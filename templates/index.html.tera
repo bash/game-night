@@ -1,0 +1,14 @@
+{% extends 'base' %}
+
+{% block chapter_number %}Zero{% endblock chapter_number %}
+{% block title %}Tau's<br>Game Night{% endblock title %}
+
+{% block content %}
+<p>
+    A (board) game night in Zurich organized every month or so.
+    Participating requires an invitation from <a href="https://rubys.ninja">Tau</a>.
+</p>
+<p>
+    <a href="/invite" class="link-button">Learn More</a>
+</p>
+{% endblock content %}

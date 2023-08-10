@@ -1,0 +1,17 @@
+{% extends 'base' %}
+
+{% block chapter_number %}One{% endblock chapter_number %}
+{% block title %}Getting Invited{% endblock title %}
+
+{% block content %}
+<p>
+    It's easy, really! Just meet Tau IRL—they'll happily invite you if you ask nicely.
+</p>
+<p>
+    If you have met Tau IRL but are too shy or too lazy to ask
+    you can alternatively send an email to game-night@tau.soy.
+</p>
+<p>
+    <a href="/register" class="link-button">I have an invitation!</a>
+</p>
+{% endblock content %}

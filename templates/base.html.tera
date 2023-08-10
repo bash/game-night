@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en" class="_{{ active_page }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preload" as="font" href="/fonts/vollkorn/Vollkorn-Regular.woff2">
+    <link rel="preload" as="font" href="/fonts/vollkorn/Vollkorn-Italic.woff2">
+    <link rel="preload" as="font" href="/fonts/vollkorn/Vollkorn-Bold.woff2">
+    <link rel="preload" as="font" href="/fonts/inter/Inter.woff2">
+    <link rel="stylesheet" type="text/css" href="/main.css">
+    <title>Tau's Game Night</title>
+</head>
+<body>
+    <a href="#main" tabindex="0" class="skip-link">Skip to content</a>
+
+    <nav>
+        <a href="/" class="_home{% if active_page == 'home' %} -active{% endif %}" title="Home">
+            <svg><use href="/icons/home.svg#icon" /></svg>
+        </a>
+        <a href="/invite" class="_invite{% if active_page == 'invite' %} -active{% endif %}" title="Get Invited">
+            <svg><use href="/icons/mail-open.svg#icon" /></svg>
+        </a>
+        <a href="/register" class="_register{% if active_page == 'register' %} -active{% endif %}" title="Register">
+            <svg><use href="/icons/clipboard-signature.svg#icon" /></svg>
+        </a>
+        <a href="/poll" class="_poll{% if active_page == 'poll' %} -active{% endif %}" title="Poll">
+            <svg><use href="/icons/calendar-check.svg#icon" /></svg>
+        </a>
+        <a href="/play" class="_play{% if active_page == 'play' %} -active{% endif %}" title="Play">
+            <svg><use href="/icons/dices.svg#icon" /></svg>
+        </a>
+    </nav>
+
+    <main id="main">
+        <header>
+            <div class="chapter-number">
+                {% block chapter_number %}
+                {% endblock chapter_number %}
+            </div>
+            <h1>
+                {% block title %}
+                {% endblock title %}
+            </h1>
+        </header>
+        {% block content %}{% endblock content %}
+    </main>
+</body>
+</html>

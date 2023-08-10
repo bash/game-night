@@ -1,0 +1,23 @@
+{% extends 'base' %}
+
+{% block chapter_number %}Two{% endblock chapter_number %}
+{% block title %}Invited{% endblock title %}
+
+{% block content %}
+<p>
+    Congratulations! Tau has invited you to their amazing
+    game night by providing you with four secret words.
+</p>
+<p>
+    Enter those secret words below to continue.
+</p>
+<form>
+    <fieldset>
+        <input type="text" placeholder="1st word" required>
+        <input type="text" placeholder="2nd word" required>
+        <input type="text" placeholder="3rd word" required>
+        <input type="text" placeholder="4th word" required>
+    </fieldset>
+    <button type="submit">Neext!</button>
+</form>
+{% endblock content %}
