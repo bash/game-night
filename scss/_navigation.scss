@@ -43,7 +43,7 @@ nav a {
     @extend %height-calculation;
 
     @media (prefers-reduced-motion: no-preference) {
-        transition: transform 125ms;
+        transition: opacity 125ms, transform 125ms;
     }
 
     svg {

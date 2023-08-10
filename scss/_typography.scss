@@ -24,6 +24,9 @@ body {
 h1, h2, h3 {
     font-family: var(--sans-serif);
     font-weight: bold;
+}
+
+h1, h2, h3, p {
     margin-bottom: 1em;
 }
 
@@ -36,16 +39,32 @@ strong {
     font-weight: bold;
 }
 
-a {
+a, button {
     color: var(--accent-color);
     font-weight: bold;
     text-decoration: none;
+    transition: opacity 125ms;
 
     &:hover {
         text-decoration: underline;
         text-underline-position: under;
         text-decoration-thickness: 2px;
         text-underline-offset: 0;
+    }
+
+    &:active {
+        opacity: .8;
+    }
+}
+
+button {
+    cursor: pointer;
+}
+
+button, .link-button {
+    &::before {
+        content: '→ ';
+        font-family: var(--sans-serif);
     }
 }
 
