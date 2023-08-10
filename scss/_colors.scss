@@ -1,0 +1,58 @@
+@mixin derived-accent-colors {
+    --accent-color-softened: color-mix(in srgb, var(--accent-color), #fff 30%);
+    --accent-color-highlight-fg: color-mix(in srgb, var(--accent-color), #000 80%);
+    --accent-color-highlight-bg: color-mix(in srgb, var(--accent-color), #fff 70%);
+    --outline-color: color-mix(in srgb, var(--accent-color) 60%, #000);
+
+    @media (prefers-color-scheme: dark) {
+        --accent-color-softened: var(--accent-color);
+        --accent-color-highlight-fg: color-mix(in srgb, var(--accent-color), #fff 80%);
+        --accent-color-highlight-bg: color-mix(in srgb, var(--accent-color), #000 30%);
+    }
+
+    @media (prefers-contrast: more) {
+        --accent-color-softened: var(--accent-color);
+        --outline-color: #000;
+    }
+}
+
+@mixin accent-color($name, $value) {
+    :root {
+        --#{$name}-color: #{$value};
+    }
+
+    ._#{$name} {
+        --accent-color: var(--#{$name}-color);
+        @include derived-accent-colors;
+    }
+}
+
+@include accent-color(home, #8839ef);
+@include accent-color(invite, #40a02b);
+@include accent-color(register, #df8e1d);
+@include accent-color(poll, #fe640b);
+@include accent-color(play, #d20f39);
+
+
+:root {
+    --accent-color: var(--home-color);
+    @include derived-accent-colors;
+}
+
+:root {
+    color-scheme: light dark;
+    accent-color: var(--accent-color);
+    background-color: #fff8f1;
+
+    @media (prefers-color-scheme: dark) {
+        background-color: #121212;
+    }
+
+    @media (prefers-contrast: more) {
+        accent-color: #000;
+    }
+
+    @media (prefers-color-scheme: dark) and (prefers-contrast: more) {
+        accent-color: #fff;
+    }
+}

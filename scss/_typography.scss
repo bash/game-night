@@ -1,0 +1,56 @@
+:root {
+    --serif: 'Vollkorn', serif;
+    --sans-serif: 'Inter', sans-serif;
+}
+
+:root {
+    font-family: var(--serif);
+    line-height: 1.4;
+}
+
+:root {
+    -webkit-text-size-adjust: none; // Stop iOS Safari from adjusting the font size in landscape.
+}
+
+::selection {
+    color: var(--accent-color-highlight-fg);
+    background-color: var(--accent-color-highlight-bg);
+}
+
+body {
+    font-size: 1.25rem;
+}
+
+h1, h2, h3 {
+    font-family: var(--sans-serif);
+    font-weight: bold;
+    margin-bottom: 1em;
+}
+
+h1 {
+    font-size: 3.75rem;
+    line-height: 1.2;
+}
+
+strong {
+    font-weight: bold;
+}
+
+a {
+    color: var(--accent-color);
+    font-weight: bold;
+    text-decoration: none;
+
+    &:hover {
+        text-decoration: underline;
+        text-underline-position: under;
+        text-decoration-thickness: 2px;
+        text-underline-offset: 0;
+    }
+}
+
+.chapter-number {
+    font-size: 1.875rem;
+    font-style: italic;
+    margin-bottom: 1rem;
+}

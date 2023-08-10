@@ -1,0 +1,63 @@
+nav {
+    --bookmark-height: 160px;
+    --bookmark-collapsed-height: 80px;
+    --bookmark-peek-distance: 10px;
+
+    display: grid;
+    grid-auto-flow: column;
+    justify-content: start;
+    grid-auto-columns: 60px;
+    gap: 24px;
+    height: var(--bookmark-height);
+}
+
+%height-calculation {
+    &:not(.-active) {
+        --height: var(--bookmark-collapsed-height) - var(--bookmark-peek-distance);
+
+        &:hover {
+            --height: var(--bookmark-collapsed-height);
+        }
+    }
+
+    &.-active {
+        --height: var(--bookmark-height) - var(--bookmark-peek-distance);
+
+        &:hover {
+            --height: var(--bookmark-height);
+        }
+    }
+}
+
+nav a {
+    display: grid;
+    align-content: end;
+    justify-content: center;
+    justify-items: center;
+    color: #fff;
+    background-color: var(--accent-color-softened);
+    clip-path: polygon(0 0, 0 100%, 50% 90%, 100% 100%, 100% 0);
+    padding: 30px 0;
+    transform: translateY(calc(var(--height) - var(--bookmark-height)));
+
+    @extend %height-calculation;
+
+    @media (prefers-reduced-motion: no-preference) {
+        transition: transform 125ms;
+    }
+
+    svg {
+        width: 1em;
+        height: 1em;
+    }
+
+    &:focus-visible {
+        outline: none;
+
+        svg {
+            outline: 2px solid var(--outline-color);
+            outline-offset: 4px;
+            border-radius: 2px;
+        }
+    }
+}

@@ -1,0 +1,21 @@
+:root {
+    --content-padding: 30px;
+    --content-max-width: calc(600px + 2 * var(--content-padding));
+}
+
+body {
+    display: grid;
+    grid-template-columns: minmax(0, var(--content-max-width));
+    align-content: start;
+    justify-content: center;
+}
+
+main {
+    margin-trim: all;
+    padding: 0 var(--content-padding) var(--content-padding) var(--content-padding);
+}
+
+nav {
+    padding: 0 var(--content-padding);
+    margin-bottom: calc(var(--content-padding) + 40px);
+}
