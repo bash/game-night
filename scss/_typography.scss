@@ -39,7 +39,7 @@ strong {
     font-weight: bold;
 }
 
-a, button {
+a {
     color: var(--accent-color);
     font-weight: bold;
     text-decoration: none;
@@ -54,17 +54,6 @@ a, button {
 
     &:active {
         opacity: .8;
-    }
-}
-
-button {
-    cursor: pointer;
-}
-
-button, .link-button {
-    &::before {
-        content: '→ ';
-        font-family: var(--sans-serif);
     }
 }
 

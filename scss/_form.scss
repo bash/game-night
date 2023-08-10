@@ -1,0 +1,55 @@
+:root {
+    --form-field-spacing: 1rem;
+}
+
+form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--form-field-spacing);
+}
+
+button {
+    @extend a;
+    cursor: pointer;
+}
+
+button, .link-button {
+    &::before {
+        content: '→ ';
+        font-family: var(--sans-serif);
+    }
+}
+
+input {
+    font-family: var(--sans-serif);
+    font-weight: bold;
+    text-align: center;
+    width: 100%;
+    padding: 8px 20px;
+    border-bottom: 4px dashed currentColor;
+
+    @media (prefers-contrast: more) {
+        border: 2px dashed currentColor;
+    }
+
+    &:focus-visible {
+        outline: none;
+        border-color: var(--accent-color);
+    }
+
+    background-color: color-mix(in srgb, var(--accent-color), #fff 90%);
+
+    @media (prefers-color-scheme: dark) {
+        background-color: color-mix(in srgb, var(--accent-color), #000 85%);
+    }
+}
+
+fieldset {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--form-field-spacing);
+}
+
+::placeholder {
+    font-style: italic;
+}
