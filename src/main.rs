@@ -1,7 +1,8 @@
 use database::SqliteRepository;
 use rocket::fairing::{self, Fairing};
+use rocket::form::Form;
 use rocket::fs::FileServer;
-use rocket::{get, launch, routes};
+use rocket::{get, launch, post, routes, FromForm};
 use rocket_db_pools::{sqlx::SqlitePool, Database, Pool};
 use rocket_dyn_templates::{context, Template};
 
@@ -12,7 +13,10 @@ mod users;
 #[launch]
 fn rocket() -> _ {
     rocket::build()
-        .mount("/", routes![index, invite, register])
+        .mount(
+            "/",
+            routes![get_index_page, get_invite_page, get_register_page, register],
+        )
         .mount("/", FileServer::from("public"))
         .attach(Template::fairing())
         .attach(GameNightDatabase::init())
@@ -20,18 +24,31 @@ fn rocket() -> _ {
 }
 
 #[get("/")]
-fn index() -> Template {
+fn get_index_page() -> Template {
     Template::render("index", context! { active_page: "home" })
 }
 
 #[get("/invite")]
-fn invite() -> Template {
+fn get_invite_page() -> Template {
     Template::render("invite", context! { active_page: "invite" })
 }
 
 #[get("/register")]
-fn register() -> Template {
+fn get_register_page() -> Template {
     Template::render("register", context! { active_page: "register" })
+}
+
+#[post("/register", data = "<form>")]
+fn register(form: Form<RegisterForm<'_>>) -> String {
+    form.words.join(" ")
+}
+
+#[derive(FromForm)]
+pub(crate) struct RegisterForm<'r> {
+    words: Vec<&'r str>,
+    name: Option<&'r str>,
+    email_address: Option<&'r str>,
+    email_verification_code: Option<&'r str>,
 }
 
 #[derive(Debug, Database)]

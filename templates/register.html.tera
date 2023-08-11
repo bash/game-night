@@ -11,12 +11,12 @@
 <p>
     Enter those secret words below to continue.
 </p>
-<form>
+<form method="post">
     <fieldset>
-        <input type="text" placeholder="1st word" required>
-        <input type="text" placeholder="2nd word" required>
-        <input type="text" placeholder="3rd word" required>
-        <input type="text" placeholder="4th word" required>
+        <input type="text" placeholder="1st word" name="words[]" required>
+        <input type="text" placeholder="2nd word" name="words[]" required>
+        <input type="text" placeholder="3rd word" name="words[]" required>
+        <input type="text" placeholder="4th word" name="words[]" required>
     </fieldset>
     <button type="submit">Neext!</button>
 </form>
