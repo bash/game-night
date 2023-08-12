@@ -36,6 +36,7 @@
 :root {
     color-scheme: light dark;
     accent-color: var(--accent-color);
+    scrollbar-color: var(--accent-color) transparent;
     background-color: #fff8f1;
 
     @media (prefers-color-scheme: dark) {
