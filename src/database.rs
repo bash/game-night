@@ -1,4 +1,4 @@
-use crate::invitation::Invitation;
+use crate::invitation::{Invitation, Passphrase};
 use crate::users::{User, UserId};
 use rocket::async_trait;
 use sqlx::pool::PoolConnection;
@@ -14,7 +14,7 @@ pub(crate) trait Repository {
 
     async fn get_invitation_by_passphrase(
         &mut self,
-        passphrase: &str,
+        passphrase: &Passphrase,
     ) -> Result<Option<Invitation>, Box<dyn Error>>;
 
     /// Adds a user while destroying the associated invitation.
@@ -46,9 +46,13 @@ impl Repository for SqliteRepository {
 
     async fn get_invitation_by_passphrase(
         &mut self,
-        passphrase: &str,
+        passphrase: &Passphrase,
     ) -> Result<Option<Invitation>, Box<dyn Error>> {
-        todo!()
+        let invitation = sqlx::query_as("SELECT rowid, * FROM invitations WHERE passphrase = ?1")
+            .bind(passphrase)
+            .fetch_optional(self.0.deref_mut())
+            .await?;
+        Ok(invitation)
     }
 
     async fn add_user(
