@@ -27,7 +27,7 @@ h1, h2, h3 {
 }
 
 h1, h2, h3, p {
-    margin-bottom: 1em;
+    margin-bottom: 1.5rem;
 }
 
 h1 {
@@ -37,6 +37,10 @@ h1 {
 
 strong {
     font-weight: bold;
+}
+
+em {
+    font-style: italic;
 }
 
 a {
@@ -61,4 +65,30 @@ a {
     font-size: 1.875rem;
     font-style: italic;
     margin-bottom: 1rem;
+}
+
+.error-message {
+    font-weight: bold;
+    font-size: 1rem;
+    font-family: var(--sans-serif);
+
+    > .label,
+    > .icon {
+        display: inline-block;
+        vertical-align: middle;
+    }
+
+    > .icon {
+        color: #fff;
+        background-color: #d20f39;
+        border-radius: 100%;
+        padding: .5em;
+        line-height: 0;
+        margin-right: 8px;
+    }
+
+    svg {
+        width: 1em;
+        height: 1em;
+    }
 }

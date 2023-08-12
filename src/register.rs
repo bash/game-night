@@ -3,22 +3,28 @@ use crate::invitation::{Invitation, Passphrase};
 use crate::GameNightDatabase;
 use email_address::EmailAddress;
 use rocket::form::Form;
-use rocket::{post, FromForm};
+use rocket::Either::*;
+use rocket::{post, Either, FromForm};
 use rocket_db_pools::Connection;
-use std::convert::identity;
+use rocket_dyn_templates::{context, Template};
 
 #[post("/register", data = "<form>")]
 pub(crate) async fn register(
     form: Form<RegisterForm<'_>>,
     database: Connection<GameNightDatabase>,
-) -> String {
+) -> Either<String, Template> {
     to_register_step(
         form.into_inner(),
         &mut SqliteRepository(database.into_inner()),
     )
     .await
-    .map(|step| format!("{:#?}", step))
-    .unwrap_or_else(identity)
+    .map(|step| Left(format!("{:#?}", step)))
+    .unwrap_or_else(|error_message| {
+        Right(Template::render(
+            "register",
+            context! { active_page: "register", error_message },
+        ))
+    })
 }
 
 async fn to_register_step(
@@ -30,7 +36,7 @@ async fn to_register_step(
         .get_invitation_by_passphrase(&passphrase)
         .await
         .unwrap()
-        .ok_or("Invitation not found")?;
+        .ok_or("That's not a valid invitation passphrase")?;
     Ok(RegisterStep::InvitationCode { invitation })
 }
 
