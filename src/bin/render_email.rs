@@ -1,4 +1,5 @@
-use lettre::{message::header::ContentType, FileTransport, Message, Transport};
+use lettre::message::MultiPart;
+use lettre::{FileTransport, Message, Transport};
 use tera::{Context, Tera};
 
 fn main() {
@@ -12,8 +13,10 @@ fn main() {
         .from("Tau's Game Night <game-night@tau.soy>".parse().unwrap())
         .to("Example Recipient <recipient@example.com>".parse().unwrap())
         .subject("Tau's Game Night")
-        .header(ContentType::TEXT_HTML)
-        .body(tera.render(&template_name, &context).unwrap())
+        .multipart(MultiPart::alternative_plain_html(
+            "TODO: plain".to_string(),
+            tera.render(&template_name, &context).unwrap(),
+        ))
         .unwrap();
     FileTransport::new("emails").send(&email).unwrap();
 }
