@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        html {
+            /* Required for macOS and iOS Mail */
+            color-scheme: dark light;
+        }
+
+        /* Some email clients (like Outlook and iOS Mail) have fonts overwritten on the specific elements,
+           so setting the font family on html is not enough. */
+        html,
+        body,
+        p,
+        a {
+            font-size: 20px; /* rem unfortunately does not work correctly across clients :/ */
+            line-height: 1.5;
+            font-family: Vollkorn, 'Noto Serif', 'Hoefler Text', 'Times New Roman', serif;
+            /* Vollkorn is the preferred font, although nobody will have it installed */
+            /* Noto Serif is for Android and Linux */
+            /* Times New Roman is for Windows and Outlook (web) */
+            /* Hoefler Text is for macOS */
+        }
+
+        /* We can't use the main tag, that breaks in Outlook Web */
+        .main {
+            display: block;
+            width: 100%;
+            max-width: 660px;
+            margin: auto;
+            padding: 10px;
+            padding-top: 30px;
+            box-sizing: border-box;
+        }
+
+        .greeting {
+            font-size: 25px;
+            font-style: italic;
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-size: 32px;
+            line-height: 1.2;
+            font-family: Inter, Arial, Helvetica, sans-serif;
+        }
+
+        a {
+            font-weight: bold;
+            color: #8839ef;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+            text-underline-position: under;
+            text-decoration-thickness: 2px;
+            text-underline-offset: 0;
+        }
+
+        a .arrow {
+            font-family: Inter, Arial, Helvetica, sans-serif;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            html {
+                background-color: #121212;
+                color: #fff;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main">
+        <div class="greeting">{{greeting}} {{name}},</div>
+        {% block content %}{% endblock content%}
+    </div>
+</body>
+</html>

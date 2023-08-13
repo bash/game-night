@@ -1,0 +1,22 @@
+{% extends 'base.html.tera' %}
+{% block content %}
+<h1>
+    Get Ready For For <br> Another Game Night 🎉
+</h1>
+
+<p>
+    Use the poll to indicate the dates on which you are
+    available for <strong>Tau's Game Night</strong>.
+    The poll closes on <strong>{{poll_close_date}}</strong> at <strong>{{poll_close_time}}</strong> after which
+    the definitive date will be announced.
+</p>
+
+<a href="{{poll_url}}">
+    <span class="arrow" role="presentation">→</span>
+    Participate in poll
+</a>
+
+<p>
+    <strong>P.S.</strong> You can ignore this email if you want to skip the next game night.
+</p>
+{% endblock content %}

@@ -1,3 +1,4 @@
 /public/*.css
 /target
 *.sqlite
+*.eml
