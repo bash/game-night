@@ -24,15 +24,21 @@
             /* Hoefler Text is for macOS */
         }
 
-        /* We can't use the main tag, that breaks in Outlook Web */
-        .main {
-            display: block;
+        /* Outlook and Windows Mail do not support margin: auto, so we have
+           to achieve the centering with tables. */
+        table {
+            border-collapse: collapse;
+        }
+
+        .outer-table {
             width: 100%;
-            max-width: 660px;
-            margin: auto;
+        }
+
+        .inner-table-cell {
             padding: 10px;
             padding-top: 30px;
             box-sizing: border-box;
+            width: 600px;
         }
 
         .greeting {
@@ -73,9 +79,21 @@
     </style>
 </head>
 <body>
-    <div class="main">
-        <div class="greeting">{{greeting}} {{name}},</div>
-        {% block content %}{% endblock content%}
-    </div>
+    <table class="outer-table" role="presentation">
+        <tr>
+            <td></td>
+            <td class="inner-table-cell">
+                <table role="presentation">
+                    <tr>
+                        <td>
+                            <div class="greeting">{{greeting}} {{name}},</div>
+                            {% block content %}{% endblock content%}
+                        </td>
+                    </tr>
+                </table>
+            </td>
+            <td></td>
+        </tr>
+    </table>
 </body>
 </html>
