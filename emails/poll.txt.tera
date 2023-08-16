@@ -1,0 +1,13 @@
+{{greeting}} {{name}},
+
+Get Ready For Another Game Night 🎉
+
+Use the poll to indicate the dates on which you are
+available for Tau's Game Night.
+
+The poll closes on {{poll_close_date}} at {{poll_close_time}} after which
+the definitive date will be announced.
+
+→ Participate in poll: {{poll_url}}
+
+P.S. You can ignore this email if you want to skip the next game night.

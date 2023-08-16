@@ -3,7 +3,7 @@ use email::{EmailSender, EmailSenderImpl};
 use rocket::error;
 use rocket::fairing::{self, Fairing};
 use rocket::fs::FileServer;
-use rocket::{get, launch, routes, FromForm};
+use rocket::{get, launch, routes};
 use rocket_db_pools::{sqlx::SqlitePool, Database, Pool};
 use rocket_dyn_templates::{context, Template};
 

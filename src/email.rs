@@ -1,20 +1,20 @@
 use anyhow::{Context as _, Result};
-use lettre::message::Mailbox;
+use lettre::message::{Mailbox, MultiPart};
 use lettre::transport::smtp::authentication::Credentials;
 use lettre::transport::smtp::client::TlsParameters;
 use lettre::transport::smtp::AsyncSmtpTransportBuilder;
+use lettre::{AsyncTransport, Message};
 use rocket::async_trait;
 use rocket::figment::Figment;
 use rocket::warn;
-use serde::Deserialize;
-use std::error::Error;
+use serde::{Deserialize, Serialize};
 use tera::{Context, Tera};
 
 type AsyncSmtpTransport = lettre::AsyncSmtpTransport<lettre::AsyncStd1Executor>;
 
 #[async_trait]
 pub(crate) trait EmailSender: Send + Sync {
-    async fn send(&self, email: EmailMessage) -> Result<(), Box<dyn Error>>;
+    async fn send(&self, email: EmailMessage) -> Result<()>;
 }
 
 pub(crate) struct EmailMessage {
@@ -22,6 +22,22 @@ pub(crate) struct EmailMessage {
     pub(crate) subject: String,
     pub(crate) template_name: String,
     pub(crate) template_context: Context,
+}
+
+impl EmailMessage {
+    pub(crate) fn new(
+        recipient: Mailbox,
+        subject: String,
+        template_name: String,
+        template_context: impl Serialize,
+    ) -> Result<Self> {
+        Ok(EmailMessage {
+            recipient,
+            subject,
+            template_name,
+            template_context: Context::from_serialize(template_context)?,
+        })
+    }
 }
 
 pub(crate) struct EmailSenderImpl {
@@ -32,8 +48,24 @@ pub(crate) struct EmailSenderImpl {
 
 #[async_trait]
 impl EmailSender for EmailSenderImpl {
-    async fn send(&self, email: EmailMessage) -> Result<(), Box<dyn Error>> {
-        todo!()
+    async fn send(&self, email: EmailMessage) -> Result<()> {
+        let html_template_name = format!("{}.html.tera", &email.template_name);
+        let text_template_name = format!("{}.txt.tera", &email.template_name);
+        let email = Message::builder()
+            .from(self.sender.clone())
+            .to(email.recipient)
+            .subject(email.subject)
+            .multipart(MultiPart::alternative_plain_html(
+                self.tera
+                    .render(&text_template_name, &email.template_context)
+                    .context("failed to render tera template")?,
+                self.tera
+                    .render(&html_template_name, &email.template_context)
+                    .context("failed to render tera template")?,
+            ))
+            .context("failed to create email message")?;
+        self.transport.send(email).await?;
+        Ok(())
     }
 }
 
@@ -41,7 +73,7 @@ impl EmailSenderImpl {
     pub(crate) async fn from_figment(figment: &Figment) -> Result<Self> {
         let config: EmailSenderConfig = figment
             .extract_inner("email")
-            .context("Failed to read email sender configuration")?;
+            .context("failed to read email sender configuration")?;
         let sender = config.sender.clone();
 
         let transport: AsyncSmtpTransport = config.try_into()?;
@@ -53,9 +85,9 @@ impl EmailSenderImpl {
             Ok(_) => {}
         };
 
-        let mut tera = Tera::new("emails/**.tera").context("Failed to initialize Tera")?;
+        let mut tera = Tera::new("emails/**.tera").context("failed to initialize Tera")?;
         tera.build_inheritance_chains()
-            .context("Failed to build tera's inheritance chain")?;
+            .context("failed to build tera's inheritance chain")?;
         Ok(Self {
             sender,
             transport,
