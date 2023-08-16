@@ -42,13 +42,9 @@ impl EmailSenderImpl {
         let config: EmailSenderConfig = figment
             .extract_inner("email")
             .context("Failed to read email sender configuration")?;
-        let transport = AsyncSmtpTransport::relay(&config.smtp_server)
-            .context("Failed to create SMTP transport")?
-            .port(config.smtp_port)
-            .tls(config.smtp_tls.to_client_tls(config.smtp_server)?)
-            .optional_credentials(config.smtp_credentials.map(Into::into))
-            .build();
+        let sender = config.sender.clone();
 
+        let transport: AsyncSmtpTransport = config.try_into()?;
         match transport.test_connection().await {
             Err(e) => warn!("unable to connect to configured SMTP transport:\n{}", e),
             Ok(successful) if !successful => {
@@ -61,7 +57,7 @@ impl EmailSenderImpl {
         tera.build_inheritance_chains()
             .context("Failed to build tera's inheritance chain")?;
         Ok(Self {
-            sender: config.sender,
+            sender,
             transport,
             tera,
         })
@@ -75,6 +71,19 @@ struct EmailSenderConfig {
     smtp_port: u16,
     smtp_tls: EmailSenderTls,
     smtp_credentials: Option<EmailSenderCredentials>,
+}
+
+impl TryFrom<EmailSenderConfig> for AsyncSmtpTransport {
+    type Error = anyhow::Error;
+
+    fn try_from(config: EmailSenderConfig) -> Result<Self> {
+        Ok(AsyncSmtpTransport::relay(&config.smtp_server)
+            .context("Failed to create SMTP transport")?
+            .port(config.smtp_port)
+            .tls(config.smtp_tls.to_client_tls(config.smtp_server)?)
+            .optional_credentials(config.smtp_credentials.map(Into::into))
+            .build())
+    }
 }
 
 #[derive(Debug, Copy, Clone, Deserialize)]
