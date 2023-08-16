@@ -1,5 +1,6 @@
 use crate::database::Repository;
 use crate::users::{Role, User, UserId};
+use anyhow::Result;
 use diceware_wordlists::EFF_LONG_WORDLIST;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
@@ -15,7 +16,7 @@ use yansi::Paint;
 
 #[derive(Debug, Copy, Clone, sqlx::Type)]
 #[sqlx(transparent)]
-pub(crate) struct InvitationId(i64);
+pub(crate) struct InvitationId(pub(crate) i64);
 
 #[derive(Debug, Clone, sqlx::FromRow)]
 pub(crate) struct Invitation<Id = InvitationId> {
@@ -24,6 +25,17 @@ pub(crate) struct Invitation<Id = InvitationId> {
     pub(crate) role: Role,
     pub(crate) created_by: Option<UserId>,
     pub(crate) passphrase: Passphrase,
+}
+
+impl Invitation<()> {
+    pub(crate) fn with_id(self, id: InvitationId) -> Invitation {
+        Invitation {
+            id,
+            role: self.role,
+            created_by: self.created_by,
+            passphrase: self.passphrase,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -90,9 +102,7 @@ impl<Id> Invitation<Id> {
     }
 }
 
-pub(crate) async fn invite_admin_user(
-    repository: &mut (dyn Repository + Send),
-) -> Result<(), Box<dyn Error>> {
+pub(crate) async fn invite_admin_user(repository: &mut dyn Repository) -> Result<()> {
     launch_meta!(
         "{}{}:",
         <Paint<&str> as PaintExt>::emoji("👑 "),
@@ -100,12 +110,22 @@ pub(crate) async fn invite_admin_user(
     );
 
     if !repository.has_users().await? {
-        let invitation = Invitation::generate(Role::Admin, None);
+        let invitation = get_or_create_invitation(repository).await?;
         launch_meta_!("invitation: {}", &invitation.passphrase);
-        repository.add_invitation(invitation).await?;
     }
 
     Ok(())
+}
+
+async fn get_or_create_invitation(repository: &mut dyn Repository) -> Result<Invitation> {
+    Ok(match repository.get_admin_invitation().await? {
+        Some(invitation) => invitation,
+        None => {
+            repository
+                .add_invitation(Invitation::generate(Role::Admin, None))
+                .await?
+        }
+    })
 }
 
 fn generate_passphrase() -> Passphrase {

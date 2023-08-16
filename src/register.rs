@@ -1,13 +1,13 @@
 use crate::database::{Repository, SqliteRepository};
 use crate::invitation::{Invitation, Passphrase};
 use crate::GameNightDatabase;
+use anyhow::Error;
 use email_address::EmailAddress;
 use rocket::form::Form;
 use rocket::{post, FromForm};
 use rocket_db_pools::Connection;
 use rocket_dyn_templates::{context, Template};
 use std::borrow::Cow;
-use std::error::Error;
 
 #[post("/register", data = "<form>")]
 pub(crate) async fn register(
@@ -41,11 +41,11 @@ async fn to_register_step(
 
 pub(crate) enum RegisterError {
     Validation(Cow<'static, str>),
-    Internal(Box<dyn Error>),
+    Internal(Error),
 }
 
-impl From<Box<dyn Error>> for RegisterError {
-    fn from(value: Box<dyn Error>) -> Self {
+impl From<Error> for RegisterError {
+    fn from(value: Error) -> Self {
         RegisterError::Internal(value)
     }
 }
