@@ -1,10 +1,11 @@
+use anyhow::{Context, Result};
 use database::SqliteRepository;
 use email::{EmailSender, EmailSenderImpl};
 use keys::GameNightKeys;
 use rocket::fairing::{self, Fairing};
 use rocket::figment::Figment;
 use rocket::fs::FileServer;
-use rocket::{error, Config};
+use rocket::{error, Build, Config, Rocket};
 use rocket::{get, launch, routes};
 use rocket_db_pools::{sqlx::SqlitePool, Database, Pool};
 use rocket_dyn_templates::{context, Template};
@@ -32,8 +33,8 @@ fn rocket() -> _ {
         .mount("/", FileServer::from("public"))
         .attach(Template::fairing())
         .attach(GameNightDatabase::init())
-        .attach(invite_admin_user())
         .attach(initialize_email_sender())
+        .attach(invite_admin_user())
 }
 
 fn figment() -> Figment {
@@ -61,18 +62,28 @@ fn get_register_page() -> Template {
 pub(crate) struct GameNightDatabase(SqlitePool);
 
 fn invite_admin_user() -> impl Fairing {
-    fairing::AdHoc::on_liftoff("Invite Admin User", |rocket| {
+    fairing::AdHoc::try_on_ignite("Invite Admin User", |rocket| {
         Box::pin(async {
-            let connection = GameNightDatabase::fetch(rocket)
-                .expect("TODO")
-                .get()
-                .await
-                .expect("TODO");
-            invitation::invite_admin_user(&mut SqliteRepository(connection))
-                .await
-                .unwrap();
+            match try_invite_admin_user(&rocket).await {
+                Ok(_) => Ok(rocket),
+                Err(e) => {
+                    error!("{}", e);
+                    Err(rocket)
+                }
+            }
         })
     })
+}
+
+async fn try_invite_admin_user(rocket: &Rocket<Build>) -> Result<()> {
+    let connection = GameNightDatabase::fetch(rocket)
+        .context("database not configured")?
+        .get()
+        .await
+        .context("failed to retrieve database")?;
+    invitation::invite_admin_user(&mut SqliteRepository(connection))
+        .await
+        .context("failed to invite admin user")
 }
 
 fn initialize_email_sender() -> impl Fairing {
