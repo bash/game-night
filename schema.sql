@@ -13,3 +13,10 @@ CREATE TABLE invitations
     , passphrase TEXT NOT NULL
     , UNIQUE (passphrase)
     );
+
+CREATE TABLE email_verification_codes
+    ( code TEXT NOT NULL
+    , email_address TEXT NOT NULL
+    , valid_until TEXT NOT NULL
+    , UNIQUE (code)
+    );

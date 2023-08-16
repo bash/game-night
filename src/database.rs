@@ -1,6 +1,8 @@
+use crate::email_verification_code::EmailVerificationCode;
 use crate::invitation::{Invitation, InvitationId, Passphrase};
 use crate::users::{User, UserId};
 use anyhow::Result;
+use chrono::Local;
 use rocket::async_trait;
 use sqlx::pool::PoolConnection;
 use sqlx::Sqlite;
@@ -23,6 +25,14 @@ pub(crate) trait Repository: Send {
     async fn add_user(&mut self, invitation: Invitation, user: User<()>) -> Result<UserId>;
 
     async fn has_users(&mut self) -> Result<bool>;
+
+    async fn add_email_verification_code(&mut self, code: EmailVerificationCode) -> Result<()>;
+
+    async fn use_email_verification_code(
+        &mut self,
+        code: &str,
+        email_address: &str,
+    ) -> Result<bool>;
 }
 
 pub(crate) struct SqliteRepository(pub(crate) SqliteConnection);
@@ -71,5 +81,37 @@ impl Repository for SqliteRepository {
             .fetch_one(self.0.deref_mut())
             .await?;
         Ok(user_count >= 1)
+    }
+
+    async fn add_email_verification_code(&mut self, code: EmailVerificationCode) -> Result<()> {
+        sqlx::query(
+            "INSERT INTO email_verification_codes (code, email_address, valid_until)
+             VALUES (?1, ?2, ?3)",
+        )
+        .bind(code.code)
+        .bind(code.email_address)
+        .bind(code.valid_until)
+        .execute(self.0.deref_mut())
+        .await?;
+        Ok(())
+    }
+
+    async fn use_email_verification_code(
+        &mut self,
+        code: &str,
+        email_address: &str,
+    ) -> Result<bool> {
+        let result = sqlx::query(
+            "DELETE FROM email_verification_codes (code, email_address, valid_until)
+             WHERE code = ?1
+               AND email_address = ?2
+               AND valid_until >= ?3",
+        )
+        .bind(code)
+        .bind(email_address)
+        .bind(Local::now())
+        .execute(self.0.deref_mut())
+        .await?;
+        Ok(result.rows_affected() >= 1)
     }
 }

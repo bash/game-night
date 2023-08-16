@@ -12,6 +12,7 @@ use rocket_dyn_templates::{context, Template};
 
 mod database;
 mod email;
+mod email_verification_code;
 mod emails;
 mod invitation;
 mod keys;
