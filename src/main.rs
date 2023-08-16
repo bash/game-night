@@ -55,7 +55,10 @@ fn get_invite_page() -> Template {
 
 #[get("/register")]
 fn get_register_page() -> Template {
-    Template::render("register", context! { active_page: "register" })
+    Template::render(
+        "register",
+        context! { active_page: "register", step: "invitation_code", form: context! {} },
+    )
 }
 
 #[derive(Debug, Database)]

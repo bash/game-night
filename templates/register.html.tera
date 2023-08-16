@@ -4,14 +4,17 @@
 {% block title %}Invited{% endblock title %}
 
 {% block content %}
-<p>
-    Congratulations! Tau has invited you to their amazing
-    game night by providing you with four secret words.
-</p>
-<p>
-    Enter those secret words below to continue.
-</p>
 <form method="post">
+    {% if step == 'invitation_code' %}
+    <p>
+        Congratulations! Tau has invited you to their amazing
+        game night by providing you with four secret words.
+    </p>
+
+    <p>
+        Enter those secret words below to continue.
+    </p>
+
     {% if error_message %}
         <div class="error-message">
             <span class="icon"><svg><use href="/icons/alert-triangle.svg#icon"></use></svg></span>
@@ -20,12 +23,48 @@
     {% endif %}
 
     <fieldset>
-        <input type="text" placeholder="1st word" name="words[]" required>
-        <input type="text" placeholder="2nd word" name="words[]" required>
-        <input type="text" placeholder="3rd word" name="words[]" required>
-        <input type="text" placeholder="4th word" name="words[]" required>
+        <input type="text" placeholder="1st word" name="words[]" value="{{form | get(key='words', default=[]) | nth(n=0)}}" required>
+        <input type="text" placeholder="2nd word" name="words[]" value="{{form | get(key='words', default=[]) | nth(n=1)}}" required>
+        <input type="text" placeholder="3rd word" name="words[]" value="{{form | get(key='words', default=[]) | nth(n=2)}}" required>
+        <input type="text" placeholder="4th word" name="words[]" value="{{form | get(key='words', default=[]) | nth(n=3)}}" required>
     </fieldset>
 
     <button type="submit">Neext!</button>
+    {% else %}
+        <input type="hidden" name="words[]" value="{{form.words | default(value=[]) | nth(n=0)}}">
+        <input type="hidden" name="words[]" value="{{form.words | default(value=[]) | nth(n=1)}}">
+        <input type="hidden" name="words[]" value="{{form.words | default(value=[]) | nth(n=2)}}">
+        <input type="hidden" name="words[]" value="{{form.words | default(value=[]) | nth(n=3)}}">
+    {% endif %}
+
+    {% if step == 'user_details' %}
+        <p>
+            Ding ding ding! You have entered the correct words.
+        </p>
+
+        <p>
+            First, let's introduce ourselves. My name is Tau, and what's yours?
+        </p>
+
+        <input type="text" placeholder="Name" name="name" value="{{form.name | default(value='')}}" required>
+
+        <p>
+            Hiiii <strong data-bind-to="name"></strong> and welcome to my game night.
+            I will need your email address to send notify you of the next game night.
+            I will only use it for game night related purposes–pinky promise~
+        </p>
+
+        <input type="email" placeholder="awesome-person@example.com" name="email_address" value="{{form.email_address | default(value='')}}" required>
+
+        <button type="submit">Neeext!</button>
+    {% endif %}
 </form>
+
+<script type="module">
+    for (const target of document.querySelectorAll('[data-bind-to]')) {
+        const source = document.querySelector(`[name=${target.dataset.bindTo}]`)
+        target.innerText = source.value
+        source.addEventListener('input', () => target.innerText = source.value)
+    }
+</script>
 {% endblock content %}

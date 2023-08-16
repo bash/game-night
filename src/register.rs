@@ -1,56 +1,57 @@
 use crate::database::{Repository, SqliteRepository};
 use crate::invitation::{Invitation, Passphrase};
 use crate::GameNightDatabase;
-use anyhow::Error;
+use anyhow::Result;
 use email_address::EmailAddress;
 use rocket::form::Form;
 use rocket::{post, FromForm};
 use rocket_db_pools::Connection;
 use rocket_dyn_templates::{context, Template};
-use std::borrow::Cow;
+use serde::Serialize;
+use StepResult::*;
 
 #[post("/register", data = "<form>")]
 pub(crate) async fn register(
     form: Form<RegisterForm<'_>>,
     database: Connection<GameNightDatabase>,
 ) -> Template {
+    let form = form.into_inner();
     let mut repository = SqliteRepository(database.into_inner());
-    match to_register_step(form.into_inner(), &mut repository).await {
-        Ok(_) => todo!(),
-        Err(RegisterError::Validation(error_message)) => Template::render(
-            "register",
-            context! { active_page: "register", error_message },
-        ),
-        Err(RegisterError::Internal(_)) => todo!(),
-    }
+
+    let _invitation = match invitation_code_step(&form, &mut repository).await.unwrap() {
+        Complete(i) => i,
+        Error(error_message) => {
+            return Template::render(
+                "register",
+                context! { active_page: "register", step: "invitation_code", error_message, form },
+            )
+        }
+    };
+
+    Template::render(
+        "register",
+        context! { active_page: "register", step: "user_details", form },
+    )
 }
 
-async fn to_register_step(
-    form: RegisterForm<'_>,
-    repository: &mut (dyn Repository + Send),
-) -> Result<RegisterStep, RegisterError> {
-    let passphrase = Passphrase(form.words);
-    let invitation = repository
+async fn invitation_code_step(
+    form: &RegisterForm<'_>,
+    repository: &mut dyn Repository,
+) -> Result<StepResult<Invitation>> {
+    let passphrase = Passphrase(form.words.clone());
+    Ok(repository
         .get_invitation_by_passphrase(&passphrase)
         .await?
-        .ok_or(RegisterError::Validation(
-            "That's not a valid invitation passphrase".into(),
-        ))?;
-    Ok(RegisterStep::InvitationCode { invitation })
+        .map(Complete)
+        .unwrap_or_else(|| Error("That's not a valid invitation passphrase".into())))
 }
 
-pub(crate) enum RegisterError {
-    Validation(Cow<'static, str>),
-    Internal(Error),
+enum StepResult<T> {
+    Error(String),
+    Complete(T),
 }
 
-impl From<Error> for RegisterError {
-    fn from(value: Error) -> Self {
-        RegisterError::Internal(value)
-    }
-}
-
-#[derive(FromForm)]
+#[derive(FromForm, Serialize)]
 pub(crate) struct RegisterForm<'r> {
     words: Vec<String>,
     name: Option<&'r str>,
@@ -58,20 +59,7 @@ pub(crate) struct RegisterForm<'r> {
     email_verification_code: Option<u64>,
 }
 
-#[derive(Debug)]
-pub(crate) enum RegisterStep {
-    InvitationCode {
-        invitation: Invitation,
-    },
-    UserDetails {
-        invitation: Invitation,
-        email_address: EmailAddress,
-        name: String,
-    },
-    EmailVerification {
-        invitation: Invitation,
-        email_address: EmailAddress,
-        name: String,
-        email_verification_code: u64,
-    },
+struct UserDetails {
+    email_address: EmailAddress,
+    name: String,
 }
