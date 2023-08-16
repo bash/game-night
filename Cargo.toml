@@ -10,7 +10,9 @@ anyhow = "1.0.74"
 chrono = "0.4.26"
 chrono-tz = "0.4"
 diceware_wordlists = "1.2.1"
+dirs = "5.0.1"
 email_address = "0.2.4"
+hex = { version = "0.4.3", features = ["serde"] }
 lettre = { version = "0.10.4", default-features = false, features = ["builder", "file-transport", "smtp-transport", "async-std1", "async-std1-rustls-tls", "serde"] }
 libreauth = "0.16.0"
 rand = "0.8.5"
@@ -18,6 +20,7 @@ rocket = { version = "=0.5.0-rc.3", features = ["secrets"] }
 rocket_db_pools = { version = "=0.1.0-rc.3", features = ["sqlx_sqlite"] }
 rocket_dyn_templates = { version = "=0.1.0-rc.3", features = ["tera"] }
 serde = { version = "1.0", features = ["derive"] }
+json = { package = "serde_json", version = "1.0.105" }
 sqlx = "0.6.0"
 tera = "1.19.0"
 yansi = "0.5.1"

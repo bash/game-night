@@ -1,8 +1,10 @@
 use database::SqliteRepository;
 use email::{EmailSender, EmailSenderImpl};
-use rocket::error;
+use keys::GameNightKeys;
 use rocket::fairing::{self, Fairing};
+use rocket::figment::Figment;
 use rocket::fs::FileServer;
+use rocket::{error, Config};
 use rocket::{get, launch, routes};
 use rocket_db_pools::{sqlx::SqlitePool, Database, Pool};
 use rocket_dyn_templates::{context, Template};
@@ -11,12 +13,13 @@ mod database;
 mod email;
 mod emails;
 mod invitation;
+mod keys;
 mod register;
 mod users;
 
 #[launch]
 fn rocket() -> _ {
-    rocket::build()
+    rocket::custom(figment())
         .mount(
             "/",
             routes![
@@ -31,6 +34,11 @@ fn rocket() -> _ {
         .attach(GameNightDatabase::init())
         .attach(invite_admin_user())
         .attach(initialize_email_sender())
+}
+
+fn figment() -> Figment {
+    let keys = GameNightKeys::read_or_generate().unwrap();
+    Config::figment().merge(("secret_key", &keys.rocket_secret_key))
 }
 
 #[get("/")]
