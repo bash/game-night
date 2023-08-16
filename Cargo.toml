@@ -7,6 +7,8 @@ default-run = "game-night"
 
 [dependencies]
 anyhow = "1.0.74"
+chrono = "0.4.26"
+chrono-tz = "0.4"
 diceware_wordlists = "1.2.1"
 email_address = "0.2.4"
 lettre = { version = "0.10.4", default-features = false, features = ["builder", "file-transport", "smtp-transport", "async-std1", "async-std1-rustls-tls", "serde"] }

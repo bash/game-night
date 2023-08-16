@@ -9,6 +9,7 @@ use rocket_dyn_templates::{context, Template};
 
 mod database;
 mod email;
+mod emails;
 mod invitation;
 mod register;
 mod users;

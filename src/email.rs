@@ -7,36 +7,25 @@ use lettre::{AsyncTransport, Message};
 use rocket::async_trait;
 use rocket::figment::Figment;
 use rocket::warn;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use tera::{Context, Tera};
+
+pub(crate) const EMAIL_DISPLAY_TIMEZONE: chrono_tz::Tz = chrono_tz::Europe::Zurich;
 
 type AsyncSmtpTransport = lettre::AsyncSmtpTransport<lettre::AsyncStd1Executor>;
 
 #[async_trait]
 pub(crate) trait EmailSender: Send + Sync {
-    async fn send(&self, email: EmailMessage) -> Result<()>;
+    async fn send(&self, recipient: Mailbox, email: &dyn EmailMessage) -> Result<()>;
 }
 
-pub(crate) struct EmailMessage {
-    pub(crate) recipient: Mailbox,
-    pub(crate) subject: String,
-    pub(crate) template_name: String,
-    pub(crate) template_context: Context,
-}
+pub(crate) trait EmailMessage: Send + Sync {
+    fn subject(&self) -> String;
 
-impl EmailMessage {
-    pub(crate) fn new(
-        recipient: Mailbox,
-        subject: String,
-        template_name: String,
-        template_context: impl Serialize,
-    ) -> Result<Self> {
-        Ok(EmailMessage {
-            recipient,
-            subject,
-            template_name,
-            template_context: Context::from_serialize(template_context)?,
-        })
+    fn template_name(&self) -> String;
+
+    fn template_context(&self) -> Context {
+        Context::new()
     }
 }
 
@@ -53,19 +42,21 @@ pub(crate) struct EmailSenderImpl {
 // TODO: message id, in-reply-to and references
 #[async_trait]
 impl EmailSender for EmailSenderImpl {
-    async fn send(&self, email: EmailMessage) -> Result<()> {
-        let html_template_name = format!("{}.html.tera", &email.template_name);
-        let text_template_name = format!("{}.txt.tera", &email.template_name);
+    async fn send(&self, recipient: Mailbox, email: &dyn EmailMessage) -> Result<()> {
+        let template_name = email.template_name();
+        let template_context = email.template_context();
+        let html_template_name = format!("{}.html.tera", &template_name);
+        let text_template_name = format!("{}.txt.tera", &template_name);
         let email = Message::builder()
             .from(self.sender.clone())
-            .to(email.recipient)
-            .subject(email.subject)
+            .to(recipient)
+            .subject(email.subject())
             .multipart(MultiPart::alternative_plain_html(
                 self.tera
-                    .render(&text_template_name, &email.template_context)
+                    .render(&text_template_name, &template_context)
                     .context("failed to render tera template")?,
                 self.tera
-                    .render(&html_template_name, &email.template_context)
+                    .render(&html_template_name, &template_context)
                     .context("failed to render tera template")?,
             ))
             .context("failed to create email message")?;
