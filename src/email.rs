@@ -38,26 +38,32 @@ pub(crate) struct EmailSenderImpl {
 #[async_trait]
 impl EmailSender for EmailSenderImpl {
     async fn send(&self, recipient: Mailbox, email: &dyn EmailMessage) -> Result<()> {
-        let template_name = email.template_name();
-        let template_context = email.template_context();
-        let html_template_name = format!("{}.html.tera", &template_name);
-        let text_template_name = format!("{}.txt.tera", &template_name);
-        let email = Message::builder()
+        let message = Message::builder()
             .from(self.sender.clone())
             .to(recipient)
             .subject(email.subject())
-            .multipart(MultiPart::alternative_plain_html(
-                self.tera
-                    .render(&text_template_name, &template_context)
-                    .context("failed to render tera template")?,
-                self.tera
-                    .render(&html_template_name, &template_context)
-                    .context("failed to render tera template")?,
-            ))
+            .multipart(render_email_body(&self.tera, email)?)
             .context("failed to create email message")?;
-        self.transport.send(email).await?;
-        Ok(())
+        self.transport
+            .send(message)
+            .await
+            .context("failed to send email")
+            .map(|_| ())
     }
+}
+
+fn render_email_body(tera: &Tera, email: &dyn EmailMessage) -> Result<MultiPart> {
+    let template_name = email.template_name();
+    let template_context = email.template_context();
+    let html_template_name = format!("{}.html.tera", &template_name);
+    let text_template_name = format!("{}.txt.tera", &template_name);
+
+    Ok(MultiPart::alternative_plain_html(
+        tera.render(&text_template_name, &template_context)
+            .context("failed to render tera template")?,
+        tera.render(&html_template_name, &template_context)
+            .context("failed to render tera template")?,
+    ))
 }
 
 impl EmailSenderImpl {
