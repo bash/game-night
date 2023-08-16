@@ -1,2 +1,9 @@
 [default.databases.sqlite]
 url = "database.sqlite"
+
+[default.email]
+sender = "Tau's Game Night <game-night@tau.soy>"
+smtp_server = "localhost"
+smtp_port = 1025
+smtp_tls = "none" # or: "required"
+# smtp_credentials = { username = "foo", password = "bar" }

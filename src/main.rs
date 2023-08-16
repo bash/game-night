@@ -6,6 +6,7 @@ use rocket_db_pools::{sqlx::SqlitePool, Database, Pool};
 use rocket_dyn_templates::{context, Template};
 
 mod database;
+mod email;
 mod invitation;
 mod register;
 mod users;
