@@ -1,7 +1,7 @@
 {% extends 'base.html.tera' %}
 {% block content %}
 <h1>
-    Get Ready For For <br> Another Game Night 🎉
+    Get Ready For <br> Another Game Night 🎉
 </h1>
 
 <p>
