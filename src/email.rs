@@ -68,23 +68,31 @@ impl EmailSenderImpl {
         let sender = config.sender.clone();
 
         let transport: AsyncSmtpTransport = config.try_into()?;
-        match transport.test_connection().await {
-            Err(e) => warn!("unable to connect to configured SMTP transport:\n{}", e),
-            Ok(successful) if !successful => {
-                warn!("failed to connect to configured SMTP transport")
-            }
-            Ok(_) => {}
-        };
+        test_connection(&transport).await;
 
-        let mut tera = Tera::new("emails/**.tera").context("failed to initialize Tera")?;
-        tera.build_inheritance_chains()
-            .context("failed to build tera's inheritance chain")?;
         Ok(Self {
             sender,
             transport,
-            tera,
+            tera: create_tera()?,
         })
     }
+}
+
+async fn test_connection(transport: &AsyncSmtpTransport) {
+    match transport.test_connection().await {
+        Err(e) => warn!("unable to connect to configured SMTP transport:\n{}", e),
+        Ok(successful) if !successful => {
+            warn!("failed to connect to configured SMTP transport")
+        }
+        Ok(_) => {}
+    }
+}
+
+fn create_tera() -> Result<Tera> {
+    let mut tera = Tera::new("emails/**.tera").context("failed to initialize Tera")?;
+    tera.build_inheritance_chains()
+        .context("failed to build tera's inheritance chain")?;
+    Ok(tera)
 }
 
 #[derive(Debug, Deserialize)]
