@@ -1,4 +1,6 @@
 use database::SqliteRepository;
+use email::{EmailSender, EmailSenderImpl};
+use rocket::error;
 use rocket::fairing::{self, Fairing};
 use rocket::fs::FileServer;
 use rocket::{get, launch, routes, FromForm};
@@ -27,6 +29,7 @@ fn rocket() -> _ {
         .attach(Template::fairing())
         .attach(GameNightDatabase::init())
         .attach(invite_admin_user())
+        .attach(initialize_email_sender())
 }
 
 #[get("/")]
@@ -59,6 +62,20 @@ fn invite_admin_user() -> impl Fairing {
             invitation::invite_admin_user(&mut SqliteRepository(connection))
                 .await
                 .unwrap();
+        })
+    })
+}
+
+fn initialize_email_sender() -> impl Fairing {
+    fairing::AdHoc::try_on_ignite("Email Sender", |rocket| {
+        Box::pin(async {
+            match EmailSenderImpl::from_figment(rocket.figment()).await {
+                Ok(sender) => Ok(rocket.manage(Box::new(sender) as Box<dyn EmailSender>)),
+                Err(error) => {
+                    error!("failed to initialize email sender: {}", error);
+                    Err(rocket)
+                }
+            }
         })
     })
 }

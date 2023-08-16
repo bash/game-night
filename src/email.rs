@@ -5,6 +5,7 @@ use lettre::transport::smtp::client::TlsParameters;
 use lettre::transport::smtp::AsyncSmtpTransportBuilder;
 use rocket::async_trait;
 use rocket::figment::Figment;
+use rocket::warn;
 use serde::Deserialize;
 use std::error::Error;
 use tera::{Context, Tera};
@@ -12,8 +13,8 @@ use tera::{Context, Tera};
 type AsyncSmtpTransport = lettre::AsyncSmtpTransport<lettre::AsyncStd1Executor>;
 
 #[async_trait]
-pub(crate) trait EmailSender {
-    async fn send(email: EmailMessage) -> Result<(), Box<dyn Error>>;
+pub(crate) trait EmailSender: Send + Sync {
+    async fn send(&self, email: EmailMessage) -> Result<(), Box<dyn Error>>;
 }
 
 pub(crate) struct EmailMessage {
@@ -29,8 +30,15 @@ pub(crate) struct EmailSenderImpl {
     tera: Tera,
 }
 
+#[async_trait]
+impl EmailSender for EmailSenderImpl {
+    async fn send(&self, email: EmailMessage) -> Result<(), Box<dyn Error>> {
+        todo!()
+    }
+}
+
 impl EmailSenderImpl {
-    pub(crate) fn from_figment(figment: &Figment) -> Result<Self> {
+    pub(crate) async fn from_figment(figment: &Figment) -> Result<Self> {
         let config: EmailSenderConfig = figment
             .extract_inner("email")
             .context("Failed to read email sender configuration")?;
@@ -40,6 +48,15 @@ impl EmailSenderImpl {
             .tls(config.smtp_tls.to_client_tls(config.smtp_server)?)
             .optional_credentials(config.smtp_credentials.map(Into::into))
             .build();
+
+        match transport.test_connection().await {
+            Err(e) => warn!("unable to connect to configured SMTP transport:\n{}", e),
+            Ok(successful) if !successful => {
+                warn!("failed to connect to configured SMTP transport")
+            }
+            Ok(_) => {}
+        };
+
         let mut tera = Tera::new("emails/**.tera").context("Failed to initialize Tera")?;
         tera.build_inheritance_chains()
             .context("Failed to build tera's inheritance chain")?;
