@@ -46,6 +46,11 @@ pub(crate) struct EmailSenderImpl {
     tera: Tera,
 }
 
+// TODO: Suppress auto responses:
+//       * For microsoft X-Auto-Response-Suppress header
+//       * Auto-Submitted header should also work for some servers
+//       * Maybe setting a list-id should also help
+// TODO: message id, in-reply-to and references
 #[async_trait]
 impl EmailSender for EmailSenderImpl {
     async fn send(&self, email: EmailMessage) -> Result<()> {
