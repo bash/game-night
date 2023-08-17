@@ -143,7 +143,7 @@ async fn use_verification_code(
     form: &RegisterForm<'_>,
     user_details: &UserDetails,
 ) -> Result<StepResult<()>> {
-    let email = &user_details.email_address.as_str();
+    let email = user_details.email_address.as_str();
     match form.email_verification_code {
         Some(code) if repository.use_verification_code(code, email).await? => Ok(Complete(())),
         Some(_) => Ok(Pending(Some(
