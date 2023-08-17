@@ -72,7 +72,7 @@
 
         {% include 'error_message' %}
 
-        <input type="number" name="email_verification_code" size="6" placeholder="123456" value="{{form.email_verification_code | default(value='')}}" autocomplete="off" required>
+        <input type="number" name="email_verification_code" size="6" placeholder="123456" value="{{form.email_verification_code | default(value='')}}" autocomplete="off" data-1p-ignore required>
 
         <button type="submit">Neeeext!</button>
     {% endif %}
