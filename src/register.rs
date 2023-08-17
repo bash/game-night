@@ -1,13 +1,14 @@
 use crate::database::Repository;
-use crate::email::{self, EmailSender};
+use crate::email::EmailSender;
 use crate::email_verification_code::EmailVerificationCode;
 use crate::emails::VerificationEmail;
 use crate::invitation::{Invitation, Passphrase};
 use crate::users::{User, UserId};
-use anyhow::Result;
+use anyhow::{Error, Result};
 use email_address::EmailAddress;
 use lettre::message::Mailbox;
 use rocket::form::Form;
+use rocket::response::Debug;
 use rocket::{post, FromForm, State};
 use rocket_dyn_templates::{context, Template};
 use serde::Serialize;
@@ -28,41 +29,38 @@ pub(crate) async fn register(
     form: Form<RegisterForm<'_>>,
     mut repository: Box<dyn Repository>,
     email_sender: &State<Box<dyn EmailSender>>,
-) -> Template {
+) -> Result<Template, Debug<Error>> {
     let form = form.into_inner();
 
     let invitation = unwrap_or_return!(
-        invitation_code_step(&form, repository.as_mut())
-            .await
-            .unwrap(),
-        error_message => Template::render(
+        invitation_code_step(&form, repository.as_mut()).await?,
+        error_message => Ok(Template::render(
             "register",
             context! { active_page: "register", step: "invitation_code", error_message, form },
-        )
+        ))
     );
 
     let user_details = unwrap_or_return!(
-        user_details_step(&form, repository.as_mut(), email_sender.as_ref())
-            .await
-            .unwrap(),
-        error_message => Template::render(
+        user_details_step(&form, repository.as_mut(), email_sender.as_ref()).await?,
+        error_message => Ok(Template::render(
             "register",
             context! { active_page: "register", step: "user_details", error_message, form },
-        )
+        ))
     );
 
     let _user_id = unwrap_or_return!(
-        email_verification_step(repository.as_mut(), &form, invitation, user_details)
-            .await
-            .unwrap(),
-        error_message => Template::render(
+        email_verification_step(repository.as_mut(), &form, invitation, user_details).await?,
+        error_message => Ok(Template::render(
             "register",
             context! { active_page: "register", step: "verify_email", error_message, form },
-        )
+        ))
     );
 
     // TOOD: log user in, redirect
-    Template::render("register", context! { active_page: "register", step: "" })
+    Ok(Template::render(
+        "register",
+        context! { active_page: "register", step: "" },
+    ))
 }
 
 async fn invitation_code_step(
