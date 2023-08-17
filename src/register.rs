@@ -1,5 +1,5 @@
 use crate::database::{Repository, SqliteRepository};
-use crate::email::{self, EmailSender};
+use crate::email::EmailSender;
 use crate::email_verification_code::EmailVerificationCode;
 use crate::emails::VerificationEmail;
 use crate::invitation::{Invitation, Passphrase};
@@ -150,13 +150,7 @@ async fn use_verification_code(
 }
 
 fn new_user(invitation: Invitation, user_details: UserDetails) -> User<()> {
-    User {
-        id: (),
-        name: user_details.name,
-        role: invitation.role,
-        email_address: user_details.email_address.to_string(),
-        invited_by: invitation.created_by,
-    }
+    invitation.to_user(user_details.name, user_details.email_address.to_string())
 }
 
 enum StepResult<T> {
