@@ -148,7 +148,9 @@ async fn use_verification_code(
         Some(code) if repository.use_email_verification_code(code, email).await? => {
             Ok(Complete(()))
         }
-        Some(_) => Ok(Pending(Some("That's not the correct code :/".into()))),
+        Some(_) => Ok(Pending(Some(
+            "That's not the correct code, maybe it has expired?".into(),
+        ))),
         None => Ok(Pending(None)),
     }
 }
