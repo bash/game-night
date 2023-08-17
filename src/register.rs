@@ -83,10 +83,7 @@ async fn user_details_step(
     let user_details = unwrap_or_return!(get_user_details_from_form(form)?, e => Ok(Pending(e)));
 
     let email_address = user_details.email_address.as_str();
-    if !repository
-        .has_email_verification_code_for_email(email_address)
-        .await?
-    {
+    if !repository.has_verification_code(email_address).await? {
         send_verification_email(repository, email_sender, &user_details).await?;
     }
 
@@ -116,9 +113,8 @@ async fn send_verification_email(
     user_details: &UserDetails,
 ) -> Result<()> {
     let verification_code = EmailVerificationCode::generate(user_details.email_address.to_string());
-    repository
-        .add_email_verification_code(&verification_code)
-        .await?;
+    repository.add_verification_code(&verification_code).await?;
+
     let email = VerificationEmail {
         name: user_details.name.to_owned(),
         code: verification_code.code,
@@ -149,9 +145,7 @@ async fn use_verification_code(
 ) -> Result<StepResult<()>> {
     let email = &user_details.email_address.as_str();
     match form.email_verification_code {
-        Some(code) if repository.use_email_verification_code(code, email).await? => {
-            Ok(Complete(()))
-        }
+        Some(code) if repository.use_verification_code(code, email).await? => Ok(Complete(())),
         Some(_) => Ok(Pending(Some(
             "That's not the correct code, maybe it has expired?".into(),
         ))),

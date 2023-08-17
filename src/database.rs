@@ -29,15 +29,11 @@ pub(crate) trait Repository: Send {
 
     async fn has_users(&mut self) -> Result<bool>;
 
-    async fn add_email_verification_code(&mut self, code: &EmailVerificationCode) -> Result<()>;
+    async fn add_verification_code(&mut self, code: &EmailVerificationCode) -> Result<()>;
 
-    async fn has_email_verification_code_for_email(&mut self, email_address: &str) -> Result<bool>;
+    async fn has_verification_code(&mut self, email_address: &str) -> Result<bool>;
 
-    async fn use_email_verification_code(
-        &mut self,
-        code: &str,
-        email_address: &str,
-    ) -> Result<bool>;
+    async fn use_verification_code(&mut self, code: &str, email_address: &str) -> Result<bool>;
 }
 
 pub(crate) struct SqliteRepository(pub(crate) SqliteConnection);
@@ -109,7 +105,7 @@ impl Repository for SqliteRepository {
         Ok(user_count >= 1)
     }
 
-    async fn add_email_verification_code(&mut self, code: &EmailVerificationCode) -> Result<()> {
+    async fn add_verification_code(&mut self, code: &EmailVerificationCode) -> Result<()> {
         sqlx::query(
             "INSERT INTO email_verification_codes (code, email_address, valid_until)
              VALUES (?1, ?2, ?3)",
@@ -122,7 +118,7 @@ impl Repository for SqliteRepository {
         Ok(())
     }
 
-    async fn has_email_verification_code_for_email(&mut self, email_address: &str) -> Result<bool> {
+    async fn has_verification_code(&mut self, email_address: &str) -> Result<bool> {
         let result: i64 = sqlx::query_scalar(
             "SELECT count(1) FROM email_verification_codes
              WHERE email_address = ?1
@@ -135,11 +131,7 @@ impl Repository for SqliteRepository {
         Ok(result >= 1)
     }
 
-    async fn use_email_verification_code(
-        &mut self,
-        code: &str,
-        email_address: &str,
-    ) -> Result<bool> {
+    async fn use_verification_code(&mut self, code: &str, email_address: &str) -> Result<bool> {
         let result = sqlx::query(
             "DELETE FROM email_verification_codes
              WHERE code = ?1
