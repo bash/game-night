@@ -4,7 +4,6 @@ use tera::Context;
 
 #[derive(Debug, Clone, Serialize)]
 pub(crate) struct VerificationEmail {
-    pub(crate) greeting: String,
     pub(crate) name: String,
     pub(crate) code: String,
 }

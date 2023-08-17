@@ -4,6 +4,7 @@ use lettre::transport::smtp::authentication::Credentials;
 use lettre::transport::smtp::client::TlsParameters;
 use lettre::transport::smtp::AsyncSmtpTransportBuilder;
 use lettre::{AsyncTransport, Message};
+use rand::{distributions, thread_rng, Rng as _};
 use rocket::async_trait;
 use rocket::figment::Figment;
 use rocket::warn;
@@ -54,7 +55,8 @@ impl EmailSender for EmailSenderImpl {
 
 fn render_email_body(tera: &Tera, email: &dyn EmailMessage) -> Result<MultiPart> {
     let template_name = email.template_name();
-    let template_context = email.template_context();
+    let mut template_context = email.template_context();
+    template_context.insert("greeting", &get_random_greeting());
     let html_template_name = format!("{}.html.tera", &template_name);
     let text_template_name = format!("{}.txt.tera", &template_name);
 
@@ -99,6 +101,24 @@ fn create_tera() -> Result<Tera> {
     tera.build_inheritance_chains()
         .context("failed to build tera's inheritance chain")?;
     Ok(tera)
+}
+
+fn get_random_greeting() -> &'static str {
+    const GREETINGS: &[&str] = &[
+        "Hi",
+        "Ciao",
+        "Salü",
+        "Hola",
+        "Hellooo",
+        "Hey there",
+        "Greetings galore",
+        "Aloha",
+        "Howdy",
+        "Hiyaa",
+        "Yoohoo~",
+        "Ahoy",
+    ];
+    thread_rng().sample(&distributions::Slice::new(GREETINGS).unwrap())
 }
 
 #[derive(Debug, Deserialize)]

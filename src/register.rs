@@ -98,7 +98,6 @@ async fn user_details_step(
         .add_email_verification_code(&verification_code)
         .await?;
     let email = VerificationEmail {
-        greeting: "Hi".to_owned(),
         name: name.to_owned(),
         code: verification_code.code,
     };
