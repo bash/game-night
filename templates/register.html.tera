@@ -38,6 +38,13 @@
     {% endif %}
 
     {% if step == 'user_details' %}
+        {% if error_message %}
+            <div class="error-message">
+                <span class="icon"><svg><use href="/icons/alert-triangle.svg#icon"></use></svg></span>
+                <span class="label"><em>*error buzzer*</em> {{error_message}}</span>
+            </div>
+        {% endif %}
+
         <p>
             Ding ding ding! You have entered the correct words.
         </p>
@@ -46,7 +53,7 @@
             First, let's introduce ourselves. My name is Tau, and what's yours?
         </p>
 
-        <input type="text" placeholder="Name" name="name" value="{{form.name | default(value='')}}" required>
+        <input type="text" placeholder="Name" name="name" value="{{form.name | default(value='')}}" required autocomplete="name">
 
         <p>
             Hiiii <strong data-bind-to="name"></strong> and welcome to my game night.
@@ -54,9 +61,28 @@
             I will only use it for game night related purposes–pinky promise~
         </p>
 
-        <input type="email" placeholder="awesome-person@example.com" name="email_address" value="{{form.email_address | default(value='')}}" required>
+        <input type="email" placeholder="awesome-person@example.com" name="email_address" value="{{form.email_address | default(value='')}}" autocomplete="email" required>
 
         <button type="submit">Neeext!</button>
+    {% else %}
+        {% if form.name %}
+            <input type="hidden" name="name" value="{{form.name | default(value='')}}">
+        {% endif %}
+        {% if form.email_address %}
+            <input type="hidden" name="email_address" value="{{form.email_address | default(value='')}}">
+        {% endif %}
+    {% endif %}
+
+    {% if step == 'verify_email' %}
+        <p>
+            We're almost there.
+            I have sent you an email to <strong>{{form.email_address}}</strong> with a six-digit code.
+            Enter the code below to complete the registration.
+        </p>
+
+        <input type="number" name="email_verification_code" size="6" placeholder="1 2 3 4 5 6" value="{{form.email_verification_code | default(value='')}}" autocomplete="off" required>
+
+        <button type="submit">Neeeext!</button>
     {% endif %}
 </form>
 

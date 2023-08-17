@@ -2,7 +2,7 @@ use rocket_db_pools::sqlx;
 
 #[derive(Debug, Copy, Clone, sqlx::Type)]
 #[sqlx(transparent)]
-pub(crate) struct UserId(i64);
+pub(crate) struct UserId(pub(crate) i64);
 
 #[derive(Debug, sqlx::FromRow)]
 pub(crate) struct User<Id = UserId> {

@@ -3,12 +3,13 @@
 }
 
 form {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-auto-flow: row;
+    justify-items: start;
     gap: var(--form-field-spacing);
 
-    input, .error-message {
-        width: 100%;
+    input:not([size]) {
+        justify-self: stretch;
     }
 
     button[type=submit] {
@@ -42,6 +43,10 @@ input {
     text-align: center;
     padding: 8px 20px;
     border-bottom: 4px dashed currentColor;
+
+    &[type=number] {
+        appearance: textfield;
+    }
 
     @media (prefers-contrast: more) {
         border: 2px dashed currentColor;

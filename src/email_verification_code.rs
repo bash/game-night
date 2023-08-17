@@ -1,5 +1,5 @@
 use chrono::{DateTime, Duration, Local};
-use rand::distributions::Alphanumeric;
+use rand::distributions::Uniform;
 use rand::Rng;
 
 #[derive(Debug, Clone, sqlx::FromRow)]
@@ -21,8 +21,8 @@ impl EmailVerificationCode {
 
 fn generate_code() -> String {
     rand::thread_rng()
-        .sample_iter(&Alphanumeric)
+        .sample_iter(&Uniform::from(1..=9))
         .take(6)
-        .map(char::from)
+        .map(|d| d.to_string())
         .collect()
 }
