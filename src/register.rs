@@ -1,5 +1,5 @@
 use crate::database::Repository;
-use crate::email::EmailSender;
+use crate::email::{self, EmailSender};
 use crate::email_verification_code::EmailVerificationCode;
 use crate::emails::VerificationEmail;
 use crate::invitation::{Invitation, Passphrase};
@@ -14,6 +14,15 @@ use serde::Serialize;
 use std::str::FromStr;
 use StepResult::*;
 
+macro_rules! unwrap_or_return {
+    ($result:expr, $e:ident => $ret:expr) => {
+        match $result {
+            Complete(x) => x,
+            Pending($e) => return $ret,
+        }
+    };
+}
+
 #[post("/register", data = "<form>")]
 pub(crate) async fn register(
     form: Form<RegisterForm<'_>>,
@@ -22,45 +31,35 @@ pub(crate) async fn register(
 ) -> Template {
     let form = form.into_inner();
 
-    let invitation = match invitation_code_step(&form, repository.as_mut())
-        .await
-        .unwrap()
-    {
-        Complete(i) => i,
-        Pending(error_message) => {
-            return Template::render(
-                "register",
-                context! { active_page: "register", step: "invitation_code", error_message, form },
-            )
-        }
-    };
-
-    let user_details = match user_details_step(&form, repository.as_mut(), email_sender.as_ref())
-        .await
-        .unwrap()
-    {
-        Complete(d) => d,
-        Pending(error_message) => {
-            return Template::render(
-                "register",
-                context! { active_page: "register", step: "user_details", error_message, form },
-            )
-        }
-    };
-
-    let _user_id =
-        match email_verification_step(repository.as_mut(), &form, invitation, user_details)
+    let invitation = unwrap_or_return!(
+        invitation_code_step(&form, repository.as_mut())
             .await
-            .unwrap()
-        {
-            Complete(id) => id,
-            Pending(error_message) => {
-                return Template::render(
-                    "register",
-                    context! { active_page: "register", step: "verify_email", error_message, form },
-                );
-            }
-        };
+            .unwrap(),
+        error_message => Template::render(
+            "register",
+            context! { active_page: "register", step: "invitation_code", error_message, form },
+        )
+    );
+
+    let user_details = unwrap_or_return!(
+        user_details_step(&form, repository.as_mut(), email_sender.as_ref())
+            .await
+            .unwrap(),
+        error_message => Template::render(
+            "register",
+            context! { active_page: "register", step: "user_details", error_message, form },
+        )
+    );
+
+    let _user_id = unwrap_or_return!(
+        email_verification_step(repository.as_mut(), &form, invitation, user_details)
+            .await
+            .unwrap(),
+        error_message => Template::render(
+            "register",
+            context! { active_page: "register", step: "verify_email", error_message, form },
+        )
+    );
 
     // TOOD: log user in, redirect
     Template::render("register", context! { active_page: "register", step: "" })
@@ -83,6 +82,20 @@ async fn user_details_step(
     repository: &mut dyn Repository,
     email_sender: &dyn EmailSender,
 ) -> Result<StepResult<UserDetails>> {
+    let user_details = unwrap_or_return!(get_user_details_from_form(form)?, e => Ok(Pending(e)));
+
+    let email_address = user_details.email_address.as_str();
+    if !repository
+        .has_email_verification_code_for_email(email_address)
+        .await?
+    {
+        send_verification_email(repository, email_sender, &user_details).await?;
+    }
+
+    Ok(Complete(user_details))
+}
+
+fn get_user_details_from_form(form: &RegisterForm<'_>) -> Result<StepResult<UserDetails>> {
     let name = match form.name {
         Some(name) if name.len() >= 1 => name,
         Some(_) => return Ok(Pending(Some("Please enter your name".into()))),
@@ -93,34 +106,26 @@ async fn user_details_step(
         Some(Err(_)) => return Ok(Pending(Some("Please enter a valid email address".into()))),
         None => return Ok(Pending(None)),
     };
-
-    if !repository
-        .has_email_verification_code_for_email(email_address.as_str())
-        .await?
-    {
-        let verification_code = EmailVerificationCode::generate(email_address.to_string());
-        repository
-            .add_email_verification_code(&verification_code)
-            .await?;
-        let email = VerificationEmail {
-            name: name.to_owned(),
-            code: verification_code.code,
-        };
-        email_sender
-            .send(
-                Mailbox::new(
-                    Some(name.to_owned()),
-                    email_address.as_str().parse().unwrap(),
-                ),
-                &email,
-            )
-            .await?;
-    }
-
     Ok(Complete(UserDetails {
         name: name.to_string(),
         email_address,
     }))
+}
+
+async fn send_verification_email(
+    repository: &mut dyn Repository,
+    email_sender: &dyn EmailSender,
+    user_details: &UserDetails,
+) -> Result<()> {
+    let verification_code = EmailVerificationCode::generate(user_details.email_address.to_string());
+    repository
+        .add_email_verification_code(&verification_code)
+        .await?;
+    let email = VerificationEmail {
+        name: user_details.name.to_owned(),
+        code: verification_code.code,
+    };
+    email_sender.send(user_details.clone().into(), &email).await
 }
 
 async fn email_verification_step(
@@ -173,7 +178,17 @@ pub(crate) struct RegisterForm<'r> {
     email_verification_code: Option<&'r str>,
 }
 
+#[derive(Debug, Clone)]
 struct UserDetails {
     email_address: EmailAddress,
     name: String,
+}
+
+impl From<UserDetails> for Mailbox {
+    fn from(value: UserDetails) -> Self {
+        Mailbox::new(
+            Some(value.name),
+            value.email_address.as_str().parse().unwrap(),
+        )
+    }
 }
