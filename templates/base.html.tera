@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="preload" as="font" href="/fonts/vollkorn/Vollkorn-Regular.woff2">
-    <link rel="preload" as="font" href="/fonts/vollkorn/Vollkorn-Italic.woff2">
-    <link rel="preload" as="font" href="/fonts/vollkorn/Vollkorn-Bold.woff2">
-    <link rel="preload" as="font" href="/fonts/inter/Inter.woff2">
+    <link rel="preload" as="font" href="/fonts/vollkorn/Vollkorn-Regular.woff2" crossorigin="anonymous">
+    <link rel="preload" as="font" href="/fonts/vollkorn/Vollkorn-Italic.woff2" crossorigin="anonymous">
+    <link rel="preload" as="font" href="/fonts/vollkorn/Vollkorn-Bold.woff2" crossorigin="anonymous">
+    <link rel="preload" as="font" href="/fonts/inter/Inter.woff2?v=3.19" crossorigin="anonymous">
     <link rel="stylesheet" type="text/css" href="/main.css">
     <title>Tau's Game Night</title>
 </head>
