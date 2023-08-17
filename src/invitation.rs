@@ -56,7 +56,7 @@ where
     ) -> Result<Passphrase, Box<dyn Error + 'static + Send + Sync>> {
         Ok(Self(
             <&str as Decode<DB>>::decode(value)?
-                .split(" ")
+                .split(' ')
                 .map(ToOwned::to_owned)
                 .collect(),
         ))

@@ -118,7 +118,7 @@ fn get_random_greeting() -> &'static str {
         "Yoohoo~",
         "Ahoy",
     ];
-    thread_rng().sample(&distributions::Slice::new(GREETINGS).unwrap())
+    thread_rng().sample(distributions::Slice::new(GREETINGS).unwrap())
 }
 
 #[derive(Debug, Deserialize)]

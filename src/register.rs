@@ -92,7 +92,7 @@ async fn user_details_step(
 
 fn get_user_details_from_form(form: &RegisterForm<'_>) -> Result<StepResult<UserDetails>> {
     let name = match form.name {
-        Some(name) if name.len() >= 1 => name,
+        Some(name) if !name.is_empty() => name,
         Some(_) => return Ok(Pending(Some("Please enter your name".into()))),
         None => return Ok(Pending(None)),
     };
