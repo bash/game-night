@@ -1,11 +1,14 @@
 use crate::email_verification_code::EmailVerificationCode;
 use crate::invitation::{Invitation, InvitationId, Passphrase};
 use crate::users::{User, UserId};
+use crate::GameNightDatabase;
 use anyhow::{anyhow, Result};
 use chrono::Local;
-use rocket::async_trait;
+use rocket::request::{FromRequest, Outcome};
+use rocket::{async_trait, Request};
+use rocket_db_pools::Connection;
 use sqlx::pool::PoolConnection;
-use sqlx::{Connection, Sqlite};
+use sqlx::{Connection as _, Sqlite};
 use std::ops::DerefMut;
 
 type SqliteConnection = PoolConnection<Sqlite>;
@@ -150,4 +153,19 @@ impl Repository for SqliteRepository {
         .await?;
         Ok(result.rows_affected() >= 1)
     }
+}
+
+#[async_trait]
+impl<'r> FromRequest<'r> for Box<dyn Repository> {
+    type Error = <Connection<GameNightDatabase> as FromRequest<'r>>::Error;
+
+    async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
+        Connection::<GameNightDatabase>::from_request(request)
+            .await
+            .map(create_repository)
+    }
+}
+
+fn create_repository(connection: Connection<GameNightDatabase>) -> Box<dyn Repository> {
+    Box::new(SqliteRepository(connection.into_inner()))
 }

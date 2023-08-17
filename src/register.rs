@@ -1,16 +1,14 @@
-use crate::database::{Repository, SqliteRepository};
+use crate::database::Repository;
 use crate::email::EmailSender;
 use crate::email_verification_code::EmailVerificationCode;
 use crate::emails::VerificationEmail;
 use crate::invitation::{Invitation, Passphrase};
 use crate::users::{User, UserId};
-use crate::GameNightDatabase;
 use anyhow::Result;
 use email_address::EmailAddress;
 use lettre::message::Mailbox;
 use rocket::form::Form;
 use rocket::{post, FromForm, State};
-use rocket_db_pools::Connection;
 use rocket_dyn_templates::{context, Template};
 use serde::Serialize;
 use std::str::FromStr;
@@ -19,13 +17,15 @@ use StepResult::*;
 #[post("/register", data = "<form>")]
 pub(crate) async fn register(
     form: Form<RegisterForm<'_>>,
-    database: Connection<GameNightDatabase>,
+    mut repository: Box<dyn Repository>,
     email_sender: &State<Box<dyn EmailSender>>,
 ) -> Template {
     let form = form.into_inner();
-    let mut repository = SqliteRepository(database.into_inner());
 
-    let invitation = match invitation_code_step(&form, &mut repository).await.unwrap() {
+    let invitation = match invitation_code_step(&form, repository.as_mut())
+        .await
+        .unwrap()
+    {
         Complete(i) => i,
         Pending(error_message) => {
             return Template::render(
@@ -35,7 +35,7 @@ pub(crate) async fn register(
         }
     };
 
-    let user_details = match user_details_step(&form, &mut repository, email_sender.as_ref())
+    let user_details = match user_details_step(&form, repository.as_mut(), email_sender.as_ref())
         .await
         .unwrap()
     {
@@ -48,18 +48,19 @@ pub(crate) async fn register(
         }
     };
 
-    let _user_id = match email_verification_step(&mut repository, &form, invitation, user_details)
-        .await
-        .unwrap()
-    {
-        Complete(id) => id,
-        Pending(error_message) => {
-            return Template::render(
-                "register",
-                context! { active_page: "register", step: "verify_email", error_message, form },
-            );
-        }
-    };
+    let _user_id =
+        match email_verification_step(repository.as_mut(), &form, invitation, user_details)
+            .await
+            .unwrap()
+        {
+            Complete(id) => id,
+            Pending(error_message) => {
+                return Template::render(
+                    "register",
+                    context! { active_page: "register", step: "verify_email", error_message, form },
+                );
+            }
+        };
 
     // TOOD: log user in, redirect
     Template::render("register", context! { active_page: "register", step: "" })
