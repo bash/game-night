@@ -14,7 +14,9 @@
         html,
         body,
         p,
-        a {
+        a,
+        .greeting,
+        .code {
             font-size: 20px; /* rem unfortunately does not work correctly across clients :/ */
             line-height: 1.5;
             font-family: Vollkorn, 'Noto Serif', 'Hoefler Text', 'Times New Roman', serif;
@@ -22,6 +24,11 @@
             /* Noto Serif is for Android and Linux */
             /* Times New Roman is for Windows and Outlook (web) */
             /* Hoefler Text is for macOS */
+        }
+
+        p,
+        .code {
+            margin: 20px 0;
         }
 
         /* Outlook and Windows Mail do not support margin: auto, so we have
@@ -70,10 +77,37 @@
             font-family: Inter, Arial, Helvetica, sans-serif;
         }
 
+        .code {
+            font-family: Inter, Arial, Helvetica, sans-serif;
+            font-weight: bold;
+            letter-spacing: 5px;
+            background-color: #F5F5F5;
+        }
+
+        .code td {
+            padding: 10px 20px;
+        }
+
+        hr {
+            border-color: #000;
+            border-style: solid;
+            margin-left: 0;
+            margin-top: 40px;
+            width: 200px;
+        }
+
         @media (prefers-color-scheme: dark) {
             html {
                 background-color: #121212;
                 color: #fff;
+            }
+
+            hr {
+                border-color: #fff;
+            }
+
+            .code {
+                background-color: #464646;
             }
         }
     </style>

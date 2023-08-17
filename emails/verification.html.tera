@@ -1,10 +1,24 @@
 {% extends 'base.html.tera' %}
 {% block content %}
 <h1>
-    TODO
+    Welcome to Tau's Game Night 👋🏼
 </h1>
 
 <p>
-    {{code}}
+    Here's the verification code to complete your registration:
 </p>
+
+<table class="code" role="presentation">
+    <tr>
+        <td>{{code}}</td>
+    </tr>
+</table>
+
+<hr>
+
+<p>
+    <strong>P.S.</strong> This code is valid for 30 minutes, so hurryyyyy~<br>
+    <strong>P.P.S.</strong> You can safely ignore this email if you didn't request it.
+</p>
+
 {% endblock content %}

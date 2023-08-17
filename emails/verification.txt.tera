@@ -1,3 +1,12 @@
 {{greeting}} {{name}},
 
-Code: {{code}}
+Welcome to Tau's Game Night 👋🏼
+
+Here's the verification code to complete your registration:
+
+{{code}}
+
+------
+
+P.S. This code is valid for 30 minutes, so hurryyyyy~
+P.P.S. You can safely ignore this email if you didn't request it.
