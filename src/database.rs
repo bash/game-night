@@ -28,6 +28,8 @@ pub(crate) trait Repository: Send {
 
     async fn add_email_verification_code(&mut self, code: &EmailVerificationCode) -> Result<()>;
 
+    async fn has_email_verification_code_for_email(&mut self, email_address: &str) -> Result<bool>;
+
     async fn use_email_verification_code(
         &mut self,
         code: &str,
@@ -98,7 +100,7 @@ impl Repository for SqliteRepository {
     }
 
     async fn has_users(&mut self) -> Result<bool> {
-        let user_count: i64 = sqlx::query_scalar("SELECT count(1) as count FROM users")
+        let user_count: i64 = sqlx::query_scalar("SELECT count(1) FROM users")
             .fetch_one(self.0.deref_mut())
             .await?;
         Ok(user_count >= 1)
@@ -115,6 +117,19 @@ impl Repository for SqliteRepository {
         .execute(self.0.deref_mut())
         .await?;
         Ok(())
+    }
+
+    async fn has_email_verification_code_for_email(&mut self, email_address: &str) -> Result<bool> {
+        let result: i64 = sqlx::query_scalar(
+            "SELECT count(1) FROM email_verification_codes
+             WHERE email_address = ?1
+               AND valid_until >= ?2",
+        )
+        .bind(email_address)
+        .bind(Local::now())
+        .fetch_one(self.0.deref_mut())
+        .await?;
+        Ok(result >= 1)
     }
 
     async fn use_email_verification_code(

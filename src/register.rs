@@ -93,23 +93,28 @@ async fn user_details_step(
         None => return Ok(Pending(None)),
     };
 
-    let verification_code = EmailVerificationCode::generate(email_address.to_string());
-    repository
-        .add_email_verification_code(&verification_code)
-        .await?;
-    let email = VerificationEmail {
-        name: name.to_owned(),
-        code: verification_code.code,
-    };
-    email_sender
-        .send(
-            Mailbox::new(
-                Some(name.to_owned()),
-                email_address.as_str().parse().unwrap(),
-            ),
-            &email,
-        )
-        .await?;
+    if !repository
+        .has_email_verification_code_for_email(email_address.as_str())
+        .await?
+    {
+        let verification_code = EmailVerificationCode::generate(email_address.to_string());
+        repository
+            .add_email_verification_code(&verification_code)
+            .await?;
+        let email = VerificationEmail {
+            name: name.to_owned(),
+            code: verification_code.code,
+        };
+        email_sender
+            .send(
+                Mailbox::new(
+                    Some(name.to_owned()),
+                    email_address.as_str().parse().unwrap(),
+                ),
+                &email,
+            )
+            .await?;
+    }
 
     Ok(Complete(UserDetails {
         name: name.to_string(),
