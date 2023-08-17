@@ -1,0 +1,6 @@
+{% if error_message %}
+    <div class="error-message">
+        <span class="icon"><svg><use href="/icons/alert-triangle.svg#icon"></use></svg></span>
+        <span class="label"><em>*error buzzer*</em> {{error_message}}</span>
+    </div>
+{% endif %}
