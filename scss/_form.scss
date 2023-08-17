@@ -46,6 +46,7 @@ input {
 
     &[type=number] {
         appearance: textfield;
+        letter-spacing: 0.25em;
     }
 
     @media (prefers-contrast: more) {
