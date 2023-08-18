@@ -8,6 +8,12 @@
     line-height: 1.4;
 }
 
+// Used by the calendar picker and for inputs with a datalist
+// The indicator arrow is off center in Chromium if the line-height >1.
+::-webkit-calendar-picker-indicator {
+    line-height: 1;
+}
+
 :root {
     -webkit-text-size-adjust: none; // Stop iOS Safari from adjusting the font size in landscape.
 }
