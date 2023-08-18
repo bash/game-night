@@ -15,7 +15,7 @@ email_address = "0.2.4"
 hex = { version = "0.4.3", features = ["serde"] }
 lettre = { version = "0.10.4", default-features = false, features = ["builder", "file-transport", "smtp-transport", "async-std1", "async-std1-rustls-tls", "serde"] }
 rand = "0.8.5"
-rocket = { version = "=0.5.0-rc.3", features = ["secrets"] }
+rocket = { version = "=0.5.0-rc.3", features = ["secrets", "json"] }
 rocket_db_pools = { version = "=0.1.0-rc.3", features = ["sqlx_sqlite"] }
 rocket_dyn_templates = { version = "=0.1.0-rc.3", features = ["tera"] }
 serde = { version = "1.0", features = ["derive"] }

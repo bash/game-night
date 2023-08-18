@@ -18,13 +18,19 @@
     {% include 'error_message' %}
 
     <fieldset>
-        <input type="text" placeholder="1st word" name="words[0]" data-overflow-to="words[1]" value="{{form | get(key='words', default=[]) | nth(n=0)}}" required>
-        <input type="text" placeholder="2nd word" name="words[1]" data-overflow-to="words[2]" value="{{form | get(key='words', default=[]) | nth(n=1)}}" required>
-        <input type="text" placeholder="3rd word" name="words[2]" data-overflow-to="words[3]" value="{{form | get(key='words', default=[]) | nth(n=2)}}" required>
-        <input type="text" placeholder="4th word" name="words[3]" value="{{form | get(key='words', default=[]) | nth(n=3)}}" required>
+        <input type="text" list="eff-long-wordlist" placeholder="1st word" name="words[0]" data-overflow-to="words[1]" value="{{form | get(key='words', default=[]) | nth(n=0)}}" required>
+        <input type="text" list="eff-long-wordlist" placeholder="2nd word" name="words[1]" data-overflow-to="words[2]" value="{{form | get(key='words', default=[]) | nth(n=1)}}" required>
+        <input type="text" list="eff-long-wordlist" placeholder="3rd word" name="words[2]" data-overflow-to="words[3]" value="{{form | get(key='words', default=[]) | nth(n=2)}}" required>
+        <input type="text" list="eff-long-wordlist" placeholder="4th word" name="words[3]" value="{{form | get(key='words', default=[]) | nth(n=3)}}" required>
     </fieldset>
 
+    <datalist id="eff-long-wordlist" data-datalist-href="/_api/eff-long-wordlist"></datalist>
+
     <button type="submit">Neext!</button>
+
+    <script type="module" src="/js/bind-to.js"></script>
+    <script type="module" src="/js/overflow-to.js"></script>
+    <script type="module" src="/js/datalist.js"></script>
     {% else %}
         <input type="hidden" name="words[]" value="{{form.words | default(value=[]) | nth(n=0)}}">
         <input type="hidden" name="words[]" value="{{form.words | default(value=[]) | nth(n=1)}}">
@@ -77,29 +83,4 @@
         <button type="submit">Neeeext!</button>
     {% endif %}
 </form>
-
-<script type="module">
-    for (const target of document.querySelectorAll('[data-bind-to]')) {
-        const source = document.querySelector(`[name=${target.dataset.bindTo}]`)
-        target.innerText = source.value
-        source.addEventListener('input', () => target.innerText = source.value)
-    }
-
-    for (const source of document.querySelectorAll('[data-overflow-to]')) {
-        const target = document.querySelector(`[name='${source.dataset.overflowTo}']`)
-        overflow(source, target)
-        source.addEventListener('input', () => overflow(source, target))
-    }
-
-    function overflow(source, target) {
-        const value = source.value.trim()
-        const firstSpace = value.indexOf(' ')
-        if (firstSpace >= 0) {
-            source.value = value.substring(0, firstSpace).trim()
-            target.value = value.substring(firstSpace + 1).trim()
-            target.focus()
-            target.dispatchEvent(new CustomEvent('input'))
-        }
-    }
-</script>
 {% endblock content %}

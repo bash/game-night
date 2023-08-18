@@ -1,12 +1,13 @@
 use anyhow::{Context, Result};
 use database::SqliteRepository;
+use diceware_wordlists::EFF_LONG_WORDLIST;
 use email::{EmailSender, EmailSenderImpl};
 use keys::GameNightKeys;
 use rocket::fairing::{self, Fairing};
 use rocket::figment::Figment;
 use rocket::fs::FileServer;
-use rocket::{error, Build, Config, Rocket};
-use rocket::{get, launch, routes};
+use rocket::serde::json::Json;
+use rocket::{error, get, launch, routes, Build, Config, Rocket};
 use rocket_db_pools::{sqlx::SqlitePool, Database, Pool};
 use rocket_dyn_templates::{context, Template};
 
@@ -28,6 +29,7 @@ fn rocket() -> _ {
                 get_index_page,
                 get_invite_page,
                 get_register_page,
+                get_eff_long_wordlist,
                 register::register
             ],
         )
@@ -59,6 +61,11 @@ fn get_register_page() -> Template {
         "register",
         context! { active_page: "register", step: "invitation_code", form: context! {} },
     )
+}
+
+#[get("/_api/eff-long-wordlist")]
+fn get_eff_long_wordlist() -> Json<Vec<&'static str>> {
+    Json(EFF_LONG_WORDLIST.into_iter().collect())
 }
 
 #[derive(Debug, Database)]
