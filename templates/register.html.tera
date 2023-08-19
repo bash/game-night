@@ -4,83 +4,94 @@
 {% block title %}Invited{% endblock title %}
 
 {% block content %}
-<form method="post">
-    {% if step == 'invitation_code' %}
+{% if user %}
+    <p><em>
+        Congratulations <strong>{{user.name}}</strong>! You have already been invited
+        to Tau's Game Night and are even signed in on this website.
+        There's no need for you to register again :)
+    </em></p>
     <p>
-        Congratulations! Tau has invited you to their amazing
-        game night by providing you with four secret words.
+        <a href="/poll" class="link-button">Take me to the poll!</a>
     </p>
-
-    <p>
-        Enter those secret words below to continue.
-    </p>
-
-    {% include 'error_message' %}
-
-    <fieldset>
-        <input type="text" list="eff-long-wordlist" placeholder="1st word" name="words[0]" data-overflow-to="words[1]" value="{{form | get(key='words', default=[]) | nth(n=0)}}" required>
-        <input type="text" list="eff-long-wordlist" placeholder="2nd word" name="words[1]" data-overflow-to="words[2]" value="{{form | get(key='words', default=[]) | nth(n=1)}}" required>
-        <input type="text" list="eff-long-wordlist" placeholder="3rd word" name="words[2]" data-overflow-to="words[3]" value="{{form | get(key='words', default=[]) | nth(n=2)}}" required>
-        <input type="text" list="eff-long-wordlist" placeholder="4th word" name="words[3]" value="{{form | get(key='words', default=[]) | nth(n=3)}}" required>
-    </fieldset>
-
-    <datalist id="eff-long-wordlist" data-datalist-href="/_api/eff-long-wordlist"></datalist>
-
-    <button type="submit">Neext!</button>
-
-    <script type="module" src="/js/bind-to.js"></script>
-    <script type="module" src="/js/overflow-to.js"></script>
-    <script type="module" src="/js/datalist.js"></script>
-    {% else %}
-        <input type="hidden" name="words[]" value="{{form.words | default(value=[]) | nth(n=0)}}">
-        <input type="hidden" name="words[]" value="{{form.words | default(value=[]) | nth(n=1)}}">
-        <input type="hidden" name="words[]" value="{{form.words | default(value=[]) | nth(n=2)}}">
-        <input type="hidden" name="words[]" value="{{form.words | default(value=[]) | nth(n=3)}}">
-    {% endif %}
-
-    {% if step == 'user_details' %}
-        {% include 'error_message' %}
-
+{% else %}
+    <form method="post">
+        {% if step == 'invitation_code' %}
         <p>
-            Ding ding ding! You have entered the correct words.
+            Congratulations! Tau has invited you to their amazing
+            game night by providing you with four secret words.
         </p>
 
         <p>
-            First, let's introduce ourselves. My name is Tau, and what's yours?
-        </p>
-
-        <input type="text" placeholder="Name" name="name" value="{{form.name | default(value='')}}" required autocomplete="name">
-
-        <p>
-            Hiiii <strong data-bind-to="name"></strong> and welcome to my game night.
-            I will need your email address to send notify you of the next game night.
-            I will only use it for game night related purposes–pinky promise~
-        </p>
-
-        <input type="email" placeholder="awesome-person@example.com" name="email_address" value="{{form.email_address | default(value='')}}" autocomplete="email" required>
-
-        <button type="submit">Neeext!</button>
-    {% else %}
-        {% if form.name %}
-            <input type="hidden" name="name" value="{{form.name | default(value='')}}">
-        {% endif %}
-        {% if form.email_address %}
-            <input type="hidden" name="email_address" value="{{form.email_address | default(value='')}}">
-        {% endif %}
-    {% endif %}
-
-    {% if step == 'verify_email' %}
-        <p>
-            We're almost there.
-            I have sent you an email to <strong>{{form.email_address}}</strong> with a six-digit code.
-            Enter the code below to complete the registration.
+            Enter those secret words below to continue.
         </p>
 
         {% include 'error_message' %}
 
-        <input type="number" name="email_verification_code" size="6" placeholder="123456" value="{{form.email_verification_code | default(value='')}}" autocomplete="off" data-1p-ignore required>
+        <fieldset>
+            <input type="text" list="eff-long-wordlist" placeholder="1st word" name="words[0]" data-overflow-to="words[1]" value="{{form | get(key='words', default=[]) | nth(n=0)}}" required>
+            <input type="text" list="eff-long-wordlist" placeholder="2nd word" name="words[1]" data-overflow-to="words[2]" value="{{form | get(key='words', default=[]) | nth(n=1)}}" required>
+            <input type="text" list="eff-long-wordlist" placeholder="3rd word" name="words[2]" data-overflow-to="words[3]" value="{{form | get(key='words', default=[]) | nth(n=2)}}" required>
+            <input type="text" list="eff-long-wordlist" placeholder="4th word" name="words[3]" value="{{form | get(key='words', default=[]) | nth(n=3)}}" required>
+        </fieldset>
 
-        <button type="submit">Neeeext!</button>
-    {% endif %}
-</form>
+        <datalist id="eff-long-wordlist" data-datalist-href="/_api/eff-long-wordlist"></datalist>
+
+        <button type="submit">Neext!</button>
+
+        <script type="module" src="/js/bind-to.js"></script>
+        <script type="module" src="/js/overflow-to.js"></script>
+        <script type="module" src="/js/datalist.js"></script>
+        {% else %}
+            <input type="hidden" name="words[]" value="{{form.words | default(value=[]) | nth(n=0)}}">
+            <input type="hidden" name="words[]" value="{{form.words | default(value=[]) | nth(n=1)}}">
+            <input type="hidden" name="words[]" value="{{form.words | default(value=[]) | nth(n=2)}}">
+            <input type="hidden" name="words[]" value="{{form.words | default(value=[]) | nth(n=3)}}">
+        {% endif %}
+
+        {% if step == 'user_details' %}
+            {% include 'error_message' %}
+
+            <p>
+                Ding ding ding! You have entered the correct words.
+            </p>
+
+            <p>
+                First, let's introduce ourselves. My name is Tau, and what's yours?
+            </p>
+
+            <input type="text" placeholder="Name" name="name" value="{{form.name | default(value='')}}" required autocomplete="name">
+
+            <p>
+                Hiiii <strong data-bind-to="name"></strong> and welcome to my game night.
+                I will need your email address to send notify you of the next game night.
+                I will only use it for game night related purposes–pinky promise~
+            </p>
+
+            <input type="email" placeholder="awesome-person@example.com" name="email_address" value="{{form.email_address | default(value='')}}" autocomplete="email" required>
+
+            <button type="submit">Neeext!</button>
+        {% else %}
+            {% if form.name %}
+                <input type="hidden" name="name" value="{{form.name | default(value='')}}">
+            {% endif %}
+            {% if form.email_address %}
+                <input type="hidden" name="email_address" value="{{form.email_address | default(value='')}}">
+            {% endif %}
+        {% endif %}
+
+        {% if step == 'verify_email' %}
+            <p>
+                We're almost there.
+                I have sent you an email to <strong>{{form.email_address}}</strong> with a six-digit code.
+                Enter the code below to complete the registration.
+            </p>
+
+            {% include 'error_message' %}
+
+            <input type="number" name="email_verification_code" size="6" placeholder="123456" value="{{form.email_verification_code | default(value='')}}" autocomplete="off" data-1p-ignore required>
+
+            <button type="submit">Neeeext!</button>
+        {% endif %}
+    </form>
+{% endif %}
 {% endblock content %}

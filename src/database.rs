@@ -2,7 +2,7 @@ use crate::email_verification_code::EmailVerificationCode;
 use crate::invitation::{Invitation, InvitationId, Passphrase};
 use crate::users::{User, UserId};
 use crate::GameNightDatabase;
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Error, Result};
 use chrono::Local;
 use rocket::request::{FromRequest, Outcome};
 use rocket::{async_trait, Request};
@@ -28,6 +28,8 @@ pub(crate) trait Repository: Send {
     async fn add_user(&mut self, invitation: Invitation, user: User<()>) -> Result<UserId>;
 
     async fn has_users(&mut self) -> Result<bool>;
+
+    async fn get_user_by_id(&mut self, user_id: UserId) -> Result<Option<User>>;
 
     async fn add_verification_code(&mut self, code: &EmailVerificationCode) -> Result<()>;
 
@@ -105,6 +107,14 @@ impl Repository for SqliteRepository {
         Ok(user_count >= 1)
     }
 
+    async fn get_user_by_id(&mut self, user_id: UserId) -> Result<Option<User>> {
+        let invitation = sqlx::query_as("SELECT rowid, * FROM users WHERE rowid = ?1")
+            .bind(user_id)
+            .fetch_optional(self.0.deref_mut())
+            .await?;
+        Ok(invitation)
+    }
+
     async fn add_verification_code(&mut self, code: &EmailVerificationCode) -> Result<()> {
         sqlx::query(
             "INSERT INTO email_verification_codes (code, email_address, valid_until)
@@ -149,13 +159,20 @@ impl Repository for SqliteRepository {
 
 #[async_trait]
 impl<'r> FromRequest<'r> for Box<dyn Repository> {
-    type Error = <Connection<GameNightDatabase> as FromRequest<'r>>::Error;
+    type Error = Error;
 
     async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
         Connection::<GameNightDatabase>::from_request(request)
             .await
             .map(create_repository)
+            .map_failure(|(status, error)| (status, into_anyhow_error(error)))
     }
+}
+
+fn into_anyhow_error<E: std::error::Error + Send + Sync + 'static>(error: Option<E>) -> Error {
+    error
+        .map(Into::into)
+        .unwrap_or_else(|| anyhow!("Unable to retrieve database"))
 }
 
 fn create_repository(connection: Connection<GameNightDatabase>) -> Box<dyn Repository> {

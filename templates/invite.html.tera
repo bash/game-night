@@ -4,14 +4,26 @@
 {% block title %}Getting Invited{% endblock title %}
 
 {% block content %}
-<p>
-    It's easy, really! Just meet Tau IRL—they'll happily invite you if you ask nicely.
-</p>
-<p>
-    If you have met Tau IRL but are too shy or too lazy to ask
-    you can alternatively send an email to <a href="mailto:game-night@tau.soy">game-night@tau.soy</a>.
-</p>
-<p>
-    <a href="/register" class="link-button">I have an invitation!</a>
-</p>
+{% if user %}
+    <p><em>
+        Congratulations <strong>{{user.name}}</strong>! You have already been invited
+        to Tau's Game Night.
+        There's no need to get invited again :)
+    </em></p>
+    <p>
+        <a href="/poll" class="link-button">Take me to the poll!</a>
+    </p>
+{% else %}
+    <p>
+        It's easy, really! Just meet Tau IRL—they'll happily invite you if you ask nicely.
+    </p>
+    <p>
+        If you have met Tau IRL but are too shy or too lazy to ask
+        you can alternatively send an email to <a href="mailto:game-night@tau.soy">game-night@tau.soy</a>.
+    </p>
+    <p>
+        <a href="/register" class="link-button">I have an invitation!</a>
+    </p>
+{% endif %}
+
 {% endblock content %}

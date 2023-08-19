@@ -1,3 +1,4 @@
+use crate::authentication::CookieJarExt;
 use crate::database::Repository;
 use crate::email::EmailSender;
 use crate::email_verification_code::EmailVerificationCode;
@@ -8,11 +9,13 @@ use anyhow::{Error, Result};
 use email_address::EmailAddress;
 use lettre::message::Mailbox;
 use rocket::form::Form;
-use rocket::response::Debug;
-use rocket::{post, FromForm, State};
+use rocket::http::CookieJar;
+use rocket::response::{Debug, Redirect};
+use rocket::{post, Either, FromForm, State};
 use rocket_dyn_templates::{context, Template};
 use serde::Serialize;
 use std::str::FromStr;
+use Either::*;
 use StepResult::*;
 
 macro_rules! unwrap_or_return {
@@ -26,41 +29,40 @@ macro_rules! unwrap_or_return {
 
 #[post("/register", data = "<form>")]
 pub(crate) async fn register(
+    cookies: &CookieJar<'_>,
     form: Form<RegisterForm<'_>>,
     mut repository: Box<dyn Repository>,
     email_sender: &State<Box<dyn EmailSender>>,
-) -> Result<Template, Debug<Error>> {
+    user: Option<User>,
+) -> Result<Either<Template, Redirect>, Debug<Error>> {
     let form = form.into_inner();
 
     let invitation = unwrap_or_return!(
         invitation_code_step(&form, repository.as_mut()).await?,
-        error_message => Ok(Template::render(
+        error_message => Ok(Left(Template::render(
             "register",
-            context! { active_page: "register", step: "invitation_code", error_message, form },
-        ))
+            context! { active_page: "register", step: "invitation_code", error_message, form, user },
+        )))
     );
 
     let user_details = unwrap_or_return!(
         user_details_step(&form, repository.as_mut(), email_sender.as_ref()).await?,
-        error_message => Ok(Template::render(
+        error_message => Ok(Left(Template::render(
             "register",
-            context! { active_page: "register", step: "user_details", error_message, form },
-        ))
+            context! { active_page: "register", step: "user_details", error_message, form, user },
+        )))
     );
 
-    let _user_id = unwrap_or_return!(
+    let user_id = unwrap_or_return!(
         email_verification_step(repository.as_mut(), &form, invitation, user_details).await?,
-        error_message => Ok(Template::render(
+        error_message => Ok(Left(Template::render(
             "register",
-            context! { active_page: "register", step: "verify_email", error_message, form },
-        ))
+            context! { active_page: "register", step: "verify_email", error_message, form, user },
+        )))
     );
 
-    // TOOD: log user in, redirect
-    Ok(Template::render(
-        "register",
-        context! { active_page: "register", step: "" },
-    ))
+    cookies.set_user_id(user_id);
+    Ok(Right(Redirect::to("/poll")))
 }
 
 async fn invitation_code_step(

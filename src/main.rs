@@ -1,3 +1,4 @@
+use crate::users::User;
 use anyhow::{Context, Result};
 use database::SqliteRepository;
 use diceware_wordlists::EFF_LONG_WORDLIST;
@@ -11,6 +12,7 @@ use rocket::{error, get, launch, routes, Build, Config, Rocket};
 use rocket_db_pools::{sqlx::SqlitePool, Database, Pool};
 use rocket_dyn_templates::{context, Template};
 
+mod authentication;
 mod database;
 mod email;
 mod email_verification_code;
@@ -29,6 +31,7 @@ fn rocket() -> _ {
                 get_index_page,
                 get_invite_page,
                 get_register_page,
+                get_poll_page,
                 get_eff_long_wordlist,
                 register::register
             ],
@@ -51,16 +54,21 @@ fn get_index_page() -> Template {
 }
 
 #[get("/invite")]
-fn get_invite_page() -> Template {
-    Template::render("invite", context! { active_page: "invite" })
+fn get_invite_page(user: Option<User>) -> Template {
+    Template::render("invite", context! { active_page: "invite", user })
 }
 
 #[get("/register")]
-fn get_register_page() -> Template {
+fn get_register_page(user: Option<User>) -> Template {
     Template::render(
         "register",
-        context! { active_page: "register", step: "invitation_code", form: context! {} },
+        context! { active_page: "register", step: "invitation_code", user, form: context! {} },
     )
+}
+
+#[get("/poll")]
+fn get_poll_page(user: User) -> Template {
+    Template::render("poll", context! { active_page: "poll", user })
 }
 
 #[get("/_api/eff-long-wordlist")]
