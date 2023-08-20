@@ -453,6 +453,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "constcat"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f272d0c4cf831b4fa80ee529c7707f76585986e910e1fbce1d7921970bc1a241"
+
+[[package]]
 name = "cookie"
 version = "0.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -900,6 +906,7 @@ dependencies = [
  "anyhow",
  "chrono",
  "chrono-tz 0.4.1",
+ "constcat",
  "diceware_wordlists",
  "dirs",
  "email_address",

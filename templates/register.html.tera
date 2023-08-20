@@ -28,13 +28,13 @@
         {% include 'error_message' %}
 
         <fieldset>
-            <input type="text" list="eff-long-wordlist" placeholder="1st word" name="words[0]" data-overflow-to="words[1]" value="{{form | get(key='words', default=[]) | nth(n=0)}}" required>
-            <input type="text" list="eff-long-wordlist" placeholder="2nd word" name="words[1]" data-overflow-to="words[2]" value="{{form | get(key='words', default=[]) | nth(n=1)}}" required>
-            <input type="text" list="eff-long-wordlist" placeholder="3rd word" name="words[2]" data-overflow-to="words[3]" value="{{form | get(key='words', default=[]) | nth(n=2)}}" required>
-            <input type="text" list="eff-long-wordlist" placeholder="4th word" name="words[3]" value="{{form | get(key='words', default=[]) | nth(n=3)}}" required>
+            <input type="text" list="wordlist" placeholder="1st word" name="words[0]" data-overflow-to="words[1]" value="{{form | get(key='words', default=[]) | nth(n=0)}}" required>
+            <input type="text" list="wordlist" placeholder="2nd word" name="words[1]" data-overflow-to="words[2]" value="{{form | get(key='words', default=[]) | nth(n=1)}}" required>
+            <input type="text" list="wordlist" placeholder="3rd word" name="words[2]" data-overflow-to="words[3]" value="{{form | get(key='words', default=[]) | nth(n=2)}}" required>
+            <input type="text" list="wordlist" placeholder="4th word" name="words[3]" value="{{form | get(key='words', default=[]) | nth(n=3)}}" required>
         </fieldset>
 
-        <datalist id="eff-long-wordlist" data-datalist-href="/_api/eff-long-wordlist"></datalist>
+        <datalist id="wordlist" data-datalist-href="/_api/wordlist"></datalist>
 
         <button type="submit">Neext!</button>
 

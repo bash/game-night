@@ -1,8 +1,8 @@
 use crate::users::User;
 use anyhow::{Context, Result};
 use database::SqliteRepository;
-use diceware_wordlists::EFF_LONG_WORDLIST;
 use email::{EmailSender, EmailSenderImpl};
+use invitation::TAUS_WORDLIST;
 use keys::GameNightKeys;
 use rocket::fairing::{self, Fairing};
 use rocket::figment::Figment;
@@ -19,6 +19,7 @@ mod email_verification_code;
 mod emails;
 mod invitation;
 mod keys;
+mod login;
 mod register;
 mod users;
 
@@ -32,7 +33,7 @@ fn rocket() -> _ {
                 get_invite_page,
                 get_register_page,
                 get_poll_page,
-                get_eff_long_wordlist,
+                get_wordlist,
                 register::register
             ],
         )
@@ -71,9 +72,9 @@ fn get_poll_page(user: User) -> Template {
     Template::render("poll", context! { active_page: "poll", user })
 }
 
-#[get("/_api/eff-long-wordlist")]
-fn get_eff_long_wordlist() -> Json<Vec<&'static str>> {
-    Json(EFF_LONG_WORDLIST.into_iter().collect())
+#[get("/_api/wordlist")]
+fn get_wordlist() -> Json<Vec<&'static str>> {
+    Json(TAUS_WORDLIST.into_iter().map(|w| *w).collect())
 }
 
 #[derive(Debug, Database)]

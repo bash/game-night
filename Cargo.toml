@@ -22,3 +22,4 @@ json = { package = "serde_json", version = "1.0.105" }
 sqlx = { version = "0.6.0", features = ["chrono"] }
 tera = "1.19.0"
 yansi = "0.5.1"
+constcat = "0.3.0"

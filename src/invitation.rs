@@ -1,9 +1,7 @@
 use crate::database::Repository;
 use crate::users::{Role, User, UserId};
 use anyhow::Result;
-use diceware_wordlists::EFF_LONG_WORDLIST;
-use rand::seq::SliceRandom;
-use rand::thread_rng;
+use rand::prelude::*;
 use rocket::log::PaintExt;
 use rocket::{launch_meta, launch_meta_};
 use sqlx::database::{HasArguments, HasValueRef};
@@ -13,6 +11,9 @@ use sqlx::{Database, Decode, Encode, Sqlite};
 use std::error::Error;
 use std::fmt;
 use yansi::Paint;
+
+mod wordlist;
+pub(crate) use self::wordlist::*;
 
 #[derive(Debug, Copy, Clone, sqlx::Type)]
 #[sqlx(transparent)]
@@ -129,7 +130,7 @@ async fn get_or_create_invitation(repository: &mut dyn Repository) -> Result<Inv
 }
 
 fn generate_passphrase() -> Passphrase {
-    let words: Vec<_> = EFF_LONG_WORDLIST
+    let words: Vec<_> = TAUS_WORDLIST
         .choose_multiple(&mut thread_rng(), 4)
         .map(|s| (*s).to_owned())
         .collect();
