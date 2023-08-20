@@ -1,5 +1,6 @@
 use crate::email_verification_code::EmailVerificationCode;
 use crate::invitation::{Invitation, InvitationId, Passphrase};
+use crate::login::{LoginToken, LoginTokenType};
 use crate::users::{User, UserId};
 use crate::GameNightDatabase;
 use anyhow::{anyhow, Error, Result};
@@ -8,7 +9,7 @@ use rocket::request::{FromRequest, Outcome};
 use rocket::{async_trait, Request};
 use rocket_db_pools::Connection;
 use sqlx::pool::PoolConnection;
-use sqlx::{Connection as _, Sqlite};
+use sqlx::{Connection as _, Sqlite, Transaction};
 use std::ops::DerefMut;
 
 type SqliteConnection = PoolConnection<Sqlite>;
@@ -36,6 +37,10 @@ pub(crate) trait Repository: Send {
     async fn has_verification_code(&mut self, email_address: &str) -> Result<bool>;
 
     async fn use_verification_code(&mut self, code: &str, email_address: &str) -> Result<bool>;
+
+    async fn add_login_token(&mut self, token: LoginToken) -> Result<()>;
+
+    async fn use_login_token(&mut self, token: &str) -> Result<Option<UserId>>;
 }
 
 pub(crate) struct SqliteRepository(pub(crate) SqliteConnection);
@@ -155,6 +160,57 @@ impl Repository for SqliteRepository {
         .await?;
         Ok(result.rows_affected() >= 1)
     }
+
+    async fn add_login_token(&mut self, token: LoginToken) -> Result<()> {
+        sqlx::query(
+            "INSERT INTO login_tokens (type, token, user_id, valid_until)
+             VALUES (?1, ?2, ?3, ?4)",
+        )
+        .bind(&token.type_)
+        .bind(&token.token)
+        .bind(&token.user_id)
+        .bind(&token.valid_until)
+        .execute(self.0.deref_mut())
+        .await?;
+        Ok(())
+    }
+
+    async fn use_login_token(&mut self, token_value: &str) -> Result<Option<UserId>> {
+        let mut transaction = self.0.begin().await?;
+
+        let token: Option<LoginToken> =
+            sqlx::query_as("SELECT * FROM login_tokens WHERE token = ?1 AND valid_until >= ?2")
+                .bind(token_value)
+                .bind(Local::now())
+                .fetch_optional(&mut transaction)
+                .await?;
+
+        if !is_one_time_token(&token) || delete_token(&mut transaction, token_value).await? {
+            transaction.commit().await?;
+            Ok(token.map(|t| t.user_id))
+        } else {
+            transaction.rollback().await?;
+            Ok(None)
+        }
+    }
+}
+
+async fn delete_token(transaction: &mut Transaction<'_, Sqlite>, token: &str) -> Result<bool> {
+    let delete_result = sqlx::query("DELETE FROM login_tokens WHERE token = ?1")
+        .bind(token)
+        .execute(transaction)
+        .await?;
+    Ok(delete_result.rows_affected() >= 1)
+}
+
+fn is_one_time_token(token: &Option<LoginToken>) -> bool {
+    matches!(
+        token,
+        Some(LoginToken {
+            type_: LoginTokenType::OneTime,
+            ..
+        })
+    )
 }
 
 #[async_trait]

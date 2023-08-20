@@ -20,3 +20,11 @@ CREATE TABLE email_verification_codes
     , valid_until TEXT NOT NULL
     , UNIQUE (code)
     );
+
+CREATE TABLE login_tokens
+    ( type TEXT NOT NULL
+    , token TEXT NOT NULL
+    , user_id INTEGER NULL
+    , valid_until TEXT NOT NULL
+    , UNIQUE (token)
+    );

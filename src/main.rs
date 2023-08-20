@@ -4,6 +4,7 @@ use database::SqliteRepository;
 use email::{EmailSender, EmailSenderImpl};
 use invitation::TAUS_WORDLIST;
 use keys::GameNightKeys;
+use login::login_with_token;
 use rocket::fairing::{self, Fairing};
 use rocket::figment::Figment;
 use rocket::fs::FileServer;
@@ -33,6 +34,7 @@ fn rocket() -> _ {
                 get_invite_page,
                 get_register_page,
                 get_poll_page,
+                login_with_token,
                 get_wordlist,
                 register::register
             ],
