@@ -1,13 +1,13 @@
 @font-face {
     font-family: 'Inter';
-    font-weight: 100 900;
+    font-style:  normal;
+    font-weight: 700;
     font-display: swap;
-    font-style: oblique 0deg 10deg;
     // ss01 = Open Digits
     // cv08 = Upper-case i with serif
     // zero = Slashed Zero
     font-feature-settings: "ss01", "cv08", "zero";
-    src: url("fonts/inter/Inter.woff2?v=3.19") format("woff2");
+    src: url("fonts/inter/Inter-Bold.woff2?v=3.19") format("woff2");
 }
 
 @font-face {
