@@ -3,7 +3,6 @@ name = "game-night"
 version = "0.1.0"
 edition = "2021"
 publish = false
-default-run = "game-night"
 
 [dependencies]
 anyhow = "1.0.74"
