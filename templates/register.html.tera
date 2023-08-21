@@ -15,7 +15,7 @@
     </p>
 {% else %}
     <form method="post">
-        {% if step == 'invitation_code' %}
+        {% if page.step == 'invitation_code' %}
         <p>
             Congratulations! Tau has invited you to their amazing
             game night by providing you with four secret words.
@@ -28,10 +28,10 @@
         {% include 'error_message' %}
 
         <fieldset>
-            <input type="text" list="wordlist" placeholder="1st word" name="words[0]" data-overflow-to="words[1]" value="{{form | get(key='words', default=[]) | nth(n=0)}}" required>
-            <input type="text" list="wordlist" placeholder="2nd word" name="words[1]" data-overflow-to="words[2]" value="{{form | get(key='words', default=[]) | nth(n=1)}}" required>
-            <input type="text" list="wordlist" placeholder="3rd word" name="words[2]" data-overflow-to="words[3]" value="{{form | get(key='words', default=[]) | nth(n=2)}}" required>
-            <input type="text" list="wordlist" placeholder="4th word" name="words[3]" value="{{form | get(key='words', default=[]) | nth(n=3)}}" required>
+            <input type="text" list="wordlist" placeholder="1st word" name="words[0]" data-overflow-to="words[1]" value="{{page.form.words | default(value=[]) | nth(n=0)}}" required>
+            <input type="text" list="wordlist" placeholder="2nd word" name="words[1]" data-overflow-to="words[2]" value="{{page.form.words | default(value=[]) | nth(n=1)}}" required>
+            <input type="text" list="wordlist" placeholder="3rd word" name="words[2]" data-overflow-to="words[3]" value="{{page.form.words | default(value=[]) | nth(n=2)}}" required>
+            <input type="text" list="wordlist" placeholder="4th word" name="words[3]" value="{{page.form.words | default(value=[]) | nth(n=3)}}" required>
         </fieldset>
 
         <datalist id="wordlist" data-datalist-href="/_api/wordlist"></datalist>
@@ -42,13 +42,13 @@
         <script type="module" src="/js/overflow-to.js"></script>
         <script type="module" src="/js/datalist.js"></script>
         {% else %}
-            <input type="hidden" name="words[]" value="{{form.words | default(value=[]) | nth(n=0)}}">
-            <input type="hidden" name="words[]" value="{{form.words | default(value=[]) | nth(n=1)}}">
-            <input type="hidden" name="words[]" value="{{form.words | default(value=[]) | nth(n=2)}}">
-            <input type="hidden" name="words[]" value="{{form.words | default(value=[]) | nth(n=3)}}">
+            <input type="hidden" name="words[]" value="{{page.form.words | default(value=[]) | nth(n=0)}}">
+            <input type="hidden" name="words[]" value="{{page.form.words | default(value=[]) | nth(n=1)}}">
+            <input type="hidden" name="words[]" value="{{page.form.words | default(value=[]) | nth(n=2)}}">
+            <input type="hidden" name="words[]" value="{{page.form.words | default(value=[]) | nth(n=3)}}">
         {% endif %}
 
-        {% if step == 'user_details' %}
+        {% if page.step == 'user_details' %}
             {% include 'error_message' %}
 
             <p>
@@ -59,7 +59,7 @@
                 First, let's introduce ourselves. My name is Tau, and what's yours?
             </p>
 
-            <input type="text" placeholder="Name" name="name" value="{{form.name | default(value='')}}" required autocomplete="name">
+            <input type="text" placeholder="Name" name="name" value="{{page.form.name | default(value='')}}" required autocomplete="name">
 
             <p>
                 Hiiii <strong data-bind-to="name"></strong> and welcome to my game night.
@@ -67,28 +67,28 @@
                 I will only use it for game night related purposes–pinky promise~
             </p>
 
-            <input type="email" placeholder="awesome-person@example.com" name="email_address" value="{{form.email_address | default(value='')}}" autocomplete="email" required>
+            <input type="email" placeholder="awesome-person@example.com" name="email_address" value="{{page.form.email_address | default(value='')}}" autocomplete="email" required>
 
             <button type="submit">Neeext!</button>
         {% else %}
-            {% if form.name %}
-                <input type="hidden" name="name" value="{{form.name | default(value='')}}">
+            {% if page.form.name %}
+                <input type="hidden" name="name" value="{{page.form.name | default(value='')}}">
             {% endif %}
-            {% if form.email_address %}
-                <input type="hidden" name="email_address" value="{{form.email_address | default(value='')}}">
+            {% if page.form.email_address %}
+                <input type="hidden" name="email_address" value="{{page.form.email_address | default(value='')}}">
             {% endif %}
         {% endif %}
 
-        {% if step == 'verify_email' %}
+        {% if page.step == 'verify_email' %}
             <p>
                 We're almost there.
-                I have sent you an email to <strong>{{form.email_address}}</strong> with a six-digit code.
+                I have sent you an email to <strong>{{page.form.email_address}}</strong> with a six-digit code.
                 Enter the code below to complete the registration.
             </p>
 
             {% include 'error_message' %}
 
-            <input type="number" name="email_verification_code" size="6" placeholder="123456" value="{{form.email_verification_code | default(value='')}}" autocomplete="off" data-1p-ignore required>
+            <input type="number" name="email_verification_code" size="6" placeholder="123456" value="{{page.form.email_verification_code | default(value='')}}" autocomplete="off" data-1p-ignore required>
 
             <button type="submit">Neeeext!</button>
         {% endif %}

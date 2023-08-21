@@ -4,6 +4,7 @@ use crate::email::EmailSender;
 use crate::email_verification_code::EmailVerificationCode;
 use crate::emails::VerificationEmail;
 use crate::invitation::{Invitation, Passphrase};
+use crate::template::{PageBuilder, PageType};
 use crate::users::{User, UserId};
 use anyhow::{Error, Result};
 use email_address::EmailAddress;
@@ -33,31 +34,32 @@ pub(crate) async fn register(
     form: Form<RegisterForm<'_>>,
     mut repository: Box<dyn Repository>,
     email_sender: &State<Box<dyn EmailSender>>,
-    user: Option<User>,
+    page: PageBuilder<'_>,
 ) -> Result<Either<Template, Redirect>, Debug<Error>> {
     let form = form.into_inner();
+    let page = page.type_(PageType::Register);
 
     let invitation = unwrap_or_return!(
         invitation_code_step(&form, repository.as_mut()).await?,
-        error_message => Ok(Left(Template::render(
+        error_message => Ok(Left(page.render(
             "register",
-            context! { active_page: "register", step: "invitation_code", error_message, form, user },
+            context! { step: "invitation_code", error_message, form },
         )))
     );
 
     let user_details = unwrap_or_return!(
         user_details_step(&form, repository.as_mut(), email_sender.as_ref()).await?,
-        error_message => Ok(Left(Template::render(
+        error_message => Ok(Left(page.render(
             "register",
-            context! { active_page: "register", step: "user_details", error_message, form, user },
+            context! { step: "user_details", error_message, form },
         )))
     );
 
     let user_id = unwrap_or_return!(
         email_verification_step(repository.as_mut(), &form, invitation, user_details).await?,
-        error_message => Ok(Left(Template::render(
+        error_message => Ok(Left(page.render(
             "register",
-            context! { active_page: "register", step: "verify_email", error_message, form, user },
+            context! { step: "verify_email", error_message, form },
         )))
     );
 

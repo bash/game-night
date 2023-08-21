@@ -5,10 +5,13 @@ use anyhow::Error;
 use chrono::{DateTime, Duration, Local};
 use rand::distributions::Alphanumeric;
 use rand::Rng;
+use rocket::form::Form;
 use rocket::http::uri::Origin;
 use rocket::http::CookieJar;
 use rocket::response::{self, Debug, Redirect, Responder};
-use rocket::{catch, catchers, get, post, routes, uri, Catcher, Request, Response, Route};
+use rocket::{
+    catch, catchers, get, post, routes, uri, Catcher, FromForm, Request, Response, Route,
+};
 
 pub(crate) fn routes() -> Vec<Route> {
     routes![login, login_page, login_with_token, logout]
@@ -41,17 +44,22 @@ async fn login_with_token<'r>(
     }
 }
 
-#[post("/logout")]
-async fn logout<'r>(cookies: &'r CookieJar<'r>) -> Logout {
+#[post("/logout", data = "<form>")]
+async fn logout<'r>(cookies: &'r CookieJar<'r>, form: Form<LogoutData<'r>>) -> Logout<'r> {
     cookies.remove_user_id();
-    Logout
+    Logout(form.redirect)
 }
 
-struct Logout;
+#[derive(FromForm)]
+struct LogoutData<'r> {
+    redirect: Option<&'r str>,
+}
 
-impl<'r> Responder<'r, 'static> for Logout {
+struct Logout<'r>(Option<&'r str>);
+
+impl<'r> Responder<'r, 'static> for Logout<'r> {
     fn respond_to(self, request: &'r Request<'_>) -> response::Result<'static> {
-        Response::build_from(Redirect::to("/").respond_to(request)?)
+        Response::build_from(redirect_to(self.0).respond_to(request)?)
             .raw_header("Clear-Site-Data", "\"*\"")
             .ok()
     }

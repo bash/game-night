@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" class="_{{ active_page }}">
+<html lang="en" class="_{{ page_type }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,19 +14,19 @@
     <a href="#main" tabindex="0" class="skip-link">Skip to content</a>
 
     <nav>
-        <a href="/" class="_home{% if active_page == 'home' %} -active{% endif %}" title="Home">
+        <a href="/" class="_home{% if page_type == 'home' %} -active{% endif %}" title="Home">
             <svg><use href="/icons/home.svg#icon" /></svg>
         </a>
-        <a href="/invite" class="_invite{% if active_page == 'invite' %} -active{% endif %}" title="Get Invited">
+        <a href="/invite" class="_invite{% if page_type == 'invite' %} -active{% endif %}" title="Get Invited">
             <svg><use href="/icons/mail-open.svg#icon" /></svg>
         </a>
-        <a href="/register" class="_register{% if active_page == 'register' %} -active{% endif %}" title="Register">
+        <a href="/register" class="_register{% if page_type == 'register' %} -active{% endif %}" title="Register">
             <svg><use href="/icons/clipboard-signature.svg#icon" /></svg>
         </a>
-        <a href="/poll" class="_poll{% if active_page == 'poll' %} -active{% endif %}" title="Poll">
+        <a href="/poll" class="_poll{% if page_type == 'poll' %} -active{% endif %}" title="Poll">
             <svg><use href="/icons/calendar-check.svg#icon" /></svg>
         </a>
-        <a href="/play" class="_play{% if active_page == 'play' %} -active{% endif %}" title="Play">
+        <a href="/play" class="_play{% if page_type == 'play' %} -active{% endif %}" title="Play">
             <svg><use href="/icons/dices.svg#icon" /></svg>
         </a>
     </nav>
@@ -50,7 +50,9 @@
                 <div>
                     Signed in as <strong>{{user.name}}</strong>.&nbsp;&nbsp;
                     <button>Log out</button>
-                </div></form>
+                </div>
+                <input type="hidden" name="redirect" value="{{uri}}">
+            </form>
         </footer>
     {% endif %}
 </body>
