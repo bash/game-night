@@ -1,14 +1,32 @@
+$bookmark-width: 60px;
+$bookmark-spacing: 30px;
+$bookmark-count: 5;
+
+$bookmarks-total-width:
+    $content-padding * 2 +
+    $bookmark-width * $bookmark-count +
+    $bookmark-spacing * ($bookmark-count - 1);
+
 nav {
     --bookmark-height: 160px;
     --bookmark-collapsed-height: 80px;
     --bookmark-peek-distance: 10px;
+    --bookmark-padding: 30px;
 
     display: grid;
     grid-auto-flow: column;
     justify-content: start;
-    grid-auto-columns: 60px;
+    grid-auto-columns: $bookmark-width;
     gap: 24px;
     height: var(--bookmark-height);
+
+    @media (max-width: $bookmarks-total-width) {
+        gap: 10px;
+        grid-auto-columns: 50px;
+        --bookmark-height: 100px;
+        --bookmark-collapsed-height: 70px;
+        --bookmark-padding: 20px;
+    }
 }
 
 %height-calculation {
@@ -37,7 +55,7 @@ nav a {
     color: #fff;
     background-color: var(--accent-color-softened);
     clip-path: polygon(0 0, 0 100%, 50% 90%, 100% 100%, 100% 0);
-    padding: 30px 0;
+    padding: var(--bookmark-padding) 0;
     transform: translateY(calc(var(--height) - var(--bookmark-height)));
 
     @extend %height-calculation;
