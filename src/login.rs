@@ -5,19 +5,29 @@ use anyhow::Error;
 use chrono::{DateTime, Duration, Local};
 use rand::distributions::Alphanumeric;
 use rand::Rng;
+use rocket::http::uri::Origin;
 use rocket::http::CookieJar;
 use rocket::response::{self, Debug, Redirect, Responder};
-use rocket::{get, post, Request, Response};
+use rocket::{catch, get, post, uri, Request, Response};
 
-#[get("/login?<token>")]
+#[get("/login?<return>")]
+pub(crate) async fn login_page<'r>(r#return: Option<&'r str>) {}
+
+#[post("/login?<return>")]
+pub(crate) async fn login<'r>(r#return: Option<&'r str>) -> Redirect {
+    redirect(r#return)
+}
+
+#[get("/login-with?<token>&<return>")]
 pub(crate) async fn login_with_token<'r>(
     token: &'r str,
     cookies: &'r CookieJar<'r>,
     mut repository: Box<dyn Repository>,
+    r#return: Option<&'r str>,
 ) -> Result<Redirect, Debug<Error>> {
     if let Some(user_id) = repository.use_login_token(token).await? {
         cookies.set_user_id(user_id);
-        Ok(Redirect::to("/"))
+        Ok(redirect(r#return))
     } else {
         todo!()
     }
@@ -37,6 +47,18 @@ impl<'r> Responder<'r, 'static> for Logout {
             .raw_header("Clear-Site-Data", "\"*\"")
             .ok()
     }
+}
+
+#[catch(401)]
+pub(crate) async fn redirect_to_login(request: &Request<'_>) -> Redirect {
+    let origin = request.uri().to_string();
+    Redirect::to(uri!(login_page(r#return = Some(origin))))
+}
+
+fn redirect(redirect_url_from_query: Option<&str>) -> Redirect {
+    redirect_url_from_query
+        .and_then(|r| Origin::parse_owned(r.to_string()).ok().map(Redirect::to))
+        .unwrap_or_else(|| Redirect::to("/"))
 }
 
 #[derive(Debug, Clone, sqlx::FromRow)]
