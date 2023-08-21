@@ -4,7 +4,7 @@ use database::SqliteRepository;
 use email::{EmailSender, EmailSenderImpl};
 use invitation::TAUS_WORDLIST;
 use keys::GameNightKeys;
-use login::login_with_token;
+use login::{login_with_token, logout};
 use rocket::fairing::{self, Fairing};
 use rocket::figment::Figment;
 use rocket::fs::FileServer;
@@ -35,6 +35,7 @@ fn rocket() -> _ {
                 get_register_page,
                 get_poll_page,
                 login_with_token,
+                logout,
                 get_wordlist,
                 register::register
             ],
@@ -52,8 +53,8 @@ fn figment() -> Figment {
 }
 
 #[get("/")]
-fn get_index_page() -> Template {
-    Template::render("index", context! { active_page: "home" })
+fn get_index_page(user: Option<User>) -> Template {
+    Template::render("index", context! { active_page: "home", user })
 }
 
 #[get("/invite")]

@@ -21,3 +21,26 @@ nav {
     padding: 0 var(--content-padding);
     margin-bottom: calc(var(--content-padding) + 40px);
 }
+
+footer {
+    padding: 0 var(--content-padding) var(--content-padding) var(--content-padding);
+    font-size: .875em;
+
+    @media (hover: hover) {
+        opacity: .4;
+        transition: opacity 125ms;
+
+        &:hover {
+            opacity: 1;
+        }
+    }
+
+    &::before {
+        content: '';
+        border-top: 1px solid currentColor;
+        display: block;
+        max-width: 200px;
+        width: 100%;
+        margin-bottom: 10px;
+    }
+}

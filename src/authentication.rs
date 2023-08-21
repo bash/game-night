@@ -2,10 +2,11 @@ use crate::database::Repository;
 use crate::users::{User, UserId};
 use anyhow::{Error, Result};
 use rocket::http::private::cookie::CookieBuilder;
-use rocket::http::{CookieJar, Status};
+use rocket::http::{Cookie, CookieJar, SameSite, Status};
 use rocket::outcome::try_outcome;
 use rocket::request::{FromRequest, Outcome};
 use rocket::{async_trait, Request};
+use std::borrow::Cow;
 use std::ops::Deref;
 
 pub(crate) struct UserGuard(User);
@@ -55,6 +56,8 @@ pub(crate) trait CookieJarExt {
     fn user_id(&self) -> Result<Option<UserId>>;
 
     fn set_user_id(&self, user_id: UserId);
+
+    fn remove_user_id(&self);
 }
 
 impl<'r> CookieJarExt for CookieJar<'r> {
@@ -64,14 +67,21 @@ impl<'r> CookieJarExt for CookieJar<'r> {
     }
 
     fn set_user_id(&self, user_id: UserId) {
-        self.add_private(
-            CookieBuilder::new(USER_ID_COOKIE_NAME, user_id.0.to_string())
-                .http_only(true)
-                .secure(true)
-                .permanent()
-                .finish(),
-        );
+        self.add_private(user_id_cookie(user_id.0.to_string()));
     }
+
+    fn remove_user_id(&self) {
+        self.remove_private(user_id_cookie(""))
+    }
+}
+
+fn user_id_cookie<'a>(value: impl Into<Cow<'a, str>>) -> Cookie<'a> {
+    CookieBuilder::new(USER_ID_COOKIE_NAME, value)
+        .http_only(true)
+        .secure(true)
+        .permanent()
+        .same_site(SameSite::Strict)
+        .finish()
 }
 
 const USER_ID_COOKIE_NAME: &str = "user-id";

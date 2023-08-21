@@ -5,9 +5,9 @@ use anyhow::Error;
 use chrono::{DateTime, Duration, Local};
 use rand::distributions::Alphanumeric;
 use rand::Rng;
-use rocket::get;
 use rocket::http::CookieJar;
-use rocket::response::{Debug, Redirect};
+use rocket::response::{self, Debug, Redirect, Responder};
+use rocket::{get, post, Request, Response};
 
 #[get("/login?<token>")]
 pub(crate) async fn login_with_token<'r>(
@@ -20,6 +20,22 @@ pub(crate) async fn login_with_token<'r>(
         Ok(Redirect::to("/"))
     } else {
         todo!()
+    }
+}
+
+#[post("/logout")]
+pub(crate) async fn logout<'r>(cookies: &'r CookieJar<'r>) -> Logout {
+    cookies.remove_user_id();
+    Logout
+}
+
+pub(crate) struct Logout;
+
+impl<'r> Responder<'r, 'static> for Logout {
+    fn respond_to(self, request: &'r Request<'_>) -> response::Result<'static> {
+        Response::build_from(Redirect::to("/").respond_to(request)?)
+            .raw_header("Clear-Site-Data", "\"*\"")
+            .ok()
     }
 }
 

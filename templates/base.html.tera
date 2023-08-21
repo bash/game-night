@@ -43,5 +43,15 @@
         </header>
         {% block content %}{% endblock content %}
     </main>
+
+    {% if user %}
+        <footer>
+            <form action="/logout" method="post">
+                <div>
+                    Signed in as <strong>{{user.name}}</strong>.&nbsp;&nbsp;
+                    <button>Log out</button>
+                </div></form>
+        </footer>
+    {% endif %}
 </body>
 </html>
