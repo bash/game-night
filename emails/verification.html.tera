@@ -1,7 +1,7 @@
 {% extends 'base.html.tera' %}
 {% block content %}
 <h1>
-    Welcome to Tau's Game Night 👋🏼
+    Welcome to Tau's Game Night 👋{{skin_tone}}
 </h1>
 
 <p>
