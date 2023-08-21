@@ -1,0 +1,20 @@
+{% extends 'base' %}
+
+{% block chapter_number %}x{% endblock chapter_number %}
+{% block title %}Login{% endblock title %}
+
+{% block content %}
+<form method="post">
+    <p>
+        {% if page.has_redirect %}
+        Accessing this page requires a user account.<br>
+        {% endif %}
+        Enter your email address below to receive a magical sign-in link ✨
+    </p>
+
+    <input type="email" autocomplete="email" placeholder="awesome-person@example.com" name="email" />
+
+    <button type="submit">Send Login Link</button>
+    <a href="/invite" class="link-button">I don't have an account</a>
+</form>
+{% endblock content %}

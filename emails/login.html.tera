@@ -1,0 +1,23 @@
+{% extends 'base.html.tera' %}
+{% block content %}
+<h1>
+    Let's Get You Logged In 💪{{skin_tone}}
+</h1>
+
+<p>
+    Use the link below to log in to <em>Tau's Game Night</em>:
+</p>
+
+<a href="{{login_url}}">
+    <span class="arrow" role="presentation">→</span>
+    Log in
+</a>
+<br>
+
+<hr>
+
+<p>
+    <strong>P.S.</strong> This code is valid for 30 minutes, so hurryyyyy~<br>
+    <strong>P.P.S.</strong> You can safely ignore this email if you didn't request it.
+</p>
+{% endblock content %}

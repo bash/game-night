@@ -1,3 +1,5 @@
+use anyhow::Result;
+use lettre::message::Mailbox;
 use rocket_db_pools::sqlx;
 use serde::Serialize;
 
@@ -21,4 +23,13 @@ pub(crate) struct User<Id = UserId> {
 pub(crate) enum Role {
     Admin,
     Guest,
+}
+
+impl<Id> User<Id> {
+    pub(crate) fn mailbox(&self) -> Result<Mailbox> {
+        Ok(Mailbox::new(
+            Some(self.name.clone()),
+            self.email_address.parse()?,
+        ))
+    }
 }

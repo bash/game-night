@@ -1,4 +1,4 @@
-use anyhow::{Context, Result};
+use anyhow::{Context, Error, Result};
 use database::SqliteRepository;
 use email::{EmailSender, EmailSenderImpl};
 use invitation::TAUS_WORDLIST;
@@ -6,10 +6,14 @@ use keys::GameNightKeys;
 use rocket::fairing::{self, Fairing};
 use rocket::figment::Figment;
 use rocket::fs::FileServer;
+use rocket::http::uri::Absolute;
+use rocket::http::Status;
+use rocket::request::{FromRequest, Outcome};
 use rocket::serde::json::Json;
-use rocket::{error, get, launch, routes, Build, Config, Rocket};
+use rocket::{async_trait, error, get, launch, routes, Build, Config, Request, Rocket};
 use rocket_db_pools::{sqlx::SqlitePool, Database, Pool};
 use rocket_dyn_templates::{context, Template};
+use serde::Deserialize;
 use template::{PageBuilder, PageType};
 use users::User;
 
@@ -85,6 +89,22 @@ fn get_wordlist() -> Json<Vec<&'static str>> {
 #[derive(Debug, Database)]
 #[database("sqlite")]
 pub(crate) struct GameNightDatabase(SqlitePool);
+
+#[derive(Debug, Deserialize)]
+#[serde(transparent)]
+pub(crate) struct UrlPrefix<'a>(pub(crate) Absolute<'a>);
+
+#[async_trait]
+impl<'r> FromRequest<'r> for UrlPrefix<'r> {
+    type Error = rocket::figment::Error;
+
+    async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
+        match request.rocket().figment().extract_inner("url_prefix") {
+            Ok(value) => Outcome::Success(UrlPrefix(value)),
+            Err(e) => Outcome::Failure((Status::InternalServerError, e)),
+        }
+    }
+}
 
 fn invite_admin_user() -> impl Fairing {
     fairing::AdHoc::try_on_ignite("Invite Admin User", |rocket| {

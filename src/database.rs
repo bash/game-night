@@ -32,6 +32,8 @@ pub(crate) trait Repository: Send {
 
     async fn get_user_by_id(&mut self, user_id: UserId) -> Result<Option<User>>;
 
+    async fn get_user_by_email(&mut self, email: &str) -> Result<Option<User>>;
+
     async fn add_verification_code(&mut self, code: &EmailVerificationCode) -> Result<()>;
 
     async fn has_verification_code(&mut self, email_address: &str) -> Result<bool>;
@@ -115,6 +117,14 @@ impl Repository for SqliteRepository {
     async fn get_user_by_id(&mut self, user_id: UserId) -> Result<Option<User>> {
         let invitation = sqlx::query_as("SELECT rowid, * FROM users WHERE rowid = ?1")
             .bind(user_id)
+            .fetch_optional(self.0.deref_mut())
+            .await?;
+        Ok(invitation)
+    }
+
+    async fn get_user_by_email(&mut self, email: &str) -> Result<Option<User>> {
+        let invitation = sqlx::query_as("SELECT rowid, * FROM users WHERE email_address = ?1")
+            .bind(email)
             .fetch_optional(self.0.deref_mut())
             .await?;
         Ok(invitation)

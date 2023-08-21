@@ -46,12 +46,28 @@ impl<'r> FromRequest<'r> for PageBuilder<'r> {
     }
 }
 
-#[derive(Debug, Copy, Clone, Serialize)]
+#[derive(Debug, Copy, Clone, Serialize, Default)]
 #[serde(rename_all = "snake_case")]
 pub(crate) enum PageType {
+    #[default]
     Home,
     Invite,
     Register,
     Poll,
     Play,
+}
+
+impl<'r> TryFrom<Origin<'r>> for PageType {
+    type Error = ();
+
+    fn try_from(value: Origin<'r>) -> Result<Self, Self::Error> {
+        match value.path().as_str() {
+            "/" => Ok(Self::Home),
+            "/invite" => Ok(Self::Invite),
+            "/register" => Ok(Self::Register),
+            "/poll" => Ok(Self::Poll),
+            "/play" => Ok(Self::Play),
+            _ => Err(()),
+        }
+    }
 }
