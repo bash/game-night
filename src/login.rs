@@ -8,18 +8,26 @@ use rand::Rng;
 use rocket::http::uri::Origin;
 use rocket::http::CookieJar;
 use rocket::response::{self, Debug, Redirect, Responder};
-use rocket::{catch, get, post, uri, Request, Response};
+use rocket::{catch, catchers, get, post, routes, uri, Catcher, Request, Response, Route};
+
+pub(crate) fn routes() -> Vec<Route> {
+    routes![login, login_page, login_with_token, logout]
+}
+
+pub(crate) fn catchers() -> Vec<Catcher> {
+    catchers![redirect_to_login]
+}
 
 #[get("/login?<return>")]
-pub(crate) async fn login_page<'r>(r#return: Option<&'r str>) {}
+async fn login_page<'r>(r#return: Option<&'r str>) {}
 
 #[post("/login?<return>")]
-pub(crate) async fn login<'r>(r#return: Option<&'r str>) -> Redirect {
+async fn login<'r>(r#return: Option<&'r str>) -> Redirect {
     redirect(r#return)
 }
 
 #[get("/login-with?<token>&<return>")]
-pub(crate) async fn login_with_token<'r>(
+async fn login_with_token<'r>(
     token: &'r str,
     cookies: &'r CookieJar<'r>,
     mut repository: Box<dyn Repository>,
@@ -34,12 +42,12 @@ pub(crate) async fn login_with_token<'r>(
 }
 
 #[post("/logout")]
-pub(crate) async fn logout<'r>(cookies: &'r CookieJar<'r>) -> Logout {
+async fn logout<'r>(cookies: &'r CookieJar<'r>) -> Logout {
     cookies.remove_user_id();
     Logout
 }
 
-pub(crate) struct Logout;
+struct Logout;
 
 impl<'r> Responder<'r, 'static> for Logout {
     fn respond_to(self, request: &'r Request<'_>) -> response::Result<'static> {
@@ -50,7 +58,7 @@ impl<'r> Responder<'r, 'static> for Logout {
 }
 
 #[catch(401)]
-pub(crate) async fn redirect_to_login(request: &Request<'_>) -> Redirect {
+async fn redirect_to_login(request: &Request<'_>) -> Redirect {
     let origin = request.uri().to_string();
     Redirect::to(uri!(login_page(r#return = Some(origin))))
 }

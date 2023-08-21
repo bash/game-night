@@ -4,12 +4,11 @@ use database::SqliteRepository;
 use email::{EmailSender, EmailSenderImpl};
 use invitation::TAUS_WORDLIST;
 use keys::GameNightKeys;
-use login::{login_page, login_with_token, logout, redirect_to_login};
 use rocket::fairing::{self, Fairing};
 use rocket::figment::Figment;
 use rocket::fs::FileServer;
 use rocket::serde::json::Json;
-use rocket::{catchers, error, get, launch, routes, Build, Config, Rocket};
+use rocket::{error, get, launch, routes, Build, Config, Rocket};
 use rocket_db_pools::{sqlx::SqlitePool, Database, Pool};
 use rocket_dyn_templates::{context, Template};
 
@@ -34,15 +33,13 @@ fn rocket() -> _ {
                 get_invite_page,
                 get_register_page,
                 get_poll_page,
-                login_page,
-                login_with_token,
-                logout,
                 get_wordlist,
                 register::register
             ],
         )
+        .mount("/", login::routes())
+        .register("/", login::catchers())
         .mount("/", FileServer::from("public"))
-        .register("/", catchers![redirect_to_login])
         .attach(Template::fairing())
         .attach(GameNightDatabase::init())
         .attach(initialize_email_sender())
