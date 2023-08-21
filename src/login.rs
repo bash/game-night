@@ -5,8 +5,9 @@ use crate::emails::LoginEmail;
 use crate::template::PageBuilder;
 use crate::users::UserId;
 use crate::UrlPrefix;
-use anyhow::Error;
+use anyhow::{Error, Result};
 use chrono::{DateTime, Duration, Local};
+use lettre::message::Mailbox;
 use rand::distributions::Alphanumeric;
 use rand::Rng;
 use rocket::form::Form;
@@ -26,14 +27,20 @@ pub(crate) fn catchers() -> Vec<Catcher> {
     catchers![redirect_to_login]
 }
 
-#[get("/login?<redirect>")]
-async fn login_page<'r>(redirect: Option<&'r str>, page: PageBuilder<'r>) -> Template {
+#[get("/login?<redirect>&<success>")]
+async fn login_page<'r>(
+    redirect: Option<&'r str>,
+    success: Option<bool>,
+    page: PageBuilder<'r>,
+) -> Template {
     let page_type = redirect
         .and_then(|r| Origin::parse(r).ok())
         .and_then(|o| o.try_into().ok())
         .unwrap_or_default();
-    page.type_(page_type)
-        .render("login", context! { has_redirect: redirect.is_some() })
+    page.type_(page_type).render(
+        "login",
+        context! { has_redirect: redirect.is_some(), success },
+    )
 }
 
 #[post("/login?<redirect>", data = "<form>")]
@@ -44,8 +51,29 @@ async fn login<'r>(
     redirect: Option<&'r str>,
     form: Form<LoginData<'r>>,
 ) -> Result<Redirect, Debug<Error>> {
-    if let Some(user) = repository.get_user_by_email(form.email).await? {
+    if let Some((mailbox, email)) =
+        login_email_for(repository.as_mut(), url_prefix, &form.email, redirect).await?
+    {
+        email_sender.send(mailbox, &email).await?;
+    }
+
+    Ok(Redirect::to(uri!(login_page(
+        success = Some(true),
+        redirect = redirect
+    ))))
+}
+
+async fn login_email_for(
+    repository: &mut dyn Repository,
+    url_prefix: UrlPrefix<'_>,
+    email: &str,
+    redirect: Option<&str>,
+) -> Result<Option<(Mailbox, LoginEmail)>> {
+    if repository.has_one_time_login_token(email).await? {
+        Ok(None)
+    } else if let Some(user) = repository.get_user_by_email(email).await? {
         let token = LoginToken::generate_one_time(user.id);
+        repository.add_login_token(&token).await?;
         let login_url = uri!(
             url_prefix.0,
             login_with(token = &token.token, redirect = redirect)
@@ -54,10 +82,10 @@ async fn login<'r>(
             name: user.name.clone(),
             login_url: login_url.to_string(),
         };
-        repository.add_login_token(token).await?;
-        email_sender.send(user.mailbox()?, &email).await?;
-    };
-    todo!()
+        Ok(Some((user.mailbox()?, email)))
+    } else {
+        Ok(None)
+    }
 }
 
 #[derive(FromForm)]
@@ -74,9 +102,10 @@ async fn login_with<'r>(
 ) -> Result<Redirect, Debug<Error>> {
     if let Some(user_id) = repository.use_login_token(token).await? {
         cookies.set_user_id(user_id);
-        Ok(redirect_to(redirect))
+        Ok(redirect_to_or_root(redirect))
     } else {
-        todo!()
+        Ok(redirect_to(redirect)
+            .unwrap_or_else(|| Redirect::to(uri!(login_page(success = _, redirect = _)))))
     }
 }
 
@@ -104,18 +133,17 @@ impl<'r> Responder<'r, 'static> for Logout<'r> {
 #[catch(401)]
 async fn redirect_to_login(request: &Request<'_>) -> Redirect {
     let origin = request.uri().to_string();
-    Redirect::to(uri!(login_page(redirect = Some(origin))))
+    Redirect::to(uri!(login_page(redirect = Some(origin), success = _)))
 }
 
-fn redirect_to(redirect_url_from_query: Option<&str>) -> Redirect {
-    match parse_redirect(redirect_url_from_query) {
-        Some(redirect) => Redirect::to(redirect),
-        None => Redirect::to("/"),
-    }
+fn redirect_to_or_root(redirect_url_from_query: Option<&str>) -> Redirect {
+    redirect_to(redirect_url_from_query).unwrap_or_else(|| Redirect::to("/"))
 }
 
-fn parse_redirect<'a>(redirect: Option<&'a str>) -> Option<Origin<'static>> {
-    redirect.and_then(|r| Origin::parse_owned(r.to_string()).ok())
+fn redirect_to<'a>(redirect: Option<&'a str>) -> Option<Redirect> {
+    redirect
+        .and_then(|r| Origin::parse_owned(r.to_string()).ok())
+        .map(|uri| Redirect::to(uri))
 }
 
 #[derive(Debug, Clone, sqlx::FromRow)]

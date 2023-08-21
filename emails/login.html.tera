@@ -1,7 +1,7 @@
 {% extends 'base.html.tera' %}
 {% block content %}
 <h1>
-    Let's Get You Logged In 💪{{skin_tone}}
+    Let's Get You Logged In 🙌{{skin_tone}}
 </h1>
 
 <p>

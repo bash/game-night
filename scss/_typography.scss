@@ -73,7 +73,7 @@ a {
     margin-bottom: 1rem;
 }
 
-.error-message {
+.message {
     font-size: 1rem;
     font-family: var(--sans-serif);
     font-weight: bold;
@@ -86,11 +86,18 @@ a {
 
     > .icon {
         color: #fff;
-        background-color: #d20f39;
         border-radius: 100%;
         padding: .5em;
         line-height: 0;
         margin-right: 8px;
+    }
+
+    &.-error > .icon {
+        background-color: #d20f39;
+    }
+
+    &.-success > .icon {
+        background-color: #40a02b;
     }
 
     svg {

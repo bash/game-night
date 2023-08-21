@@ -7,12 +7,19 @@
 <form method="post">
     <p>
         {% if page.has_redirect %}
-        Accessing this page requires a user account.<br>
+            Accessing this page requires a user account.<br>
         {% endif %}
         Enter your email address below to receive a magical sign-in link ✨
     </p>
 
-    <input type="email" autocomplete="email" placeholder="awesome-person@example.com" name="email" />
+    {% if page.success %}
+        <div class="message -success">
+            <span class="icon"><svg><use href="/icons/mail-check.svg#icon"></use></svg></span>{#
+            #}<span class="label">Success! An email with the login link should arrive shortly~</span>
+        </div>
+    {% endif %}
+
+    <input type="email" autocomplete="email" placeholder="awesome-person@example.com" name="email" required />
 
     <button type="submit">Send Login Link</button>
     <a href="/invite" class="link-button">I don't have an account</a>

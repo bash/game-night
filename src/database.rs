@@ -40,7 +40,9 @@ pub(crate) trait Repository: Send {
 
     async fn use_verification_code(&mut self, code: &str, email_address: &str) -> Result<bool>;
 
-    async fn add_login_token(&mut self, token: LoginToken) -> Result<()>;
+    async fn has_one_time_login_token(&mut self, email_address: &str) -> Result<bool>;
+
+    async fn add_login_token(&mut self, token: &LoginToken) -> Result<()>;
 
     async fn use_login_token(&mut self, token: &str) -> Result<Option<UserId>>;
 }
@@ -171,18 +173,33 @@ impl Repository for SqliteRepository {
         Ok(result.rows_affected() >= 1)
     }
 
-    async fn add_login_token(&mut self, token: LoginToken) -> Result<()> {
+    async fn add_login_token(&mut self, token: &LoginToken) -> Result<()> {
         sqlx::query(
             "INSERT INTO login_tokens (type, token, user_id, valid_until)
              VALUES (?1, ?2, ?3, ?4)",
         )
-        .bind(&token.type_)
+        .bind(token.type_)
         .bind(&token.token)
-        .bind(&token.user_id)
-        .bind(&token.valid_until)
+        .bind(token.user_id)
+        .bind(token.valid_until)
         .execute(self.0.deref_mut())
         .await?;
         Ok(())
+    }
+
+    async fn has_one_time_login_token(&mut self, email_address: &str) -> Result<bool> {
+        let token_count: i64 = sqlx::query_scalar(
+            "SELECT count(1) FROM login_tokens
+             JOIN users ON users.rowid = login_tokens.user_id
+             WHERE users.email_address = ?1
+               AND valid_until >= ?2
+               AND type = 'one_time'",
+        )
+        .bind(email_address)
+        .bind(Local::now())
+        .fetch_one(self.0.as_mut())
+        .await?;
+        Ok(token_count >= 1)
     }
 
     async fn use_login_token(&mut self, token_value: &str) -> Result<Option<UserId>> {

@@ -1,5 +1,5 @@
 {% if page.error_message %}
-    <div class="error-message">
+    <div class="message -error">
         <span class="icon"><svg><use href="/icons/alert-triangle.svg#icon"></use></svg></span>
         <span class="label"><em>*error buzzer*</em> {{page.error_message}}</span>
     </div>
