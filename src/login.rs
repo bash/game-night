@@ -18,24 +18,24 @@ pub(crate) fn catchers() -> Vec<Catcher> {
     catchers![redirect_to_login]
 }
 
-#[get("/login?<return>")]
-async fn login_page<'r>(r#return: Option<&'r str>) {}
+#[get("/login?<redirect>")]
+async fn login_page<'r>(redirect: Option<&'r str>) {}
 
-#[post("/login?<return>")]
-async fn login<'r>(r#return: Option<&'r str>) -> Redirect {
-    redirect(r#return)
+#[post("/login?<redirect>")]
+async fn login<'r>(redirect: Option<&'r str>) -> Redirect {
+    redirect_to(redirect)
 }
 
-#[get("/login-with?<token>&<return>")]
+#[get("/login-with?<token>&<redirect>")]
 async fn login_with_token<'r>(
     token: &'r str,
     cookies: &'r CookieJar<'r>,
     mut repository: Box<dyn Repository>,
-    r#return: Option<&'r str>,
+    redirect: Option<&'r str>,
 ) -> Result<Redirect, Debug<Error>> {
     if let Some(user_id) = repository.use_login_token(token).await? {
         cookies.set_user_id(user_id);
-        Ok(redirect(r#return))
+        Ok(redirect_to(redirect))
     } else {
         todo!()
     }
@@ -60,10 +60,10 @@ impl<'r> Responder<'r, 'static> for Logout {
 #[catch(401)]
 async fn redirect_to_login(request: &Request<'_>) -> Redirect {
     let origin = request.uri().to_string();
-    Redirect::to(uri!(login_page(r#return = Some(origin))))
+    Redirect::to(uri!(login_page(redirect = Some(origin))))
 }
 
-fn redirect(redirect_url_from_query: Option<&str>) -> Redirect {
+fn redirect_to(redirect_url_from_query: Option<&str>) -> Redirect {
     redirect_url_from_query
         .and_then(|r| Origin::parse_owned(r.to_string()).ok().map(Redirect::to))
         .unwrap_or_else(|| Redirect::to("/"))
