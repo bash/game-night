@@ -2,8 +2,8 @@ use crate::authentication::CookieJarExt;
 use crate::database::Repository;
 use crate::email::EmailSender;
 use crate::emails::LoginEmail;
-use crate::template::PageBuilder;
-use crate::users::UserId;
+use crate::template::{PageBuilder, PageType};
+use crate::users::{User, UserId};
 use crate::UrlPrefix;
 use anyhow::{Error, Result};
 use chrono::{DateTime, Duration, Local};
@@ -33,14 +33,17 @@ async fn login_page<'r>(
     success: Option<bool>,
     page: PageBuilder<'r>,
 ) -> Template {
-    let page_type = redirect
-        .and_then(|r| Origin::parse(r).ok())
-        .and_then(|o| o.try_into().ok())
-        .unwrap_or_default();
-    page.type_(page_type).render(
+    page.type_(page_type_from_redirect_uri(redirect)).render(
         "login",
         context! { has_redirect: redirect.is_some(), success },
     )
+}
+
+fn page_type_from_redirect_uri(redirect: Option<&str>) -> PageType {
+    redirect
+        .and_then(|r| Origin::parse(r).ok())
+        .and_then(|o| o.try_into().ok())
+        .unwrap_or_default()
 }
 
 #[post("/login?<redirect>", data = "<form>")]
@@ -72,20 +75,33 @@ async fn login_email_for(
     if repository.has_one_time_login_token(email).await? {
         Ok(None)
     } else if let Some(user) = repository.get_user_by_email(email).await? {
-        let token = LoginToken::generate_one_time(user.id);
-        repository.add_login_token(&token).await?;
-        let login_url = uri!(
-            url_prefix.0,
-            login_with(token = &token.token, redirect = redirect)
-        );
-        let email = LoginEmail {
-            name: user.name.clone(),
-            login_url: login_url.to_string(),
-        };
-        Ok(Some((user.mailbox()?, email)))
+        generate_login_email(repository, url_prefix, redirect, user)
+            .await
+            .map(Some)
     } else {
         Ok(None)
     }
+}
+
+async fn generate_login_email(
+    repository: &mut dyn Repository,
+    url_prefix: UrlPrefix<'_>,
+    redirect: Option<&str>,
+    user: User,
+) -> Result<(Mailbox, LoginEmail)> {
+    let token = LoginToken::generate_one_time(user.id);
+    repository.add_login_token(&token).await?;
+
+    let login_url = uri!(
+        url_prefix.0,
+        login_with(token = &token.token, redirect = redirect)
+    );
+    let email = LoginEmail {
+        name: user.name.clone(),
+        login_url: login_url.to_string(),
+    };
+
+    Ok((user.mailbox()?, email))
 }
 
 #[derive(FromForm)]
