@@ -104,13 +104,12 @@ impl<Id> Invitation<Id> {
 }
 
 pub(crate) async fn invite_admin_user(repository: &mut dyn Repository) -> Result<()> {
-    launch_meta!(
-        "{}{}:",
-        <Paint<&str> as PaintExt>::emoji("👑 "),
-        Paint::magenta("Admin")
-    );
-
     if !repository.has_users().await? {
+        launch_meta!(
+            "{}{}:",
+            <Paint<&str> as PaintExt>::emoji("👑 "),
+            Paint::magenta("Admin")
+        );
         let invitation = get_or_create_invitation(repository).await?;
         launch_meta_!("invitation: {}", &invitation.passphrase);
     }
