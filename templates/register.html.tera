@@ -38,7 +38,6 @@
 
         <button type="submit">Neext!</button>
 
-        <script type="module" src="/js/bind-to.js"></script>
         <script type="module" src="/js/overflow-to.js"></script>
         <script type="module" src="/js/datalist.js"></script>
         {% else %}
@@ -70,6 +69,8 @@
             <input type="email" placeholder="awesome-person@example.com" name="email_address" value="{{page.form.email_address | default(value='')}}" autocomplete="email" required>
 
             <button type="submit">Neeext!</button>
+
+            <script type="module" src="/js/bind-to.js"></script>
         {% else %}
             {% if page.form.name %}
                 <input type="hidden" name="name" value="{{page.form.name | default(value='')}}">
