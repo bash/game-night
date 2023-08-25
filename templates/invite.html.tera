@@ -1,10 +1,31 @@
 {% extends 'base' %}
 
 {% block chapter_number %}One{% endblock chapter_number %}
-{% block title %}Getting Invited{% endblock title %}
+{% block title %}
+    {% if page.can_invite %}
+        Inviting Others
+    {% else %}
+        Getting Invited
+    {% endif %}
+{% endblock title %}
 
 {% block content %}
-{% if user %}
+{% if page.can_invite %}
+
+<form method="post">
+    <p>
+        Congratulations <strong>{{user.name}}</strong>!
+        You have already been invited to Tau's Game Night and you can invite others if you'd like.
+    </p>
+    <label for="lifetime">Invitation Lifetime:</label>
+    <select name="lifetime" id="lifetime">
+        <option value="short" selected>Short (1 month)</option>
+        <option value="long">Long (1 year)</option>
+    </select>
+    <button type="submit">Create Invitation</button>
+</form>
+
+{% elif user %}
     <p><em>
         Congratulations <strong>{{user.name}}</strong>! You have already been invited
         to Tau's Game Night.

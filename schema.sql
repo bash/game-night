@@ -11,6 +11,7 @@ CREATE TABLE invitations
     ( 'role' INTEGER NOT NULL
     , created_by INTEGER NULL
     , passphrase TEXT NOT NULL
+    , valid_until TEXT NULL
     , UNIQUE (passphrase)
     );
 

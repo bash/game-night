@@ -1,4 +1,4 @@
-use anyhow::{Context, Error, Result};
+use anyhow::{Context, Result};
 use database::SqliteRepository;
 use email::{EmailSender, EmailSenderImpl};
 use invitation::TAUS_WORDLIST;
@@ -36,13 +36,13 @@ fn rocket() -> _ {
             "/",
             routes![
                 get_index_page,
-                get_invite_page,
                 get_register_page,
                 get_poll_page,
                 get_wordlist,
                 register::register
             ],
         )
+        .mount("/", invitation::routes())
         .mount("/", login::routes())
         .register("/", login::catchers())
         .mount("/", FileServer::from("public"))
@@ -60,11 +60,6 @@ fn figment() -> Figment {
 #[get("/")]
 fn get_index_page(page: PageBuilder<'_>) -> Template {
     page.render("index", context! {})
-}
-
-#[get("/invite")]
-fn get_invite_page(page: PageBuilder<'_>) -> Template {
-    page.type_(PageType::Invite).render("invite", context! {})
 }
 
 #[get("/register")]

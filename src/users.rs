@@ -2,6 +2,7 @@ use anyhow::Result;
 use lettre::message::Mailbox;
 use rocket_db_pools::sqlx;
 use serde::Serialize;
+use std::ops::Deref;
 
 #[derive(Debug, Copy, Clone, sqlx::Type, Serialize)]
 #[sqlx(transparent)]
@@ -18,7 +19,7 @@ pub(crate) struct User<Id = UserId> {
     pub(crate) invited_by: Option<UserId>,
 }
 
-#[derive(Debug, Copy, Clone, sqlx::Type, Serialize)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, sqlx::Type, Serialize)]
 #[sqlx(rename_all = "lowercase")]
 pub(crate) enum Role {
     Admin,
@@ -31,5 +32,31 @@ impl<Id> User<Id> {
             Some(self.name.clone()),
             self.email_address.parse()?,
         ))
+    }
+
+    pub(crate) fn can_invite(&self) -> bool {
+        self.role == Role::Admin
+    }
+}
+
+pub(crate) struct CanInvite<T>(T);
+
+impl<T> CanInvite<T> {
+    pub(crate) fn new(inner: T) -> Self {
+        Self(inner)
+    }
+}
+
+impl<T> Deref for CanInvite<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<T> CanInvite<T> {
+    fn into_inner(self) -> T {
+        self.0
     }
 }

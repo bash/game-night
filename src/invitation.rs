@@ -1,19 +1,73 @@
 use crate::database::Repository;
-use crate::users::{Role, User, UserId};
-use anyhow::Result;
+use crate::template::{PageBuilder, PageType};
+use crate::users::{CanInvite, Role, User, UserId};
+use anyhow::{Error, Result};
+use chrono::{DateTime, Duration, Local};
 use rand::prelude::*;
+use rocket::form::Form;
 use rocket::log::PaintExt;
-use rocket::{launch_meta, launch_meta_};
+use rocket::response::Debug;
+use rocket::{get, launch_meta, launch_meta_, post, routes, FromForm, FromFormField, Route};
+use rocket_dyn_templates::{context, Template};
+use serde::Serialize;
 use sqlx::database::{HasArguments, HasValueRef};
 use sqlx::encode::IsNull;
 use sqlx::sqlite::SqliteArgumentValue;
 use sqlx::{Database, Decode, Encode, Sqlite};
-use std::error::Error;
 use std::fmt;
 use yansi::Paint;
 
 mod wordlist;
 pub(crate) use self::wordlist::*;
+
+pub(crate) fn routes() -> Vec<Route> {
+    routes![invite_page, generate_invitation]
+}
+
+#[get("/invite")]
+fn invite_page(page: PageBuilder<'_>, user: Option<User>) -> Template {
+    let can_invite = user.map(|u| u.can_invite()).unwrap_or_default();
+    page.type_(PageType::Invite)
+        .render("invite", context! { can_invite })
+}
+
+#[post("/invite", data = "<form>")]
+async fn generate_invitation(
+    page: PageBuilder<'_>,
+    mut repository: Box<dyn Repository>,
+    form: Form<GenerateInvitationData>,
+    user: CanInvite<User>,
+) -> Result<Template, Debug<Error>> {
+    let lifetime: Duration = form.lifetime.into();
+    let valid_until = Local::now() + lifetime;
+    let invitation = Invitation::generate(Role::Guest, Some(user.id), Some(valid_until));
+    let invitation = repository.add_invitation(invitation).await?;
+
+    Ok(page
+        .type_(PageType::Invite)
+        .render("invitation", context! { passphrase: invitation.passphrase }))
+}
+
+#[derive(Debug, FromForm)]
+struct GenerateInvitationData {
+    lifetime: InvitationLifetime,
+}
+
+#[derive(Debug, Clone, Copy, FromFormField)]
+enum InvitationLifetime {
+    Short,
+    Long,
+}
+
+impl From<InvitationLifetime> for Duration {
+    fn from(value: InvitationLifetime) -> Self {
+        use InvitationLifetime::*;
+        match value {
+            Short => Duration::days(30),
+            Long => Duration::days(365),
+        }
+    }
+}
 
 #[derive(Debug, Copy, Clone, sqlx::Type)]
 #[sqlx(transparent)]
@@ -26,6 +80,7 @@ pub(crate) struct Invitation<Id = InvitationId> {
     pub(crate) role: Role,
     pub(crate) created_by: Option<UserId>,
     pub(crate) passphrase: Passphrase,
+    pub(crate) valid_until: Option<DateTime<Local>>,
 }
 
 impl Invitation<()> {
@@ -35,11 +90,13 @@ impl Invitation<()> {
             role: self.role,
             created_by: self.created_by,
             passphrase: self.passphrase,
+            valid_until: self.valid_until,
         }
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
+#[serde(transparent)]
 pub(crate) struct Passphrase(pub(crate) Vec<String>);
 
 impl fmt::Display for Passphrase {
@@ -54,7 +111,7 @@ where
 {
     fn decode(
         value: <DB as HasValueRef<'r>>::ValueRef,
-    ) -> Result<Passphrase, Box<dyn Error + 'static + Send + Sync>> {
+    ) -> Result<Passphrase, Box<dyn std::error::Error + 'static + Send + Sync>> {
         Ok(Self(
             <&str as Decode<DB>>::decode(value)?
                 .split(' ')
@@ -81,11 +138,16 @@ impl sqlx::Type<Sqlite> for Passphrase {
 }
 
 impl Invitation<()> {
-    pub(crate) fn generate(role: Role, created_by: Option<UserId>) -> Self {
+    pub(crate) fn generate(
+        role: Role,
+        created_by: Option<UserId>,
+        valid_until: Option<DateTime<Local>>,
+    ) -> Self {
         Invitation {
             id: (),
             role,
             created_by,
+            valid_until,
             passphrase: generate_passphrase(),
         }
     }
@@ -122,7 +184,7 @@ async fn get_or_create_invitation(repository: &mut dyn Repository) -> Result<Inv
         Some(invitation) => invitation,
         None => {
             repository
-                .add_invitation(Invitation::generate(Role::Admin, None))
+                .add_invitation(Invitation::generate(Role::Admin, None, None))
                 .await?
         }
     })

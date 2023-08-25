@@ -8,11 +8,12 @@ form {
     justify-items: start;
     gap: var(--form-field-spacing);
 
-    input:not([size]) {
+    input:not([size]), select {
         justify-self: stretch;
     }
 
-    button[type=submit] {
+    button[type=submit],
+    .link-button.-submit {
         margin-top: 30px;
     }
 
@@ -20,7 +21,7 @@ form {
         margin-bottom: 0;
     }
 
-    input + p {
+    :is(input, select) + p {
         margin-top: 30px;
     }
 }
@@ -31,13 +32,29 @@ button {
 }
 
 button, .link-button {
-    &::before {
+    &:not(.-icon)::before {
         content: '→ ';
         font-family: var(--sans-serif);
     }
+
+    &.-icon {
+        display: inline-flex;
+        align-items: center;
+        grid-gap: 4px;
+
+        > svg {
+            display: inline;
+            width: 1em;
+            height: 1em;
+        }
+
+        > :is(svg, span) {
+            vertical-align: middle;
+        }
+    }
 }
 
-input {
+input, select {
     font-family: var(--sans-serif);
     font-weight: bold;
     text-align: center;
@@ -63,6 +80,13 @@ input {
     @media (prefers-color-scheme: dark) {
         background-color: color-mix(in srgb, var(--accent-color), #000 85%);
     }
+}
+
+input:read-only {
+    background-image: url(/icons/readonly-input.svg);
+    background-position: right 10px center;
+    background-repeat: no-repeat;
+    background-size: 1rem auto;
 }
 
 fieldset {

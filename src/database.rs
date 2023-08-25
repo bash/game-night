@@ -53,11 +53,12 @@ pub(crate) struct SqliteRepository(pub(crate) SqliteConnection);
 impl Repository for SqliteRepository {
     async fn add_invitation(&mut self, invitation: Invitation<()>) -> Result<Invitation> {
         let result = sqlx::query(
-            "INSERT INTO invitations (role, created_by, passphrase)
-             VALUES (?1, ?2, ?3)",
+            "INSERT INTO invitations (role, created_by, valid_until, passphrase)
+             VALUES (?1, ?2, ?3, ?4)",
         )
         .bind(invitation.role)
         .bind(invitation.created_by)
+        .bind(invitation.valid_until)
         .bind(&invitation.passphrase)
         .execute(self.0.deref_mut())
         .await?;
@@ -77,10 +78,15 @@ impl Repository for SqliteRepository {
         &mut self,
         passphrase: &Passphrase,
     ) -> Result<Option<Invitation>> {
-        let invitation = sqlx::query_as("SELECT rowid, * FROM invitations WHERE passphrase = ?1")
-            .bind(passphrase)
-            .fetch_optional(self.0.deref_mut())
-            .await?;
+        let invitation = sqlx::query_as(
+            "SELECT rowid, * FROM invitations
+             WHERE passphrase = ?1
+               AND (valid_until IS NULL OR valid_until >= ?2)",
+        )
+        .bind(passphrase)
+        .bind(Local::now())
+        .fetch_optional(self.0.deref_mut())
+        .await?;
         Ok(invitation)
     }
 

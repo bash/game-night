@@ -1,0 +1,39 @@
+{% extends 'base' %}
+
+{% block chapter_number %}One{% endblock chapter_number %}
+{% block title %}Inviting Others{% endblock title %}
+
+{% block content %}
+
+<form>
+    <p>Here's your invitation:</p>
+
+    <fieldset>
+        {% for word in page.passphrase %}
+            <input type="text" value="{{word}}" readonly>
+        {% endfor %}
+    </fieldset>
+
+    <button type="button" class="-icon" data-copy-to-clipboard="{{page.passphrase | join(sep=' ')}}" data-icon="/icons/clipboard-copy.svg">
+        <svg><use href="/icons/clipboard-copy.svg#icon" /></svg>
+        <span>Copy to Clipboard</span>
+    </button>
+    <a class="link-button -submit" href="/invite">Create another invitation</a>
+</form>
+
+<script type="module">
+    for (const target of document.querySelectorAll('[data-copy-to-clipboard]')) {
+        const labelElement = target.querySelector('span')
+        const label = labelElement.innerText
+        let resetLabelTimer
+
+        target.addEventListener('click', async () => {
+            await navigator.clipboard.writeText(target.dataset.copyToClipboard)
+            clearTimeout(resetLabelTimer)
+            labelElement.innerText = "Copied!"
+            resetLabelTimer = setTimeout(() => labelElement.innerText = label, 1_000)
+        })
+    }
+</script>
+
+{% endblock content %}
