@@ -35,7 +35,7 @@
     <main id="main">
         <header>
             <div class="chapter-number">
-                Chapter {% block chapter_number %}{% endblock chapter_number %}
+                Chapter {{chapter_number}}
             </div>
             <h1>
                 {% block title %}

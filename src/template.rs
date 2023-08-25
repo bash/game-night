@@ -26,7 +26,13 @@ impl<'r> PageBuilder<'r> {
     ) -> Template {
         Template::render(
             name,
-            context! { user: &self.user, uri: self.uri, page_type: self.type_, page: context },
+            context! {
+                user: &self.user,
+                uri: self.uri,
+                page_type: self.type_,
+                chapter_number: self.type_.chapter_number(),
+                page: context
+            },
         )
     }
 }
@@ -55,6 +61,19 @@ pub(crate) enum PageType {
     Register,
     Poll,
     Play,
+}
+
+impl PageType {
+    fn chapter_number(self) -> &'static str {
+        use PageType::*;
+        match self {
+            Home => "Zero",
+            Invite => "One",
+            Register => "Two",
+            Poll => "Three",
+            Play => "Four",
+        }
+    }
 }
 
 impl<'r> TryFrom<Origin<'r>> for PageType {

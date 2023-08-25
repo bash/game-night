@@ -1,6 +1,5 @@
 {% extends 'base' %}
 
-{% block chapter_number %}Two{% endblock chapter_number %}
 {% block title %}Invited{% endblock title %}
 
 {% block content %}

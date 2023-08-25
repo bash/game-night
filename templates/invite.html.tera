@@ -1,6 +1,5 @@
 {% extends 'base' %}
 
-{% block chapter_number %}One{% endblock chapter_number %}
 {% block title %}
     {% if page.can_invite %}
         Inviting Others

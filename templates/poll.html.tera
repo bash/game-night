@@ -1,6 +1,5 @@
 {% extends 'base' %}
 
-{% block chapter_number %}Three{% endblock chapter_number %}
 {% block title %}Poll{% endblock title %}
 
 {% block content %}

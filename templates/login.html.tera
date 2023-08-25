@@ -1,6 +1,5 @@
 {% extends 'base' %}
 
-{% block chapter_number %}x{% endblock chapter_number %}
 {% block title %}Login{% endblock title %}
 
 {% block content %}
