@@ -37,10 +37,15 @@
     color-scheme: light dark;
     accent-color: var(--accent-color);
     scrollbar-color: var(--accent-color) transparent;
-    background-color: #fff8f1;
+    background-color: var(--background-color);
+    color: var(--text-color);
+
+    --text-color: #000;
+    --background-color: #fff8f1;
 
     @media (prefers-color-scheme: dark) {
-        background-color: #121212;
+        --text-color: #fff;
+        --background-color: #121212;
     }
 
     @media (prefers-contrast: more) {

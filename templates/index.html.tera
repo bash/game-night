@@ -1,7 +1,7 @@
 {% extends 'base' %}
 
 {% block chapter_number %}Zero{% endblock chapter_number %}
-{% block title %}Tau's<br>Game Night{% endblock title %}
+{% block title %}Tau's<br><span class="_invert">Game Night</span>{% endblock title %}
 
 {% block content %}
 <p>
