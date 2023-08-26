@@ -27,7 +27,8 @@ em {
 }
 
 .page {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(5, var(--card-width));
     flex-wrap: wrap;
     justify-content: center;
     align-content: center;
@@ -39,29 +40,25 @@ em {
     }
 }
 
+.guide {
+    width: var(--card-width);
+    height: 4mm;
+    border-right: var(--guidelines-thickness) dashed #000;
+    border-left: var(--guidelines-thickness) dashed #000;
+
+    &.-top { border-top: var(--guidelines-thickness) dashed #000; }
+    &.-bottom { border-bottom: var(--guidelines-thickness) dashed #000; }
+}
+
 .card-box {
+    display: flex;
     width: var(--card-width);
     height: var(--card-height);
-    position: relative;
-
-    &::before {
-        content: '';
-        width: var(--card-width);
-        height: var(--card-height);
-        border: var(--guidelines-thickness) dashed #000;
-    }
-
-    &::before,
-    > .background {
-        position: absolute;
-        top: 0;
-        left: 0;
-    }
 
     > .background {
         width: var(--card-width);
         height: var(--card-height);
-        border-radius: 6mm;
+        // border-radius: 6mm;
         // This would be better with a conic-gradient, but FF does not support it for printing:
         // https://bugzilla.mozilla.org/show_bug.cgi?id=1617039
         --card-background: url(/print/card-background.png);
