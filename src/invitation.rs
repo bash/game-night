@@ -43,9 +43,13 @@ async fn generate_invitation(
     let invitation = Invitation::generate(Role::Guest, Some(user.id), Some(valid_until));
     let invitation = repository.add_invitation(invitation).await?;
 
-    Ok(page
-        .type_(PageType::Invite)
-        .render("invitation", context! { passphrase: invitation.passphrase }))
+    Ok(page.type_(PageType::Invite).render(
+        "invitation",
+        context! {
+            passphrase: invitation.passphrase,
+            lifetime: form.lifetime
+        },
+    ))
 }
 
 #[derive(Debug, FromForm)]
@@ -53,7 +57,8 @@ struct GenerateInvitationData {
     lifetime: InvitationLifetime,
 }
 
-#[derive(Debug, Clone, Copy, FromFormField)]
+#[derive(Debug, Clone, Copy, FromFormField, Serialize)]
+#[serde(rename_all = "snake_case")]
 enum InvitationLifetime {
     Short,
     Long,

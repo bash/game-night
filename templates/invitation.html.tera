@@ -4,7 +4,7 @@
 
 {% block content %}
 
-<form>
+<form method="post">
     <p>Here's your invitation:</p>
 
     <fieldset>
@@ -17,7 +17,9 @@
         <svg><use href="/icons/clipboard-copy.svg#icon" /></svg>
         <span>Copy to Clipboard</span>
     </button>
-    <a class="link-button -submit" href="/invite">Create another invitation</a>
+
+    <input type="hidden" name="lifetime" value="{{page.lifetime}}" />
+    <button type="submit">Generate another invitation</button>
 </form>
 
 <script type="module">

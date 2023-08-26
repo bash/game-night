@@ -21,7 +21,7 @@
         <option value="short" selected>Short (1 month)</option>
         <option value="long">Long (1 year)</option>
     </select>
-    <button type="submit">Create Invitation</button>
+    <button type="submit">Generate Invitation</button>
 </form>
 
 {% elif user %}
