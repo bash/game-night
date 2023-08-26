@@ -1,14 +1,15 @@
 SCSS_FILES := $(shell find scss -name '*.scss')
 MAIN_CSS := public/main.css
+PRINT_CSS := public/print.css
 SHELL := $(shell which bash)
 
 .ONESHELL:
 .PHONY: all clean recreate-db
 
-all: $(MAIN_CSS)
+all: $(MAIN_CSS) $(PRINT_CSS)
 
 clean:
-	rm -f $(MAIN_CSS)
+	rm -f $(MAIN_CSS) $(PRINT_CSS)
 
 watch:
 	@while true; do
@@ -22,3 +23,6 @@ recreate-db:
 
 $(MAIN_CSS): $(SCSS_FILES)
 	sass scss/main.scss $@ --embed-source-map
+
+$(PRINT_CSS): $(SCSS_FILES)
+	sass scss/print.scss $@ --embed-source-map

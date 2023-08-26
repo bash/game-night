@@ -1,0 +1,153 @@
+@import '_fonts';
+@import '_reset';
+
+@page {
+    size: A4 landscape;
+    margin: 0;
+}
+
+:root {
+    --card-width: 54mm;
+    --card-height: 85mm;
+    --guidelines-thickness: .1mm;
+}
+
+body {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+
+    @media not print {
+        gap: 20px;
+    }
+}
+
+em {
+    font-style: italic;
+}
+
+.page {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-content: center;
+    width: 297mm;
+    height: 210mm;
+
+    @media not print {
+        border: 2px dashed currentColor;
+    }
+}
+
+.card-box {
+    width: var(--card-width);
+    height: var(--card-height);
+    position: relative;
+
+    &::before {
+        content: '';
+        width: var(--card-width);
+        height: var(--card-height);
+        border: var(--guidelines-thickness) dashed #000;
+    }
+
+    &::before,
+    > .background {
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
+
+    > .background {
+        width: var(--card-width);
+        height: var(--card-height);
+        border-radius: 6mm;
+        // This would be better with a conic-gradient, but FF does not support it for printing:
+        // https://bugzilla.mozilla.org/show_bug.cgi?id=1617039
+        --card-background: url(/print/card-background.png);
+        background-image: var(--card-background);
+        background-size: 100% auto;
+
+        &.-mirrored {
+            --card-background: url(/print/card-background-mirrored.png);
+        }
+    }
+
+    &.-front > .background {
+        padding: 1mm;
+    }
+}
+
+.card-back {
+    background-color: #fff;
+    padding: 1mm;
+    background-clip: content-box;
+    width: 100%;
+    height: 100%;
+    border-radius: 6.5mm;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.card-logo {
+    text-align: center;
+    line-height: 1.5;
+    font-size: 15pt;
+    font-family: 'Inter', sans-serif;
+    font-weight: bold;
+
+    > .inverted {
+        color: #fff;
+        background-color: #000;
+        padding: 1mm 2mm;
+    }
+}
+
+.card-front {
+    display: flex;
+    flex-direction: column;
+    background-color: #fff;
+    margin: 3mm;
+    width: calc(100% - 6mm);
+    height: calc(100% - 6mm);
+    border-radius: 6.5mm;
+}
+
+.card-title {
+    color: transparent;
+    background-image: var(--card-background);
+    background-position: -3mm -3mm;
+    background-size: var(--card-width) auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    text-align: center;
+    font-size: 15pt;
+    font-family: 'Inter', sans-serif;
+    padding: 6mm 0 3mm 0;
+}
+
+.card-text {
+    font-size: 10pt;
+    font-family: 'Vollkorn', serif;
+    text-align: center;
+}
+
+.card-text + .card-text {
+    margin-top: 3mm;
+}
+
+.secret-words {
+    flex-grow: 1;
+    border: .4mm solid #000;
+    border-radius: 2mm;
+    margin: 3mm 4mm 6mm 4mm;
+    display: flex;
+    justify-content: center;
+    align-content: center;
+    flex-wrap: wrap;
+    font-family: 'Inter', sans-serif;
+    font-size: 10pt;
+    line-height: 1.5;
+}
