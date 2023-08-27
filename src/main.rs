@@ -38,6 +38,7 @@ fn rocket() -> _ {
                 get_index_page,
                 get_register_page,
                 get_poll_page,
+                get_play_page,
                 get_wordlist,
                 register::register
             ],
@@ -72,8 +73,12 @@ fn get_register_page(page: PageBuilder<'_>) -> Template {
 
 #[get("/poll")]
 fn get_poll_page(page: PageBuilder<'_>, _user: User) -> Template {
-    page.type_(PageType::Poll)
-        .render("poll", context! { step: "invitation_code" })
+    page.type_(PageType::Poll).render("poll", context! {})
+}
+
+#[get("/play")]
+fn get_play_page(page: PageBuilder<'_>, _user: User) -> Template {
+    page.type_(PageType::Play).render("play", context! {})
 }
 
 #[get("/_api/wordlist")]
