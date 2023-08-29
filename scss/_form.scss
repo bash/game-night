@@ -8,7 +8,10 @@ form {
     justify-items: start;
     gap: var(--form-field-spacing);
 
-    input:not([size]), select {
+
+    input:not([size]),
+    select,
+    fieldset {
         justify-self: stretch;
     }
 
@@ -75,6 +78,17 @@ input, select {
         border-color: var(--accent-color);
     }
 
+    &:read-only {
+        background-image: url(/icons/readonly-input.svg);
+        background-position: right 10px center;
+        background-repeat: no-repeat;
+        background-size: 1rem auto;
+    }
+
+    &:not([size]) {
+        min-width: 0;
+    }
+
     background-color: color-mix(in srgb, var(--accent-color), #fff 90%);
 
     @media (prefers-color-scheme: dark) {
@@ -82,17 +96,14 @@ input, select {
     }
 }
 
-input:read-only {
-    background-image: url(/icons/readonly-input.svg);
-    background-position: right 10px center;
-    background-repeat: no-repeat;
-    background-size: 1rem auto;
-}
-
 fieldset {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: var(--form-field-spacing);
+
+    @media (max-width: 500px) {
+        grid-template-columns: 100%;
+    }
 }
 
 ::placeholder {
