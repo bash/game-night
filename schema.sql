@@ -3,6 +3,7 @@ CREATE TABLE users
     , 'role' INTEGER NOT NULL
     , email_address TEXT NOT NULL
     , invited_by INTEGER NULL
+    , campaign TEXT NULL
     -- , FOREIGN KEY (invited_by) REFERENCES users(rowid)
     , UNIQUE (email_address)
     );

@@ -17,6 +17,7 @@ pub(crate) struct User<Id = UserId> {
     pub(crate) role: Role,
     pub(crate) email_address: String,
     pub(crate) invited_by: Option<UserId>,
+    pub(crate) campaign: Option<String>,
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, sqlx::Type, Serialize)]

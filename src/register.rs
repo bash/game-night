@@ -28,13 +28,14 @@ macro_rules! unwrap_or_return {
     };
 }
 
-#[post("/register", data = "<form>")]
+#[post("/register?<campaign>", data = "<form>")]
 pub(crate) async fn register(
     cookies: &CookieJar<'_>,
     form: Form<RegisterForm<'_>>,
     mut repository: Box<dyn Repository>,
     email_sender: &State<Box<dyn EmailSender>>,
     page: PageBuilder<'_>,
+    campaign: Option<&str>,
 ) -> Result<Either<Template, Redirect>, Debug<Error>> {
     let form = form.into_inner();
     let page = page.type_(PageType::Register);
@@ -56,7 +57,7 @@ pub(crate) async fn register(
     );
 
     let user_id = unwrap_or_return!(
-        email_verification_step(repository.as_mut(), &form, invitation, user_details).await?,
+        email_verification_step(repository.as_mut(), &form, invitation, user_details, campaign).await?,
         error_message => Ok(Left(page.render(
             "register",
             context! { step: "verify_email", error_message, form },
@@ -131,13 +132,17 @@ async fn email_verification_step(
     form: &RegisterForm<'_>,
     invitation: Invitation,
     user_details: UserDetails,
+    campaign: Option<&str>,
 ) -> Result<StepResult<UserId>> {
     if let Pending(e) = use_verification_code(repository, form, &user_details).await? {
         return Ok(Pending(e));
     };
 
     let user_id = repository
-        .add_user(invitation.clone(), new_user(invitation, user_details))
+        .add_user(
+            invitation.clone(),
+            new_user(invitation, user_details, campaign),
+        )
         .await?;
     Ok(Complete(user_id))
 }
@@ -157,8 +162,12 @@ async fn use_verification_code(
     }
 }
 
-fn new_user(invitation: Invitation, user_details: UserDetails) -> User<()> {
-    invitation.to_user(user_details.name, user_details.email_address.to_string())
+fn new_user(invitation: Invitation, user_details: UserDetails, campaign: Option<&str>) -> User<()> {
+    invitation.to_user(
+        user_details.name,
+        user_details.email_address.to_string(),
+        campaign.map(|c| c.to_owned()),
+    )
 }
 
 enum StepResult<T> {

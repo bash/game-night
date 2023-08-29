@@ -98,13 +98,14 @@ impl Repository for SqliteRepository {
             .await?;
         if delete_result.rows_affected() >= 1 {
             let insert_result = sqlx::query(
-                "INSERT INTO users (name, role, email_address, invited_by)
-                 VALUES (?1, ?2, ?3, ?4)",
+                "INSERT INTO users (name, role, email_address, invited_by, campaign)
+                 VALUES (?1, ?2, ?3, ?4, ?5)",
             )
             .bind(user.name)
             .bind(user.role)
             .bind(user.email_address)
             .bind(user.invited_by)
+            .bind(user.campaign)
             .execute(&mut transaction)
             .await?;
             transaction.commit().await?;

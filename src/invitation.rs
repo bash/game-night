@@ -159,13 +159,19 @@ impl Invitation<()> {
 }
 
 impl<Id> Invitation<Id> {
-    pub(crate) fn to_user(&self, name: String, email_address: String) -> User<()> {
+    pub(crate) fn to_user(
+        &self,
+        name: String,
+        email_address: String,
+        campaign: Option<String>,
+    ) -> User<()> {
         User {
             id: (),
             name,
             email_address,
             role: self.role,
             invited_by: self.created_by,
+            campaign,
         }
     }
 }
