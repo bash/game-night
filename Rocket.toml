@@ -5,7 +5,7 @@ url_prefix = "http://localhost:8000"
 url = "database.sqlite"
 
 [default.email]
-sender = "Tau's Game Night <game-night@tau.soy>"
+sender = "Tau's Game Night <game-night@tau.garden>"
 smtp_server = "localhost"
 smtp_port = 1025
 smtp_tls = "none" # or: "required"
