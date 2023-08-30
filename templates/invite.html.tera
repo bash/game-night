@@ -22,6 +22,7 @@
         <option value="long">Long (1 year)</option>
     </select>
     <button type="submit">Generate Invitation</button>
+    <button type="submit" formaction="{{page.batch_invite_uri}}">Generate Invitation Cards</button>
 </form>
 
 {% elif user %}

@@ -7,7 +7,7 @@ use rand::prelude::*;
 use rocket::form::Form;
 use rocket::log::PaintExt;
 use rocket::response::Debug;
-use rocket::{get, launch_meta, launch_meta_, post, routes, FromForm, FromFormField, Route};
+use rocket::{get, launch_meta, launch_meta_, post, routes, uri, FromForm, FromFormField, Route};
 use rocket_dyn_templates::{context, Template};
 use serde::Serialize;
 use sqlx::database::{HasArguments, HasValueRef};
@@ -19,16 +19,24 @@ use yansi::Paint;
 
 mod wordlist;
 pub(crate) use self::wordlist::*;
+mod batch;
 
 pub(crate) fn routes() -> Vec<Route> {
-    routes![invite_page, generate_invitation]
+    routes![
+        invite_page,
+        generate_invitation,
+        batch::invite,
+        batch::cards
+    ]
 }
 
 #[get("/invite")]
 fn invite_page(page: PageBuilder<'_>, user: Option<User>) -> Template {
     let can_invite = user.map(|u| u.can_invite()).unwrap_or_default();
-    page.type_(PageType::Invite)
-        .render("invite", context! { can_invite })
+    page.type_(PageType::Invite).render(
+        "invite",
+        context! { can_invite, batch_invite_uri: uri!(batch::invite) },
+    )
 }
 
 #[post("/invite", data = "<form>")]

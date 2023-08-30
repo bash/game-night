@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="/print.css">
+</head>
+<body>
+    {% for cards in pages %}
+        {% if loop.index % 2 == 0 %}
+            {% set even_page = true %}
+        {% else %}
+            {% set even_page = false %}
+        {% endif %}
+        <section class="page">
+            <div class="guide -bottom"></div>
+            <div class="guide -bottom"></div>
+            <div class="guide -bottom"></div>
+            <div class="guide -bottom"></div>
+            <div class="guide -bottom"></div>
+            {% for passphrase in cards %}
+                {% if even_page %}
+                    {% include "cards/back" %}
+                {% else %}
+                    {% include "cards/front" %}
+                {% endif %}
+                {% if loop.index % 3 == 0 %}
+                    <div class="guide -top -bottom"></div>
+                    <div class="guide -top -bottom"></div>
+                    <div class="guide -top -bottom"></div>
+                    <div class="guide -top -bottom"></div>
+                    <div class="guide -top -bottom"></div>
+                    <div class="guide -top -bottom"></div>
+                    <div class="guide -top -bottom"></div>
+                    <div class="guide -top -bottom"></div>
+                    <div class="guide -top -bottom"></div>
+                    <div class="guide -top -bottom"></div>
+                {% endif %}
+                {% if even_page %}
+                    {% include "cards/front" %}
+                {% else %}
+                    {% include "cards/back" %}
+                {% endif %}
+            {% endfor %}
+            <div class="guide -top"></div>
+            <div class="guide -top"></div>
+            <div class="guide -top"></div>
+            <div class="guide -top"></div>
+            <div class="guide -top"></div>
+        </section>
+    {% endfor %}
+</body>
+</html>
