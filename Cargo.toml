@@ -6,7 +6,7 @@ publish = false
 
 [dependencies]
 anyhow = "1.0.74"
-chrono = "0.4.26"
+chrono = { version = "0.4.26", features = ["serde"] }
 chrono-tz = "0.4"
 diceware_wordlists = "1.2.1"
 dirs = "5.0.1"
