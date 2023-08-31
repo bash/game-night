@@ -5,7 +5,7 @@ use anyhow::{Error, Result};
 use chrono::{DateTime, Duration, Local};
 use rand::prelude::*;
 use rocket::form::Form;
-use rocket::log::PaintExt;
+use rocket::log::PaintExt as _;
 use rocket::response::Debug;
 use rocket::{get, launch_meta, launch_meta_, post, routes, uri, FromForm, FromFormField, Route};
 use rocket_dyn_templates::{context, Template};
@@ -15,7 +15,7 @@ use sqlx::encode::IsNull;
 use sqlx::sqlite::SqliteArgumentValue;
 use sqlx::{Database, Decode, Encode, Sqlite};
 use std::fmt;
-use yansi::Paint;
+use yansi::Paint as _;
 
 mod wordlist;
 pub(crate) use self::wordlist::*;
@@ -186,11 +186,7 @@ impl<Id> Invitation<Id> {
 
 pub(crate) async fn invite_admin_user(repository: &mut dyn Repository) -> Result<()> {
     if !repository.has_users().await? {
-        launch_meta!(
-            "{}{}:",
-            <Paint<&str> as PaintExt>::emoji("👑 "),
-            Paint::magenta("Admin")
-        );
+        launch_meta!("{}{}:", "👑 ".emoji(), "Admin".magenta());
         let invitation = get_or_create_invitation(repository).await?;
         launch_meta_!("invitation: {}", &invitation.passphrase);
     }

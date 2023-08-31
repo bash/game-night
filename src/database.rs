@@ -9,7 +9,7 @@ use rocket::request::{FromRequest, Outcome};
 use rocket::{async_trait, Request};
 use rocket_db_pools::Connection;
 use sqlx::pool::PoolConnection;
-use sqlx::{Connection as _, Sqlite, Transaction};
+use sqlx::{Connection as _, Executor, Sqlite};
 use std::ops::DerefMut;
 
 type SqliteConnection = PoolConnection<Sqlite>;
@@ -94,7 +94,7 @@ impl Repository for SqliteRepository {
         let mut transaction = self.0.begin().await?;
         let delete_result = sqlx::query("DELETE FROM invitations WHERE rowid = ?")
             .bind(invitation.id)
-            .execute(&mut transaction)
+            .execute(&mut *transaction)
             .await?;
         if delete_result.rows_affected() >= 1 {
             let insert_result = sqlx::query(
@@ -106,7 +106,7 @@ impl Repository for SqliteRepository {
             .bind(user.email_address)
             .bind(user.invited_by)
             .bind(user.campaign)
-            .execute(&mut transaction)
+            .execute(&mut *transaction)
             .await?;
             transaction.commit().await?;
             Ok(UserId(insert_result.last_insert_rowid()))
@@ -216,10 +216,10 @@ impl Repository for SqliteRepository {
             sqlx::query_as("SELECT * FROM login_tokens WHERE token = ?1 AND valid_until >= ?2")
                 .bind(token_value)
                 .bind(Local::now())
-                .fetch_optional(&mut transaction)
+                .fetch_optional(&mut *transaction)
                 .await?;
 
-        if !is_one_time_token(&token) || delete_token(&mut transaction, token_value).await? {
+        if !is_one_time_token(&token) || delete_token(&mut *transaction, token_value).await? {
             transaction.commit().await?;
             Ok(token.map(|t| t.user_id))
         } else {
@@ -229,10 +229,13 @@ impl Repository for SqliteRepository {
     }
 }
 
-async fn delete_token(transaction: &mut Transaction<'_, Sqlite>, token: &str) -> Result<bool> {
+async fn delete_token<'c, E>(executor: E, token: &str) -> Result<bool>
+where
+    E: Executor<'c, Database = Sqlite>,
+{
     let delete_result = sqlx::query("DELETE FROM login_tokens WHERE token = ?1")
         .bind(token)
-        .execute(transaction)
+        .execute(executor)
         .await?;
     Ok(delete_result.rows_affected() >= 1)
 }
