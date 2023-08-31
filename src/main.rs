@@ -46,6 +46,7 @@ fn rocket() -> _ {
         .attach(GameNightDatabase::init())
         .attach(initialize_email_sender())
         .attach(invite_admin_user())
+        .attach(login::auto_login_fairing())
 }
 
 fn figment() -> Figment {

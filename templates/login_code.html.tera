@@ -1,0 +1,23 @@
+{% extends 'base' %}
+
+{% block title %}Login{% endblock title %}
+
+{% block content %}
+<form method="post">
+    <p>
+        Success! An email is on it's way to you~<br>
+        Enter the login code below:
+    </p>
+
+    {% if page.invalid_code %}
+        <div class="message -error">
+            <span class="icon"><svg><use href="/icons/alert-triangle.svg#icon"></use></svg></span>
+            <span class="label"><em>Hmmmmmmmmm</em> That's not a valid code, maybe it has expired? 🤔</span>
+        </div>
+    {% endif %}
+
+    <input type="number" placeholder="123456" name="code" required autocomplete="off" data-1p-ignore />
+
+    <button type="submit">Login</button>
+</form>
+{% endblock content %}
