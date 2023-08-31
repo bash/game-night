@@ -2,7 +2,7 @@ use anyhow::Result;
 use lettre::message::Mailbox;
 use rocket_db_pools::sqlx;
 use serde::Serialize;
-use std::ops::Deref;
+use std::{marker::PhantomData, ops::Deref};
 
 #[derive(Debug, Copy, Clone, sqlx::Type, Serialize)]
 #[sqlx(transparent)]
@@ -40,24 +40,39 @@ impl<Id> User<Id> {
     }
 }
 
-pub(crate) struct CanInvite<T>(T);
+pub(crate) trait UserPredicate {
+    fn is_satisfied(user: &User) -> bool;
+}
 
-impl<T> CanInvite<T> {
-    pub(crate) fn new(inner: T) -> Self {
-        Self(inner)
+pub(crate) struct AuthorizedTo<P>(User, PhantomData<P>);
+
+impl<P> AuthorizedTo<P>
+where
+    P: UserPredicate,
+{
+    pub(crate) fn new(inner: User) -> Option<Self> {
+        P::is_satisfied(&inner).then_some(Self(inner, PhantomData))
     }
 }
 
-impl<T> Deref for CanInvite<T> {
-    type Target = T;
+impl<P> Deref for AuthorizedTo<P> {
+    type Target = User;
 
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
-impl<T> CanInvite<T> {
-    fn into_inner(self) -> T {
+impl<P> AuthorizedTo<P> {
+    fn into_inner(self) -> User {
         self.0
+    }
+}
+
+pub(crate) struct Invite;
+
+impl UserPredicate for Invite {
+    fn is_satisfied(user: &User) -> bool {
+        user.can_invite()
     }
 }

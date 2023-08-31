@@ -1,5 +1,5 @@
 use crate::database::Repository;
-use crate::users::{CanInvite, User, UserId};
+use crate::users::{AuthorizedTo, User, UserId, UserPredicate};
 use anyhow::{Error, Result};
 use rocket::http::private::cookie::CookieBuilder;
 use rocket::http::{Cookie, CookieJar, SameSite, Status};
@@ -43,13 +43,13 @@ impl<'r> FromRequest<'r> for User {
 }
 
 #[async_trait]
-impl<'r> FromRequest<'r> for CanInvite<User> {
+impl<'r, P: UserPredicate> FromRequest<'r> for AuthorizedTo<P> {
     type Error = Option<Error>;
 
     async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
         let user: User = try_outcome!(request.guard().await);
-        if user.can_invite() {
-            Outcome::Success(CanInvite::new(user))
+        if let Some(result) = AuthorizedTo::new(user) {
+            Outcome::Success(result)
         } else {
             Outcome::Failure((Status::Unauthorized, None))
         }

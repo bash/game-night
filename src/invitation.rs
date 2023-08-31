@@ -1,6 +1,6 @@
 use crate::database::Repository;
 use crate::template::{PageBuilder, PageType};
-use crate::users::{CanInvite, Role, User, UserId};
+use crate::users::{AuthorizedTo, Invite, Role, User, UserId};
 use anyhow::{Error, Result};
 use chrono::{DateTime, Duration, Local};
 use rand::prelude::*;
@@ -44,7 +44,7 @@ async fn generate_invitation(
     page: PageBuilder<'_>,
     mut repository: Box<dyn Repository>,
     form: Form<GenerateInvitationData>,
-    user: CanInvite<User>,
+    user: AuthorizedTo<Invite>,
 ) -> Result<Template, Debug<Error>> {
     let lifetime: Duration = form.lifetime.into();
     let valid_until = Local::now() + lifetime;

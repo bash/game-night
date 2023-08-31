@@ -1,6 +1,6 @@
 use super::{Invitation, InvitationLifetime, Passphrase};
 use crate::database::Repository;
-use crate::users::{CanInvite, Role, User};
+use crate::users::{AuthorizedTo, Invite, Role, User};
 use anyhow::{Error, Result};
 use chrono::{Duration, Local};
 use rocket::form::FromFormField;
@@ -16,7 +16,7 @@ const INVITATIONS_PER_PAGE: usize = INVITATIONS_PER_SHEET / 2;
 
 #[post("/invite/batch")]
 pub(super) async fn invite(
-    user: CanInvite<User>,
+    user: AuthorizedTo<Invite>,
     mut repository: Box<dyn Repository>,
 ) -> Result<Redirect, Debug<Error>> {
     let invitations = save_invitations(
@@ -29,7 +29,7 @@ pub(super) async fn invite(
 }
 
 #[get("/invite/cards?<passphrases>")]
-pub(super) async fn cards(passphrases: Passphrases, _user: CanInvite<User>) -> Template {
+pub(super) async fn cards(passphrases: Passphrases, _user: AuthorizedTo<Invite>) -> Template {
     let pages: Vec<_> = passphrases.0.chunks(INVITATIONS_PER_PAGE).collect();
     Template::render("cards", context! { pages })
 }
