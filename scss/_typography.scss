@@ -55,6 +55,12 @@ em {
     padding: 0 .2em;
     display: inline-block;
     line-height: 1.5;
+
+    @media (forced-colors: active) {
+        background-color: transparent;
+        color: var(--text-color);
+        padding: 0;
+    }
 }
 
 a {
