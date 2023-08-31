@@ -12,7 +12,7 @@ use lettre::message::Mailbox;
 use rocket::form::Form;
 use rocket::http::CookieJar;
 use rocket::response::{Debug, Redirect};
-use rocket::{post, Either, FromForm, State};
+use rocket::{get, post, routes, Either, FromForm, Route, State};
 use rocket_dyn_templates::{context, Template};
 use serde::Serialize;
 use std::str::FromStr;
@@ -28,8 +28,20 @@ macro_rules! unwrap_or_return {
     };
 }
 
+pub(crate) fn routes() -> Vec<Route> {
+    routes![register_page, register]
+}
+
+#[get("/register")]
+fn register_page(page: PageBuilder<'_>) -> Template {
+    page.type_(PageType::Register).render(
+        "register",
+        context! { step: "invitation_code", form: context! {} },
+    )
+}
+
 #[post("/register?<campaign>", data = "<form>")]
-pub(crate) async fn register(
+async fn register(
     cookies: &CookieJar<'_>,
     form: Form<RegisterForm<'_>>,
     mut repository: Box<dyn Repository>,

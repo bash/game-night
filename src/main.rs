@@ -33,17 +33,9 @@ mod users;
 #[launch]
 fn rocket() -> _ {
     rocket::custom(figment())
-        .mount(
-            "/",
-            routes![
-                get_index_page,
-                get_register_page,
-                get_play_page,
-                get_wordlist,
-                register::register,
-            ],
-        )
+        .mount("/", routes![get_index_page, get_play_page, get_wordlist])
         .mount("/", invitation::routes())
+        .mount("/", register::routes())
         .mount("/", poll::routes())
         .mount("/", login::routes())
         .register("/", login::catchers())
@@ -62,14 +54,6 @@ fn figment() -> Figment {
 #[get("/")]
 fn get_index_page(page: PageBuilder<'_>) -> Template {
     page.render("index", context! {})
-}
-
-#[get("/register")]
-fn get_register_page(page: PageBuilder<'_>) -> Template {
-    page.type_(PageType::Register).render(
-        "register",
-        context! { step: "invitation_code", form: context! {} },
-    )
 }
 
 #[get("/play")]
