@@ -42,7 +42,10 @@ impl<'r> FromRequest<'r> for PageBuilder<'r> {
     type Error = Error;
 
     async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
-        let user: Option<User> = request.guard().await.unwrap();
+        let user: Option<User> = request
+            .guard()
+            .await
+            .expect("Option<T> guard is infallible");
         let uri = request.uri();
         Outcome::Success(PageBuilder {
             user,
@@ -76,17 +79,26 @@ impl PageType {
     }
 }
 
-impl<'r> TryFrom<Origin<'r>> for PageType {
+impl<'a, 'r> TryFrom<&'a Origin<'r>> for PageType {
+    type Error = ();
+
+    fn try_from(value: &'a Origin<'r>) -> Result<Self, Self::Error> {
+        use PageType::*;
+        match value.path().segments().get(0) {
+            None => Ok(Home),
+            Some("invite") => Ok(Invite),
+            Some("register") => Ok(Register),
+            Some("poll") => Ok(Poll),
+            Some("play") => Ok(Play),
+            _ => Err(()),
+        }
+    }
+}
+
+impl<'a, 'r> TryFrom<Origin<'r>> for PageType {
     type Error = ();
 
     fn try_from(value: Origin<'r>) -> Result<Self, Self::Error> {
-        match value.path().segments().get(0) {
-            None => Ok(Self::Home),
-            Some("invite") => Ok(Self::Invite),
-            Some("register") => Ok(Self::Register),
-            Some("poll") => Ok(Self::Poll),
-            Some("play") => Ok(Self::Play),
-            _ => Err(()),
-        }
+        (&value).try_into()
     }
 }

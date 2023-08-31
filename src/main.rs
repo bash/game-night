@@ -40,6 +40,7 @@ fn rocket() -> _ {
         .mount("/", poll::routes())
         .mount("/", login::routes())
         .register("/", login::catchers())
+        .register("/", authorization::catchers())
         .mount("/", FileServer::from("public"))
         .attach(Template::fairing())
         .attach(GameNightDatabase::init())

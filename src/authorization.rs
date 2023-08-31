@@ -1,11 +1,17 @@
+use crate::template::PageBuilder;
 use crate::users::User;
 use anyhow::Error;
 use rocket::http::Status;
 use rocket::outcome::try_outcome;
 use rocket::request::{FromRequest, Outcome};
-use rocket::{async_trait, Request};
+use rocket::{async_trait, catch, catchers, Catcher, Request};
+use rocket_dyn_templates::{context, Template};
 use std::marker::PhantomData;
 use std::ops::Deref;
+
+pub(crate) fn catchers() -> Vec<Catcher> {
+    catchers![forbidden]
+}
 
 pub(crate) struct AuthorizedTo<P>(User, PhantomData<P>);
 
@@ -56,4 +62,13 @@ impl UserPredicate for Invite {
     fn is_satisfied(user: &User) -> bool {
         user.can_invite()
     }
+}
+
+#[catch(403)]
+async fn forbidden(request: &Request<'_>) -> Template {
+    let page = PageBuilder::from_request(request)
+        .await
+        .expect("Page builder guard is infallible");
+    let type_ = request.uri().try_into().unwrap_or_default();
+    page.type_(type_).render("errors/403", context! {})
 }

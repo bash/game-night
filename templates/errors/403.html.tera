@@ -1,0 +1,7 @@
+{% extends 'base' %}
+
+{% block title %}No Dice! 🚫{% endblock title %}
+
+{% block content %}
+You're not authorized to view this page, sorryyyy :/
+{% endblock content %}
