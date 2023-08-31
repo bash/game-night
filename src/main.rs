@@ -25,6 +25,7 @@ mod emails;
 mod invitation;
 mod keys;
 mod login;
+mod poll;
 mod register;
 mod template;
 mod users;
@@ -37,13 +38,13 @@ fn rocket() -> _ {
             routes![
                 get_index_page,
                 get_register_page,
-                get_poll_page,
                 get_play_page,
                 get_wordlist,
-                register::register
+                register::register,
             ],
         )
         .mount("/", invitation::routes())
+        .mount("/", poll::routes())
         .mount("/", login::routes())
         .register("/", login::catchers())
         .mount("/", FileServer::from("public"))
@@ -69,11 +70,6 @@ fn get_register_page(page: PageBuilder<'_>) -> Template {
         "register",
         context! { step: "invitation_code", form: context! {} },
     )
-}
-
-#[get("/poll")]
-fn get_poll_page(page: PageBuilder<'_>, _user: User) -> Template {
-    page.type_(PageType::Poll).render("poll", context! {})
 }
 
 #[get("/play")]
