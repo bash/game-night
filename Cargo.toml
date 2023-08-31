@@ -23,6 +23,7 @@ sqlx = { version = "0.7", features = ["chrono"] }
 tera = "1.19.0"
 yansi = "1.0.0-rc"
 constcat = "0.3.0"
+url = "2.4"
 
 [patch.crates-io]
 rocket = { git = "https://github.com/bash/Rocket/", branch = "game-night" }

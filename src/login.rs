@@ -19,8 +19,17 @@ use rocket::{
 };
 use rocket_dyn_templates::{context, Template};
 
+mod auto_login;
+pub(crate) use auto_login::*;
+
 pub(crate) fn routes() -> Vec<Route> {
-    routes![login, login_page, login_with, logout]
+    routes![
+        login,
+        login_page,
+        login_with,
+        logout,
+        auto_login::auto_login_redirect
+    ]
 }
 
 pub(crate) fn catchers() -> Vec<Catcher> {
