@@ -10,7 +10,7 @@ endif
 
 
 .ONESHELL:
-.PHONY: all clean recreate-db
+.PHONY: all clean recreate-db certs run
 
 all: $(MAIN_CSS) $(PRINT_CSS)
 
@@ -26,6 +26,17 @@ watch:
 recreate-db:
 	rm -f database.sqlite
 	sqlite3 database.sqlite < schema.sql
+
+certs:
+	@mkdir -p private
+	openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes \
+		-keyout private/key.pem \
+		-out private/cert.pem \
+		-subj "/CN=localhost" \
+		-addext "subjectAltName=DNS:localhost,IP:127.0.0.1"
+
+run:
+	ROCKET_TLS={certs="private/cert.pem",key="private/key.pem"} cargo run --features tls
 
 $(MAIN_CSS): $(SCSS_FILES)
 	sass scss/main.scss $@ $(SASS_FLAGS)

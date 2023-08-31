@@ -25,6 +25,9 @@ yansi = "1.0.0-rc"
 constcat = "0.3.0"
 url = "2.4"
 
+[features]
+tls = ["rocket/tls"]
+
 [patch.crates-io]
 rocket = { git = "https://github.com/bash/Rocket/", branch = "game-night" }
 rocket_codegen = { git = "https://github.com/bash/Rocket/", branch = "game-night" }
