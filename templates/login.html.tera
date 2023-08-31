@@ -8,7 +8,7 @@
         {% if page.has_redirect %}
             Accessing this page requires a user account.<br>
         {% endif %}
-        Enter your email address below to receive a magical sign-in link ✨
+        Enter your email address below to receive a login code ✨
     </p>
 
     {% if page.success %}

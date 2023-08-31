@@ -5,7 +5,7 @@ use tera::Context;
 #[derive(Debug, Clone, Serialize)]
 pub(crate) struct LoginEmail {
     pub(crate) name: String,
-    pub(crate) login_url: String,
+    pub(crate) code: String,
 }
 
 impl EmailMessage for LoginEmail {
