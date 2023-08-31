@@ -1,6 +1,7 @@
 use super::{Invitation, InvitationLifetime, Passphrase};
+use crate::authorization::{AuthorizedTo, Invite};
 use crate::database::Repository;
-use crate::users::{AuthorizedTo, Invite, Role, User};
+use crate::users::{Role, User};
 use anyhow::{Error, Result};
 use chrono::{Duration, Local};
 use rocket::form::FromFormField;

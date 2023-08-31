@@ -1,7 +1,6 @@
 use crate::database::Repository;
-use crate::users::{AuthorizedTo, User, UserId, UserPredicate};
+use crate::users::{User, UserId};
 use anyhow::{Error, Result};
-use rocket::http::private::cookie::CookieBuilder;
 use rocket::http::{Cookie, CookieJar, SameSite, Status};
 use rocket::outcome::try_outcome;
 use rocket::request::{FromRequest, Outcome};
@@ -42,20 +41,6 @@ impl<'r> FromRequest<'r> for User {
     }
 }
 
-#[async_trait]
-impl<'r, P: UserPredicate> FromRequest<'r> for AuthorizedTo<P> {
-    type Error = Option<Error>;
-
-    async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
-        let user: User = try_outcome!(request.guard().await);
-        if let Some(result) = AuthorizedTo::new(user) {
-            Outcome::Success(result)
-        } else {
-            Outcome::Failure((Status::Forbidden, None))
-        }
-    }
-}
-
 async fn fetch_user(
     request: &Request<'_>,
     repository: &mut dyn Repository,
@@ -90,7 +75,7 @@ impl<'r> CookieJarExt for CookieJar<'r> {
 }
 
 fn user_id_cookie<'a>(value: impl Into<Cow<'a, str>>) -> Cookie<'a> {
-    CookieBuilder::new(USER_ID_COOKIE_NAME, value)
+    Cookie::build(USER_ID_COOKIE_NAME, value)
         .http_only(true)
         .secure(true)
         .permanent()

@@ -1,6 +1,7 @@
+use crate::authorization::{AuthorizedTo, Invite};
 use crate::database::Repository;
 use crate::template::{PageBuilder, PageType};
-use crate::users::{AuthorizedTo, Invite, Role, User, UserId};
+use crate::users::{Role, User, UserId};
 use anyhow::{Error, Result};
 use chrono::{DateTime, Duration, Local};
 use rand::prelude::*;

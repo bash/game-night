@@ -18,6 +18,7 @@ use template::{PageBuilder, PageType};
 use users::User;
 
 mod authentication;
+mod authorization;
 mod database;
 mod email;
 mod email_verification_code;
