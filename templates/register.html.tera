@@ -97,7 +97,7 @@
             {% include 'error_message' %}
 
             <fieldset>
-                <input type="number" name="email_verification_code" size="6" placeholder="123456" value="{{page.form.email_verification_code | default(value='')}}" autocomplete="off" data-1p-ignore required>
+                <input type="number" name="email_verification_code" size="6" placeholder="123456" value="{{page.form.email_verification_code | default(value='')}}" autocomplete="off" inputmode="numeric" data-1p-ignore required>
             </fieldset>
 
             <fieldset class="-actions">

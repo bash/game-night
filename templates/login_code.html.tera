@@ -17,7 +17,7 @@
     {% endif %}
 
     <fieldset>
-        <input type="number" placeholder="123456" size="6" name="code" required autocomplete="off" data-1p-ignore />
+        <input type="number" placeholder="123456" size="6" name="code" required autocomplete="off" inputmode="numeric" data-1p-ignore />
     </fieldset>
 
     <fieldset class="-actions">
