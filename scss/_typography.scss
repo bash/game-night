@@ -41,6 +41,11 @@ h1, h2, h3, p {
 h1 {
     font-size: 3.75rem;
     line-height: 1.2;
+
+    // This is optimized for the Game Night heading to stay on one line
+    @media (max-width: 450px) {
+        font-size: 3rem;
+    }
 }
 
 strong {
@@ -58,9 +63,8 @@ small {
 ._invert {
     background-color: var(--text-color);
     color: var(--background-color);
-    padding: 0 .2em;
+    padding: 0.15em;
     display: inline-block;
-    line-height: 1.5;
 
     @media (forced-colors: active) {
         background-color: transparent;
