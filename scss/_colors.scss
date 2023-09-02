@@ -28,10 +28,10 @@
 }
 
 @include accent-color(home, #8839ef);
-@include accent-color(invite, #1e66f5);
+@include accent-color(invite, #d20f39);
 @include accent-color(register, #40a02b);
-@include accent-color(poll, #fe640b);
-@include accent-color(play, #d20f39);
+@include accent-color(poll, #179299);
+@include accent-color(play, #04a5e5);
 
 :root {
     color-scheme: light dark;
