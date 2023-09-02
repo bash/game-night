@@ -9,19 +9,14 @@ body {
     display: grid;
     grid-template-columns: minmax(0, var(--content-max-width));
     grid-template-rows: max-content 1fr max-content;
-    min-height: 100vh;
+    min-height: 100svh;
     align-content: start;
     justify-content: center;
 }
 
 main {
     margin-trim: all;
-    padding: var(--content-padding);
-    margin-top: 40px;
-
-    @media (min-height: 700px) and (min-width: 700px) {
-        margin-top: 160px;
-    }
+    padding: calc(var(--content-padding) + 10svmin) var(--content-padding);
 }
 
 nav {
