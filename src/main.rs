@@ -1,7 +1,6 @@
 use anyhow::{Context, Result};
 use database::SqliteRepository;
 use email::{EmailSender, EmailSenderImpl};
-use invitation::TAUS_WORDLIST;
 use keys::GameNightKeys;
 use rocket::fairing::{self, Fairing};
 use rocket::figment::Figment;
@@ -9,7 +8,6 @@ use rocket::fs::FileServer;
 use rocket::http::uri::Absolute;
 use rocket::http::Status;
 use rocket::request::{FromRequest, Outcome};
-use rocket::serde::json::Json;
 use rocket::{
     async_trait, catch, catchers, error, get, launch, routes, Build, Config, Request, Rocket,
 };
@@ -36,7 +34,7 @@ mod users;
 #[launch]
 fn rocket() -> _ {
     rocket::custom(figment())
-        .mount("/", routes![get_index_page, get_play_page, get_wordlist])
+        .mount("/", routes![get_index_page, get_play_page])
         .mount("/", invitation::routes())
         .mount("/", register::routes())
         .mount("/", poll::routes())
@@ -65,11 +63,6 @@ fn get_index_page(page: PageBuilder<'_>) -> Template {
 #[get("/play")]
 fn get_play_page(page: PageBuilder<'_>, _user: User) -> Template {
     page.type_(PageType::Play).render("play", context! {})
-}
-
-#[get("/_api/wordlist")]
-fn get_wordlist() -> Json<Vec<&'static str>> {
-    Json(TAUS_WORDLIST.into_iter().map(|w| *w).collect())
 }
 
 #[catch(404)]
