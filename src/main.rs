@@ -10,7 +10,9 @@ use rocket::http::uri::Absolute;
 use rocket::http::Status;
 use rocket::request::{FromRequest, Outcome};
 use rocket::serde::json::Json;
-use rocket::{async_trait, error, get, launch, routes, Build, Config, Request, Rocket};
+use rocket::{
+    async_trait, catch, catchers, error, get, launch, routes, Build, Config, Request, Rocket,
+};
 use rocket_db_pools::{sqlx::SqlitePool, Database, Pool};
 use rocket_dyn_templates::{context, Template};
 use serde::Deserialize;
@@ -41,6 +43,7 @@ fn rocket() -> _ {
         .mount("/", login::routes())
         .register("/", login::catchers())
         .register("/", authorization::catchers())
+        .register("/", catchers![not_found])
         .mount("/", FileServer::from("public"))
         .attach(Template::fairing())
         .attach(GameNightDatabase::init())
@@ -67,6 +70,16 @@ fn get_play_page(page: PageBuilder<'_>, _user: User) -> Template {
 #[get("/_api/wordlist")]
 fn get_wordlist() -> Json<Vec<&'static str>> {
     Json(TAUS_WORDLIST.into_iter().map(|w| *w).collect())
+}
+
+#[catch(404)]
+async fn not_found(request: &Request<'_>) -> Template {
+    let page = PageBuilder::from_request(request)
+        .await
+        .expect("Page builder guard is infallible");
+    let type_ = request.uri().try_into().unwrap_or_default();
+    let path = request.uri().path().as_str();
+    page.type_(type_).render("errors/404", context! { path })
 }
 
 #[derive(Debug, Database)]
