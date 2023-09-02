@@ -1,29 +1,30 @@
-:root {
-    --form-field-spacing: 1rem;
-}
-
-form {
+fieldset {
     display: grid;
-    grid-auto-flow: row;
     justify-items: start;
-    gap: var(--form-field-spacing);
+    margin-bottom: var(--inter-block-gap-with-line-height-compensation);
 
-    input:not([size]),
-    select,
-    fieldset {
+    input[type=text],
+    input[type=email],
+    select {
         justify-self: stretch;
     }
 
-    :is(button[type=submit], .link-button.-submit):first-of-type {
-        margin-top: 30px;
+    button,
+    .link-button {
+        margin-bottom: .5rem;
     }
 
-    p {
-        margin-bottom: 0;
+    &.-actions {
+        margin-top: calc(var(--inter-block-gap) * 2);
     }
 
-    :is(input, select) + p {
-        margin-top: 30px;
+    &.-two-column {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+
+        @media (max-width: 500px) {
+            grid-template-columns: 100%;
+        }
     }
 }
 
@@ -48,32 +49,33 @@ button, .link-button {
             width: 1em;
             height: 1em;
         }
-
-        > :is(svg, span) {
-            vertical-align: middle;
-        }
     }
 }
 
-input, select {
+input[type=text],
+input[type=email],
+input[type=number],
+input[type=time],
+select {
     font-family: var(--sans-serif);
     font-weight: bold;
     text-align: center;
     padding: 8px 20px;
     border-bottom: 4px dashed currentColor;
 
-    &[type=number] {
-        appearance: textfield;
-        letter-spacing: 0.25em;
-    }
-
     @media (prefers-contrast: more) {
+        border-radius: 6px;
         border: 2px dashed currentColor;
     }
 
     &:focus-visible {
         outline: none;
         border-color: var(--accent-color);
+
+        @media (prefers-contrast: more) {
+            border: 2px solid currentColor;
+            outline: 1px solid currentColor;
+        }
     }
 
     &:not([size]) {
@@ -87,16 +89,17 @@ input, select {
     }
 }
 
-fieldset {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: var(--form-field-spacing);
-
-    @media (max-width: 500px) {
-        grid-template-columns: 100%;
-    }
+input[type=number] {
+    appearance: textfield;
+    letter-spacing: 0.25em;
 }
 
-::placeholder {
-    font-style: italic;
+.logout-form {
+    display: grid;
+    grid-template-columns: auto auto;
+    justify-content: start;
+    align-items: center;
+    gap: 1rem;
+
+    button { margin: 0 }
 }

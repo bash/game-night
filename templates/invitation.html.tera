@@ -7,19 +7,23 @@
 <form method="post">
     <p>Here's your invitation:</p>
 
-    <fieldset>
+    <fieldset class="-two-column">
         {% for word in page.passphrase %}
             <input type="text" value="{{word}}" readonly>
         {% endfor %}
+        <small>
+            <button type="button" class="-icon" data-copy-to-clipboard="{{page.passphrase | join(sep=' ')}}" data-icon="/icons/clipboard-copy.svg">
+                <svg><use href="/icons/clipboard-copy.svg#icon" /></svg>
+                <span>Copy to Clipboard</span>
+            </button>
+        </small>
     </fieldset>
 
-    <button type="button" class="-icon" data-copy-to-clipboard="{{page.passphrase | join(sep=' ')}}" data-icon="/icons/clipboard-copy.svg">
-        <svg><use href="/icons/clipboard-copy.svg#icon" /></svg>
-        <span>Copy to Clipboard</span>
-    </button>
+    <fieldset class="-actions">
+        <button type="submit">Generate another invitation</button>
+    </fieldset>
 
     <input type="hidden" name="lifetime" value="{{page.lifetime}}" />
-    <button type="submit">Generate another invitation</button>
 </form>
 
 <script type="module">

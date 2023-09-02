@@ -1,6 +1,8 @@
 :root {
     --serif: 'Vollkorn', serif;
     --sans-serif: 'Inter', sans-serif;
+    --inter-block-gap: 1.5rem;
+    --inter-block-gap-with-line-height-compensation: 1.7rem;
 }
 
 :root {
@@ -33,7 +35,7 @@ h1, h2, h3 {
 }
 
 h1, h2, h3, p {
-    margin-bottom: 1.5rem;
+    margin-bottom: var(--inter-block-gap);
 }
 
 h1 {
@@ -47,6 +49,10 @@ strong {
 
 em {
     font-style: italic;
+}
+
+small {
+    font-size: .8em;
 }
 
 ._invert {
@@ -91,6 +97,7 @@ a {
     font-size: 1rem;
     font-family: var(--sans-serif);
     font-weight: bold;
+    margin-bottom: 1rem;
 
     > .label,
     > .icon {

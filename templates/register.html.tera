@@ -4,11 +4,11 @@
 
 {% block content %}
 {% if user %}
-    <p><em>
-        Congratulations <strong>{{user.name}}</strong>! You have already been invited
+    <p>
+        <em>Congratulations <strong>{{user.name}}</strong>! You have already been invited
         to Tau's Game Night and are even signed in on this website.
-        There's no need for you to register again :)
-    </em></p>
+        There's no need for you to register again :)</em>
+    </p>
     <p>
         <a href="/poll" class="link-button">Take me to the poll!</a>
     </p>
@@ -26,7 +26,7 @@
 
         {% include 'error_message' %}
 
-        <fieldset>
+        <fieldset class="-two-column">
             <input type="text" list="wordlist" placeholder="1st word" name="words[0]" data-overflow-to="words[1]" value="{{page.form.words | default(value=[]) | nth(n=0)}}" required>
             <input type="text" list="wordlist" placeholder="2nd word" name="words[1]" data-overflow-to="words[2]" value="{{page.form.words | default(value=[]) | nth(n=1)}}" required>
             <input type="text" list="wordlist" placeholder="3rd word" name="words[2]" data-overflow-to="words[3]" value="{{page.form.words | default(value=[]) | nth(n=2)}}" required>
@@ -35,7 +35,9 @@
 
         <datalist id="wordlist" data-datalist-href="/_api/wordlist"></datalist>
 
-        <button type="submit">Neext!</button>
+        <fieldset class="-actions">
+            <button type="submit">Neext!</button>
+        </fieldset>
 
         <script type="module" src="/js/overflow-to.js"></script>
         <script type="module" src="/js/datalist.js"></script>
@@ -57,17 +59,23 @@
                 First, let's introduce ourselves. My name is Tau, and what's yours?
             </p>
 
-            <input type="text" placeholder="Name" name="name" value="{{page.form.name | default(value='')}}" required autocomplete="name">
+            <fieldset>
+                <input type="text" placeholder="Name" name="name" value="{{page.form.name | default(value='')}}" required autocomplete="name">
+            </fieldset>
 
             <p>
                 Hiiii <strong data-bind-to="name"></strong> and welcome to my game night.
-                I will need your email address to send notify you of the next game night.
+                I will need your email address to notify you when the next game night is happening.
                 I will only use it for game night related purposes–pinky promise~
             </p>
 
-            <input type="email" placeholder="awesome-person@example.com" name="email_address" value="{{page.form.email_address | default(value='')}}" autocomplete="email" required>
+            <fieldset>
+                <input type="email" placeholder="awesome-person@example.com" name="email_address" value="{{page.form.email_address | default(value='')}}" autocomplete="email" required>
+            </fieldset>
 
-            <button type="submit">Neeext!</button>
+            <fieldset class="-actions">
+                <button type="submit">Neeext!</button>
+            </fieldset>
 
             <script type="module" src="/js/bind-to.js"></script>
         {% else %}
@@ -88,9 +96,13 @@
 
             {% include 'error_message' %}
 
-            <input type="number" name="email_verification_code" size="6" placeholder="123456" value="{{page.form.email_verification_code | default(value='')}}" autocomplete="off" data-1p-ignore required>
+            <fieldset>
+                <input type="number" name="email_verification_code" size="6" placeholder="123456" value="{{page.form.email_verification_code | default(value='')}}" autocomplete="off" data-1p-ignore required>
+            </fieldset>
 
-            <button type="submit">Neeeext!</button>
+            <fieldset class="-actions">
+                <button type="submit">Neeeext!</button>
+            </fieldset>
         {% endif %}
     </form>
 {% endif %}

@@ -16,13 +16,19 @@
         Congratulations <strong>{{user.name}}</strong>!
         You have already been invited to Tau's Game Night and you can invite others if you'd like.
     </p>
-    <label for="lifetime">Invitation Lifetime:</label>
-    <select name="lifetime" id="lifetime">
-        <option value="short" selected>Short (1 month)</option>
-        <option value="long">Long (1 year)</option>
-    </select>
-    <button type="submit">Generate Invitation</button>
-    <button type="submit" formaction="{{page.batch_invite_uri}}">Generate Invitation Cards</button>
+
+    <fieldset>
+        <label for="lifetime">Invitation Lifetime:</label>
+        <select name="lifetime" id="lifetime">
+            <option value="short" selected>Short (1 month)</option>
+            <option value="long">Long (1 year)</option>
+        </select>
+    </fieldset>
+
+    <fieldset class="-actions">
+        <button type="submit">Generate Invitation</button>
+        <button type="submit" formaction="{{page.batch_invite_uri}}">Generate Invitation Cards</button>
+    </fieldset>
 </form>
 
 {% elif user %}

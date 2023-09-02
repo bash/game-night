@@ -16,8 +16,12 @@
         </div>
     {% endif %}
 
-    <input type="number" placeholder="123456" name="code" required autocomplete="off" data-1p-ignore />
+    <fieldset>
+        <input type="number" placeholder="123456" size="6" name="code" required autocomplete="off" data-1p-ignore />
+    </fieldset>
 
-    <button type="submit">Login</button>
+    <fieldset class="-actions">
+        <button type="submit">Login</button>
+    </fieldset>
 </form>
 {% endblock content %}

@@ -11,16 +11,13 @@
         Enter your email address below to receive a login code ✨
     </p>
 
-    {% if page.success %}
-        <div class="message -success">
-            <span class="icon"><svg><use href="/icons/mail-check.svg#icon"></use></svg></span>{#
-            #}<span class="label">Success! An email with the login link should arrive shortly~</span>
-        </div>
-    {% endif %}
+    <fieldset>
+        <input type="email" autocomplete="email" placeholder="awesome-person@example.com" name="email" required />
+    </fieldset>
 
-    <input type="email" autocomplete="email" placeholder="awesome-person@example.com" name="email" required />
-
-    <button type="submit">Send Login Link</button>
-    <a href="/invite" class="link-button">I don't have an account</a>
+    <fieldset class="-actions">
+        <button type="submit">Send Login Code</button>
+        <a href="/invite" class="link-button">I don't have an account</a>
+    </fieldset>
 </form>
 {% endblock content %}

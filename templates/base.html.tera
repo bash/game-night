@@ -47,11 +47,9 @@
 
     {% if user %}
         <footer>
-            <form action="/logout" method="post">
-                <div>
-                    Signed in as <strong>{{user.name}}</strong>.&nbsp;&nbsp;
-                    <button>Log out</button>
-                </div>
+            <form action="/logout" method="post" class="logout-form">
+                <span>Signed in as <strong>{{user.name}}</strong></span>
+                <button type="submit">Log out</button>
                 <input type="hidden" name="redirect" value="{{uri}}">
             </form>
         </footer>
