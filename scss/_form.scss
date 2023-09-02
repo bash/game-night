@@ -8,7 +8,6 @@ form {
     justify-items: start;
     gap: var(--form-field-spacing);
 
-
     input:not([size]),
     select,
     fieldset {
@@ -75,13 +74,6 @@ input, select {
     &:focus-visible {
         outline: none;
         border-color: var(--accent-color);
-    }
-
-    &:read-only {
-        background-image: url(/icons/readonly-input.svg);
-        background-position: right 10px center;
-        background-repeat: no-repeat;
-        background-size: 1rem auto;
     }
 
     &:not([size]) {
