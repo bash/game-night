@@ -29,6 +29,7 @@ impl<'r> PageBuilder<'r> {
             context! {
                 user: &self.user,
                 uri: self.uri,
+                path: self.uri.path().as_str(),
                 page_type: self.type_,
                 chapter_number: self.type_.chapter_number(),
                 page: context

@@ -7,10 +7,11 @@ use crate::invitation::{Invitation, Passphrase};
 use crate::template::{PageBuilder, PageType};
 use crate::users::{User, UserId};
 use anyhow::{Error, Result};
+use campaign::Campaign;
 use email_address::EmailAddress;
 use lettre::message::Mailbox;
 use rocket::form::Form;
-use rocket::http::CookieJar;
+use rocket::http::{Cookie, CookieJar, SameSite};
 use rocket::response::{Debug, Redirect};
 use rocket::{get, post, routes, Either, FromForm, Route, State};
 use rocket_dyn_templates::{context, Template};
@@ -18,6 +19,8 @@ use serde::Serialize;
 use std::str::FromStr;
 use Either::*;
 use StepResult::*;
+
+mod campaign;
 
 macro_rules! unwrap_or_return {
     ($result:expr, $e:ident => $ret:expr) => {
@@ -33,21 +36,35 @@ pub(crate) fn routes() -> Vec<Route> {
 }
 
 #[get("/register")]
-fn register_page(page: PageBuilder<'_>) -> Template {
+fn register_page(
+    cookies: &CookieJar<'_>,
+    page: PageBuilder<'_>,
+    campaign: Option<Campaign<'_>>,
+) -> Template {
+    if campaign.is_none() {
+        cookies.add(
+            Cookie::build("vary-smart", "A_cookie_for_very_smart_people")
+                .http_only(true)
+                .secure(true)
+                .same_site(SameSite::Strict)
+                .finish(),
+        );
+    }
+
     page.type_(PageType::Register).render(
         "register",
-        context! { step: "invitation_code", form: context! {} },
+        context! { step: "invitation_code", form: context! {}, is_campaign_valid: campaign.is_some(), campaign },
     )
 }
 
-#[post("/register?<campaign>", data = "<form>")]
+#[post("/register", data = "<form>")]
 async fn register(
     cookies: &CookieJar<'_>,
     form: Form<RegisterForm<'_>>,
     mut repository: Box<dyn Repository>,
     email_sender: &State<Box<dyn EmailSender>>,
     page: PageBuilder<'_>,
-    campaign: Option<&str>,
+    campaign: Campaign<'_>,
 ) -> Result<Either<Template, Redirect>, Debug<Error>> {
     let form = form.into_inner();
     let page = page.type_(PageType::Register);
@@ -56,7 +73,7 @@ async fn register(
         invitation_code_step(&form, repository.as_mut()).await?,
         error_message => Ok(Left(page.render(
             "register",
-            context! { step: "invitation_code", error_message, form },
+            context! { step: "invitation_code", error_message, form, is_campaign_valid: true, campaign },
         )))
     );
 
@@ -144,7 +161,7 @@ async fn email_verification_step(
     form: &RegisterForm<'_>,
     invitation: Invitation,
     user_details: UserDetails,
-    campaign: Option<&str>,
+    campaign: Campaign<'_>,
 ) -> Result<StepResult<UserId>> {
     if let Pending(e) = use_verification_code(repository, form, &user_details).await? {
         return Ok(Pending(e));
@@ -174,11 +191,11 @@ async fn use_verification_code(
     }
 }
 
-fn new_user(invitation: Invitation, user_details: UserDetails, campaign: Option<&str>) -> User<()> {
+fn new_user(invitation: Invitation, user_details: UserDetails, campaign: Campaign<'_>) -> User<()> {
     invitation.to_user(
         user_details.name,
         user_details.email_address.to_string(),
-        campaign.map(|c| c.to_owned()),
+        campaign.into_inner().map(|c| c.to_owned()),
     )
 }
 

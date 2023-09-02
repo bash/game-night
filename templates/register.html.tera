@@ -35,6 +35,24 @@
 
         <datalist id="wordlist" data-datalist-href="/_api/wordlist"></datalist>
 
+        {% if not page.is_campaign_valid %}
+        <p>
+            <strong>P.S.</strong>
+            You seem to have fumbled around with the URL, namely the <strong>campaign</strong> query parameter.
+            You must feel <em>prettyyyyyyyy</em> smart.
+            Here, have a cookie: 🍪
+        </p>
+        {% endif %}
+        {% if page.campaign %}
+        <p>
+            <small>
+                <strong>P.S.</strong> I'm tracking that you are registering via the «<strong>{{page.campaign}}</strong>» campaign.
+                I will only use it for—*paper rustling*—special reward purposes.
+                You can <a href="{{path}}">opt out</a> if you don't want that.
+            </small>
+        </p>
+        {% endif %}
+
         <fieldset class="-actions">
             <button type="submit">Neext!</button>
         </fieldset>

@@ -1,5 +1,6 @@
 [default]
 url_prefix = "http://localhost:8000"
+allowed_campaigns = ['super-secrit-beta', 'penis']
 
 [default.databases.sqlite]
 url = "database.sqlite"
