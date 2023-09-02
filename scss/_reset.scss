@@ -6,3 +6,8 @@
     border: none;
     background: none;
 }
+
+// Disables iOS Safari's rounding on inputs
+input, select {
+    border-radius: 0;
+}
