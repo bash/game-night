@@ -8,18 +8,24 @@ $content-padding: 30px;
 body {
     display: grid;
     grid-template-columns: minmax(0, var(--content-max-width));
+    grid-template-rows: max-content 1fr max-content;
+    min-height: 100vh;
     align-content: start;
     justify-content: center;
 }
 
 main {
     margin-trim: all;
-    padding: 0 var(--content-padding) var(--content-padding) var(--content-padding);
+    padding: var(--content-padding);
+    margin-top: 40px;
+
+    @media (min-height: 700px) and (min-width: 700px) {
+        margin-top: 160px;
+    }
 }
 
 nav {
     padding: 0 var(--content-padding);
-    margin-bottom: calc(var(--content-padding) + 40px);
 }
 
 footer {
