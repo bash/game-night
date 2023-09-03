@@ -111,7 +111,7 @@ fn invite_admin_user() -> impl Fairing {
             match try_invite_admin_user(&rocket).await {
                 Ok(_) => Ok(rocket),
                 Err(e) => {
-                    error!("{}", e);
+                    error!("{:?}", e);
                     Err(rocket)
                 }
             }
