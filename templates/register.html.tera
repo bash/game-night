@@ -85,7 +85,7 @@
             </p>
 
             <fieldset>
-                <input type="email" placeholder="awesome-person@example.com" name="email_address" value="{{page.form.email_address | default(value='')}}" autocomplete="email" required>
+                <input type="email" inputmode="email" placeholder="awesome-person@example.com" name="email_address" value="{{page.form.email_address | default(value='')}}" autocomplete="email" required>
             </fieldset>
 
             <fieldset class="-actions">

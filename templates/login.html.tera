@@ -12,7 +12,7 @@
     </p>
 
     <fieldset>
-        <input type="email" autocomplete="email" placeholder="awesome-person@example.com" name="email" required />
+        <input type="email" autocomplete="email" inputmode="email" placeholder="awesome-person@example.com" name="email" required />
     </fieldset>
 
     <fieldset class="-actions">
