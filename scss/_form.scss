@@ -1,3 +1,8 @@
+:disabled {
+    opacity: .5;
+    pointer-events: none;
+}
+
 fieldset {
     display: grid;
     justify-items: start;
@@ -32,11 +37,6 @@ fieldset {
 button {
     @extend a;
     cursor: pointer;
-
-    &:disabled {
-        opacity: .5;
-        pointer-events: none;
-    }
 }
 
 button, .link-button {
@@ -146,3 +146,5 @@ textarea {
     align-items: center;
     gap: 1rem;
 }
+
+@import 'form/_time';

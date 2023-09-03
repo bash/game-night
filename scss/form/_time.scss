@@ -1,0 +1,45 @@
+input[type=time] {
+    font-family: var(--seven-segment);
+    font-weight: bold;
+    background-color: #fff;
+    border: 2px solid #cfcfcf;
+    border-radius: 6px;
+    color: color-mix(in srgb, var(--accent-color), #000 20%);
+    line-height: 1.2;
+    font-size: 1rem;
+    padding: 6px 2px;
+    transition: opacity 125ms, border-color 125ms;
+
+    &:hover {
+        border-color: #aaaaaa;
+    }
+
+    @media (prefers-color-scheme: dark) {
+        color: var(--accent-color);
+        background-color: #000;
+        border-color: #2d2d2d;
+
+        &:hover {
+            border-color: #393939;
+        }
+    }
+
+    @media (prefers-contrast: more) {
+        color: var(--text-color);
+    }
+
+    &:focus-visible {
+        outline: none;
+        border-color: currentColor;
+    }
+
+    &::-webkit-calendar-picker-indicator {
+        margin-inline-start: 2px;
+    }
+
+    // Chrome hides the clock icon when the input is disabled,
+    // this creates an ugly blank space inside the input.
+    &:disabled::-webkit-calendar-picker-indicator {
+        visibility: visible;
+    }
+}
