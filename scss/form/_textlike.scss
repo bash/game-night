@@ -1,0 +1,41 @@
+%textlike-input {
+    font-weight: bold;
+    text-align: center;
+    border-bottom: 4px dashed currentColor;
+    --vertical-padding: 8px;
+    --horizontal-padding: 20px;
+    padding: var(--vertical-padding) var(--horizontal-padding);
+
+    @media (prefers-contrast: more) {
+        border-radius: 6px;
+        border: 2px dashed currentColor;
+    }
+
+    &:focus-visible {
+        outline: none;
+        border-color: var(--accent-color);
+
+        @media (prefers-contrast: more) {
+            border: 2px solid currentColor;
+            outline: 1px solid currentColor;
+        }
+    }
+
+    &:not([size]) {
+        min-width: 0;
+    }
+
+    &.-inline {
+        --vertical-padding: 0px; // The unit is important here so that the max() function understands that this is a length value
+        --horizontal-padding: 0px;
+        background-color: transparent;
+        border-width: 2px;
+        margin: 4px 0;
+    }
+
+    background-color: color-mix(in srgb, var(--accent-color), #fff 90%);
+
+    @media (prefers-color-scheme: dark) {
+        background-color: color-mix(in srgb, var(--accent-color), #000 85%);
+    }
+}

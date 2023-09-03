@@ -1,0 +1,26 @@
+fieldset {
+    display: grid;
+    justify-items: start;
+    margin-bottom: var(--inter-block-gap-with-line-height-compensation);
+
+    %textlike-input {
+        justify-self: stretch;
+    }
+
+    %button {
+        margin-bottom: .5rem;
+    }
+
+    &.-actions {
+        margin-top: calc(var(--inter-block-gap) * 2);
+    }
+
+    &.-two-column {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+
+        @media (max-width: 500px) {
+            grid-template-columns: 100%;
+        }
+    }
+}

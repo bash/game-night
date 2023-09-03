@@ -1,0 +1,23 @@
+button {
+    @extend a;
+    cursor: pointer;
+}
+
+%button {
+    &:not(.-icon)::before {
+        content: '→ ';
+        font-family: var(--sans-serif);
+    }
+
+    &.-icon {
+        display: inline-flex;
+        align-items: center;
+        grid-gap: 4px;
+
+        > svg {
+            display: inline;
+            width: 1em;
+            height: 1em;
+        }
+    }
+}

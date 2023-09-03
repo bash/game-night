@@ -1,0 +1,22 @@
+// Desktop Safari still styles <select>s in a weird glossy
+// style. appearance: none resets everything so we need to re-add the arrow.
+select {
+    -moz-appearance: none;
+    -webkit-appearance: none;
+    appearance: none;
+
+    --caret-width: .5em;
+    --caret-offset: max(4px, var(--horizontal-padding));
+    --caret-to-text-padding: max(4px, calc(var(--caret-offset) / 2));
+
+    // Source for the SVG trick: https://stackoverflow.com/a/57510283/6827589
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='130' fill='%23000'><polygon points='50,0 0,50 100,50'/><polygon points='0,80 100,80 50,130'/></svg>");
+    background-repeat: no-repeat;
+    background-size: var(--caret-width);
+    background-position: right var(--caret-offset) center;
+    padding-right: calc(var(--caret-offset) + var(--caret-to-text-padding) + var(--caret-width));
+
+    @media (prefers-color-scheme: dark) {
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='130' fill='%23FFF'><polygon points='50,0 0,50 100,50'/><polygon points='0,80 100,80 50,130'/></svg>");
+    }
+}
