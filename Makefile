@@ -9,9 +9,8 @@ ifeq ($(env ENABLE_SOURCE_MAPS), true)
 	SASS_FLAGS := --embed-source-map --embed-sources
 endif
 
-
 .ONESHELL:
-.PHONY: all clean recreate-db certs run publish
+.PHONY: all clean recreate-db certs run publish deploy
 
 all: $(MAIN_CSS) $(PRINT_CSS)
 
@@ -51,3 +50,6 @@ publish:
 	cargo build --release
 	cp target/release/game-night $(PUBLISH_DIR)/
 	cp -R {public,templates,emails} $(PUBLISH_DIR)/
+
+deploy: publish
+	rsync --archive --verbose --human-readable --delete $(PUBLISH_DIR)/ root@fedora-01.infra.tau.garden:/opt/game-night/bin/
