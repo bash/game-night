@@ -12,6 +12,16 @@
     <p>
         <a href="/poll" class="link-button">Take me to the poll!</a>
     </p>
+{% elif not page.is_campaign_valid %}
+    <p>
+        <strong>Helloooo there 👋</strong>
+        You seem to have fumbled around with the URL, namely the <strong>campaign</strong> query parameter.
+        You must feel <em>prettyyyyyyyy</em> smart.
+        Here, have a cookie: 🍪
+    </p>
+    <p>
+        <a href="{{path}}" class="link-button">Onward to the registration!</a>
+    </p>
 {% else %}
     <form method="post">
         {% if page.step == 'invitation_code' %}
@@ -33,14 +43,6 @@
             <input type="text" placeholder="4th word" name="words[3]" value="{{page.form.words | default(value=[]) | nth(n=3)}}" required>
         </fieldset>
 
-        {% if not page.is_campaign_valid %}
-        <p>
-            <strong>P.S.</strong>
-            You seem to have fumbled around with the URL, namely the <strong>campaign</strong> query parameter.
-            You must feel <em>prettyyyyyyyy</em> smart.
-            Here, have a cookie: 🍪
-        </p>
-        {% endif %}
         {% if page.campaign %}
         <p>
             <small>
