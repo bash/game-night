@@ -5,12 +5,14 @@ use lettre::transport::smtp::client::TlsParameters;
 use lettre::transport::smtp::AsyncSmtpTransportBuilder;
 use lettre::{AsyncTransport, Message};
 use rand::{distributions, thread_rng, Rng as _};
-use rocket::async_trait;
+use rocket::figment::value::magic::RelativePathBuf;
 use rocket::figment::Figment;
-use rocket::warn;
+use rocket::{async_trait, warn};
 use serde::Deserialize;
+use std::path::Path;
 use tera::{Context, Tera};
 
+const DEFAULT_EMAIL_TEMPLATE_DIR: &str = "emails";
 pub(crate) const EMAIL_DISPLAY_TIMEZONE: chrono_tz::Tz = chrono_tz::Europe::Zurich;
 
 type AsyncSmtpTransport = lettre::AsyncSmtpTransport<lettre::AsyncStd1Executor>;
@@ -75,6 +77,11 @@ impl EmailSenderImpl {
             .extract_inner("email")
             .context("failed to read email sender configuration")?;
         let sender = config.sender.clone();
+        let template_dir = config
+            .template_dir
+            .as_ref()
+            .map(|t| t.relative())
+            .unwrap_or_else(|| DEFAULT_EMAIL_TEMPLATE_DIR.into());
 
         let transport: AsyncSmtpTransport = config.try_into()?;
         test_connection(&transport).await;
@@ -82,7 +89,7 @@ impl EmailSenderImpl {
         Ok(Self {
             sender,
             transport,
-            tera: create_tera()?,
+            tera: create_tera(&template_dir)?,
         })
     }
 }
@@ -97,8 +104,12 @@ async fn test_connection(transport: &AsyncSmtpTransport) {
     }
 }
 
-fn create_tera() -> Result<Tera> {
-    let mut tera = Tera::new("emails/**.tera").context("failed to initialize Tera")?;
+fn create_tera(template_dir: &Path) -> Result<Tera> {
+    let templates = template_dir.join("**.tera");
+    let templates = templates
+        .to_str()
+        .context("template dir is not valid utf-8")?;
+    let mut tera = Tera::new(templates).context("failed to initialize Tera")?;
     tera.build_inheritance_chains()
         .context("failed to build tera's inheritance chain")?;
     Ok(tera)
@@ -140,6 +151,7 @@ struct EmailSenderConfig {
     smtp_port: u16,
     smtp_tls: EmailSenderTls,
     smtp_credentials: Option<EmailSenderCredentials>,
+    template_dir: Option<RelativePathBuf>,
 }
 
 impl TryFrom<EmailSenderConfig> for AsyncSmtpTransport {
