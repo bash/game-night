@@ -9,7 +9,7 @@ use rocket::http::uri::Absolute;
 use rocket::http::Status;
 use rocket::request::{FromRequest, Outcome};
 use rocket::{
-    async_trait, catch, catchers, error, get, launch, routes, Build, Config, Request, Rocket,
+    async_trait, catch, catchers, error, get, launch, routes, Build, Config, Request, Rocket, Route,
 };
 use rocket_db_pools::{sqlx::SqlitePool, Database, Pool};
 use rocket_dyn_templates::{context, Template};
@@ -42,7 +42,7 @@ fn rocket() -> _ {
         .register("/", login::catchers())
         .register("/", authorization::catchers())
         .register("/", catchers![not_found])
-        .mount("/", FileServer::from("public"))
+        .mount("/", file_server())
         .attach(Template::fairing())
         .attach(GameNightDatabase::init())
         .attach(initialize_email_sender())
@@ -53,6 +53,16 @@ fn rocket() -> _ {
 fn figment() -> Figment {
     let keys = GameNightKeys::read_or_generate().unwrap();
     Config::figment().merge(("secret_key", &keys.rocket_secret_key))
+}
+
+#[cfg(debug_assertions)]
+fn file_server() -> impl Into<Vec<Route>> {
+    FileServer::from("public")
+}
+
+#[cfg(not(debug_assertions))]
+fn file_server() -> impl Into<Vec<Route>> {
+    routes![]
 }
 
 #[get("/")]
