@@ -3,6 +3,7 @@ MAIN_CSS := public/main.css
 PRINT_CSS := public/print.css
 SHELL := $(shell which bash)
 SASS_FLAGS := --no-source-map
+PUBLISH_DIR := publish
 
 ifeq ($(env ENABLE_SOURCE_MAPS), true)
 	SASS_FLAGS := --embed-source-map --embed-sources
@@ -10,7 +11,7 @@ endif
 
 
 .ONESHELL:
-.PHONY: all clean recreate-db certs run
+.PHONY: all clean recreate-db certs run publish
 
 all: $(MAIN_CSS) $(PRINT_CSS)
 
@@ -43,3 +44,10 @@ $(MAIN_CSS): $(SCSS_FILES)
 
 $(PRINT_CSS): $(SCSS_FILES)
 	sass scss/print.scss $@ $(SASS_FLAGS)
+
+publish:
+	@rm -rf $(PUBLISH_DIR)
+	@mkdir -p $(PUBLISH_DIR)
+	cargo build --release
+	cp target/release/game-night $(PUBLISH_DIR)/
+	cp -R {public,templates,emails} $(PUBLISH_DIR)/
