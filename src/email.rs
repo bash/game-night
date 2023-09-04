@@ -5,7 +5,7 @@ use rand::{distributions, thread_rng, Rng as _};
 use rocket::async_trait;
 use rocket::figment::value::magic::RelativePathBuf;
 use rocket::figment::Figment;
-use rocket::tokio::fs::{create_dir_all, rename, OpenOptions};
+use rocket::tokio::fs::{create_dir_all, read_to_string, rename, OpenOptions};
 use rocket::tokio::io::AsyncWriteExt;
 use serde::Deserialize;
 use std::path::{Path, PathBuf};
@@ -34,6 +34,7 @@ pub(crate) trait EmailMessage: Send + Sync {
 pub(crate) struct EmailSenderImpl {
     sender: Mailbox,
     outbox_dir: PathBuf,
+    css: String,
     tera: Tera,
 }
 
@@ -44,7 +45,7 @@ impl EmailSender for EmailSenderImpl {
             .from(self.sender.clone())
             .to(recipient)
             .subject(email.subject())
-            .multipart(render_email_body(&self.tera, email)?)
+            .multipart(self.render_email_body(email)?)
             .context("failed to create email message")?;
 
         let message_id = Uuid::new_v4();
@@ -72,22 +73,6 @@ impl EmailSender for EmailSenderImpl {
     }
 }
 
-fn render_email_body(tera: &Tera, email: &dyn EmailMessage) -> Result<MultiPart> {
-    let template_name = email.template_name();
-    let mut template_context = email.template_context();
-    template_context.insert("greeting", get_random_greeting());
-    template_context.insert("skin_tone", get_random_skin_tone_modifier());
-    let html_template_name = format!("{}.html.tera", &template_name);
-    let text_template_name = format!("{}.txt.tera", &template_name);
-
-    Ok(MultiPart::alternative_plain_html(
-        tera.render(&text_template_name, &template_context)
-            .context("failed to render tera template")?,
-        tera.render(&html_template_name, &template_context)
-            .context("failed to render tera template")?,
-    ))
-}
-
 impl EmailSenderImpl {
     pub(crate) async fn from_figment(figment: &Figment) -> Result<Self> {
         let config: EmailSenderConfig = figment
@@ -102,12 +87,34 @@ impl EmailSenderImpl {
             .outbox_dir
             .map(|d| d.relative())
             .unwrap_or_else(|| DEFAULT_OUTBOX_DIR.into());
+        let mut css_file_path = template_dir.clone();
+        css_file_path.push("email.css");
 
         Ok(Self {
             sender: config.sender,
             outbox_dir,
             tera: create_tera(&template_dir)?,
+            css: read_to_string(css_file_path).await?,
         })
+    }
+
+    fn render_email_body(&self, email: &dyn EmailMessage) -> Result<MultiPart> {
+        let template_name = email.template_name();
+        let mut template_context = email.template_context();
+        template_context.insert("greeting", get_random_greeting());
+        template_context.insert("skin_tone", get_random_skin_tone_modifier());
+        template_context.insert("css", &self.css);
+        let html_template_name = format!("{}.html.tera", &template_name);
+        let text_template_name = format!("{}.txt.tera", &template_name);
+
+        Ok(MultiPart::alternative_plain_html(
+            self.tera
+                .render(&text_template_name, &template_context)
+                .context("failed to render tera template")?,
+            self.tera
+                .render(&html_template_name, &template_context)
+                .context("failed to render tera template")?,
+        ))
     }
 }
 

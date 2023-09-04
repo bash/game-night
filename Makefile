@@ -1,6 +1,7 @@
 SCSS_FILES := $(shell find scss -name '*.scss')
 MAIN_CSS := public/main.css
 PRINT_CSS := public/print.css
+EMAIL_CSS := emails/email.css
 SHELL := $(shell which bash)
 SASS_FLAGS := --no-source-map
 PUBLISH_DIR := publish
@@ -12,7 +13,7 @@ endif
 .ONESHELL:
 .PHONY: all clean recreate-db certs run publish deploy
 
-all: $(MAIN_CSS) $(PRINT_CSS)
+all: $(MAIN_CSS) $(PRINT_CSS) $(EMAIL_CSS)
 
 clean:
 	rm -f $(MAIN_CSS) $(PRINT_CSS)
@@ -43,6 +44,9 @@ $(MAIN_CSS): $(SCSS_FILES)
 
 $(PRINT_CSS): $(SCSS_FILES)
 	sass scss/print.scss $@ $(SASS_FLAGS)
+
+$(EMAIL_CSS): emails/email.scss
+	sass --no-source-map --style compressed $< $@
 
 publish:
 	@rm -rf $(PUBLISH_DIR)

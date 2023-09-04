@@ -4,3 +4,4 @@
 /private
 /publish
 /outbox
+/emails/*.css
