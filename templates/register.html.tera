@@ -12,7 +12,7 @@
     <p>
         <a href="/poll" class="link-button">Take me to the poll!</a>
     </p>
-{% elif not page.is_campaign_valid %}
+{% elif page.invalid_campaign %}
     <p>
         <strong>Helloooo there 👋</strong>
         You seem to have fumbled around with the URL, namely the <strong>campaign</strong> query parameter.

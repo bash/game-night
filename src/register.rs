@@ -53,7 +53,7 @@ fn register_page(
 
     page.type_(PageType::Register).render(
         "register",
-        context! { step: "invitation_code", form: context! {}, is_campaign_valid: campaign.is_some(), campaign },
+        context! { step: "invitation_code", form: context! {}, invalid_campaign: campaign.is_none(), campaign },
     )
 }
 
@@ -73,7 +73,7 @@ async fn register(
         invitation_code_step(&form, repository.as_mut()).await?,
         error_message => Ok(Left(page.render(
             "register",
-            context! { step: "invitation_code", error_message, form, is_campaign_valid: true, campaign },
+            context! { step: "invitation_code", error_message, form, campaign },
         )))
     );
 
