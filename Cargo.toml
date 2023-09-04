@@ -24,6 +24,7 @@ tera = "1.19.0"
 yansi = "1.0.0-rc"
 constcat = "0.3.0"
 url = "2.4"
+uuid = { version = "1.4.1", features = ["v4"] }
 
 [features]
 tls = ["rocket/tls"]

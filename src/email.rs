@@ -1,21 +1,20 @@
 use anyhow::{Context as _, Result};
 use lettre::message::{Mailbox, MultiPart};
-use lettre::transport::smtp::authentication::Credentials;
-use lettre::transport::smtp::client::TlsParameters;
-use lettre::transport::smtp::AsyncSmtpTransportBuilder;
-use lettre::{AsyncTransport, Message};
+use lettre::Message;
 use rand::{distributions, thread_rng, Rng as _};
+use rocket::async_trait;
 use rocket::figment::value::magic::RelativePathBuf;
 use rocket::figment::Figment;
-use rocket::{async_trait, warn};
+use rocket::tokio::fs::{create_dir_all, rename, OpenOptions};
+use rocket::tokio::io::AsyncWriteExt;
 use serde::Deserialize;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use tera::{Context, Tera};
+use uuid::Uuid;
 
 const DEFAULT_EMAIL_TEMPLATE_DIR: &str = "emails";
+const DEFAULT_OUTBOX_DIR: &str = "outbox";
 pub(crate) const EMAIL_DISPLAY_TIMEZONE: chrono_tz::Tz = chrono_tz::Europe::Zurich;
-
-type AsyncSmtpTransport = lettre::AsyncSmtpTransport<lettre::AsyncStd1Executor>;
 
 #[async_trait]
 pub(crate) trait EmailSender: Send + Sync {
@@ -34,7 +33,7 @@ pub(crate) trait EmailMessage: Send + Sync {
 
 pub(crate) struct EmailSenderImpl {
     sender: Mailbox,
-    transport: AsyncSmtpTransport,
+    outbox_dir: PathBuf,
     tera: Tera,
 }
 
@@ -47,11 +46,29 @@ impl EmailSender for EmailSenderImpl {
             .subject(email.subject())
             .multipart(render_email_body(&self.tera, email)?)
             .context("failed to create email message")?;
-        self.transport
-            .send(message)
-            .await
-            .context("failed to send email")
-            .map(|_| ())
+
+        let message_id = Uuid::new_v4();
+
+        create_dir_all(&self.outbox_dir).await?;
+
+        // We don't want the outbox processor to attempt to send
+        // files while we're writing them.
+        // We use the leading _ to communicate that to the `outbox` program.
+        let mut temporary_path = self.outbox_dir.clone();
+        temporary_path.push(format!("_{}.eml", message_id));
+        let mut file = OpenOptions::default()
+            .create_new(true)
+            .write(true)
+            .open(&temporary_path)
+            .await?;
+        file.write_all(&message.formatted()).await?;
+
+        // Renames are atomic, so the file is available `outbox` all at once.
+        let mut message_path = self.outbox_dir.clone();
+        message_path.push(format!("{}.eml", message_id));
+        rename(temporary_path, message_path).await?;
+
+        Ok(())
     }
 }
 
@@ -76,31 +93,21 @@ impl EmailSenderImpl {
         let config: EmailSenderConfig = figment
             .extract_inner("email")
             .context("failed to read email sender configuration")?;
-        let sender = config.sender.clone();
         let template_dir = config
             .template_dir
             .as_ref()
             .map(|t| t.relative())
             .unwrap_or_else(|| DEFAULT_EMAIL_TEMPLATE_DIR.into());
-
-        let transport: AsyncSmtpTransport = config.try_into()?;
-        test_connection(&transport).await;
+        let outbox_dir = config
+            .outbox_dir
+            .map(|d| d.relative())
+            .unwrap_or_else(|| DEFAULT_OUTBOX_DIR.into());
 
         Ok(Self {
-            sender,
-            transport,
+            sender: config.sender,
+            outbox_dir,
             tera: create_tera(&template_dir)?,
         })
-    }
-}
-
-async fn test_connection(transport: &AsyncSmtpTransport) {
-    match transport.test_connection().await {
-        Err(e) => warn!("unable to connect to configured SMTP transport:\n{}", e),
-        Ok(successful) if !successful => {
-            warn!("failed to connect to configured SMTP transport")
-        }
-        Ok(_) => {}
     }
 }
 
@@ -147,66 +154,6 @@ fn get_random_skin_tone_modifier() -> &'static str {
 #[derive(Debug, Deserialize)]
 struct EmailSenderConfig {
     sender: Mailbox,
-    smtp_server: String,
-    smtp_port: u16,
-    smtp_tls: EmailSenderTls,
-    smtp_credentials: Option<EmailSenderCredentials>,
+    outbox_dir: Option<RelativePathBuf>,
     template_dir: Option<RelativePathBuf>,
-}
-
-impl TryFrom<EmailSenderConfig> for AsyncSmtpTransport {
-    type Error = anyhow::Error;
-
-    fn try_from(config: EmailSenderConfig) -> Result<Self> {
-        Ok(AsyncSmtpTransport::relay(&config.smtp_server)
-            .context("Failed to create SMTP transport")?
-            .port(config.smtp_port)
-            .tls(config.smtp_tls.to_client_tls(config.smtp_server)?)
-            .optional_credentials(config.smtp_credentials.map(Into::into))
-            .build())
-    }
-}
-
-#[derive(Debug, Copy, Clone, Deserialize)]
-#[serde(rename_all = "snake_case")]
-enum EmailSenderTls {
-    None,
-    Required,
-}
-
-impl EmailSenderTls {
-    fn to_client_tls(self, domain: String) -> Result<lettre::transport::smtp::client::Tls> {
-        use lettre::transport::smtp::client::Tls;
-        match self {
-            EmailSenderTls::None => Ok(Tls::None),
-            EmailSenderTls::Required => Ok(Tls::Required(
-                TlsParameters::new(domain).context("Failed to create TLS parameters")?,
-            )),
-        }
-    }
-}
-
-#[derive(Debug, Deserialize)]
-struct EmailSenderCredentials {
-    username: String,
-    password: String,
-}
-
-impl From<EmailSenderCredentials> for Credentials {
-    fn from(EmailSenderCredentials { username, password }: EmailSenderCredentials) -> Self {
-        Credentials::new(username, password)
-    }
-}
-
-trait AsyncSmtpTransportBuilderExt {
-    fn optional_credentials(self, credentials: Option<Credentials>) -> Self;
-}
-
-impl AsyncSmtpTransportBuilderExt for AsyncSmtpTransportBuilder {
-    fn optional_credentials(self, credentials: Option<Credentials>) -> Self {
-        match credentials {
-            Some(credentials) => self.credentials(credentials),
-            None => self,
-        }
-    }
 }
