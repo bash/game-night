@@ -11,9 +11,10 @@ p,
 a,
 .greeting,
 .code {
-    font-size: 20px; /* rem unfortunately does not work correctly across clients :/ */
+    font-size: 20px; // rem unfortunately does not work correctly across clients :/
     line-height: 1.5;
     font-family: Vollkorn, 'Noto Serif', 'Hoefler Text', 'Times New Roman', serif;
+    font-weight: 400; // Some mail clients (like iCloud Mail on the Web) set the font-weight to 300
     // Vollkorn is the preferred font, although nobody will have it installed :)
     // Noto Serif is for Android and Linux
     // Times New Roman is for Windows and Outlook (web)
@@ -87,6 +88,12 @@ hr {
     margin-left: 0;
     margin-top: 40px;
     width: 200px;
+}
+
+// This is a weird div that iCloud Mail (Web) inserts
+// between the <body> and our content. It background-color: #fff, which breaks our dark mode :/
+.mail-message-defaults {
+    background-color: transparent;
 }
 
 // Some Mail Clients *cough* Thunderbird *cough* support the color-scheme property
