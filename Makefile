@@ -48,7 +48,7 @@ $(PRINT_CSS): $(SCSS_FILES)
 $(EMAIL_CSS): emails/email.scss
 	sass --no-source-map --style compressed $< $@
 
-publish:
+publish: all
 	@rm -rf $(PUBLISH_DIR)
 	@mkdir -p $(PUBLISH_DIR)
 	cargo build --release
