@@ -1,5 +1,5 @@
 @mixin derived-accent-colors {
-    --accent-color-softened: color-mix(in srgb, var(--accent-color), #fff 30%);
+    --accent-color-softened: color-mix(in srgb, var(--accent-color), #fff 10%);
     --accent-color-highlight-fg: color-mix(in srgb, var(--accent-color), #000 80%);
     --accent-color-highlight-bg: color-mix(in srgb, var(--accent-color), #fff 70%);
     --outline-color: color-mix(in srgb, var(--accent-color) 60%, #000);
