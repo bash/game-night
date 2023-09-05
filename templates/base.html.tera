@@ -15,20 +15,20 @@
     <a href="#main" tabindex="0" class="skip-link">Skip to content</a>
 
     <nav>
-        <a href="/" class="_home{% if page_type == 'home' %} -active{% endif %}" title="Home">
-            <svg><use href="/icons/home.svg#icon" /></svg>
+        <a href="/" class="_home{% if page_type == 'home' %} -active{% endif %}" title="Home" accesskey="h">
+            <svg role="img" aria-label="Home"><use href="/icons/home.svg#icon" aria-hidden="true" /></svg>
         </a>
         <a href="/invite" class="_invite{% if page_type == 'invite' %} -active{% endif %}" title="Get Invited">
-            <svg><use href="/icons/mail-open.svg#icon" /></svg>
+            <svg role="img" aria-label="Mail Open"><use href="/icons/mail-open.svg#icon" aria-hidden="true" /></svg>
         </a>
         <a href="/register" class="_register{% if page_type == 'register' %} -active{% endif %}" title="Register">
-            <svg><use href="/icons/clipboard-signature.svg#icon" /></svg>
+            <svg role="img" aria-label="Clipboard Signature"><use href="/icons/clipboard-signature.svg#icon" aria-hidden="true" /></svg>
         </a>
         <a href="/poll" class="_poll{% if page_type == 'poll' %} -active{% endif %}" title="Poll">
-            <svg><use href="/icons/calendar-check.svg#icon" /></svg>
+            <svg role="img" aria-label="Calendar Check"><use href="/icons/calendar-check.svg#icon" aria-hidden="true" /></svg>
         </a>
         <a href="/play" class="_play{% if page_type == 'play' %} -active{% endif %}" title="Play">
-            <svg><use href="/icons/dices.svg#icon" /></svg>
+            <svg role="img" aria-label="Dices"><use href="/icons/dices.svg#icon" aria-hidden="true" /></svg>
         </a>
     </nav>
 
