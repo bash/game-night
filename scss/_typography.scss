@@ -98,36 +98,12 @@ a {
     margin-bottom: 1rem;
 }
 
-.message {
-    font-size: 1rem;
+.error-message {
     font-family: var(--sans-serif);
+    font-size: .8rem;
     font-weight: bold;
+    background-color: color-mix(in srgb, #d20f39, var(--background-color) 70%);
+    border-radius: 8px;
+    padding: 10px;
     margin-bottom: 1rem;
-
-    > .label,
-    > .icon {
-        display: inline-block;
-        vertical-align: middle;
-    }
-
-    > .icon {
-        color: #fff;
-        border-radius: 100%;
-        padding: .5em;
-        line-height: 0;
-        margin-right: 8px;
-    }
-
-    &.-error > .icon {
-        background-color: #d20f39;
-    }
-
-    &.-success > .icon {
-        background-color: #40a02b;
-    }
-
-    svg {
-        width: 1em;
-        height: 1em;
-    }
 }

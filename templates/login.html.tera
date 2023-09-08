@@ -11,6 +11,8 @@
         Enter your email address below to receive a login code ✨
     </p>
 
+    {% include 'error_message' %}
+
     <fieldset>
         <input type="email" autocomplete="email" inputmode="email" placeholder="awesome-person@example.com" name="email" required />
     </fieldset>

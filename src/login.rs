@@ -20,6 +20,7 @@ use rocket_dyn_templates::{context, Template};
 
 mod auto_login;
 pub(crate) use auto_login::*;
+use serde::Serialize;
 mod code;
 
 pub(crate) fn routes() -> Vec<Route> {
@@ -51,28 +52,54 @@ fn page_type_from_redirect_uri(redirect: Option<&str>) -> PageType {
 }
 
 #[post("/login?<redirect>", data = "<form>")]
-async fn login<'r>(
+async fn login(
+    builder: PageBuilder<'_>,
     mut repository: Box<dyn Repository>,
     email_sender: &State<Box<dyn EmailSender>>,
-    redirect: Option<&'r str>,
-    form: Form<LoginData<'r>>,
-) -> Result<Redirect, Debug<Error>> {
+    redirect: Option<&str>,
+    form: Form<LoginData<'_>>,
+) -> Result<Login, Debug<Error>> {
     if let Some((mailbox, email)) = login_email_for(repository.as_mut(), &form.email).await? {
         email_sender.send(mailbox, &email).await?;
+        Ok(Login::success(redirect))
+    } else {
+        Ok(Login::failure(builder, redirect, form.into_inner()))
+    }
+}
+
+#[derive(Debug, Responder)]
+enum Login {
+    Success(Redirect),
+    #[response(status = 400)]
+    Failure(Template),
+}
+
+impl Login {
+    fn success(redirect: Option<&str>) -> Login {
+        Self::Success(Redirect::to(uri!(code::login_with_code_page(
+            redirect = redirect
+        ))))
     }
 
-    Ok(Redirect::to(uri!(code::login_with_code_page(
-        redirect = redirect
-    ))))
+    fn failure(builder: PageBuilder, redirect: Option<&str>, form: LoginData<'_>) -> Login {
+        let context = context! {
+            has_redirect: redirect.is_some(),
+            form,
+            error_message: "I don't know what to do with this email address, maybe you did a typo? 🤷🏻"
+        };
+        Self::Failure(
+            builder
+                .type_(page_type_from_redirect_uri(redirect))
+                .render("login", context),
+        )
+    }
 }
 
 async fn login_email_for(
     repository: &mut dyn Repository,
     email: &str,
 ) -> Result<Option<(Mailbox, LoginEmail)>> {
-    if repository.has_one_time_login_token(email).await? {
-        Ok(None)
-    } else if let Some(user) = repository.get_user_by_email(email).await? {
+    if let Some(user) = repository.get_user_by_email(email).await? {
         generate_login_email(repository, user).await.map(Some)
     } else {
         Ok(None)
@@ -94,7 +121,7 @@ async fn generate_login_email(
     Ok((user.mailbox()?, email))
 }
 
-#[derive(FromForm)]
+#[derive(Debug, FromForm, Serialize)]
 struct LoginData<'r> {
     email: &'r str,
 }
