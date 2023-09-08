@@ -1,6 +1,6 @@
 {% extends 'base' %}
 
-{% block title %}Poll{% endblock title %}
+{% block title %}Play{% endblock title %}
 
 {% block content %}
 <p>
