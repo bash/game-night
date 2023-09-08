@@ -5,7 +5,7 @@
 {% block content %}
 <p>
     A (board) game night in Zurich organized every month or so.
-    Participating requires an invitation from <a href="https://rubys.ninja">Tau</a>.
+    Participating requires an invitation from <a href="https://tau.garden">Tau</a>.
 </p>
 <p>
     <a href="/invite" class="link-button">Learn More</a>
