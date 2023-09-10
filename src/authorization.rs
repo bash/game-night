@@ -64,6 +64,14 @@ impl UserPredicate for Invite {
     }
 }
 
+pub(crate) struct ManagePoll;
+
+impl UserPredicate for ManagePoll {
+    fn is_satisfied(user: &User) -> bool {
+        user.can_manage_poll()
+    }
+}
+
 #[catch(403)]
 async fn forbidden(request: &Request<'_>) -> Template {
     let page = PageBuilder::from_request(request)
