@@ -26,6 +26,38 @@ CREATE TABLE login_tokens
     ( id INTEGER PRIMARY KEY
     , type TEXT NOT NULL
     , token TEXT NOT NULL UNIQUE
-    , user_id INTEGER NULL REFERENCES users(rowid)
+    , user_id INTEGER NULL REFERENCES users(id)
     , valid_until TEXT NOT NULL
+    );
+
+CREATE TABLE polls
+    ( id INTEGER PRIMARY KEY
+    , min_participants INTEGER NOT NULL
+    , max_participants INTEGER NOT NULL
+    , strategy TEXT NOT NULL
+    , description TEXT NOT NULL
+    , created_by INTEGER NOT NULL
+    , open_until TEXT NOT NULl
+    , closed INTEGER NOT NULL
+    , FOREIGN KEY (created_by) REFERENCES users(id)
+    , CHECK (max_participants >= min_participants)
+    , CHECK (min_participants >= 2)
+    );
+
+CREATE TABLE poll_options
+    ( id INTEGER PRIMARY KEY
+    , poll_id INTEGER NOT NULL
+    , date TEXT NOT NULL
+    , time TEXT NOT NULL
+    , FOREIGN KEY (poll_id) REFERENCES polls(id)
+    );
+
+CREATE TABLE poll_answers
+    ( id INTEGER PRIMARY KEY
+    , poll_option_id INTEGER NOT NULL
+    , user_id INTEGER NOT NULL
+    , value TEXT NOT NULL
+    , UNIQUE (poll_option_id, user_id) ON CONFLICT REPLACE
+    , FOREIGN KEY (poll_option_id) REFERENCES poll_options(id)
+    , FOREIGN KEY (user_id) REFERENCES users(rowid)
     );
