@@ -67,7 +67,7 @@ impl Repository for SqliteRepository {
 
     async fn get_admin_invitation(&mut self) -> Result<Option<Invitation>> {
         let invitation = sqlx::query_as(
-            "SELECT rowid, * FROM invitations WHERE role = 'admin' AND created_by IS NULL LIMIT 1",
+            "SELECT * FROM invitations WHERE role = 'admin' AND created_by IS NULL LIMIT 1",
         )
         .fetch_optional(self.0.deref_mut())
         .await?;
@@ -79,7 +79,7 @@ impl Repository for SqliteRepository {
         passphrase: &Passphrase,
     ) -> Result<Option<Invitation>> {
         let invitation = sqlx::query_as(
-            "SELECT rowid, * FROM invitations
+            "SELECT * FROM invitations
              WHERE passphrase = ?1
                AND (valid_until IS NULL OR valid_until >= ?2)",
         )
@@ -92,7 +92,7 @@ impl Repository for SqliteRepository {
 
     async fn add_user(&mut self, invitation: Invitation, user: User<()>) -> Result<UserId> {
         let mut transaction = self.0.begin().await?;
-        let delete_result = sqlx::query("DELETE FROM invitations WHERE rowid = ?")
+        let delete_result = sqlx::query("DELETE FROM invitations WHERE id = ?")
             .bind(invitation.id)
             .execute(&mut *transaction)
             .await?;
@@ -124,7 +124,7 @@ impl Repository for SqliteRepository {
     }
 
     async fn get_user_by_id(&mut self, user_id: UserId) -> Result<Option<User>> {
-        let invitation = sqlx::query_as("SELECT rowid, * FROM users WHERE rowid = ?1")
+        let invitation = sqlx::query_as("SELECT * FROM users WHERE id = ?1")
             .bind(user_id)
             .fetch_optional(self.0.deref_mut())
             .await?;
@@ -132,7 +132,7 @@ impl Repository for SqliteRepository {
     }
 
     async fn get_user_by_email(&mut self, email: &str) -> Result<Option<User>> {
-        let invitation = sqlx::query_as("SELECT rowid, * FROM users WHERE email_address = ?1")
+        let invitation = sqlx::query_as("SELECT * FROM users WHERE email_address = ?1")
             .bind(email)
             .fetch_optional(self.0.deref_mut())
             .await?;
@@ -197,7 +197,7 @@ impl Repository for SqliteRepository {
     async fn has_one_time_login_token(&mut self, email_address: &str) -> Result<bool> {
         let token_count: i64 = sqlx::query_scalar(
             "SELECT count(1) FROM login_tokens
-             JOIN users ON users.rowid = login_tokens.user_id
+             JOIN users ON users.id = login_tokens.user_id
              WHERE users.email_address = ?1
                AND valid_until >= ?2
                AND type = 'one_time'",

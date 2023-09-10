@@ -89,7 +89,6 @@ pub(crate) struct InvitationId(pub(crate) i64);
 
 #[derive(Debug, Clone, sqlx::FromRow)]
 pub(crate) struct Invitation<Id = InvitationId> {
-    #[sqlx(rename = "rowid")]
     pub(crate) id: Id,
     pub(crate) role: Role,
     pub(crate) created_by: Option<UserId>,

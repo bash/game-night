@@ -10,7 +10,6 @@ pub(crate) struct UserId(pub(crate) i64);
 
 #[derive(Debug, sqlx::FromRow, Serialize)]
 pub(crate) struct User<Id = UserId> {
-    #[sqlx(rename = "rowid")]
     pub(crate) id: Id,
     pub(crate) name: String,
     pub(crate) role: Role,
