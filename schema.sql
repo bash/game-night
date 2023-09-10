@@ -26,6 +26,6 @@ CREATE TABLE login_tokens
     ( id INTEGER PRIMARY KEY
     , type TEXT NOT NULL
     , token TEXT NOT NULL UNIQUE
-    , user_id INTEGER NULL
+    , user_id INTEGER NULL REFERENCES users(rowid)
     , valid_until TEXT NOT NULL
     );
