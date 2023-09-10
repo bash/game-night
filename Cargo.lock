@@ -948,6 +948,7 @@ dependencies = [
  "dirs",
  "email_address",
  "hex",
+ "itertools",
  "lettre",
  "rand",
  "rocket",
