@@ -17,6 +17,7 @@ all: $(MAIN_CSS) $(PRINT_CSS) $(EMAIL_CSS)
 
 clean:
 	rm -f $(MAIN_CSS) $(PRINT_CSS)
+	rm -rf outbox/
 
 watch:
 	@while true; do
