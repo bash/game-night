@@ -1,7 +1,7 @@
 use crate::authorization::{AuthorizedTo, ManagePoll};
 use crate::template::{PageBuilder, PageType};
 use crate::users::User;
-use rocket::{get, routes, Route};
+use rocket::{get, routes, uri, Route};
 use rocket_dyn_templates::{context, Template};
 
 pub(crate) fn routes() -> Vec<Route> {
@@ -9,8 +9,10 @@ pub(crate) fn routes() -> Vec<Route> {
 }
 
 #[get("/poll")]
-fn poll_page(page: PageBuilder<'_>, _user: User) -> Template {
-    page.type_(PageType::Poll).render("poll", context! {})
+fn poll_page(page: PageBuilder<'_>, user: User) -> Template {
+    let new_poll_uri = user.can_manage_poll().then(|| uri!(new_poll_page()));
+    page.type_(PageType::Poll)
+        .render("poll", context! { new_poll_uri })
 }
 
 #[get("/poll/new")]
