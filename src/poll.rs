@@ -17,5 +17,5 @@ fn poll_page(page: PageBuilder<'_>, user: User) -> Template {
 
 #[get("/poll/new")]
 fn new_poll_page(page: PageBuilder<'_>, _user: AuthorizedTo<ManagePoll>) -> Template {
-    todo!()
+    page.type_(PageType::Poll).render("poll/new", context! {})
 }

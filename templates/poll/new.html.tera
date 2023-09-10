@@ -1,0 +1,6 @@
+{% extends 'base' %}
+
+{% block title %}New Poll{% endblock title %}
+
+{% block content %}
+{% endblock content %}
