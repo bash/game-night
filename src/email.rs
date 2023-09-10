@@ -67,7 +67,10 @@ impl EmailSender for EmailSenderImpl {
         // Renames are atomic, so the file is available `outbox` all at once.
         let mut message_path = self.outbox_dir.clone();
         message_path.push(format!("{}.eml", message_id));
-        rename(temporary_path, message_path).await?;
+        rename(temporary_path, &message_path).await?;
+
+        #[cfg(debug_assertions)]
+        opener::open(&message_path)?;
 
         Ok(())
     }
