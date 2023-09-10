@@ -3,12 +3,12 @@ use crate::template::{PageBuilder, PageType};
 use crate::users::User;
 use chrono::{Datelike, Local, Month, NaiveDate};
 use itertools::Itertools;
-use rocket::{get, routes, uri, Route};
+use rocket::{get, post, routes, uri, Route};
 use rocket_dyn_templates::{context, Template};
 use serde::Serialize;
 
 pub(crate) fn routes() -> Vec<Route> {
-    routes![poll_page, new_poll_page]
+    routes![poll_page, new_poll_page, new_poll]
 }
 
 #[get("/poll")]
@@ -17,6 +17,9 @@ fn poll_page(page: PageBuilder<'_>, user: User) -> Template {
     page.type_(PageType::Poll)
         .render("poll", context! { new_poll_uri })
 }
+
+#[post("/poll/new")]
+fn new_poll(_user: AuthorizedTo<ManagePoll>) -> () {}
 
 #[get("/poll/new")]
 fn new_poll_page(page: PageBuilder<'_>, _user: AuthorizedTo<ManagePoll>) -> Template {
