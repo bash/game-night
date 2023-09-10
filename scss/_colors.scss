@@ -41,15 +41,18 @@
     color: var(--text-color);
 
     --text-color: #000;
+    --secondary-text-color: #989490;
     --background-color: #fff8f1;
 
     @media (prefers-color-scheme: dark) {
         --text-color: #fff;
+        --secondary-text-color: #535353;
         --background-color: #121212;
     }
 
     @media (prefers-contrast: more) {
         accent-color: #000;
+        --secondary-text-color: var(--text-color);
     }
 
     @media (prefers-color-scheme: dark) and (prefers-contrast: more) {
