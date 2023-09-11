@@ -3,7 +3,7 @@ CREATE TABLE users
     , name TEXT NOT NULL
     , 'role' INTEGER NOT NULL
     , email_address TEXT NOT NULL UNIQUE
-    , invited_by INTEGER NULL REFERENCES users(id)
+    , invited_by INTEGER NULL REFERENCES users(id) ON DELETE RESTRICT
     , campaign TEXT NULL
     );
 
@@ -26,7 +26,7 @@ CREATE TABLE login_tokens
     ( id INTEGER PRIMARY KEY
     , type TEXT NOT NULL
     , token TEXT NOT NULL UNIQUE
-    , user_id INTEGER NULL REFERENCES users(id)
+    , user_id INTEGER NULL REFERENCES users(id) ON DELETE CASCADE
     , valid_until TEXT NOT NULL
     );
 
@@ -36,27 +36,23 @@ CREATE TABLE polls
     , max_participants INTEGER NOT NULL
     , strategy TEXT NOT NULL
     , description TEXT NOT NULL
-    , created_by INTEGER NOT NULL
+    , created_by INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT
     , open_until TEXT NOT NULl
     , closed INTEGER NOT NULL
-    , FOREIGN KEY (created_by) REFERENCES users(id)
     , CHECK (max_participants >= min_participants)
     , CHECK (min_participants >= 2)
     );
 
 CREATE TABLE poll_options
     ( id INTEGER PRIMARY KEY
-    , poll_id INTEGER NOT NULL
+    , poll_id INTEGER NOT NULL REFERENCES polls(id) ON DELETE CASCADE
     , datetime TEXT NOT NULL
-    , FOREIGN KEY (poll_id) REFERENCES polls(id)
     );
 
 CREATE TABLE poll_answers
     ( id INTEGER PRIMARY KEY
-    , poll_option_id INTEGER NOT NULL
-    , user_id INTEGER NOT NULL
+    , poll_option_id INTEGER NOT NULL REFERENCES poll_options(id) ON DELETE CASCADE
+    , user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT
     , value TEXT NOT NULL
     , UNIQUE (poll_option_id, user_id) ON CONFLICT REPLACE
-    , FOREIGN KEY (poll_option_id) REFERENCES poll_options(id)
-    , FOREIGN KEY (user_id) REFERENCES users(id)
     );

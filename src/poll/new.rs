@@ -1,4 +1,4 @@
-use super::rocket_uri_macro_poll_page;
+use super::{rocket_uri_macro_poll_page, Answer, AnswerValue, Attendance};
 use super::{DateSelectionStrategy, Poll, PollOption};
 use crate::authorization::{AuthorizedTo, ManagePoll};
 use crate::database::Repository;
@@ -107,21 +107,30 @@ fn to_poll(poll: NewPollData, user: &User) -> Result<Poll<(), UserId>> {
         open_until: now + Duration::hours(poll.duration_in_hours),
         closed: false,
         created_by: user.id,
-        options: to_poll_options(poll.options.iter())?,
+        options: to_poll_options(poll.options.iter(), user)?,
     })
 }
 
 fn to_poll_options<'a>(
     options: impl Iterator<Item = &'a NewPollOption>,
+    user: &User,
 ) -> Result<Vec<PollOption<(), UserId>>> {
-    options.filter(|o| o.enabled).map(to_poll_option).collect()
+    options
+        .filter(|o| o.enabled)
+        .map(|o| to_poll_option(o, user))
+        .collect()
 }
 
-fn to_poll_option(option: &NewPollOption) -> Result<PollOption<(), UserId>> {
+fn to_poll_option(option: &NewPollOption, user: &User) -> Result<PollOption<(), UserId>> {
     Ok(PollOption {
         id: (),
         datetime: to_cet(option.date, option.time)?,
-        answers: Vec::default(),
+        // The user creating the poll is automatically added with a required attendance.
+        answers: vec![Answer {
+            id: (),
+            user: user.id,
+            value: AnswerValue::yes(Attendance::Required),
+        }],
     })
 }
 

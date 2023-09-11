@@ -252,11 +252,24 @@ impl Repository for SqliteRepository {
         .last_insert_rowid();
 
         for option in poll.options {
-            sqlx::query("INSERT INTO poll_options (poll_id, datetime) VALUES (?1, ?2)")
-                .bind(poll_id)
-                .bind(option.datetime)
+            let option_id =
+                sqlx::query("INSERT INTO poll_options (poll_id, datetime) VALUES (?1, ?2)")
+                    .bind(poll_id)
+                    .bind(option.datetime)
+                    .execute(&mut *transaction)
+                    .await?
+                    .last_insert_rowid();
+            for answer in option.answers {
+                sqlx::query(
+                    "INSERT INTO poll_answers (poll_option_id, value, user_id)
+                     VALUES (?1, ?2, ?3)",
+                )
+                .bind(option_id)
+                .bind(answer.value)
+                .bind(answer.user)
                 .execute(&mut *transaction)
                 .await?;
+            }
         }
 
         transaction.commit().await?;
