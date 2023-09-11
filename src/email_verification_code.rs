@@ -1,12 +1,12 @@
-use chrono::{DateTime, Duration, Local};
 use rand::distributions::Uniform;
 use rand::Rng;
+use time::{Duration, OffsetDateTime};
 
 #[derive(Debug, Clone, sqlx::FromRow)]
 pub(crate) struct EmailVerificationCode {
     pub(crate) code: String,
     pub(crate) email_address: String,
-    pub(crate) valid_until: DateTime<Local>,
+    pub(crate) valid_until: OffsetDateTime,
 }
 
 impl EmailVerificationCode {
@@ -14,7 +14,7 @@ impl EmailVerificationCode {
         Self {
             code: generate_code(),
             email_address,
-            valid_until: Local::now() + Duration::minutes(30),
+            valid_until: OffsetDateTime::now_utc() + Duration::minutes(30),
         }
     }
 }

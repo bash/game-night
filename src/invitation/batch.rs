@@ -3,7 +3,6 @@ use crate::authorization::{AuthorizedTo, Invite};
 use crate::database::Repository;
 use crate::users::{Role, User};
 use anyhow::{Error, Result};
-use chrono::{Duration, Local};
 use rocket::form::FromFormField;
 use rocket::http::impl_from_uri_param_identity;
 use rocket::http::uri::fmt::{Query, UriDisplay};
@@ -11,6 +10,7 @@ use rocket::response::{Debug, Redirect};
 use rocket::{get, post, uri};
 use rocket_dyn_templates::{context, Template};
 use std::fmt;
+use time::{Duration, OffsetDateTime};
 
 const INVITATIONS_PER_SHEET: usize = 10;
 const INVITATIONS_PER_PAGE: usize = INVITATIONS_PER_SHEET / 2;
@@ -20,9 +20,10 @@ pub(super) async fn invite(
     user: AuthorizedTo<Invite>,
     mut repository: Box<dyn Repository>,
 ) -> Result<Redirect, Debug<Error>> {
+    let now = OffsetDateTime::now_utc();
     let invitations = save_invitations(
         repository.as_mut(),
-        (0..INVITATIONS_PER_SHEET).map(|_| generate_invitation(&user)),
+        (0..INVITATIONS_PER_SHEET).map(|_| generate_invitation(&user, now)),
     )
     .await?;
     let passphrases = Passphrases::from_invitations(invitations.iter());
@@ -46,8 +47,8 @@ async fn save_invitations(
     Ok(result)
 }
 
-fn generate_invitation(user: &User) -> Invitation<()> {
-    let valid_until = Local::now() + Duration::from(InvitationLifetime::Long);
+fn generate_invitation(user: &User, now: OffsetDateTime) -> Invitation<()> {
+    let valid_until = now + Duration::from(InvitationLifetime::Long);
     Invitation::generate(Role::Guest, Some(user.id), Some(valid_until))
 }
 

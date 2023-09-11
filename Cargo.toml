@@ -6,8 +6,6 @@ publish = false
 
 [dependencies]
 anyhow = "1.0.74"
-chrono = { version = "0.4.26", features = ["serde"] }
-chrono-tz = "0.4"
 diceware_wordlists = "1.2.1"
 dirs = "5.0.1"
 email_address = "0.2.4"
@@ -19,7 +17,7 @@ rocket_db_pools = { version = "=0.1.0-rc.3", features = ["sqlx_sqlite"] }
 rocket_dyn_templates = { version = "=0.1.0-rc.3", features = ["tera"] }
 serde = { version = "1.0", features = ["derive"] }
 json = { package = "serde_json", version = "1.0.105" }
-sqlx = { version = "0.7", features = ["chrono"] }
+sqlx = { version = "0.7", features = ["time"] }
 tera = "1.19.0"
 yansi = "1.0.0-rc"
 constcat = "0.3.0"
@@ -27,6 +25,7 @@ url = "2.4"
 uuid = { version = "1.4.1", features = ["v4"] }
 itertools = "0.11.0"
 opener = "0.6.1"
+time = { version = "0.3.28", features = ["formatting", "serde", "local-offset", "macros"] }
 
 [features]
 tls = ["rocket/tls"]

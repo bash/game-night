@@ -3,7 +3,6 @@ use crate::database::Repository;
 use crate::template::{PageBuilder, PageType};
 use crate::users::{Role, User, UserId};
 use anyhow::{Error, Result};
-use chrono::{DateTime, Duration, Local};
 use rand::prelude::*;
 use rocket::form::Form;
 use rocket::log::PaintExt as _;
@@ -16,6 +15,7 @@ use sqlx::encode::IsNull;
 use sqlx::sqlite::SqliteArgumentValue;
 use sqlx::{Database, Decode, Encode, Sqlite};
 use std::fmt;
+use time::{Duration, OffsetDateTime};
 use yansi::Paint as _;
 
 mod wordlist;
@@ -48,7 +48,7 @@ async fn generate_invitation(
     user: AuthorizedTo<Invite>,
 ) -> Result<Template, Debug<Error>> {
     let lifetime: Duration = form.lifetime.into();
-    let valid_until = Local::now() + lifetime;
+    let valid_until = OffsetDateTime::now_utc() + lifetime;
     let invitation = Invitation::generate(Role::Guest, Some(user.id), Some(valid_until));
     let invitation = repository.add_invitation(invitation).await?;
 
@@ -93,7 +93,7 @@ pub(crate) struct Invitation<Id = InvitationId> {
     pub(crate) role: Role,
     pub(crate) created_by: Option<UserId>,
     pub(crate) passphrase: Passphrase,
-    pub(crate) valid_until: Option<DateTime<Local>>,
+    pub(crate) valid_until: Option<OffsetDateTime>,
 }
 
 impl Invitation<()> {
@@ -154,7 +154,7 @@ impl Invitation<()> {
     pub(crate) fn generate(
         role: Role,
         created_by: Option<UserId>,
-        valid_until: Option<DateTime<Local>>,
+        valid_until: Option<OffsetDateTime>,
     ) -> Self {
         Invitation {
             id: (),

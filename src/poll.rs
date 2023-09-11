@@ -1,11 +1,11 @@
 use crate::template::{PageBuilder, PageType};
 use crate::users::User;
-use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 use rocket::{get, routes, uri, Route};
 use rocket_dyn_templates::{context, Template};
 use serde::Serialize;
 use sqlx::sqlite::{SqliteTypeInfo, SqliteValueRef};
 use sqlx::{Database, Decode, Encode, Sqlite, Type};
+use time::{Date, OffsetDateTime, Time};
 
 mod new;
 
@@ -29,7 +29,7 @@ pub(crate) struct Poll<Id = i64, UserRef = User> {
     pub(crate) max_participants: u64,
     pub(crate) strategy: DateSelectionStrategy,
     pub(crate) description: String,
-    pub(crate) open_until: NaiveDateTime,
+    pub(crate) open_until: OffsetDateTime,
     pub(crate) closed: bool,
     pub(crate) created_by: UserRef,
     #[sqlx(skip)]
@@ -53,7 +53,7 @@ impl<Id, UserRef> Poll<Id, UserRef> {
 }
 
 impl<Id> Poll<Id> {
-    pub(crate) fn state(&self, now: NaiveDateTime) -> PollState {
+    pub(crate) fn state(&self, now: OffsetDateTime) -> PollState {
         if self.closed {
             PollState::Closed
         } else if now > self.open_until {
@@ -63,7 +63,7 @@ impl<Id> Poll<Id> {
         }
     }
 
-    pub(crate) fn is_open(&self, now: NaiveDateTime) -> bool {
+    pub(crate) fn is_open(&self, now: OffsetDateTime) -> bool {
         self.state(now).is_open()
     }
 }
@@ -71,8 +71,8 @@ impl<Id> Poll<Id> {
 #[derive(Debug, sqlx::FromRow, Serialize)]
 pub(crate) struct PollOption<Id = i64, UserRef = User> {
     pub(crate) id: Id,
-    pub(crate) date: NaiveDate,
-    pub(crate) time: NaiveTime,
+    pub(crate) date: Date,
+    pub(crate) time: Time,
     #[sqlx(skip)]
     pub(crate) answers: Vec<Answer<Id, UserRef>>,
 }

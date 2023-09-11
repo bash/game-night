@@ -5,7 +5,6 @@ use crate::poll::{Answer, Poll, PollOption};
 use crate::users::{User, UserId};
 use crate::GameNightDatabase;
 use anyhow::{anyhow, Error, Result};
-use chrono::Local;
 use rocket::request::{FromRequest, Outcome};
 use rocket::{async_trait, Request};
 use rocket_db_pools::Connection;
@@ -92,10 +91,9 @@ impl Repository for SqliteRepository {
         let invitation = sqlx::query_as(
             "SELECT * FROM invitations
              WHERE passphrase = ?1
-               AND (valid_until IS NULL OR valid_until >= ?2)",
+               AND (valid_until IS NULL OR unixepoch(valid_until) - unixepoch('now') >= 0)",
         )
         .bind(passphrase)
-        .bind(Local::now())
         .fetch_optional(self.0.deref_mut())
         .await?;
         Ok(invitation)
@@ -167,10 +165,9 @@ impl Repository for SqliteRepository {
         let result: i64 = sqlx::query_scalar(
             "SELECT count(1) FROM email_verification_codes
              WHERE email_address = ?1
-               AND valid_until >= ?2",
+               AND unixepoch(valid_until) - unixepoch('now') >= 0",
         )
         .bind(email_address)
-        .bind(Local::now())
         .fetch_one(self.0.deref_mut())
         .await?;
         Ok(result >= 1)
@@ -181,11 +178,10 @@ impl Repository for SqliteRepository {
             "DELETE FROM email_verification_codes
              WHERE code = ?1
                AND email_address = ?2
-               AND valid_until >= ?3",
+               AND unixepoch(valid_until) - unixepoch('now') >= 0",
         )
         .bind(code)
         .bind(email_address)
-        .bind(Local::now())
         .execute(self.0.deref_mut())
         .await?;
         Ok(result.rows_affected() >= 1)
@@ -210,11 +206,10 @@ impl Repository for SqliteRepository {
             "SELECT count(1) FROM login_tokens
              JOIN users ON users.id = login_tokens.user_id
              WHERE users.email_address = ?1
-               AND valid_until >= ?2
+               AND unixepoch(valid_until) - unixepoch('now') >= 0
                AND type = 'one_time'",
         )
         .bind(email_address)
-        .bind(Local::now())
         .fetch_one(self.0.as_mut())
         .await?;
         Ok(token_count >= 1)
@@ -224,9 +219,8 @@ impl Repository for SqliteRepository {
         let mut transaction = self.0.begin().await?;
 
         let token: Option<LoginToken> =
-            sqlx::query_as("SELECT * FROM login_tokens WHERE token = ?1 AND valid_until >= ?2")
+            sqlx::query_as("SELECT * FROM login_tokens WHERE token = ?1 AND unixepoch(valid_until) - unixepoch('now') >= 0")
                 .bind(token_value)
-                .bind(Local::now())
                 .fetch_optional(&mut *transaction)
                 .await?;
 

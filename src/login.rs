@@ -5,7 +5,6 @@ use crate::emails::LoginEmail;
 use crate::template::{PageBuilder, PageType};
 use crate::users::{User, UserId};
 use anyhow::{Error, Result};
-use chrono::{DateTime, Duration, Local};
 use lettre::message::Mailbox;
 use rand::distributions::{Alphanumeric, Uniform};
 use rand::Rng;
@@ -21,6 +20,7 @@ use rocket_dyn_templates::{context, Template};
 mod auto_login;
 pub(crate) use auto_login::*;
 use serde::Serialize;
+use time::{Duration, OffsetDateTime};
 mod code;
 
 pub(crate) fn routes() -> Vec<Route> {
@@ -165,13 +165,13 @@ pub(crate) struct LoginToken {
     pub(crate) type_: LoginTokenType,
     pub(crate) token: String,
     pub(crate) user_id: UserId,
-    pub(crate) valid_until: DateTime<Local>,
+    pub(crate) valid_until: OffsetDateTime,
 }
 
 impl LoginToken {
     pub(crate) fn generate_one_time(user_id: UserId) -> Self {
         let one_time_token_expiration = Duration::minutes(10);
-        let valid_until = Local::now() + one_time_token_expiration;
+        let valid_until = OffsetDateTime::now_utc() + one_time_token_expiration;
         Self {
             type_: LoginTokenType::OneTime,
             token: generate_one_time_code(),
@@ -180,7 +180,7 @@ impl LoginToken {
         }
     }
 
-    pub(crate) fn generate_reusable(user_id: UserId, valid_until: DateTime<Local>) -> Self {
+    pub(crate) fn generate_reusable(user_id: UserId, valid_until: OffsetDateTime) -> Self {
         Self {
             type_: LoginTokenType::Reusable,
             token: generate_reusable_token(),

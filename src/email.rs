@@ -14,7 +14,6 @@ use uuid::Uuid;
 
 const DEFAULT_EMAIL_TEMPLATE_DIR: &str = "emails";
 const DEFAULT_OUTBOX_DIR: &str = "outbox";
-pub(crate) const EMAIL_DISPLAY_TIMEZONE: chrono_tz::Tz = chrono_tz::Europe::Zurich;
 
 #[async_trait]
 pub(crate) trait EmailSender: Send + Sync {

@@ -1,11 +1,11 @@
-use crate::email::{EmailMessage, EMAIL_DISPLAY_TIMEZONE};
-use chrono::{DateTime, Local};
+use crate::email::EmailMessage;
 use tera::Context;
+use time::OffsetDateTime;
 
 #[derive(Debug, Clone)]
 pub(crate) struct PollEmail {
     pub(crate) name: String,
-    pub(crate) poll_closes_at: DateTime<Local>,
+    pub(crate) poll_closes_at: OffsetDateTime,
     pub(crate) poll_url: String,
 }
 
@@ -19,17 +19,8 @@ impl EmailMessage for PollEmail {
     }
 
     fn template_context(&self) -> Context {
-        let poll_closes_at = self.poll_closes_at.with_timezone(&EMAIL_DISPLAY_TIMEZONE);
         let mut context = Context::new();
         context.insert("name", &self.name);
-        context.insert(
-            "poll_close_date",
-            &poll_closes_at.format("%d. %B %Y").to_string(),
-        );
-        context.insert(
-            "poll_close_time",
-            &poll_closes_at.format("%I:%M %p").to_string(),
-        );
         context.insert("poll_url", &self.poll_url);
         context
     }
