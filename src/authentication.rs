@@ -32,7 +32,7 @@ impl<'r> FromRequest<'r> for User {
         let mut repository = try_outcome!(request
             .guard::<Box<dyn Repository>>()
             .await
-            .map_failure(|(s, e)| (s, Some(e.into()))));
+            .map_failure(|(s, e)| (s, Some(e))));
         match fetch_user(request, repository.as_mut()).await {
             Ok(Some(user)) => Outcome::Success(user),
             Ok(None) => Outcome::Failure((Status::Unauthorized, None)),

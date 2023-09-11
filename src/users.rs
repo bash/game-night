@@ -36,4 +36,8 @@ impl<Id> User<Id> {
     pub(crate) fn can_invite(&self) -> bool {
         self.role == Role::Admin
     }
+
+    pub(crate) fn can_manage_poll(&self) -> bool {
+        self.role == Role::Admin
+    }
 }

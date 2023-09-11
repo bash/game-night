@@ -20,4 +20,9 @@
         <strong>P.P.S.</strong> I have forwarded a formal complaint to Santa's naughty list.
     </p>
 {% endif %}
+{% if page.new_poll_uri %}
+<p>
+    <a href="{{page.new_poll_uri}}" class="link-button">Start a new poll</a>
+</p>
+{% endif %}
 {% endblock content %}

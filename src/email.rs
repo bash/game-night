@@ -14,7 +14,6 @@ use uuid::Uuid;
 
 const DEFAULT_EMAIL_TEMPLATE_DIR: &str = "emails";
 const DEFAULT_OUTBOX_DIR: &str = "outbox";
-pub(crate) const EMAIL_DISPLAY_TIMEZONE: chrono_tz::Tz = chrono_tz::Europe::Zurich;
 
 #[async_trait]
 pub(crate) trait EmailSender: Send + Sync {
@@ -67,7 +66,10 @@ impl EmailSender for EmailSenderImpl {
         // Renames are atomic, so the file is available `outbox` all at once.
         let mut message_path = self.outbox_dir.clone();
         message_path.push(format!("{}.eml", message_id));
-        rename(temporary_path, message_path).await?;
+        rename(temporary_path, &message_path).await?;
+
+        #[cfg(debug_assertions)]
+        opener::open(&message_path)?;
 
         Ok(())
     }

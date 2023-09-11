@@ -1,0 +1,51 @@
+.calendar-list {
+    display: grid;
+    grid-template-columns: max-content max-content 1fr max-content;
+    margin-bottom: var(--inter-block-gap);
+
+    > ul {
+        display: contents;
+        list-style: none;
+    }
+
+    // Rows
+    > h2,
+    > ul > li,
+    > .placeholder {
+        grid-column: span 4;
+    }
+
+    // Rows with border
+    > ul > li,
+    > .placeholder {
+        border-top: 1px dashed var(--secondary-text-color);
+        padding: 8px 0;
+    }
+
+    > h2 {
+        font-family: var(--serif);
+        margin: 0;
+        padding: 10px 0;
+    }
+
+    > ul > li {
+        display: grid;
+        grid-template-columns: subgrid;
+        align-items: center;
+        gap: 10px;
+    }
+
+    > ul > li > label {
+        display: grid;
+        grid-template-columns: subgrid;
+        grid-column: span 2;
+        gap: 10px;
+
+        > .day { text-align: right; }
+    }
+
+    .placeholder {
+        text-align: center;
+        color: var(--secondary-text-color);
+    }
+}

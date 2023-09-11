@@ -1,0 +1,73 @@
+{% extends 'base' %}
+
+{% block title %}New Poll{% endblock title %}
+
+{% block content %}
+<form method="post">
+    <p>
+        I want to invite between
+        <input type="number" class="-inline" name="min_participants" id="min-participants" size="2" inputmode="numeric" placeholder="2" required min="2"> and
+        <input type="number" class="-inline" name="max_participants" size="2" inputmode="numeric" placeholder="4" required min="2" data-validate-gte="min-participants"> people<br>
+        with the date chosen
+        <select class="-inline" name="strategy">
+            {% for strategy in page.strategies %}
+                <option value="{{strategy.value}}">{{strategy.name}}</option>
+            {% endfor %}
+        </select>.<br>
+    </p>
+
+    <p>
+        Participants have <input type="number" class="-inline" name="duration" size="2" inputmode="numeric" placeholder="72" required min="1" value="72"> hours to complete the poll.
+    </p>
+
+    <div class="calendar-list">
+        {% for month in page.calendar %}
+            <h2>{{month.name}}</h2>
+            <ul>
+                {% for day in month.days %}
+                    <li>
+                        <input type="hidden" name="options[{{day.date}}][date]" value="{{day.date}}">
+                        <input type="checkbox" name="options[{{day.date}}][enabled]" id="days-{{day.date}}">
+                        <label for="days-{{day.date}}">
+                            <span class="day">{{day.day}}</span>
+                            <span class="weekday">{{day.weekday}}</span>
+                        </label>
+                        <input type="time" name="options[{{day.date}}][time]" data-bind-disabled-to="days-{{day.date}}" step="{{60 * 15}}" disabled>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endfor %}
+    </div>
+
+    <fieldset>
+        <label for="description">Here's space for me to write down some extra information for the event using markdown:</label>
+        <textarea name="description" id="description"></textarea>
+    </fieldset>
+
+    <fieldset class="-actions">
+        <button type="submit">Create Poll</button>
+    </fieldset>
+</form>
+
+<script type="module">
+    for (const target of document.querySelectorAll('[data-bind-disabled-to]')) {
+        const source = document.querySelector(`#${target.dataset.bindDisabledTo}`)
+        target.disabled = !source.checked
+        source.addEventListener('input', () => target.disabled = !source.checked)
+    }
+</script>
+
+<script type="module">
+    const validate = (left, right) => left.setCustomValidity(
+        left.valueAsNumber >= right.valueAsNumber
+            ? ''
+            : `Please select a value that is no less than ${right.valueAsNumber}`)
+
+    for (const left of document.querySelectorAll('[data-validate-gte]')) {
+        const right = document.querySelector(`#${left.dataset.validateGte}`)
+        left.addEventListener('input', () => validate(left, right))
+        right.addEventListener('input', () => validate(left, right))
+        validate(left, right)
+    }
+</script>
+{% endblock content %}

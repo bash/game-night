@@ -5,7 +5,6 @@ use crate::emails::LoginEmail;
 use crate::template::{PageBuilder, PageType};
 use crate::users::{User, UserId};
 use anyhow::{Error, Result};
-use chrono::{DateTime, Duration, Local};
 use lettre::message::Mailbox;
 use rand::distributions::{Alphanumeric, Uniform};
 use rand::Rng;
@@ -21,6 +20,7 @@ use rocket_dyn_templates::{context, Template};
 mod auto_login;
 pub(crate) use auto_login::*;
 use serde::Serialize;
+use time::{Duration, OffsetDateTime};
 mod code;
 
 pub(crate) fn routes() -> Vec<Route> {
@@ -59,7 +59,7 @@ async fn login(
     redirect: Option<&str>,
     form: Form<LoginData<'_>>,
 ) -> Result<Login, Debug<Error>> {
-    if let Some((mailbox, email)) = login_email_for(repository.as_mut(), &form.email).await? {
+    if let Some((mailbox, email)) = login_email_for(repository.as_mut(), form.email).await? {
         email_sender.send(mailbox, &email).await?;
         Ok(Login::success(redirect))
     } else {
@@ -153,10 +153,10 @@ async fn redirect_to_login(request: &Request<'_>) -> Redirect {
     Redirect::to(uri!(login_page(redirect = Some(origin))))
 }
 
-fn redirect_to<'a>(redirect: Option<&'a str>) -> Option<Redirect> {
+fn redirect_to(redirect: Option<&str>) -> Option<Redirect> {
     redirect
         .and_then(|r| Origin::parse_owned(r.to_string()).ok())
-        .map(|uri| Redirect::to(uri))
+        .map(Redirect::to)
 }
 
 #[derive(Debug, Clone, sqlx::FromRow)]
@@ -165,13 +165,13 @@ pub(crate) struct LoginToken {
     pub(crate) type_: LoginTokenType,
     pub(crate) token: String,
     pub(crate) user_id: UserId,
-    pub(crate) valid_until: DateTime<Local>,
+    pub(crate) valid_until: OffsetDateTime,
 }
 
 impl LoginToken {
     pub(crate) fn generate_one_time(user_id: UserId) -> Self {
         let one_time_token_expiration = Duration::minutes(10);
-        let valid_until = Local::now() + one_time_token_expiration;
+        let valid_until = OffsetDateTime::now_utc() + one_time_token_expiration;
         Self {
             type_: LoginTokenType::OneTime,
             token: generate_one_time_code(),
@@ -180,7 +180,7 @@ impl LoginToken {
         }
     }
 
-    pub(crate) fn generate_reusable(user_id: UserId, valid_until: DateTime<Local>) -> Self {
+    pub(crate) fn generate_reusable(user_id: UserId, valid_until: OffsetDateTime) -> Self {
         Self {
             type_: LoginTokenType::Reusable,
             token: generate_reusable_token(),

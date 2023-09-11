@@ -1,10 +1,10 @@
 use crate::email_verification_code::EmailVerificationCode;
 use crate::invitation::{Invitation, InvitationId, Passphrase};
 use crate::login::{LoginToken, LoginTokenType};
+use crate::poll::{Answer, Poll, PollOption};
 use crate::users::{User, UserId};
 use crate::GameNightDatabase;
 use anyhow::{anyhow, Error, Result};
-use chrono::Local;
 use rocket::request::{FromRequest, Outcome};
 use rocket::{async_trait, Request};
 use rocket_db_pools::Connection;
@@ -45,6 +45,16 @@ pub(crate) trait Repository: Send {
     async fn add_login_token(&mut self, token: &LoginToken) -> Result<()>;
 
     async fn use_login_token(&mut self, token: &str) -> Result<Option<UserId>>;
+
+    async fn add_poll(&mut self, poll: Poll<(), UserId>) -> Result<i64>;
+
+    async fn update_poll_description(&mut self, id: i64, description: &str) -> Result<()>;
+
+    async fn add_answer(&mut self, option_id: i64, answer: Answer<(), UserId>) -> Result<()>;
+
+    async fn get_current_poll(&mut self) -> Result<Option<Poll>>;
+
+    async fn close_poll(&mut self, id: i64) -> Result<()>;
 }
 
 pub(crate) struct SqliteRepository(pub(crate) SqliteConnection);
@@ -81,10 +91,9 @@ impl Repository for SqliteRepository {
         let invitation = sqlx::query_as(
             "SELECT * FROM invitations
              WHERE passphrase = ?1
-               AND (valid_until IS NULL OR valid_until >= ?2)",
+               AND (valid_until IS NULL OR unixepoch(valid_until) - unixepoch('now') >= 0)",
         )
         .bind(passphrase)
-        .bind(Local::now())
         .fetch_optional(self.0.deref_mut())
         .await?;
         Ok(invitation)
@@ -156,10 +165,9 @@ impl Repository for SqliteRepository {
         let result: i64 = sqlx::query_scalar(
             "SELECT count(1) FROM email_verification_codes
              WHERE email_address = ?1
-               AND valid_until >= ?2",
+               AND unixepoch(valid_until) - unixepoch('now') >= 0",
         )
         .bind(email_address)
-        .bind(Local::now())
         .fetch_one(self.0.deref_mut())
         .await?;
         Ok(result >= 1)
@@ -170,11 +178,10 @@ impl Repository for SqliteRepository {
             "DELETE FROM email_verification_codes
              WHERE code = ?1
                AND email_address = ?2
-               AND valid_until >= ?3",
+               AND unixepoch(valid_until) - unixepoch('now') >= 0",
         )
         .bind(code)
         .bind(email_address)
-        .bind(Local::now())
         .execute(self.0.deref_mut())
         .await?;
         Ok(result.rows_affected() >= 1)
@@ -199,11 +206,10 @@ impl Repository for SqliteRepository {
             "SELECT count(1) FROM login_tokens
              JOIN users ON users.id = login_tokens.user_id
              WHERE users.email_address = ?1
-               AND valid_until >= ?2
+               AND unixepoch(valid_until) - unixepoch('now') >= 0
                AND type = 'one_time'",
         )
         .bind(email_address)
-        .bind(Local::now())
         .fetch_one(self.0.as_mut())
         .await?;
         Ok(token_count >= 1)
@@ -213,9 +219,8 @@ impl Repository for SqliteRepository {
         let mut transaction = self.0.begin().await?;
 
         let token: Option<LoginToken> =
-            sqlx::query_as("SELECT * FROM login_tokens WHERE token = ?1 AND valid_until >= ?2")
+            sqlx::query_as("SELECT * FROM login_tokens WHERE token = ?1 AND unixepoch(valid_until) - unixepoch('now') >= 0")
                 .bind(token_value)
-                .bind(Local::now())
                 .fetch_optional(&mut *transaction)
                 .await?;
 
@@ -226,6 +231,147 @@ impl Repository for SqliteRepository {
             transaction.rollback().await?;
             Ok(None)
         }
+    }
+
+    async fn add_poll(&mut self, poll: Poll<(), UserId>) -> Result<i64> {
+        let mut transaction: sqlx::Transaction<'_, Sqlite> = self.0.begin().await?;
+
+        let poll_id = sqlx::query(
+            "INSERT INTO polls (min_participants, max_participants, strategy, description, created_by, open_until, closed)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+        )
+        .bind(i64::try_from(poll.min_participants)?)
+        .bind(i64::try_from(poll.max_participants)?)
+        .bind(poll.strategy)
+        .bind(poll.description)
+        .bind(poll.created_by)
+        .bind(poll.open_until)
+        .bind(poll.closed)
+        .execute(&mut *transaction)
+        .await?
+        .last_insert_rowid();
+
+        for option in poll.options {
+            let option_id =
+                sqlx::query("INSERT INTO poll_options (poll_id, datetime) VALUES (?1, ?2)")
+                    .bind(poll_id)
+                    .bind(option.datetime)
+                    .execute(&mut *transaction)
+                    .await?
+                    .last_insert_rowid();
+            for answer in option.answers {
+                sqlx::query(
+                    "INSERT INTO poll_answers (poll_option_id, value, user_id)
+                     VALUES (?1, ?2, ?3)",
+                )
+                .bind(option_id)
+                .bind(answer.value)
+                .bind(answer.user)
+                .execute(&mut *transaction)
+                .await?;
+            }
+        }
+
+        transaction.commit().await?;
+
+        Ok(poll_id)
+    }
+
+    async fn update_poll_description(&mut self, id: i64, description: &str) -> Result<()> {
+        sqlx::query("UPDATE polls SET description = ?1 WHERE id = ?2")
+            .bind(description)
+            .bind(id)
+            .execute(self.0.deref_mut())
+            .await?;
+        Ok(())
+    }
+
+    async fn get_current_poll(&mut self) -> Result<Option<Poll>> {
+        let poll: Option<Poll<i64, UserId>> =
+            sqlx::query_as("SELECT * FROM polls ORDER BY polls.open_until DESC LIMIT 1")
+                .fetch_optional(self.0.deref_mut())
+                .await?;
+        match poll {
+            Some(poll) => Ok(Some(self.materialize_poll(poll).await?)),
+            None => Ok(None),
+        }
+    }
+
+    async fn add_answer(&mut self, option_id: i64, answer: Answer<(), UserId>) -> Result<()> {
+        let mut transaction: sqlx::Transaction<'_, Sqlite> = self.0.begin().await?;
+
+        let closed: bool = sqlx::query_scalar(
+            "SELECT polls.closed FROM polls
+             JOIN poll_options ON poll_options.poll_id = polls.id
+             WHERE poll_options.id = ?1",
+        )
+        .bind(option_id)
+        .fetch_one(&mut *transaction)
+        .await?;
+
+        if closed {
+            return Err(anyhow!("Poll already closed"));
+        }
+
+        sqlx::query(
+            "INSERT INTO poll_answers (poll_option_id, value, user_id)
+             VALUES (?1, ?2, ?3)",
+        )
+        .bind(option_id)
+        .bind(answer.value)
+        .bind(answer.user)
+        .execute(&mut *transaction)
+        .await?;
+
+        transaction.commit().await?;
+
+        Ok(())
+    }
+
+    async fn close_poll(&mut self, id: i64) -> Result<()> {
+        sqlx::query("UPDATE polls SET closed = ?1 WHERE id = ?2")
+            .bind(true)
+            .bind(id)
+            .execute(self.0.deref_mut())
+            .await?;
+        Ok(())
+    }
+}
+
+impl SqliteRepository {
+    async fn materialize_poll(&mut self, poll: Poll<i64, UserId>) -> Result<Poll> {
+        // Yes, yes using a JOIN to fetch the poll and the user at once would be better,
+        // but it's very inconvenient as I can't use the auto-derived FromRow impl :/
+        let user: User = sqlx::query_as("SELECT * FROM users WHERE id = ?1")
+            .bind(poll.created_by)
+            .fetch_one(self.0.deref_mut())
+            .await?;
+
+        let mut options: Vec<PollOption> =
+            sqlx::query_as("SELECT * FROM poll_options WHERE poll_id = ?1")
+                .bind(poll.id)
+                .fetch_all(self.0.deref_mut())
+                .await?;
+
+        for option in &mut options {
+            for answer in sqlx::query_as("SELECT * FROM poll_answers WHERE poll_option_id = ?1")
+                .bind(option.id)
+                .fetch_all(self.0.deref_mut())
+                .await?
+            {
+                option.answers.push(self.materialize_answer(answer).await?);
+            }
+        }
+
+        Ok(poll.materialize(user, options))
+    }
+
+    async fn materialize_answer(&mut self, answer: Answer<i64, UserId>) -> Result<Answer> {
+        let user: User = sqlx::query_as("SELECT * FROM users WHERE id = ?1")
+            .bind(answer.user)
+            .fetch_one(self.0.deref_mut())
+            .await?;
+        Ok(answer.materialize(user))
     }
 }
 
