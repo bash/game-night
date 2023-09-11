@@ -22,7 +22,7 @@ pub(super) fn new_poll_page(
     page: PageBuilder<'_>,
     _user: AuthorizedTo<ManagePoll>,
 ) -> Result<Template, Debug<Error>> {
-    let calendar = get_calendar(OffsetDateTime::now_utc(), 90);
+    let calendar = get_calendar(OffsetDateTime::now_utc(), 14);
     Ok(page
         .type_(PageType::Poll)
         .render("poll/new", context! { calendar, strategies: strategies() }))
