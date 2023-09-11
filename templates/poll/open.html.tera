@@ -1,0 +1,26 @@
+{% extends 'base' %}
+
+{% block title %}Poll{% endblock title %}
+
+{% block content %}
+<div>{{page.poll.description | markdown | safe}}</div>
+
+<div class="calendar-list">
+    {% for group in page.options_by_month %}
+        <h2>{{group.name}}</h2>
+        <ul>
+            {% for option in group.options %}
+                <li>
+                    {# TODO: checked #}
+                    <input type="checkbox" name="options[{{option.id}}]" id="option-{{option.id}}">
+                    <label for="option-{{option.id}}">
+                        <span class="day">{{option.datetime | date(format="%e")}}</span>
+                        <span class="weekday">{{option.datetime | date(format="%A")}}</span>
+                    </label>
+                    <input type="time" readonly value="{{option.datetime | date(format='%H:%M')}}">
+                </li>
+            {% endfor %}
+        </ul>
+    {% endfor %}
+</div>
+{% endblock content %}

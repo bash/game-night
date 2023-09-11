@@ -8,21 +8,22 @@
     I will send you an email to <strong>{{user.email_address}}</strong>
     once it's time to vote for a date.
 </p>
+
 {% if user.campaign == 'super-secrit-beta' %}
-<p>
-    <strong>P.S.</strong> Congratulations! 🎉 You made sense of my <em>interesting</em> invitation puzzle.
-    I will have a <em>special</em> present ready for you the first time you participate in a game night~ ✨
-</p>
-{% endif %}
-{% if user.campaign == 'penis' %}
+    <p>
+        <strong>P.S.</strong> Congratulations! 🎉 You made sense of my <em>interesting</em> invitation puzzle.
+        I will have a <em>special</em> present ready for you the first time you participate in a game night~ ✨
+    </p>
+{% elif user.campaign == 'penis' %}
     <p>
         <strong>P.S.</strong> You're <em>very</em> funny ha ha.<br>
         <strong>P.P.S.</strong> I have forwarded a formal complaint to Santa's naughty list.
     </p>
 {% endif %}
+
 {% if page.new_poll_uri %}
-<p>
+<fieldset class="-actions">
     <a href="{{page.new_poll_uri}}" class="link-button">Start a new poll</a>
-</p>
+</fieldset>
 {% endif %}
 {% endblock content %}

@@ -80,10 +80,13 @@ struct CalendarMonth {
 
 #[derive(Debug, Serialize)]
 struct CalendarDay {
+    #[serde(with = "iso8601_date")]
     date: Date,
     day: u8,
     weekday: String,
 }
+
+time::serde::format_description!(iso8601_date, Date, "[year]-[month]-[day]");
 
 #[post("/poll/new", data = "<form>")]
 pub(super) async fn new_poll(
@@ -147,7 +150,7 @@ fn now_utc_without_subminutes() -> Result<OffsetDateTime> {
         .replace_nanosecond(0)?)
 }
 
-#[derive(Debug, FromForm, Serialize)]
+#[derive(Debug, FromForm)]
 pub(super) struct NewPollData<'r> {
     min_participants: u64,
     #[field(validate = gte(self.min_participants))]
@@ -159,7 +162,7 @@ pub(super) struct NewPollData<'r> {
     options: Vec<NewPollOption>,
 }
 
-#[derive(Debug, Serialize, FromForm)]
+#[derive(Debug, FromForm)]
 pub(super) struct NewPollOption {
     date: Date,
     #[field(default_with = Some(Time::MIDNIGHT))]

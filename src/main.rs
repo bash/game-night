@@ -12,8 +12,9 @@ use rocket::{
     async_trait, catch, catchers, error, get, launch, routes, Build, Config, Request, Rocket, Route,
 };
 use rocket_db_pools::{sqlx::SqlitePool, Database, Pool};
-use rocket_dyn_templates::{context, Template};
+use rocket_dyn_templates::{context, Engines, Template};
 use serde::Deserialize;
+use std::collections::HashMap;
 use template::{PageBuilder, PageType};
 use users::User;
 
@@ -43,7 +44,7 @@ fn rocket() -> _ {
         .register("/", authorization::catchers())
         .register("/", catchers![not_found])
         .mount("/", file_server())
-        .attach(Template::fairing())
+        .attach(Template::custom(configure_template_engines))
         .attach(GameNightDatabase::init())
         .attach(initialize_email_sender())
         .attach(invite_admin_user())
@@ -142,4 +143,30 @@ fn initialize_email_sender() -> impl Fairing {
             }
         })
     })
+}
+
+fn configure_template_engines(engines: &mut Engines) {
+    engines.tera.register_filter("markdown", markdown_filter);
+}
+
+fn markdown_filter(
+    value: &tera::Value,
+    _args: &HashMap<String, tera::Value>,
+) -> tera::Result<tera::Value> {
+    use pulldown_cmark::{html, Options, Parser};
+
+    const OPTIONS: Options = Options::empty()
+        .union(Options::ENABLE_TABLES)
+        .union(Options::ENABLE_FOOTNOTES)
+        .union(Options::ENABLE_STRIKETHROUGH);
+
+    let input = value
+        .as_str()
+        .ok_or_else(|| tera::Error::msg("This filter expects a string as input"))?;
+
+    let parser = Parser::new_ext(input, OPTIONS);
+    let mut html_output = String::new();
+    html::push_html(&mut html_output, parser);
+
+    Ok(html_output.into())
 }

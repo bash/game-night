@@ -1,5 +1,9 @@
+use crate::database::Repository;
 use crate::template::{PageBuilder, PageType};
 use crate::users::User;
+use anyhow::Error;
+use itertools::Itertools;
+use rocket::response::Debug;
 use rocket::{get, routes, uri, FromFormField, Route};
 use rocket_dyn_templates::{context, Template};
 use serde::Serialize;
@@ -14,10 +18,44 @@ pub(crate) fn routes() -> Vec<Route> {
 }
 
 #[get("/poll")]
-fn poll_page(page: PageBuilder<'_>, user: User) -> Template {
+async fn poll_page(
+    mut repository: Box<dyn Repository>,
+    page: PageBuilder<'_>,
+    user: User,
+) -> Result<Template, Debug<Error>> {
+    let now = OffsetDateTime::now_utc();
+    match repository.get_current_poll().await? {
+        Some(poll) if poll.is_open(now) => Ok(open_poll_page(page, poll)),
+        _ => Ok(no_open_poll_page(page, user)),
+    }
+}
+
+fn no_open_poll_page(page: PageBuilder<'_>, user: User) -> Template {
     let new_poll_uri = user.can_manage_poll().then(|| uri!(new::new_poll_page()));
     page.type_(PageType::Poll)
         .render("poll", context! { new_poll_uri })
+}
+
+fn open_poll_page(page: PageBuilder<'_>, poll: Poll) -> Template {
+    let options_by_month: Vec<_> = poll
+        .options
+        .iter()
+        .cloned()
+        .group_by(|o| o.datetime.month())
+        .into_iter()
+        .map(|(month, options)| PollOptionGroup {
+            name: month.to_string(),
+            options: options.collect(),
+        })
+        .collect();
+    page.type_(PageType::Poll)
+        .render("poll/open", context! { poll, options_by_month })
+}
+
+#[derive(Debug, Serialize)]
+struct PollOptionGroup {
+    name: String,
+    options: Vec<PollOption>,
 }
 
 #[derive(Debug, sqlx::FromRow, Serialize)]
@@ -29,6 +67,7 @@ pub(crate) struct Poll<Id = i64, UserRef = User> {
     pub(crate) max_participants: u64,
     pub(crate) strategy: DateSelectionStrategy,
     pub(crate) description: String,
+    #[serde(with = "time::serde::iso8601")]
     pub(crate) open_until: OffsetDateTime,
     pub(crate) closed: bool,
     pub(crate) created_by: UserRef,
@@ -68,15 +107,16 @@ impl<Id> Poll<Id> {
     }
 }
 
-#[derive(Debug, sqlx::FromRow, Serialize)]
+#[derive(Debug, Clone, sqlx::FromRow, Serialize)]
 pub(crate) struct PollOption<Id = i64, UserRef = User> {
     pub(crate) id: Id,
+    #[serde(with = "time::serde::iso8601")]
     pub(crate) datetime: OffsetDateTime,
     #[sqlx(skip)]
     pub(crate) answers: Vec<Answer<Id, UserRef>>,
 }
 
-#[derive(Debug, sqlx::FromRow, Serialize)]
+#[derive(Debug, Clone, sqlx::FromRow, Serialize)]
 pub(crate) struct Answer<Id = i64, UserRef = User> {
     pub(crate) id: Id,
     pub(crate) value: AnswerValue,

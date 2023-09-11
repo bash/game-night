@@ -8,7 +8,7 @@ use serde::Serialize;
 #[serde(transparent)]
 pub(crate) struct UserId(pub(crate) i64);
 
-#[derive(Debug, sqlx::FromRow, Serialize)]
+#[derive(Debug, Clone, sqlx::FromRow, Serialize)]
 pub(crate) struct User<Id = UserId> {
     pub(crate) id: Id,
     pub(crate) name: String,
