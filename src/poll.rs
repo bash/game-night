@@ -1,6 +1,6 @@
 use crate::template::{PageBuilder, PageType};
 use crate::users::User;
-use rocket::{get, routes, uri, Route};
+use rocket::{get, routes, uri, FromFormField, Route};
 use rocket_dyn_templates::{context, Template};
 use serde::Serialize;
 use sqlx::sqlite::{SqliteTypeInfo, SqliteValueRef};
@@ -71,8 +71,7 @@ impl<Id> Poll<Id> {
 #[derive(Debug, sqlx::FromRow, Serialize)]
 pub(crate) struct PollOption<Id = i64, UserRef = User> {
     pub(crate) id: Id,
-    pub(crate) date: Date,
-    pub(crate) time: Time,
+    pub(crate) datetime: OffsetDateTime,
     #[sqlx(skip)]
     pub(crate) answers: Vec<Answer<Id, UserRef>>,
 }
@@ -163,11 +162,13 @@ pub(crate) enum Attendance {
     Required,
 }
 
-#[derive(Debug, Copy, Clone, sqlx::Type, Serialize)]
+#[derive(Debug, Copy, Clone, sqlx::Type, Serialize, FromFormField)]
 #[sqlx(rename_all = "snake_case")]
 #[serde(rename_all = "snake_case")]
 pub(crate) enum DateSelectionStrategy {
+    #[field(value = "at_random")]
     AtRandom,
+    #[field(value = "to_maximize_participants")]
     ToMaximizeParticipants,
 }
 

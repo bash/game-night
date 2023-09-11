@@ -25,7 +25,8 @@ url = "2.4"
 uuid = { version = "1.4.1", features = ["v4"] }
 itertools = "0.11.0"
 opener = "0.6.1"
-time = { version = "0.3.28", features = ["formatting", "serde", "local-offset", "macros"] }
+time = { version = "0.3.28", features = ["formatting", "serde-human-readable", "local-offset", "macros"] }
+time-tz = "2.0.0"
 
 [features]
 tls = ["rocket/tls"]

@@ -47,8 +47,7 @@ CREATE TABLE polls
 CREATE TABLE poll_options
     ( id INTEGER PRIMARY KEY
     , poll_id INTEGER NOT NULL
-    , date TEXT NOT NULL
-    , time TEXT NOT NULL
+    , datetime TEXT NOT NULL
     , FOREIGN KEY (poll_id) REFERENCES polls(id)
     );
 
