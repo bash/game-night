@@ -22,7 +22,6 @@ fn poll_page(page: PageBuilder<'_>, user: User) -> Template {
 
 #[derive(Debug, sqlx::FromRow, Serialize)]
 pub(crate) struct Poll<Id = i64, UserRef = User> {
-    #[sqlx(rename = "rowid")]
     pub(crate) id: Id,
     #[sqlx(try_from = "i64")]
     pub(crate) min_participants: u64,
@@ -35,6 +34,22 @@ pub(crate) struct Poll<Id = i64, UserRef = User> {
     pub(crate) created_by: UserRef,
     #[sqlx(skip)]
     pub(crate) options: Vec<PollOption<Id, UserRef>>,
+}
+
+impl<Id, UserRef> Poll<Id, UserRef> {
+    pub(crate) fn materialize(self, user: User, options: Vec<PollOption<Id>>) -> Poll<Id> {
+        Poll {
+            id: self.id,
+            min_participants: self.min_participants,
+            max_participants: self.max_participants,
+            strategy: self.strategy,
+            description: self.description,
+            open_until: self.open_until,
+            closed: self.closed,
+            created_by: user,
+            options: options,
+        }
+    }
 }
 
 impl<Id> Poll<Id> {
@@ -55,28 +70,42 @@ impl<Id> Poll<Id> {
 
 #[derive(Debug, sqlx::FromRow, Serialize)]
 pub(crate) struct PollOption<Id = i64, UserRef = User> {
-    #[sqlx(rename = "rowid")]
     pub(crate) id: Id,
     pub(crate) date: NaiveDate,
     pub(crate) time: NaiveTime,
     #[sqlx(skip)]
-    pub(crate) votes: Vec<Answer<Id, UserRef>>,
+    pub(crate) answers: Vec<Answer<Id, UserRef>>,
 }
 
 #[derive(Debug, sqlx::FromRow, Serialize)]
 pub(crate) struct Answer<Id = i64, UserRef = User> {
-    #[sqlx(rename = "rowid")]
     pub(crate) id: Id,
     pub(crate) value: AnswerValue,
     #[sqlx(rename = "user_id")]
     pub(crate) user: UserRef,
 }
 
+impl<Id, UserRef> Answer<Id, UserRef> {
+    pub(crate) fn materialize(self, user: User) -> Answer<Id> {
+        Answer {
+            id: self.id,
+            value: self.value,
+            user,
+        }
+    }
+}
+
 #[derive(Debug, Copy, Clone, Serialize)]
-#[serde(rename_all = "snake_case")]
+#[serde(rename_all = "snake_case", tag = "type")]
 pub(crate) enum AnswerValue {
     No,
-    Yes(Attendance),
+    Yes { attendance: Attendance },
+}
+
+impl AnswerValue {
+    fn yes(attendance: Attendance) -> Self {
+        Self::Yes { attendance }
+    }
 }
 
 impl Type<Sqlite> for AnswerValue {
@@ -97,22 +126,29 @@ where
         &self,
         buf: &mut <DB as sqlx::database::HasArguments<'q>>::ArgumentBuffer,
     ) -> sqlx::encode::IsNull {
+        use AnswerValue::*;
+        use Attendance::*;
         match self {
-            AnswerValue::No => "no".encode_by_ref(buf),
-            AnswerValue::Yes(Attendance::Optional) => "yes:optional".encode_by_ref(buf),
-            AnswerValue::Yes(Attendance::Required) => "yes:required".encode_by_ref(buf),
+            No => "no".encode_by_ref(buf),
+            Yes {
+                attendance: Optional,
+            } => "yes:optional".encode_by_ref(buf),
+            Yes {
+                attendance: Required,
+            } => "yes:required".encode_by_ref(buf),
         }
     }
 }
 
 impl<'r> Decode<'r, Sqlite> for AnswerValue {
     fn decode(value: SqliteValueRef<'r>) -> Result<Self, sqlx::error::BoxDynError> {
+        use Attendance::*;
         let text = <&str as Decode<'r, Sqlite>>::decode(value)?;
         match text {
             "no" => Ok(AnswerValue::No),
-            "yes:optional" => Ok(AnswerValue::Yes(Attendance::Optional)),
-            "yes:required" => Ok(AnswerValue::Yes(Attendance::Optional)),
-            other => Err(format!("Invalid answer value").into()),
+            "yes:optional" => Ok(AnswerValue::yes(Optional)),
+            "yes:required" => Ok(AnswerValue::yes(Required)),
+            other => Err(format!("Invalid answer value: {other}").into()),
         }
     }
 }

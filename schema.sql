@@ -59,5 +59,5 @@ CREATE TABLE poll_answers
     , value TEXT NOT NULL
     , UNIQUE (poll_option_id, user_id) ON CONFLICT REPLACE
     , FOREIGN KEY (poll_option_id) REFERENCES poll_options(id)
-    , FOREIGN KEY (user_id) REFERENCES users(rowid)
+    , FOREIGN KEY (user_id) REFERENCES users(id)
     );
