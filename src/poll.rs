@@ -1,8 +1,8 @@
+use self::open::open_poll_page;
 use crate::database::Repository;
 use crate::template::{PageBuilder, PageType};
 use crate::users::User;
 use anyhow::Error;
-use itertools::Itertools;
 use rocket::response::Debug;
 use rocket::{get, routes, uri, FromFormField, Route};
 use rocket_dyn_templates::{context, Template};
@@ -12,6 +12,7 @@ use sqlx::{Database, Decode, Encode, Sqlite, Type};
 use time::OffsetDateTime;
 
 mod new;
+mod open;
 
 pub(crate) fn routes() -> Vec<Route> {
     routes![poll_page, new::new_poll_page, new::new_poll]
@@ -34,28 +35,6 @@ fn no_open_poll_page(page: PageBuilder<'_>, user: User) -> Template {
     let new_poll_uri = user.can_manage_poll().then(|| uri!(new::new_poll_page()));
     page.type_(PageType::Poll)
         .render("poll", context! { new_poll_uri })
-}
-
-fn open_poll_page(page: PageBuilder<'_>, poll: Poll) -> Template {
-    let options_by_month: Vec<_> = poll
-        .options
-        .iter()
-        .cloned()
-        .group_by(|o| o.datetime.month())
-        .into_iter()
-        .map(|(month, options)| PollOptionGroup {
-            name: month.to_string(),
-            options: options.collect(),
-        })
-        .collect();
-    page.type_(PageType::Poll)
-        .render("poll/open", context! { poll, options_by_month })
-}
-
-#[derive(Debug, Serialize)]
-struct PollOptionGroup {
-    name: String,
-    options: Vec<PollOption>,
 }
 
 #[derive(Debug, sqlx::FromRow, Serialize)]
