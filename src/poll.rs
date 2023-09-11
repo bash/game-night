@@ -5,7 +5,7 @@ use rocket_dyn_templates::{context, Template};
 use serde::Serialize;
 use sqlx::sqlite::{SqliteTypeInfo, SqliteValueRef};
 use sqlx::{Database, Decode, Encode, Sqlite, Type};
-use time::{Date, OffsetDateTime, Time};
+use time::OffsetDateTime;
 
 mod new;
 
