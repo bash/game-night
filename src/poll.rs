@@ -47,7 +47,7 @@ impl<Id, UserRef> Poll<Id, UserRef> {
             open_until: self.open_until,
             closed: self.closed,
             created_by: user,
-            options: options,
+            options,
         }
     }
 }

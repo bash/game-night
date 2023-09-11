@@ -96,7 +96,7 @@ impl<'a, 'r> TryFrom<&'a Origin<'r>> for PageType {
     }
 }
 
-impl<'a, 'r> TryFrom<Origin<'r>> for PageType {
+impl<'r> TryFrom<Origin<'r>> for PageType {
     type Error = ();
 
     fn try_from(value: Origin<'r>) -> Result<Self, Self::Error> {

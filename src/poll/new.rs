@@ -7,7 +7,7 @@ use rocket_dyn_templates::{context, Template};
 use serde::Serialize;
 
 #[post("/poll/new")]
-pub(super) fn new_poll(_user: AuthorizedTo<ManagePoll>) -> () {}
+pub(super) fn new_poll(_user: AuthorizedTo<ManagePoll>) {}
 
 #[get("/poll/new")]
 pub(super) fn new_poll_page(page: PageBuilder<'_>, _user: AuthorizedTo<ManagePoll>) -> Template {

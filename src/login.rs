@@ -59,7 +59,7 @@ async fn login(
     redirect: Option<&str>,
     form: Form<LoginData<'_>>,
 ) -> Result<Login, Debug<Error>> {
-    if let Some((mailbox, email)) = login_email_for(repository.as_mut(), &form.email).await? {
+    if let Some((mailbox, email)) = login_email_for(repository.as_mut(), form.email).await? {
         email_sender.send(mailbox, &email).await?;
         Ok(Login::success(redirect))
     } else {
@@ -153,10 +153,10 @@ async fn redirect_to_login(request: &Request<'_>) -> Redirect {
     Redirect::to(uri!(login_page(redirect = Some(origin))))
 }
 
-fn redirect_to<'a>(redirect: Option<&'a str>) -> Option<Redirect> {
+fn redirect_to(redirect: Option<&str>) -> Option<Redirect> {
     redirect
         .and_then(|r| Origin::parse_owned(r.to_string()).ok())
-        .map(|uri| Redirect::to(uri))
+        .map(Redirect::to)
 }
 
 #[derive(Debug, Clone, sqlx::FromRow)]
