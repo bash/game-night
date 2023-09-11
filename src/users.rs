@@ -3,7 +3,7 @@ use lettre::message::Mailbox;
 use rocket_db_pools::sqlx;
 use serde::Serialize;
 
-#[derive(Debug, Copy, Clone, sqlx::Type, Serialize)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, sqlx::Type, Serialize)]
 #[sqlx(transparent)]
 #[serde(transparent)]
 pub(crate) struct UserId(pub(crate) i64);
