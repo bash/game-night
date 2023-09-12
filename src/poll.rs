@@ -11,6 +11,8 @@ use sqlx::sqlite::{SqliteTypeInfo, SqliteValueRef};
 use sqlx::{Database, Decode, Encode, Sqlite, Type};
 use time::OffsetDateTime;
 
+mod finalize;
+pub(crate) use finalize::*;
 mod new;
 mod open;
 

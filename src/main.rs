@@ -1,7 +1,8 @@
 use anyhow::{Context, Result};
-use database::SqliteRepository;
+use database::Repository;
 use email::{EmailSender, EmailSenderImpl};
 use keys::GameNightKeys;
+use poll::poll_finalizer;
 use rocket::fairing::{self, Fairing};
 use rocket::figment::Figment;
 use rocket::fs::FileServer;
@@ -9,7 +10,8 @@ use rocket::http::uri::Absolute;
 use rocket::http::Status;
 use rocket::request::{FromRequest, Outcome};
 use rocket::{
-    async_trait, catch, catchers, error, get, launch, routes, Build, Config, Request, Rocket, Route,
+    async_trait, catch, catchers, error, get, launch, routes, Build, Config, Phase, Request,
+    Rocket, Route,
 };
 use rocket_db_pools::{sqlx::SqlitePool, Database, Pool};
 use rocket_dyn_templates::{context, Engines, Template};
@@ -49,6 +51,7 @@ fn rocket() -> _ {
         .attach(initialize_email_sender())
         .attach(invite_admin_user())
         .attach(login::auto_login_fairing())
+        .attach(poll_finalizer())
 }
 
 fn figment() -> Figment {
@@ -121,12 +124,7 @@ fn invite_admin_user() -> impl Fairing {
 }
 
 async fn try_invite_admin_user(rocket: &Rocket<Build>) -> Result<()> {
-    let connection = GameNightDatabase::fetch(rocket)
-        .context("database not configured")?
-        .get()
-        .await
-        .context("failed to retrieve database")?;
-    invitation::invite_admin_user(&mut SqliteRepository(connection))
+    invitation::invite_admin_user(&mut *rocket.repository().await?)
         .await
         .context("failed to invite admin user")
 }
@@ -169,4 +167,21 @@ fn markdown_filter(
     html::push_html(&mut html_output, parser);
 
     Ok(html_output.into())
+}
+
+#[async_trait]
+trait RocketExt {
+    async fn repository(&self) -> Result<Box<dyn Repository>>;
+}
+
+#[async_trait]
+impl<P: Phase> RocketExt for Rocket<P> {
+    async fn repository(&self) -> Result<Box<dyn Repository>> {
+        let database = GameNightDatabase::fetch(self)
+            .context("database not configured")?
+            .get()
+            .await
+            .context("failed to retrieve database")?;
+        Ok(database::create_repository(database))
+    }
 }

@@ -403,7 +403,7 @@ impl<'r> FromRequest<'r> for Box<dyn Repository> {
     async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
         Connection::<GameNightDatabase>::from_request(request)
             .await
-            .map(create_repository)
+            .map(|c| create_repository(c.into_inner()))
             .map_failure(|(status, error)| (status, into_anyhow_error(error)))
     }
 }
@@ -414,6 +414,6 @@ fn into_anyhow_error<E: std::error::Error + Send + Sync + 'static>(error: Option
         .unwrap_or_else(|| anyhow!("Unable to retrieve database"))
 }
 
-fn create_repository(connection: Connection<GameNightDatabase>) -> Box<dyn Repository> {
-    Box::new(SqliteRepository(connection.into_inner()))
+pub(crate) fn create_repository(connection: PoolConnection<Sqlite>) -> Box<dyn Repository> {
+    Box::new(SqliteRepository(connection))
 }
