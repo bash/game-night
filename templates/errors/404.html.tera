@@ -1,6 +1,6 @@
 {% extends 'base' %}
 
-{% block title %}404—Page Not Found{% endblock title %}
+{% block title %}404—Not Found{% endblock title %}
 
 {% block content %}
 I have searched far and wide for the page <strong>{{page.path}}</strong>.
