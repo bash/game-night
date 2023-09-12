@@ -1,3 +1,4 @@
+use super::{Poll, PollState};
 use crate::database::Repository;
 use crate::RocketExt;
 use anyhow::Result;
@@ -6,6 +7,7 @@ use rocket::tokio::time::interval;
 use rocket::tokio::{self, select};
 use rocket::{warn, Orbit, Rocket, Shutdown};
 use std::time::Duration;
+use time::OffsetDateTime;
 
 pub(crate) fn poll_finalizer() -> impl Fairing {
     fairing::AdHoc::on_liftoff("Poll Finalizer", |rocket| {
@@ -39,7 +41,19 @@ pub(crate) async fn finalize(repository: &mut dyn Repository) {
     }
 }
 
-pub(crate) async fn try_finalize(_repository: &mut dyn Repository) -> Result<()> {
-    dbg!("finalizing...");
+pub(crate) async fn try_finalize(repository: &mut dyn Repository) -> Result<()> {
+    // not using a transaction here because we're the only ones setting polls to closed.
+    if let Some(poll) = repository.get_current_poll().await? {
+        if poll.state(OffsetDateTime::now_utc()) == PollState::PendingClosure {
+            try_finalize_poll(repository, poll).await?;
+        }
+    }
+
+    Ok(())
+}
+
+async fn try_finalize_poll(repository: &mut dyn Repository, poll: Poll) -> Result<()> {
+    repository.close_poll(poll.id).await?;
+    // TODO
     Ok(())
 }

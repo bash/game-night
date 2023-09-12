@@ -193,7 +193,7 @@ pub(crate) enum DateSelectionStrategy {
     ToMaximizeParticipants,
 }
 
-#[derive(Debug, Copy, Clone, Serialize)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub(crate) enum PollState {
     Open,
