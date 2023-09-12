@@ -55,6 +55,8 @@ pub(crate) trait Repository: Send {
     async fn get_current_poll(&mut self) -> Result<Option<Poll>>;
 
     async fn close_poll(&mut self, id: i64) -> Result<()>;
+
+    async fn prune(&mut self) -> Result<()>;
 }
 
 pub(crate) struct SqliteRepository(pub(crate) SqliteConnection);
@@ -333,6 +335,16 @@ impl Repository for SqliteRepository {
             .bind(true)
             .bind(id)
             .execute(self.0.deref_mut())
+            .await?;
+        Ok(())
+    }
+
+    async fn prune(&mut self) -> Result<()> {
+        sqlx::query("DELETE FROM login_tokens WHERE unixepoch(valid_until) - unixepoch('now') < 0")
+            .execute(&mut *self.0)
+            .await?;
+        sqlx::query("DELETE FROM email_verification_codes WHERE unixepoch(valid_until) - unixepoch('now') < 0")
+            .execute(&mut *self.0)
             .await?;
         Ok(())
     }
