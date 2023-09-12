@@ -1,7 +1,9 @@
-use super::{Poll, PollState};
+use super::{DateSelectionStrategy, Poll, PollOption, PollState};
 use crate::database::Repository;
 use crate::RocketExt;
 use anyhow::Result;
+use rand::seq::SliceRandom;
+use rand::thread_rng;
 use rocket::fairing::{self, Fairing};
 use rocket::tokio::time::interval;
 use rocket::tokio::{self, select};
@@ -53,7 +55,37 @@ pub(crate) async fn try_finalize(repository: &mut dyn Repository) -> Result<()> 
 }
 
 async fn try_finalize_poll(repository: &mut dyn Repository, poll: Poll) -> Result<()> {
+    let candidates = get_candidates(&poll);
+    let _chosen_option = choose_option(candidates, poll.strategy);
+
+    // TODO: eliminate participants over max_participants
+    // TODO: create event
+    // TODO: send email
+
     repository.close_poll(poll.id).await?;
     // TODO
     Ok(())
+}
+
+fn get_candidates(poll: &Poll) -> Vec<PollOption> {
+    poll.options
+        .iter()
+        .cloned()
+        .filter(|o| o.count_participants().try_into().ok() >= Some(poll.min_participants))
+        .collect()
+}
+
+fn choose_option(
+    mut candidates: Vec<PollOption>,
+    strategy: DateSelectionStrategy,
+) -> Option<PollOption> {
+    use DateSelectionStrategy::*;
+    match strategy {
+        AtRandom => candidates.choose(&mut thread_rng()).cloned(),
+        ToMaximizeParticipants => {
+            let max_participants = candidates.iter().map(|o| o.count_participants()).max();
+            candidates.retain(|o| Some(o.count_participants()) == max_participants);
+            candidates.choose(&mut thread_rng()).cloned()
+        }
+    }
 }

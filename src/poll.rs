@@ -97,6 +97,12 @@ pub(crate) struct PollOption<Id = i64, UserRef = User> {
     pub(crate) answers: Vec<Answer<Id, UserRef>>,
 }
 
+impl<Id, UserRef> PollOption<Id, UserRef> {
+    pub(crate) fn count_participants(&self) -> usize {
+        self.answers.iter().filter(|a| a.value.is_yes()).count()
+    }
+}
+
 #[derive(Debug, Clone, sqlx::FromRow, Serialize)]
 pub(crate) struct Answer<Id = i64, UserRef = User> {
     pub(crate) id: Id,
@@ -125,6 +131,10 @@ pub(crate) enum AnswerValue {
 impl AnswerValue {
     fn yes(attendance: Attendance) -> Self {
         Self::Yes { attendance }
+    }
+
+    fn is_yes(self) -> bool {
+        matches!(self, AnswerValue::Yes { .. })
     }
 }
 
