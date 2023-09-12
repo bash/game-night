@@ -1,7 +1,7 @@
 use self::open::open_poll_page;
 use crate::database::Repository;
 use crate::template::{PageBuilder, PageType};
-use crate::users::User;
+use crate::users::{User, UserId};
 use anyhow::Error;
 use rocket::response::Debug;
 use rocket::{get, routes, uri, FromFormField, Route};
@@ -43,9 +43,9 @@ fn no_open_poll_page(page: PageBuilder<'_>, user: User) -> Template {
 pub(crate) struct Poll<Id = i64, UserRef = User> {
     pub(crate) id: Id,
     #[sqlx(try_from = "i64")]
-    pub(crate) min_participants: u64,
+    pub(crate) min_participants: usize,
     #[sqlx(try_from = "i64")]
-    pub(crate) max_participants: u64,
+    pub(crate) max_participants: usize,
     pub(crate) strategy: DateSelectionStrategy,
     pub(crate) description: String,
     #[serde(with = "time::serde::iso8601")]
@@ -121,6 +121,19 @@ impl<Id, UserRef> Answer<Id, UserRef> {
     }
 }
 
+#[derive(Debug)]
+pub(crate) struct YesAnswer(pub(crate) Attendance, pub(crate) UserId);
+
+impl Answer {
+    pub(crate) fn yes(&self) -> Option<YesAnswer> {
+        use AnswerValue::*;
+        match self.value {
+            No => None,
+            Yes { attendance } => Some(YesAnswer(attendance, self.user.id)),
+        }
+    }
+}
+
 #[derive(Debug, Copy, Clone, Serialize)]
 #[serde(rename_all = "snake_case", tag = "type")]
 pub(crate) enum AnswerValue {
@@ -183,7 +196,7 @@ impl<'r> Decode<'r, Sqlite> for AnswerValue {
     }
 }
 
-#[derive(Debug, Copy, Clone, sqlx::Type, Serialize)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, sqlx::Type, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub(crate) enum Attendance {
     Optional,

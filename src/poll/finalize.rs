@@ -1,13 +1,16 @@
-use super::{DateSelectionStrategy, Poll, PollOption, PollState};
+use super::{Answer, Attendance, DateSelectionStrategy, Poll, PollOption, PollState};
 use crate::database::Repository;
+use crate::users::UserId;
 use crate::RocketExt;
 use anyhow::Result;
+use itertools::{Either, Itertools};
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 use rocket::fairing::{self, Fairing};
 use rocket::tokio::time::interval;
 use rocket::tokio::{self, select};
 use rocket::{warn, Orbit, Rocket, Shutdown};
+use std::cmp::min;
 use std::time::Duration;
 use time::OffsetDateTime;
 
@@ -55,15 +58,18 @@ pub(crate) async fn try_finalize(repository: &mut dyn Repository) -> Result<()> 
 }
 
 async fn try_finalize_poll(repository: &mut dyn Repository, poll: Poll) -> Result<()> {
-    let candidates = get_candidates(&poll);
-    let _chosen_option = choose_option(candidates, poll.strategy);
-
-    // TODO: eliminate participants over max_participants
-    // TODO: create event
-    // TODO: send email
-
     repository.close_poll(poll.id).await?;
-    // TODO
+
+    let candidates = get_candidates(&poll);
+
+    if let Some(chosen_option) = choose_option(candidates, &poll) {
+        let (_, _) = choose_participants(chosen_option.answers, poll.max_participants);
+        // TODO: create event
+        // TODO: send email
+    } else {
+        // No date found, send email to everyone
+    }
+
     Ok(())
 }
 
@@ -71,21 +77,50 @@ fn get_candidates(poll: &Poll) -> Vec<PollOption> {
     poll.options
         .iter()
         .cloned()
-        .filter(|o| o.count_participants().try_into().ok() >= Some(poll.min_participants))
+        .filter(|o| o.count_participants() >= poll.min_participants)
         .collect()
 }
 
-fn choose_option(
-    mut candidates: Vec<PollOption>,
-    strategy: DateSelectionStrategy,
-) -> Option<PollOption> {
+fn choose_option(mut candidates: Vec<PollOption>, poll: &Poll) -> Option<PollOption> {
     use DateSelectionStrategy::*;
-    match strategy {
+    match poll.strategy {
         AtRandom => candidates.choose(&mut thread_rng()).cloned(),
         ToMaximizeParticipants => {
-            let max_participants = candidates.iter().map(|o| o.count_participants()).max();
-            candidates.retain(|o| Some(o.count_participants()) == max_participants);
+            let max_participants = min(
+                poll.max_participants,
+                candidates
+                    .iter()
+                    .map(|o| o.count_participants())
+                    .max()
+                    .unwrap_or(usize::MAX),
+            );
+            candidates.retain(|o| (o.count_participants()) >= max_participants);
             candidates.choose(&mut thread_rng()).cloned()
         }
     }
+}
+
+fn choose_participants(
+    answers: Vec<Answer>,
+    max_participants: usize,
+) -> (Vec<UserId>, Vec<UserId>) {
+    let (mut accepted, mut rejected): (Vec<_>, Vec<_>) = pre_partition_by_attendance(answers);
+
+    let available = max_participants.saturating_sub(accepted.len());
+    if available > 0 {
+        rejected.shuffle(&mut thread_rng());
+        accepted.extend(rejected.drain(..available));
+    }
+
+    (accepted, rejected)
+}
+
+fn pre_partition_by_attendance(answers: Vec<Answer>) -> (Vec<UserId>, Vec<UserId>) {
+    answers
+        .into_iter()
+        .filter_map(|a| a.yes())
+        .partition_map(|a| match a.0 {
+            Attendance::Required => Either::Left(a.1),
+            Attendance::Optional => Either::Right(a.1),
+        })
 }

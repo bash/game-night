@@ -152,9 +152,9 @@ fn now_utc_without_subminutes() -> Result<OffsetDateTime> {
 
 #[derive(Debug, FromForm)]
 pub(super) struct NewPollData<'r> {
-    min_participants: u64,
+    min_participants: usize,
     #[field(validate = gte(self.min_participants))]
-    max_participants: u64,
+    max_participants: usize,
     strategy: DateSelectionStrategy,
     #[field(name = "duration", validate = gte(1))]
     duration_in_hours: i64,
