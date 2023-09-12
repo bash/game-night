@@ -5,22 +5,47 @@
 {% block content %}
 <div>{{page.poll.description | markdown | safe}}</div>
 
-<div class="calendar-list">
-    {% for group in page.options_by_month %}
-        <h2>{{group.name}}</h2>
-        <ul>
-            {% for option in group.options %}
-                <li>
-                    {# TODO: checked #}
-                    <input type="checkbox" name="options[{{option.id}}]" id="option-{{option.id}}">
-                    <label for="option-{{option.id}}">
-                        <span class="day">{{option.datetime | date(format="%e")}}</span>
-                        <span class="weekday">{{option.datetime | date(format="%A")}}</span>
-                    </label>
-                    <input type="time" readonly value="{{option.datetime | date(format='%H:%M')}}">
-                </li>
-            {% endfor %}
-        </ul>
-    {% endfor %}
-</div>
+{# TODO: show details as per submission page #}
+
+<form method="post">
+    <p>
+        I can attend <em>Tau's Game Night</em> if it happened
+        on one of the following dates:
+    </p>
+    <div class="calendar-list">
+        {% for group in page.option_groups %}
+            <h2>{{group.name}}</h2>
+            <ul>
+                {% for option in group.options %}
+                    <li>
+                        {% if option.answer and option.answer.type == 'yes' %}
+                            {% set checked = 'checked' %}
+                        {% else %}
+                            {% set checked = '' %}
+                        {% endif %}
+
+                        {% if option.answer and option.answer.attendance == 'required' %}
+                            {% set disabled = 'disabled' %}
+                        {% else %}
+                            {% set disabled = '' %}
+                        {% endif %}
+
+                        <input type="checkbox" name="options[{{option.id}}]" id="option-{{option.id}}" {{checked}} {{disabled}}>
+                        <label for="option-{{option.id}}">
+                            <span class="day">{{option.datetime | date(format="%e")}}</span>
+                            <span class="weekday">{{option.datetime | date(format="%A")}}</span>
+                        </label>
+                        <input type="time" readonly value="{{option.datetime | date(format='%H:%M')}}" disabled>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endfor %}
+    </div>
+    <p>
+        <strong>P.S.</strong> You can select any number of dates.
+    </p>
+    <fieldset class="-actions">
+        <button type="submit">Save Answers</button>
+    </fieldset>
+</form>
 {% endblock content %}

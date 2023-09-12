@@ -17,7 +17,12 @@ mod new;
 mod open;
 
 pub(crate) fn routes() -> Vec<Route> {
-    routes![poll_page, new::new_poll_page, new::new_poll]
+    routes![
+        poll_page,
+        new::new_poll_page,
+        new::new_poll,
+        open::update_answers,
+    ]
 }
 
 #[get("/poll")]
@@ -28,7 +33,7 @@ async fn poll_page(
 ) -> Result<Template, Debug<Error>> {
     let now = OffsetDateTime::now_utc();
     match repository.get_current_poll().await? {
-        Some(poll) if poll.is_open(now) => Ok(open_poll_page(page, poll)),
+        Some(poll) if poll.is_open(now) => Ok(open_poll_page(page, poll, user)),
         _ => Ok(no_open_poll_page(page, user)),
     }
 }
