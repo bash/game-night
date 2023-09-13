@@ -41,6 +41,7 @@ fn rocket() -> _ {
         .mount("/", invitation::routes())
         .mount("/", register::routes())
         .mount("/", poll::routes())
+        .mount("/", users::routes())
         .mount("/", login::routes())
         .register("/", login::catchers())
         .register("/", authorization::catchers())

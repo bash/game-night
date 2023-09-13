@@ -72,6 +72,14 @@ impl UserPredicate for ManagePoll {
     }
 }
 
+pub(crate) struct ManageUsers;
+
+impl UserPredicate for ManageUsers {
+    fn is_satisfied(user: &User) -> bool {
+        user.can_manage_users()
+    }
+}
+
 #[catch(403)]
 async fn forbidden(request: &Request<'_>) -> Template {
     let page = PageBuilder::from_request(request)

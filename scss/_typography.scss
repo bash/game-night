@@ -107,3 +107,21 @@ a {
     padding: 10px;
     margin-bottom: 1rem;
 }
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+td, th {
+    border: 1px solid var(--secondary-text-color);
+    padding: 6px 12px;
+}
+
+th {
+    font-weight: 700;
+}
+
+tr:target td {
+    background-color: var(--highlight-bg);
+}

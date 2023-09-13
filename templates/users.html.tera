@@ -1,0 +1,35 @@
+{% extends 'base' %}
+
+{% block title %}Users{% endblock title %}
+
+{% block content %}
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Role</th>
+            <th>Invited By</th>
+            <th>Campaign</th>
+            <th style="border: none"></th>
+        </tr>
+    </thead>
+    <tbody align="center">
+        {% for user in page.users %}
+            <tr id="user-{{user.id}}">
+                <td><a href="mailto:{{user.email_address}}">{{user.name}}</a></td>
+                <td>{{user.role}}</td>
+                <td>
+                    {% if user.invited_by %}
+                        <a href="#user-{{user.invited_by}}">#</a>
+                    {% else %}
+                        ∅
+                    {% endif %}
+                </td>
+                <td>{{user.campaign | default(value="∅")}}</td>
+                <td style="border: none; background-color: transparent" align="left"><a href="#user-{{user.id}}">#</a></td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock content %}

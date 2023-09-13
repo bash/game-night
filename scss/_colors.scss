@@ -43,11 +43,13 @@
     --text-color: #000;
     --secondary-text-color: #989490;
     --background-color: #fff8f1;
+    --highlight-bg: rgba(0, 0, 0, 10%);
 
     @media (prefers-color-scheme: dark) {
         --text-color: #fff;
         --secondary-text-color: #535353;
         --background-color: #121212;
+        --highlight-bg: rgba(255, 255, 255, 6%);
     }
 
     @media (prefers-contrast: more) {
