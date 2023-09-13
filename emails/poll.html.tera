@@ -1,13 +1,17 @@
 {% extends 'base.html.tera' %}
 {% block content %}
 <h1>
-    Get Ready For <br> Another Game Night 🎉
+    Are You Ready for<br>
+    a Game Night? 🧙{{skin_tone}}
 </h1>
 
 <p>
-    Use the poll to indicate the dates on which you are
-    available for <strong>Tau's Game Night</strong>.
-    The poll closes on <strong>{{poll_close_date}}</strong> at <strong>{{poll_close_time}}</strong> after which
+    Participate in the poll to help<br>
+    select the next date for <em>Tau's Game Night</em>.
+</p>
+
+<p>
+    The poll closes on <strong>{{poll_closes_at | date(format = "%B %e")}}</strong> at <strong>{{poll_closes_at | date(format='%H:%M')}}</strong> after which
     the definitive date will be announced.
 </p>
 

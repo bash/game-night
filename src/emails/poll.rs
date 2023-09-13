@@ -1,17 +1,21 @@
 use crate::email::EmailMessage;
+use serde::{Serialize, Serializer};
 use tera::Context;
-use time::OffsetDateTime;
+use time::macros::format_description;
+use time::{OffsetDateTime, PrimitiveDateTime};
+use time_tz::{timezones, OffsetDateTimeExt};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub(crate) struct PollEmail {
     pub(crate) name: String,
+    #[serde(serialize_with = "serialize_as_cet")]
     pub(crate) poll_closes_at: OffsetDateTime,
     pub(crate) poll_url: String,
 }
 
 impl EmailMessage for PollEmail {
     fn subject(&self) -> String {
-        "Get Ready For Another Game Night".to_owned()
+        "Are You Ready for a Game Night?".to_owned()
     }
 
     fn template_name(&self) -> String {
@@ -19,9 +23,14 @@ impl EmailMessage for PollEmail {
     }
 
     fn template_context(&self) -> Context {
-        let mut context = Context::new();
-        context.insert("name", &self.name);
-        context.insert("poll_url", &self.poll_url);
-        context
+        Context::from_serialize(self).unwrap()
     }
+}
+
+fn serialize_as_cet<S: Serializer>(dt: &OffsetDateTime, serializer: S) -> Result<S::Ok, S::Error> {
+    let in_cet = dt.to_timezone(timezones::db::CET);
+    let primitive = PrimitiveDateTime::new(in_cet.date(), in_cet.time());
+    let format = format_description!("[year]-[month]-[day]T[hour]:[minute]:[second]");
+    let formatted = primitive.format(&format).unwrap();
+    serializer.serialize_str(&formatted)
 }

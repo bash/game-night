@@ -1,8 +1,9 @@
+use super::LoginToken;
 use crate::authentication::CookieJarExt;
 use crate::database::Repository;
 use crate::users::User;
 use rocket::fairing::{self, Fairing};
-use rocket::http::uri::Origin;
+use rocket::http::uri::{Absolute, Origin};
 use rocket::request::{FromRequest, Outcome};
 use rocket::response::Redirect;
 use rocket::{async_trait, get, Request};
@@ -12,6 +13,12 @@ pub(crate) fn auto_login_fairing() -> impl Fairing {
     fairing::AdHoc::on_request("Auto-Login", |req, _data| {
         Box::pin(async { _ = auto_login(req).await })
     })
+}
+
+pub(crate) fn with_autologin_token(uri: Absolute<'_>, token: &LoginToken) -> String {
+    let mut url = Url::parse(&uri.to_string()).unwrap();
+    url.query_pairs_mut().append_pair(QUERY_PARAM, &token.token);
+    url.to_string()
 }
 
 #[get("/_auto-login-redirect")]

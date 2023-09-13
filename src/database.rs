@@ -34,6 +34,8 @@ pub(crate) trait Repository: Send {
 
     async fn get_user_by_email(&mut self, email: &str) -> Result<Option<User>>;
 
+    async fn get_users(&mut self) -> Result<Vec<User>>;
+
     async fn add_verification_code(&mut self, code: &EmailVerificationCode) -> Result<()>;
 
     async fn has_verification_code(&mut self, email_address: &str) -> Result<bool>;
@@ -46,7 +48,7 @@ pub(crate) trait Repository: Send {
 
     async fn use_login_token(&mut self, token: &str) -> Result<Option<UserId>>;
 
-    async fn add_poll(&mut self, poll: Poll<(), UserId>) -> Result<i64>;
+    async fn add_poll(&mut self, poll: &Poll<(), UserId>) -> Result<i64>;
 
     async fn update_poll_description(&mut self, id: i64, description: &str) -> Result<()>;
 
@@ -135,19 +137,25 @@ impl Repository for SqliteRepository {
     }
 
     async fn get_user_by_id(&mut self, user_id: UserId) -> Result<Option<User>> {
-        let invitation = sqlx::query_as("SELECT * FROM users WHERE id = ?1")
+        let user = sqlx::query_as("SELECT * FROM users WHERE id = ?1")
             .bind(user_id)
             .fetch_optional(self.0.deref_mut())
             .await?;
-        Ok(invitation)
+        Ok(user)
     }
 
     async fn get_user_by_email(&mut self, email: &str) -> Result<Option<User>> {
-        let invitation = sqlx::query_as("SELECT * FROM users WHERE email_address = ?1")
+        let user = sqlx::query_as("SELECT * FROM users WHERE email_address = ?1")
             .bind(email)
             .fetch_optional(self.0.deref_mut())
             .await?;
-        Ok(invitation)
+        Ok(user)
+    }
+
+    async fn get_users(&mut self) -> Result<Vec<User>> {
+        Ok(sqlx::query_as("SELECT * FROM users")
+            .fetch_all(&mut *self.0)
+            .await?)
     }
 
     async fn add_verification_code(&mut self, code: &EmailVerificationCode) -> Result<()> {
@@ -235,7 +243,7 @@ impl Repository for SqliteRepository {
         }
     }
 
-    async fn add_poll(&mut self, poll: Poll<(), UserId>) -> Result<i64> {
+    async fn add_poll(&mut self, poll: &Poll<(), UserId>) -> Result<i64> {
         let mut transaction: sqlx::Transaction<'_, Sqlite> = self.0.begin().await?;
 
         let poll_id = sqlx::query(
@@ -245,7 +253,7 @@ impl Repository for SqliteRepository {
         .bind(i64::try_from(poll.min_participants)?)
         .bind(i64::try_from(poll.max_participants)?)
         .bind(poll.strategy)
-        .bind(poll.description)
+        .bind(&poll.description)
         .bind(poll.created_by)
         .bind(poll.open_until)
         .bind(poll.closed)
@@ -253,7 +261,7 @@ impl Repository for SqliteRepository {
         .await?
         .last_insert_rowid();
 
-        for option in poll.options {
+        for option in poll.options.iter() {
             let option_id =
                 sqlx::query("INSERT INTO poll_options (poll_id, datetime) VALUES (?1, ?2)")
                     .bind(poll_id)
@@ -261,7 +269,7 @@ impl Repository for SqliteRepository {
                     .execute(&mut *transaction)
                     .await?
                     .last_insert_rowid();
-            for answer in option.answers {
+            for answer in option.answers.iter() {
                 sqlx::query(
                     "INSERT INTO poll_answers (poll_option_id, value, user_id)
                      VALUES (?1, ?2, ?3)",
