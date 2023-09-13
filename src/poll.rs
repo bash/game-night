@@ -3,12 +3,16 @@ use crate::database::Repository;
 use crate::template::{PageBuilder, PageType};
 use crate::users::{User, UserId};
 use anyhow::Error;
+use rocket::http::Status;
+use rocket::outcome::try_outcome;
+use rocket::request::{FromRequest, Outcome};
 use rocket::response::Debug;
-use rocket::{get, routes, uri, FromFormField, Route};
+use rocket::{async_trait, get, routes, uri, FromFormField, Request, Route};
 use rocket_dyn_templates::{context, Template};
 use serde::Serialize;
 use sqlx::sqlite::{SqliteTypeInfo, SqliteValueRef};
 use sqlx::{Database, Decode, Encode, Sqlite, Type};
+use std::ops;
 use time::OffsetDateTime;
 
 mod finalize;
@@ -105,6 +109,12 @@ pub(crate) struct PollOption<Id = i64, UserRef = User> {
 impl<Id, UserRef> PollOption<Id, UserRef> {
     pub(crate) fn count_participants(&self) -> usize {
         self.answers.iter().filter(|a| a.value.is_yes()).count()
+    }
+}
+
+impl PollOption {
+    pub(crate) fn get_answer(&self, user: UserId) -> Option<&Answer> {
+        self.answers.iter().find(|a| a.user.id == user)
     }
 }
 
@@ -232,5 +242,33 @@ pub(crate) enum PollState {
 impl PollState {
     pub(crate) fn is_open(self) -> bool {
         matches!(self, PollState::Open)
+    }
+}
+
+pub(crate) struct Open<T>(T);
+
+impl<T> ops::Deref for Open<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+#[async_trait]
+impl<'r> FromRequest<'r> for Open<Poll> {
+    type Error = Option<Error>;
+
+    async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
+        let mut repository: Box<dyn Repository> = try_outcome!(FromRequest::from_request(request)
+            .await
+            .map_failure(|(s, e)| (s, Some(e))));
+        match repository.get_current_poll().await {
+            Ok(Some(poll)) if poll.is_open(OffsetDateTime::now_utc()) => {
+                Outcome::Success(Open(poll))
+            }
+            Ok(_) => Outcome::Failure((Status::BadRequest, None)),
+            Err(error) => Outcome::Failure((Status::InternalServerError, Some(error))),
+        }
     }
 }

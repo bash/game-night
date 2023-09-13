@@ -50,7 +50,7 @@ pub(crate) trait Repository: Send {
 
     async fn update_poll_description(&mut self, id: i64, description: &str) -> Result<()>;
 
-    async fn add_answer(&mut self, option_id: i64, answer: Answer<(), UserId>) -> Result<()>;
+    async fn add_answers(&mut self, answers: Vec<(i64, Answer<(), UserId>)>) -> Result<()>;
 
     async fn get_current_poll(&mut self) -> Result<Option<Poll>>;
 
@@ -299,31 +299,33 @@ impl Repository for SqliteRepository {
         }
     }
 
-    async fn add_answer(&mut self, option_id: i64, answer: Answer<(), UserId>) -> Result<()> {
+    async fn add_answers(&mut self, answers: Vec<(i64, Answer<(), UserId>)>) -> Result<()> {
         let mut transaction: sqlx::Transaction<'_, Sqlite> = self.0.begin().await?;
 
-        let closed: bool = sqlx::query_scalar(
-            "SELECT polls.closed FROM polls
-             JOIN poll_options ON poll_options.poll_id = polls.id
-             WHERE poll_options.id = ?1",
-        )
-        .bind(option_id)
-        .fetch_one(&mut *transaction)
-        .await?;
+        for (option_id, answer) in answers {
+            let closed: bool = sqlx::query_scalar(
+                "SELECT polls.closed FROM polls
+                 JOIN poll_options ON poll_options.poll_id = polls.id
+                 WHERE poll_options.id = ?1",
+            )
+            .bind(option_id)
+            .fetch_one(&mut *transaction)
+            .await?;
 
-        if closed {
-            return Err(anyhow!("Poll already closed"));
+            if closed {
+                return Err(anyhow!("Poll already closed"));
+            }
+
+            sqlx::query(
+                "INSERT INTO poll_answers (poll_option_id, value, user_id)
+                 VALUES (?1, ?2, ?3)",
+            )
+            .bind(option_id)
+            .bind(answer.value)
+            .bind(answer.user)
+            .execute(&mut *transaction)
+            .await?;
         }
-
-        sqlx::query(
-            "INSERT INTO poll_answers (poll_option_id, value, user_id)
-             VALUES (?1, ?2, ?3)",
-        )
-        .bind(option_id)
-        .bind(answer.value)
-        .bind(answer.user)
-        .execute(&mut *transaction)
-        .await?;
 
         transaction.commit().await?;
 

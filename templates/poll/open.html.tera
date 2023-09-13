@@ -24,7 +24,7 @@
                             {% set checked = '' %}
                         {% endif %}
 
-                        {% if option.answer and option.answer.attendance == 'required' %}
+                        {% if option.answer and option.answer.type == 'yes' and option.answer.attendance == 'required' %}
                             {% set disabled = 'disabled' %}
                         {% else %}
                             {% set disabled = '' %}

@@ -1,8 +1,9 @@
-use super::rocket_uri_macro_poll_page;
+use super::{rocket_uri_macro_poll_page, Open};
+use super::{Answer, AnswerValue, Attendance};
 use crate::database::Repository;
 use crate::poll::{Poll, PollOption};
 use crate::template::{PageBuilder, PageType};
-use crate::users::User;
+use crate::users::{User, UserId};
 use anyhow::Error;
 use itertools::Itertools;
 use rocket::form::Form;
@@ -12,8 +13,6 @@ use rocket_dyn_templates::Template;
 use serde::Serialize;
 use std::collections::HashMap;
 use time::{Month, OffsetDateTime};
-
-use super::{Answer, AnswerValue, Attendance};
 
 pub(super) fn open_poll_page(page: PageBuilder<'_>, poll: Poll, user: User) -> Template {
     page.type_(PageType::Poll)
@@ -87,25 +86,58 @@ struct OpenPollOption {
 pub(super) async fn update_answers(
     mut repository: Box<dyn Repository>,
     user: User,
-    form: Form<UpdateAnswersData>,
+    form: Form<AnswerUpdates>,
+    poll: Open<Poll>,
 ) -> Result<Redirect, Debug<Error>> {
-    for (option_id, answer) in form.into_inner().options {
-        let value = if answer {
-            AnswerValue::yes(Attendance::Optional)
-        } else {
-            AnswerValue::No
-        };
-        let answer = Answer {
-            id: (),
-            value,
-            user: user.id,
-        };
-        repository.add_answer(option_id, answer).await?;
-    }
+    repository
+        .add_answers(apply_updates(&poll, &user, form.into_inner()))
+        .await?;
     Ok(Redirect::to(uri!(poll_page())))
 }
 
+fn apply_updates(
+    poll: &Poll,
+    user: &User,
+    updates: AnswerUpdates,
+) -> Vec<(i64, Answer<(), UserId>)> {
+    poll.options
+        .iter()
+        .filter(|option| !is_answered_with_yes_and_required_attendance(option, user)) // required attendences cannot currently not be updated
+        .map(|option| (option.id, get_answer(user, &updates, option)))
+        .collect()
+}
+
+fn get_answer(user: &User, updates: &AnswerUpdates, option: &PollOption) -> Answer<(), UserId> {
+    Answer {
+        id: (),
+        user: user.id,
+        value: get_answer_value(updates, option.id),
+    }
+}
+
+fn get_answer_value(updates: &AnswerUpdates, option_id: i64) -> AnswerValue {
+    let yes = updates.options.get(&option_id).copied().unwrap_or_default();
+    if yes {
+        AnswerValue::yes(Attendance::Optional)
+    } else {
+        AnswerValue::No
+    }
+}
+
+fn is_answered_with_yes_and_required_attendance(option: &PollOption, user: &User) -> bool {
+    matches!(option.get_answer(user.id), Some(answer) if is_required(answer))
+}
+
+fn is_required(answer: &Answer) -> bool {
+    matches!(
+        answer.value,
+        AnswerValue::Yes {
+            attendance: Attendance::Required
+        }
+    )
+}
+
 #[derive(Debug, FromForm)]
-pub(super) struct UpdateAnswersData {
+pub(super) struct AnswerUpdates {
     options: HashMap<i64, bool>,
 }
