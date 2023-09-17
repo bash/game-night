@@ -1,4 +1,4 @@
-use super::{rocket_uri_macro_poll_page, Answer, AnswerValue, Attendance};
+use super::{rocket_uri_macro_poll_page, Answer, AnswerValue, Attendance, Location};
 use super::{DateSelectionStrategy, Poll, PollOption};
 use crate::authorization::{AuthorizedTo, ManagePoll};
 use crate::database::Repository;
@@ -103,13 +103,14 @@ pub(super) async fn new_poll(
     user: AuthorizedTo<ManagePoll>,
     url_prefix: UrlPrefix<'_>,
 ) -> Result<Redirect, Debug<Error>> {
-    let poll = to_poll(form.into_inner(), &user)?;
+    let location = repository.get_location().await?;
+    let poll = to_poll(form.into_inner(), location, &user)?;
     repository.add_poll(&poll).await?;
     send_poll_emails(repository, email_sender.as_ref(), url_prefix, &poll).await?;
     Ok(Redirect::to(uri!(poll_page())))
 }
 
-fn to_poll(poll: NewPollData, user: &User) -> Result<Poll<(), UserId>> {
+fn to_poll(poll: NewPollData, location: Location, user: &User) -> Result<Poll<(), UserId, i64>> {
     let now = now_utc_without_subminutes()?;
     Ok(Poll {
         id: (),
@@ -120,6 +121,7 @@ fn to_poll(poll: NewPollData, user: &User) -> Result<Poll<(), UserId>> {
         open_until: now + Duration::hours(poll.duration_in_hours),
         closed: false,
         created_by: user.id,
+        location: location.id,
         options: to_poll_options(poll.options.iter(), user)?,
     })
 }
@@ -195,7 +197,7 @@ async fn send_poll_emails(
     mut repository: Box<dyn Repository>,
     email_sender: &dyn EmailSender,
     url_prefix: UrlPrefix<'_>,
-    poll: &Poll<(), UserId>,
+    poll: &Poll<(), UserId, i64>,
 ) -> Result<()> {
     for user in repository.get_users().await? {
         let token = LoginToken::generate_reusable(user.id, poll.open_until);

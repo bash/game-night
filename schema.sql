@@ -36,6 +36,7 @@ CREATE TABLE polls
     , max_participants INTEGER NOT NULL
     , strategy TEXT NOT NULL
     , description TEXT NOT NULL
+    , location_id INTEGER NOT NULL REFERENCES locations(id) ON DELETE RESTRICT
     , created_by INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT
     , open_until TEXT NOT NULl
     , closed INTEGER NOT NULL
@@ -55,4 +56,16 @@ CREATE TABLE poll_answers
     , user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT
     , value TEXT NOT NULL
     , UNIQUE (poll_option_id, user_id) ON CONFLICT REPLACE
+    );
+
+CREATE TABLE locations
+    ( id INTEGER PRIMARY KEY
+    , nameplate TEXT NOT NULL
+    , street TEXT NOT NULL
+    , street_number TEXT NOT NULL
+    , plz TEXT NOT NULL
+    , city TEXT NOT NULL
+    , floor INTEGER NOT NULL
+    , CHECK (floor >= -128)
+    , CHECK (floor <= 127)
     );

@@ -114,6 +114,65 @@ a {
     margin-bottom: 1rem;
 }
 
+.postal-address {
+    display: grid;
+    grid-template-columns: auto auto;
+    justify-content: start;
+    margin-bottom: var(--inter-block-gap);
+    gap: 1ex;
+
+    .nameplate {
+        display: grid;
+        align-items: center;
+        grid-template-columns: auto 1fr auto;
+        gap: 50px;
+        border: 4px double currentColor;
+        padding: 10px;
+        border-radius: 6px;
+
+        > div {
+            justify-self: center;
+        }
+
+        &::before,
+        &::after {
+            content: '';
+            width: .4em;
+            height: .4em;
+            border-radius: 50%;
+            background-color: currentColor;
+        }
+    }
+
+    .floor {
+        display: grid;
+        grid-template-rows: auto 1fr;
+        border: 2px solid currentColor;
+        border-radius: 6px;
+        font-family: var(--sans-serif);
+        font-size: 2rem;
+
+        > span {
+            padding: 20px 25px;
+            align-self: center;
+        }
+
+        &::before {
+            font-size: .3em;
+            padding: 2px;
+            content: attr(aria-label);
+            text-align: center;
+            background-color: var(--text-color);
+            color: var(--background-color);
+            align-self: start;
+        }
+    }
+
+    .address {
+        text-align: center;
+    }
+}
+
 table {
     border-collapse: collapse;
     width: 100%;

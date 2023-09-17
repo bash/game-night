@@ -2,7 +2,7 @@ $content-padding: 30px;
 
 :root {
     --content-padding: #{$content-padding};
-    --content-max-width: calc(600px + 2 * var(--content-padding));
+    --content-max-width: calc(38rem + 2 * var(--content-padding));
 }
 
 body {

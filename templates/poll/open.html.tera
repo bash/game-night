@@ -3,20 +3,49 @@
 {% block title %}Poll{% endblock title %}
 
 {% block content %}
-<div>{{page.poll.description | markdown | safe}}</div>
+<p>
+    Hurray, Tau is inviting you to another <em>Game Night</em> 🎉 <br>
+    Fill out the poll until
+        <strong>{{page.poll.open_until | date(format = "%B %e")}}</strong>
+        at <strong>{{page.poll.open_until | date(format='%H:%M')}}</strong>
+        to help pick the date.
+</p>
+
+<section>
+    <p>The <em>Game Night</em> will take place at</p>
+    <div class="postal-address">
+        <div class="nameplate">
+            <div>
+                {% for name in page.poll.location.nameplate | split(pat=', ') %}
+                    {{name}}
+                    {% if not loop.last %}<br>{% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        <div class="floor" aria-label="Floor"><span>{{page.poll.location.floor}}</span></div>
+        <div class="address">
+            {{page.poll.location.street}} {{page.poll.location.street_number}}<br>
+            {{page.poll.location.plz}} {{page.poll.location.city}}
+        </div>
+    </div>
+</section>
 
 <p>
-    After the poll closes on <strong>{{page.poll.open_until | date(format = "%B %e")}}</strong>
-    at <strong>{{page.poll.open_until | date(format='%H:%M')}}</strong> the date will be chosen
+    After the poll closes the date will be chosen
     <strong>{{page.date_selection_strategy}}</strong>,
-    picking a date with at least <strong>{{page.poll.min_participants}}</strong> people.<br>
+    picking a date that at least <strong>{{page.poll.min_participants}}</strong> people have selected.
     At most <strong>{{page.poll.max_participants}}</strong> people will be invited to the game night.
 </p>
 
+{% if page.poll.description %}
+    <section>
+        {{page.poll.description | markdown | safe}}
+    </section>
+{% endif %}
+
 <form method="post">
     <p>
-        I can attend <em>Tau's Game Night</em> if it happened
-        on one of the following dates:
+        I would like to attend <em>Tau's Game Night</em> on one of the following dates:
     </p>
     <div class="calendar-list">
         {% for group in page.option_groups %}
@@ -54,11 +83,11 @@
             at <strong>{{page.poll.open_until | date(format='%H:%M')}}</strong>.
         </p>
     {% endif %}
+    <fieldset>
+        <button type="submit">Save Answers</button>
+    </fieldset>
     <p>
         <strong>P.S.</strong> You can select any number of dates.
     </p>
-    <fieldset class="-actions">
-        <button type="submit">Save Answers</button>
-    </fieldset>
 </form>
 {% endblock content %}

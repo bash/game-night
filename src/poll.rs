@@ -49,7 +49,7 @@ fn no_open_poll_page(page: PageBuilder<'_>, user: User) -> Template {
 }
 
 #[derive(Debug, sqlx::FromRow, Serialize)]
-pub(crate) struct Poll<Id = i64, UserRef = User> {
+pub(crate) struct Poll<Id = i64, UserRef = User, LocationRef = Location> {
     pub(crate) id: Id,
     #[sqlx(try_from = "i64")]
     pub(crate) min_participants: usize,
@@ -61,12 +61,19 @@ pub(crate) struct Poll<Id = i64, UserRef = User> {
     pub(crate) open_until: OffsetDateTime,
     pub(crate) closed: bool,
     pub(crate) created_by: UserRef,
+    #[sqlx(rename = "location_id")]
+    pub(crate) location: LocationRef,
     #[sqlx(skip)]
     pub(crate) options: Vec<PollOption<Id, UserRef>>,
 }
 
-impl<Id, UserRef> Poll<Id, UserRef> {
-    pub(crate) fn materialize(self, user: User, options: Vec<PollOption<Id>>) -> Poll<Id> {
+impl<Id, UserRef, LocationRef> Poll<Id, UserRef, LocationRef> {
+    pub(crate) fn materialize(
+        self,
+        user: User,
+        location: Location,
+        options: Vec<PollOption<Id>>,
+    ) -> Poll<Id> {
         Poll {
             id: self.id,
             min_participants: self.min_participants,
@@ -76,6 +83,7 @@ impl<Id, UserRef> Poll<Id, UserRef> {
             open_until: self.open_until,
             closed: self.closed,
             created_by: user,
+            location,
             options,
         }
     }
@@ -238,6 +246,18 @@ impl fmt::Display for DateSelectionStrategy {
             DateSelectionStrategy::ToMaximizeParticipants => write!(f, "to maximize participants"),
         }
     }
+}
+
+#[derive(Debug, sqlx::FromRow, Serialize)]
+pub(crate) struct Location<Id = i64> {
+    pub(crate) id: Id,
+    pub(crate) nameplate: String,
+    pub(crate) street: String,
+    pub(crate) street_number: String,
+    pub(crate) plz: String,
+    pub(crate) city: String,
+    #[sqlx(try_from = "i64")]
+    pub(crate) floor: i8,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize)]
