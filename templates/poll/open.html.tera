@@ -43,6 +43,8 @@
     </section>
 {% endif %}
 
+<hr>
+
 <form method="post">
     <p>
         I would like to attend <em>Tau's Game Night</em> on one of the following dates:
