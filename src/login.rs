@@ -85,7 +85,7 @@ impl Login {
         let context = context! {
             has_redirect: redirect.is_some(),
             form,
-            error_message: "I don't know what to do with this email address, maybe you did a typo? 🤷🏻"
+            error_message: "I don't know what to do with this email address, are you sure that you spelled it correctly? 🤔"
         };
         Self::Failure(
             builder

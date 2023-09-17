@@ -59,20 +59,23 @@ fn to_calendar_day(date: Date) -> CalendarDay {
 
 #[derive(Debug, Serialize)]
 struct DateSelectionStrategyOption {
-    name: &'static str,
+    name: String,
     value: DateSelectionStrategy,
 }
 
-fn strategies() -> &'static [DateSelectionStrategyOption] {
-    &[
+impl From<DateSelectionStrategy> for DateSelectionStrategyOption {
+    fn from(value: DateSelectionStrategy) -> Self {
         DateSelectionStrategyOption {
-            name: "at random",
-            value: DateSelectionStrategy::AtRandom,
-        },
-        DateSelectionStrategyOption {
-            name: "to maximize participants",
-            value: DateSelectionStrategy::ToMaximizeParticipants,
-        },
+            name: value.to_string(),
+            value,
+        }
+    }
+}
+
+fn strategies() -> [DateSelectionStrategyOption; 2] {
+    [
+        DateSelectionStrategy::AtRandom.into(),
+        DateSelectionStrategy::ToMaximizeParticipants.into(),
     ]
 }
 

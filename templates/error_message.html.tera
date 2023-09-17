@@ -1,5 +1,5 @@
 {% if page.error_message %}
     <div class="error-message">
-        <em>*error buzzer*</em> {{page.error_message}}
+        {{page.error_message}}
     </div>
 {% endif %}

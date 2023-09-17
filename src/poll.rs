@@ -12,7 +12,7 @@ use rocket_dyn_templates::{context, Template};
 use serde::Serialize;
 use sqlx::sqlite::{SqliteTypeInfo, SqliteValueRef};
 use sqlx::{Database, Decode, Encode, Sqlite, Type};
-use std::ops;
+use std::{fmt, ops};
 use time::OffsetDateTime;
 
 mod finalize;
@@ -229,6 +229,15 @@ pub(crate) enum DateSelectionStrategy {
     AtRandom,
     #[field(value = "to_maximize_participants")]
     ToMaximizeParticipants,
+}
+
+impl fmt::Display for DateSelectionStrategy {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            DateSelectionStrategy::AtRandom => write!(f, "at random"),
+            DateSelectionStrategy::ToMaximizeParticipants => write!(f, "to maximize participants"),
+        }
+    }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize)]

@@ -5,7 +5,13 @@
 {% block content %}
 <div>{{page.poll.description | markdown | safe}}</div>
 
-{# TODO: show details as per submission page #}
+<p>
+    After the poll closes on <strong>{{page.poll.open_until | date(format = "%B %e")}}</strong>
+    at <strong>{{page.poll.open_until | date(format='%H:%M')}}</strong> the date will be chosen
+    <strong>{{page.date_selection_strategy}}</strong>,
+    picking a date with at least <strong>{{page.poll.min_participants}}</strong> people.<br>
+    At most <strong>{{page.poll.max_participants}}</strong> people will be invited to the game night.
+</p>
 
 <form method="post">
     <p>
@@ -41,6 +47,13 @@
             </ul>
         {% endfor %}
     </div>
+    {% if page.has_answers %}
+        <p class="success-message">
+            Thank you for participating in the poll 😊 You can change your answer
+            as often as you'd like until the deadline on <strong>{{page.poll.open_until | date(format = "%B %e")}}</strong>
+            at <strong>{{page.poll.open_until | date(format='%H:%M')}}</strong>.
+        </p>
+    {% endif %}
     <p>
         <strong>P.S.</strong> You can select any number of dates.
     </p>

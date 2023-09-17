@@ -99,10 +99,16 @@ a {
 }
 
 .error-message {
-    font-family: var(--sans-serif);
-    font-size: .8rem;
-    font-weight: bold;
+    font-size: 1rem;
     background-color: color-mix(in srgb, #d20f39, var(--background-color) 70%);
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 1rem;
+}
+
+.success-message {
+    font-size: 1rem;
+    background-color: color-mix(in srgb, #40a02b, var(--background-color) 70%);
     border-radius: 8px;
     padding: 10px;
     margin-bottom: 1rem;
