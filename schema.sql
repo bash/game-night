@@ -5,6 +5,7 @@ CREATE TABLE users
     , email_address TEXT NOT NULL UNIQUE
     , invited_by INTEGER NULL REFERENCES users(id) ON DELETE RESTRICT
     , campaign TEXT NULL
+    , created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
     );
 
 CREATE TABLE invitations
@@ -13,6 +14,7 @@ CREATE TABLE invitations
     , created_by INTEGER NULL
     , passphrase TEXT NOT NULL UNIQUE
     , valid_until TEXT NULL
+    , created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
     );
 
 CREATE TABLE email_verification_codes
@@ -20,6 +22,7 @@ CREATE TABLE email_verification_codes
     , code TEXT NOT NULL UNIQUE
     , email_address TEXT NOT NULL
     , valid_until TEXT NOT NULL
+    , created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
     );
 
 CREATE TABLE login_tokens
@@ -28,6 +31,7 @@ CREATE TABLE login_tokens
     , token TEXT NOT NULL UNIQUE
     , user_id INTEGER NULL REFERENCES users(id) ON DELETE CASCADE
     , valid_until TEXT NOT NULL
+    , created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
     );
 
 CREATE TABLE polls
@@ -40,6 +44,7 @@ CREATE TABLE polls
     , created_by INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT
     , open_until TEXT NOT NULl
     , closed INTEGER NOT NULL
+    , created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
     , CHECK (max_participants >= min_participants)
     , CHECK (min_participants >= 2)
     );
@@ -55,6 +60,7 @@ CREATE TABLE poll_answers
     , poll_option_id INTEGER NOT NULL REFERENCES poll_options(id) ON DELETE CASCADE
     , user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT
     , value TEXT NOT NULL
+    , created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
     , UNIQUE (poll_option_id, user_id) ON CONFLICT REPLACE
     );
 
@@ -66,6 +72,7 @@ CREATE TABLE locations
     , plz TEXT NOT NULL
     , city TEXT NOT NULL
     , floor INTEGER NOT NULL
+    , created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
     , CHECK (floor >= -128)
     , CHECK (floor <= 127)
     );
