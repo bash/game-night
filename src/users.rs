@@ -1,3 +1,6 @@
+use crate::authorization::{AuthorizedTo, ManageUsers};
+use crate::database::Repository;
+use crate::template::{PageBuilder, PageType};
 use anyhow::{Error, Result};
 use lettre::message::Mailbox;
 use rocket::response::Debug;
@@ -5,10 +8,6 @@ use rocket::{get, routes, Route};
 use rocket_db_pools::sqlx;
 use rocket_dyn_templates::{context, Template};
 use serde::Serialize;
-
-use crate::authorization::{AuthorizedTo, ManageUsers};
-use crate::database::Repository;
-use crate::template::PageBuilder;
 
 pub(crate) fn routes() -> Vec<Route> {
     routes![list_users]
@@ -20,7 +19,9 @@ async fn list_users(
     mut repository: Box<dyn Repository>,
     _guard: AuthorizedTo<ManageUsers>,
 ) -> Result<Template, Debug<Error>> {
-    Ok(page.render("users", context! { users: repository.get_users().await? }))
+    Ok(page
+        .type_(PageType::Register)
+        .render("users", context! { users: repository.get_users().await? }))
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, sqlx::Type, Serialize)]

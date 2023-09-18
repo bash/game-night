@@ -9,8 +9,11 @@
         to Tau's Game Night and are even signed in on this website.
         There's no need for you to register again :)</em>
     </p>
-    <p>
+    <fieldset class="-actions">
         <a href="/poll" class="link-button">Take me to the poll!</a>
+        {% if page.users_url %}
+            <a href="{{page.users_url}}" class="link-button">Show me the list of users!</a>
+        {% endif %}
     </p>
 {% elif page.invalid_campaign %}
     <p>

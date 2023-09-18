@@ -5,7 +5,7 @@ use crate::email_verification_code::EmailVerificationCode;
 use crate::emails::VerificationEmail;
 use crate::invitation::{Invitation, Passphrase};
 use crate::template::{PageBuilder, PageType};
-use crate::users::{User, UserId};
+use crate::users::{rocket_uri_macro_list_users, User, UserId};
 use anyhow::{Error, Result};
 use campaign::Campaign;
 use email_address::EmailAddress;
@@ -13,7 +13,7 @@ use lettre::message::Mailbox;
 use rocket::form::Form;
 use rocket::http::{Cookie, CookieJar, SameSite};
 use rocket::response::{Debug, Redirect};
-use rocket::{get, post, routes, Either, FromForm, Route, State};
+use rocket::{get, post, routes, uri, Either, FromForm, Route, State};
 use rocket_dyn_templates::{context, Template};
 use serde::Serialize;
 use std::str::FromStr;
@@ -40,6 +40,7 @@ fn register_page(
     cookies: &CookieJar<'_>,
     page: PageBuilder<'_>,
     campaign: Option<Campaign<'_>>,
+    user: Option<User>,
 ) -> Template {
     if campaign.is_none() {
         cookies.add(
@@ -51,9 +52,12 @@ fn register_page(
         );
     }
 
+    let users_url = user
+        .filter(|u| u.can_manage_users())
+        .map(|_| uri!(list_users));
     page.type_(PageType::Register).render(
         "register",
-        context! { step: "invitation_code", form: context! {}, invalid_campaign: campaign.is_none(), campaign },
+        context! { step: "invitation_code", form: context! {}, invalid_campaign: campaign.is_none(), campaign, users_url },
     )
 }
 
