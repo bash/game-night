@@ -71,6 +71,10 @@ hr {
         width: 3rem;
         height: 1.5rem;
         background-color: currentColor;
+        -webkit-mask-image: url(/icons/fleuron.svg);
+        -webkit-mask-size: contain;
+        -webkit-mask-position: center;
+        -webkit-mask-repeat: no-repeat;
         mask-image: url(/icons/fleuron.svg);
         mask-size: contain;
         mask-position: center;
