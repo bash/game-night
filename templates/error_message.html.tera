@@ -1,5 +1,5 @@
-{% if page.error_message %}
+{% if error_message %}
     <div class="error-message">
-        {{page.error_message}}
+        {{error_message}}
     </div>
 {% endif %}

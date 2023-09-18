@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" class="_{{ page_type }}">
+<html lang="en" class="_{{ page.type }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,19 +15,19 @@
     <a href="#main" tabindex="0" class="skip-link">Skip to content</a>
 
     <nav>
-        <a href="/" class="_home{% if page_type == 'home' %} -active{% endif %}" title="Home" accesskey="h">
+        <a href="/" class="_home{% if page.type == 'home' %} -active{% endif %}" title="Home" accesskey="h">
             <svg role="img" aria-label="Home"><use href="/icons/home.svg#icon" aria-hidden="true" /></svg>
         </a>
-        <a href="/invite" class="_invite{% if page_type == 'invite' %} -active{% endif %}" title="Get Invited">
+        <a href="/invite" class="_invite{% if page.type == 'invite' %} -active{% endif %}" title="Get Invited">
             <svg role="img" aria-label="Mail Open"><use href="/icons/mail-open.svg#icon" aria-hidden="true" /></svg>
         </a>
-        <a href="/register" class="_register{% if page_type == 'register' %} -active{% endif %}" title="Register">
+        <a href="/register" class="_register{% if page.type == 'register' %} -active{% endif %}" title="Register">
             <svg role="img" aria-label="Clipboard Signature"><use href="/icons/clipboard-signature.svg#icon" aria-hidden="true" /></svg>
         </a>
-        <a href="/poll" class="_poll{% if page_type == 'poll' %} -active{% endif %}" title="Poll">
+        <a href="/poll" class="_poll{% if page.type == 'poll' %} -active{% endif %}" title="Poll">
             <svg role="img" aria-label="Calendar Check"><use href="/icons/calendar-check.svg#icon" aria-hidden="true" /></svg>
         </a>
-        <a href="/play" class="_play{% if page_type == 'play' %} -active{% endif %}" title="Play">
+        <a href="/play" class="_play{% if page.type == 'play' %} -active{% endif %}" title="Play">
             <svg role="img" aria-label="Dices"><use href="/icons/dices.svg#icon" aria-hidden="true" /></svg>
         </a>
     </nav>
@@ -35,7 +35,7 @@
     <main id="main">
         <header>
             <div class="chapter-number">
-                Chapter {{chapter_number}}
+                Chapter {{page.chapter_number}}
             </div>
             <h1>
                 {% block title %}
@@ -50,7 +50,7 @@
             <form action="/logout" method="post" class="logout-form">
                 <span>Signed in as <strong>{{user.name}}</strong></span>
                 <button type="submit">Log out</button>
-                <input type="hidden" name="redirect" value="{{uri}}">
+                <input type="hidden" name="redirect" value="{{page.uri}}">
             </form>
         </footer>
     {% endif %}

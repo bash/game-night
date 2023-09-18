@@ -10,7 +10,7 @@
         <input type="number" class="-inline" name="max_participants" size="2" inputmode="numeric" placeholder="4" required min="2" data-validate-gte="min-participants"> people<br>
         with the date chosen
         <select class="-inline" name="strategy">
-            {% for strategy in page.strategies %}
+            {% for strategy in strategies %}
                 <option value="{{strategy.value}}">{{strategy.name}}</option>
             {% endfor %}
         </select>.<br>
@@ -21,7 +21,7 @@
     </p>
 
     <div class="calendar-list">
-        {% for month in page.calendar %}
+        {% for month in calendar %}
             <h2>{{month.name}}</h2>
             <ul>
                 {% for day in month.days %}

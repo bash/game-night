@@ -11,11 +11,11 @@
     </p>
     <fieldset class="-actions">
         <a href="/poll" class="link-button">Take me to the poll!</a>
-        {% if page.users_url %}
-            <a href="{{page.users_url}}" class="link-button">Show me the list of users!</a>
+        {% if users_url %}
+            <a href="{{users_url}}" class="link-button">Show me the list of users!</a>
         {% endif %}
     </p>
-{% elif page.invalid_campaign %}
+{% elif invalid_campaign %}
     <p>
         <strong>Helloooo there 👋</strong>
         You seem to have fumbled around with the URL, namely the <strong>campaign</strong> query parameter.
@@ -23,11 +23,11 @@
         Here, have a cookie: 🍪
     </p>
     <p>
-        <a href="{{path}}" class="link-button">Onward to the registration!</a>
+        <a href="{{page.path}}" class="link-button">Onward to the registration!</a>
     </p>
 {% else %}
     <form method="post">
-        {% if page.step == 'invitation_code' %}
+        {% if step == 'invitation_code' %}
         <p>
             Congratulations! Tau has invited you to their amazing
             game night by providing you with four secret words.
@@ -40,18 +40,18 @@
         {% include 'error_message' %}
 
         <fieldset class="-two-column">
-            <input type="text" placeholder="1st word" name="words[0]" data-overflow-to="words[1]" value="{{page.form.words | default(value=[]) | nth(n=0)}}" required>
-            <input type="text" placeholder="2nd word" name="words[1]" data-overflow-to="words[2]" value="{{page.form.words | default(value=[]) | nth(n=1)}}" required>
-            <input type="text" placeholder="3rd word" name="words[2]" data-overflow-to="words[3]" value="{{page.form.words | default(value=[]) | nth(n=2)}}" required>
-            <input type="text" placeholder="4th word" name="words[3]" value="{{page.form.words | default(value=[]) | nth(n=3)}}" required>
+            <input type="text" placeholder="1st word" name="words[0]" data-overflow-to="words[1]" value="{{form.words | default(value=[]) | nth(n=0)}}" required>
+            <input type="text" placeholder="2nd word" name="words[1]" data-overflow-to="words[2]" value="{{form.words | default(value=[]) | nth(n=1)}}" required>
+            <input type="text" placeholder="3rd word" name="words[2]" data-overflow-to="words[3]" value="{{form.words | default(value=[]) | nth(n=2)}}" required>
+            <input type="text" placeholder="4th word" name="words[3]" value="{{form.words | default(value=[]) | nth(n=3)}}" required>
         </fieldset>
 
-        {% if page.campaign %}
+        {% if campaign %}
         <p>
             <small>
-                <strong>P.S.</strong> I'm tracking that you are registering via the «<strong>{{page.campaign}}</strong>» campaign.
+                <strong>P.S.</strong> I'm tracking that you are registering via the «<strong>{{campaign}}</strong>» campaign.
                 I will only use it for—*paper rustling*—special reward purposes.
-                You can <a href="{{path}}">opt out</a> if you don't want that.
+                You can <a href="{{page.path}}">opt out</a> if you don't want that.
             </small>
         </p>
         {% endif %}
@@ -62,13 +62,13 @@
 
         <script type="module" src="/js/overflow-to.js"></script>
         {% else %}
-            <input type="hidden" name="words[]" value="{{page.form.words | default(value=[]) | nth(n=0)}}">
-            <input type="hidden" name="words[]" value="{{page.form.words | default(value=[]) | nth(n=1)}}">
-            <input type="hidden" name="words[]" value="{{page.form.words | default(value=[]) | nth(n=2)}}">
-            <input type="hidden" name="words[]" value="{{page.form.words | default(value=[]) | nth(n=3)}}">
+            <input type="hidden" name="words[]" value="{{form.words | default(value=[]) | nth(n=0)}}">
+            <input type="hidden" name="words[]" value="{{form.words | default(value=[]) | nth(n=1)}}">
+            <input type="hidden" name="words[]" value="{{form.words | default(value=[]) | nth(n=2)}}">
+            <input type="hidden" name="words[]" value="{{form.words | default(value=[]) | nth(n=3)}}">
         {% endif %}
 
-        {% if page.step == 'user_details' %}
+        {% if step == 'user_details' %}
             {% include 'error_message' %}
 
             <p>
@@ -80,7 +80,7 @@
             </p>
 
             <fieldset>
-                <input type="text" placeholder="Name" name="name" value="{{page.form.name | default(value='')}}" required autocomplete="name">
+                <input type="text" placeholder="Name" name="name" value="{{form.name | default(value='')}}" required autocomplete="name">
             </fieldset>
 
             <p>
@@ -90,7 +90,7 @@
             </p>
 
             <fieldset>
-                <input type="email" inputmode="email" placeholder="awesome-person@example.com" name="email_address" value="{{page.form.email_address | default(value='')}}" autocomplete="email" required>
+                <input type="email" inputmode="email" placeholder="awesome-person@example.com" name="email_address" value="{{form.email_address | default(value='')}}" autocomplete="email" required>
             </fieldset>
 
             <fieldset class="-actions">
@@ -99,25 +99,25 @@
 
             <script type="module" src="/js/bind-to.js"></script>
         {% else %}
-            {% if page.form.name %}
-                <input type="hidden" name="name" value="{{page.form.name | default(value='')}}">
+            {% if form.name %}
+                <input type="hidden" name="name" value="{{form.name | default(value='')}}">
             {% endif %}
-            {% if page.form.email_address %}
-                <input type="hidden" name="email_address" value="{{page.form.email_address | default(value='')}}">
+            {% if form.email_address %}
+                <input type="hidden" name="email_address" value="{{form.email_address | default(value='')}}">
             {% endif %}
         {% endif %}
 
-        {% if page.step == 'verify_email' %}
+        {% if step == 'verify_email' %}
             <p>
                 We're almost there.
-                I have sent you an email to <strong>{{page.form.email_address}}</strong> with a six-digit code.
+                I have sent you an email to <strong>{{form.email_address}}</strong> with a six-digit code.
                 Enter the code below to complete the registration.
             </p>
 
             {% include 'error_message' %}
 
             <fieldset>
-                <input type="number" name="email_verification_code" size="6" placeholder="123456" value="{{page.form.email_verification_code | default(value='')}}" autocomplete="off" inputmode="numeric" data-1p-ignore required>
+                <input type="number" name="email_verification_code" size="6" placeholder="123456" value="{{form.email_verification_code | default(value='')}}" autocomplete="off" inputmode="numeric" data-1p-ignore required>
             </fieldset>
 
             <fieldset class="-actions">

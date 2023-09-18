@@ -8,11 +8,11 @@
     <p>Here's your invitation:</p>
 
     <fieldset class="-two-column">
-        {% for word in page.passphrase %}
+        {% for word in passphrase %}
             <input type="text" value="{{word}}" readonly>
         {% endfor %}
         <small>
-            <button type="button" class="-icon" data-copy-to-clipboard="{{page.passphrase | join(sep=' ')}}" data-icon="/icons/clipboard-copy.svg">
+            <button type="button" class="-icon" data-copy-to-clipboard="{{passphrase | join(sep=' ')}}" data-icon="/icons/clipboard-copy.svg">
                 <svg><use href="/icons/clipboard-copy.svg#icon" /></svg>
                 <span>Copy to Clipboard</span>
             </button>
@@ -23,7 +23,7 @@
         <button type="submit">Generate another invitation</button>
     </fieldset>
 
-    <input type="hidden" name="lifetime" value="{{page.lifetime}}" />
+    <input type="hidden" name="lifetime" value="{{lifetime}}" />
 </form>
 
 <script type="module">

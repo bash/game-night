@@ -85,8 +85,7 @@ async fn not_found(request: &Request<'_>) -> Template {
         .await
         .expect("Page builder guard is infallible");
     let type_ = request.uri().try_into().unwrap_or_default();
-    let path = request.uri().path().as_str();
-    page.type_(type_).render("errors/404", context! { path })
+    page.type_(type_).render("errors/404", ())
 }
 
 #[derive(Debug, Database)]

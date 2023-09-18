@@ -1,7 +1,7 @@
 {% extends 'base' %}
 
 {% block title %}
-    {% if page.can_invite %}
+    {% if can_invite %}
         Inviting Others
     {% else %}
         Getting Invited
@@ -9,7 +9,7 @@
 {% endblock title %}
 
 {% block content %}
-{% if page.can_invite %}
+{% if can_invite %}
 
 <form method="post">
     <p>
@@ -27,7 +27,7 @@
 
     <fieldset class="-actions">
         <button type="submit">Generate Invitation</button>
-        <button type="submit" formaction="{{page.batch_invite_uri}}">Generate Invitation Cards</button>
+        <button type="submit" formaction="{{batch_invite_uri}}">Generate Invitation Cards</button>
     </fieldset>
 </form>
 

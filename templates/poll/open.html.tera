@@ -6,8 +6,8 @@
 <p>
     Hurray, Tau is inviting you to another <em>Game Night</em> 🎉 <br>
     Fill out the poll until
-        <strong>{{page.poll.open_until | date(format = "%B %e")}}</strong>
-        at <strong>{{page.poll.open_until | date(format='%H:%M')}}</strong>
+        <strong>{{poll.open_until | date(format = "%B %e")}}</strong>
+        at <strong>{{poll.open_until | date(format='%H:%M')}}</strong>
         to help pick the date.
 </p>
 
@@ -16,30 +16,30 @@
     <div class="postal-address">
         <div class="nameplate">
             <div>
-                {% for name in page.poll.location.nameplate | split(pat=', ') %}
+                {% for name in poll.location.nameplate | split(pat=', ') %}
                     {{name}}
                     {% if not loop.last %}<br>{% endif %}
                 {% endfor %}
             </div>
         </div>
-        <div class="floor" aria-label="Floor"><span>{{page.poll.location.floor}}</span></div>
+        <div class="floor" aria-label="Floor"><span>{{poll.location.floor}}</span></div>
         <div class="address">
-            {{page.poll.location.street}} {{page.poll.location.street_number}}<br>
-            {{page.poll.location.plz}} {{page.poll.location.city}}
+            {{poll.location.street}} {{poll.location.street_number}}<br>
+            {{poll.location.plz}} {{poll.location.city}}
         </div>
     </div>
 </section>
 
 <p>
     After the poll closes the date will be chosen
-    <strong>{{page.date_selection_strategy}}</strong>,
-    picking a date that at least <strong>{{page.poll.min_participants}}</strong> people have selected.
-    At most <strong>{{page.poll.max_participants}}</strong> people will be invited to the game night.
+    <strong>{{date_selection_strategy}}</strong>,
+    picking a date that at least <strong>{{poll.min_participants}}</strong> people have selected.
+    At most <strong>{{poll.max_participants}}</strong> people will be invited to the game night.
 </p>
 
-{% if page.poll.description %}
+{% if poll.description %}
     <section>
-        {{page.poll.description | markdown | safe}}
+        {{poll.description | markdown | safe}}
     </section>
 {% endif %}
 
@@ -50,7 +50,7 @@
         I would like to attend <em>Tau's Game Night</em> on one of the following dates:
     </p>
     <div class="calendar-list">
-        {% for group in page.option_groups %}
+        {% for group in option_groups %}
             <h2>{{group.name}}</h2>
             <ul>
                 {% for option in group.options %}
@@ -78,11 +78,11 @@
             </ul>
         {% endfor %}
     </div>
-    {% if page.has_answers %}
+    {% if has_answers %}
         <p class="success-message">
             Thank you for participating in the poll 😊 You can change your answer
-            as often as you'd like until the deadline on <strong>{{page.poll.open_until | date(format = "%B %e")}}</strong>
-            at <strong>{{page.poll.open_until | date(format='%H:%M')}}</strong>.
+            as often as you'd like until the deadline on <strong>{{poll.open_until | date(format = "%B %e")}}</strong>
+            at <strong>{{poll.open_until | date(format='%H:%M')}}</strong>.
         </p>
     {% endif %}
     <fieldset>

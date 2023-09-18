@@ -3,7 +3,7 @@ use anyhow::Error;
 use rocket::http::uri::Origin;
 use rocket::request::{FromRequest, Outcome};
 use rocket::{async_trait, Request};
-use rocket_dyn_templates::{context, Template};
+use rocket_dyn_templates::Template;
 use serde::Serialize;
 use std::borrow::Cow;
 
@@ -26,16 +26,38 @@ impl<'r> PageBuilder<'r> {
     ) -> Template {
         Template::render(
             name,
-            context! {
-                user: &self.user,
-                uri: self.uri,
-                path: self.uri.path().as_str(),
-                page_type: self.type_,
-                chapter_number: self.type_.chapter_number(),
-                page: context
+            TemplateContext {
+                context,
+                user: self.user.as_ref(),
+                page: Page {
+                    uri: self.uri,
+                    path: self.uri.path().as_str(),
+                    type_: self.type_,
+                    chapter_number: self.type_.chapter_number(),
+                },
             },
         )
     }
+}
+
+#[derive(Serialize)]
+struct TemplateContext<'a, C>
+where
+    C: Serialize,
+{
+    user: Option<&'a User>,
+    page: Page<'a>,
+    #[serde(flatten)]
+    context: C,
+}
+
+#[derive(Serialize)]
+struct Page<'a> {
+    uri: &'a Origin<'a>,
+    path: &'a str,
+    #[serde(rename = "type")]
+    type_: PageType,
+    chapter_number: &'a str,
 }
 
 #[async_trait]

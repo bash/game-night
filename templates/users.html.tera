@@ -14,7 +14,7 @@
         </tr>
     </thead>
     <tbody align="center">
-        {% for user in page.users %}
+        {% for user in users %}
             <tr id="user-{{user.id}}">
                 <td><a href="mailto:{{user.email_address}}">{{user.name}}</a></td>
                 <td>{{user.role}}</td>

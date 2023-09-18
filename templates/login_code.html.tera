@@ -9,7 +9,7 @@
         Enter the login code below:
     </p>
 
-    {% if page.invalid_code %}
+    {% if invalid_code %}
         <div class="error-message">
             <em>Hmmmmmmmmm</em> That's not a valid code, maybe it has expired? 🤔
         </div>

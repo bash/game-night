@@ -5,7 +5,7 @@
 {% block content %}
 <form method="post">
     <p>
-        {% if page.has_redirect %}
+        {% if has_redirect %}
             Accessing this page requires a user account.<br>
         {% endif %}
         Enter your email address below to receive a login code ✨
