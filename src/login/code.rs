@@ -29,7 +29,7 @@ pub(super) async fn login_with_code<'r>(
     use LoginWithCodeResult::*;
     if let Some(user_id) = repository.use_login_token(form.code).await? {
         cookies.set_user_id(user_id);
-        Ok(Success(
+        Ok(LoginWithCodeResult::success(
             redirect_to(redirect).unwrap_or_else(|| Redirect::to("/")),
         ))
     } else {
@@ -47,6 +47,12 @@ pub(super) struct LoginWithCodeData<'r> {
 
 #[derive(Responder)]
 pub(super) enum LoginWithCodeResult {
-    Success(Redirect),
+    Success(Box<Redirect>),
     Error(Template),
+}
+
+impl LoginWithCodeResult {
+    fn success(redirect: Redirect) -> Self {
+        LoginWithCodeResult::Success(Box::new(redirect))
+    }
 }

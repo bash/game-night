@@ -5,7 +5,6 @@ use keys::GameNightKeys;
 use poll::poll_finalizer;
 use rocket::fairing::{self, Fairing};
 use rocket::figment::Figment;
-use rocket::fs::FileServer;
 use rocket::http::uri::Absolute;
 use rocket::http::Status;
 use rocket::request::{FromRequest, Outcome};
@@ -62,7 +61,7 @@ fn figment() -> Figment {
 
 #[cfg(debug_assertions)]
 fn file_server() -> impl Into<Vec<Route>> {
-    FileServer::from("public")
+    rocket::fs::FileServer::from("public")
 }
 
 #[cfg(not(debug_assertions))]

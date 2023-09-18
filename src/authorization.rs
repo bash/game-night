@@ -50,12 +50,6 @@ impl<P> Deref for AuthorizedTo<P> {
     }
 }
 
-impl<P> AuthorizedTo<P> {
-    fn into_inner(self) -> User {
-        self.0
-    }
-}
-
 pub(crate) struct Invite;
 
 impl UserPredicate for Invite {

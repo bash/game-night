@@ -10,12 +10,6 @@ use std::ops::Deref;
 
 pub(crate) struct UserGuard(User);
 
-impl UserGuard {
-    pub(crate) fn into_inner(self) -> User {
-        self.0
-    }
-}
-
 impl Deref for UserGuard {
     type Target = User;
 

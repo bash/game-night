@@ -23,7 +23,7 @@ fn to_open_poll(poll: Poll, user: &User) -> OpenPoll {
     OpenPoll {
         option_groups: to_open_poll_options(poll.options.iter(), user),
         date_selection_strategy: poll.strategy.to_string(),
-        has_answers: has_answers(&poll, &user),
+        has_answers: has_answers(&poll, user),
         poll,
     }
 }
