@@ -135,7 +135,8 @@ a {
     display: grid;
     grid-template-columns: auto auto;
     justify-content: start;
-    margin-bottom: var(--inter-block-gap);
+    margin: 0 auto var(--inter-block-gap) auto;
+    max-width: max-content;
     gap: 1ex;
 
     .nameplate {
