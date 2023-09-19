@@ -79,7 +79,7 @@ fn get_candidates(poll: &Poll) -> Vec<PollOption> {
     poll.options
         .iter()
         .cloned()
-        .filter(|o| o.count_participants() >= poll.min_participants)
+        .filter(|o| o.count_yes_answers() >= poll.min_participants)
         .collect()
 }
 
@@ -92,11 +92,11 @@ fn choose_option(mut candidates: Vec<PollOption>, poll: &Poll) -> Option<PollOpt
                 poll.max_participants,
                 candidates
                     .iter()
-                    .map(|o| o.count_participants())
+                    .map(|o| o.count_yes_answers())
                     .max()
                     .unwrap_or(usize::MAX),
             );
-            candidates.retain(|o| (o.count_participants()) >= max_participants);
+            candidates.retain(|o| (o.count_yes_answers()) >= max_participants);
             candidates.choose(&mut thread_rng()).cloned()
         }
     }

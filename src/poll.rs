@@ -115,7 +115,7 @@ pub(crate) struct PollOption<Id = i64, UserRef = User> {
 }
 
 impl<Id, UserRef> PollOption<Id, UserRef> {
-    pub(crate) fn count_participants(&self) -> usize {
+    pub(crate) fn count_yes_answers(&self) -> usize {
         self.answers.iter().filter(|a| a.value.is_yes()).count()
     }
 }
@@ -298,6 +298,59 @@ impl<'r> FromRequest<'r> for Open<Poll> {
             }
             Ok(_) => Outcome::Failure((Status::BadRequest, None)),
             Err(error) => Outcome::Failure((Status::InternalServerError, Some(error))),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    mod count_yes_answers {
+        use super::*;
+
+        #[test]
+        fn option_with_no_answers_has_zero_yes_answers() {
+            let option: PollOption<_, ()> = PollOption {
+                id: (),
+                datetime: OffsetDateTime::now_utc(),
+                answers: vec![],
+            };
+            assert_eq!(0, option.count_yes_answers());
+        }
+
+        #[test]
+        fn counts_yes_answers() {
+            let option: PollOption<_, ()> = PollOption {
+                id: (),
+                datetime: OffsetDateTime::now_utc(),
+                answers: vec![
+                    answer(AnswerValue::yes(Attendance::Optional)),
+                    answer(AnswerValue::yes(Attendance::Required)),
+                ],
+            };
+            assert_eq!(2, option.count_yes_answers());
+        }
+
+        #[test]
+        fn counts_yes_answers_while_ignoring_no_values() {
+            let option: PollOption<_, ()> = PollOption {
+                id: (),
+                datetime: OffsetDateTime::now_utc(),
+                answers: vec![
+                    answer(AnswerValue::No),
+                    answer(AnswerValue::yes(Attendance::Optional)),
+                ],
+            };
+            assert_eq!(1, option.count_yes_answers());
+        }
+
+        fn answer(value: AnswerValue) -> Answer<(), ()> {
+            Answer {
+                value,
+                id: (),
+                user: (),
+            }
         }
     }
 }
