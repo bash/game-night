@@ -21,7 +21,6 @@ use users::User;
 mod auth;
 mod database;
 mod email;
-mod email_verification_code;
 mod event;
 mod invitation;
 mod login;

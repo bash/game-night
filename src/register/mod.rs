@@ -1,7 +1,6 @@
 use crate::auth::CookieJarExt;
 use crate::database::Repository;
 use crate::email::EmailSender;
-use crate::email_verification_code::EmailVerificationCode;
 use crate::invitation::{Invitation, Passphrase};
 use crate::template::{PageBuilder, PageType};
 use crate::users::{rocket_uri_macro_list_users, User, UserId};
@@ -21,7 +20,9 @@ use Either::*;
 use StepResult::*;
 
 mod campaign;
+mod email_verification_code;
 mod verification;
+pub(crate) use email_verification_code::*;
 
 macro_rules! unwrap_or_return {
     ($result:expr, $e:ident => $ret:expr) => {

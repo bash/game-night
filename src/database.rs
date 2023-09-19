@@ -1,8 +1,8 @@
-use crate::email_verification_code::EmailVerificationCode;
 use crate::event::Event;
 use crate::invitation::{Invitation, InvitationId, Passphrase};
 use crate::login::{LoginToken, LoginTokenType};
 use crate::poll::{Answer, Location, Poll, PollOption};
+use crate::register::EmailVerificationCode;
 use crate::users::{User, UserId};
 use crate::GameNightDatabase;
 use anyhow::{anyhow, Error, Result};
