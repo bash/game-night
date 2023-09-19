@@ -12,9 +12,9 @@ use rocket::{
     Rocket, Route,
 };
 use rocket_db_pools::{sqlx::SqlitePool, Database, Pool};
-use rocket_dyn_templates::{context, Engines, Template};
+use rocket_dyn_templates::{context, Template};
 use serde::Deserialize;
-use std::collections::HashMap;
+use template::configure_template_engines;
 use template::{PageBuilder, PageType};
 use users::User;
 
@@ -138,32 +138,6 @@ fn initialize_email_sender() -> impl Fairing {
             }
         })
     })
-}
-
-fn configure_template_engines(engines: &mut Engines) {
-    engines.tera.register_filter("markdown", markdown_filter);
-}
-
-fn markdown_filter(
-    value: &tera::Value,
-    _args: &HashMap<String, tera::Value>,
-) -> tera::Result<tera::Value> {
-    use pulldown_cmark::{html, Options, Parser};
-
-    const OPTIONS: Options = Options::empty()
-        .union(Options::ENABLE_TABLES)
-        .union(Options::ENABLE_FOOTNOTES)
-        .union(Options::ENABLE_STRIKETHROUGH);
-
-    let input = value
-        .as_str()
-        .ok_or_else(|| tera::Error::msg("This filter expects a string as input"))?;
-
-    let parser = Parser::new_ext(input, OPTIONS);
-    let mut html_output = String::new();
-    html::push_html(&mut html_output, parser);
-
-    Ok(html_output.into())
 }
 
 #[async_trait]

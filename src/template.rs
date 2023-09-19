@@ -3,9 +3,10 @@ use anyhow::Error;
 use rocket::http::uri::Origin;
 use rocket::request::{FromRequest, Outcome};
 use rocket::{async_trait, Request};
-use rocket_dyn_templates::Template;
+use rocket_dyn_templates::{Engines, Template};
 use serde::Serialize;
 use std::borrow::Cow;
+use std::collections::HashMap;
 
 pub(crate) struct PageBuilder<'r> {
     user: Option<User>,
@@ -124,4 +125,30 @@ impl<'r> TryFrom<Origin<'r>> for PageType {
     fn try_from(value: Origin<'r>) -> Result<Self, Self::Error> {
         (&value).try_into()
     }
+}
+
+pub(crate) fn configure_template_engines(engines: &mut Engines) {
+    engines.tera.register_filter("markdown", markdown_filter);
+}
+
+fn markdown_filter(
+    value: &tera::Value,
+    _args: &HashMap<String, tera::Value>,
+) -> tera::Result<tera::Value> {
+    use pulldown_cmark::{html, Options, Parser};
+
+    const OPTIONS: Options = Options::empty()
+        .union(Options::ENABLE_TABLES)
+        .union(Options::ENABLE_FOOTNOTES)
+        .union(Options::ENABLE_STRIKETHROUGH);
+
+    let input = value
+        .as_str()
+        .ok_or_else(|| tera::Error::msg("This filter expects a string as input"))?;
+
+    let parser = Parser::new_ext(input, OPTIONS);
+    let mut html_output = String::new();
+    html::push_html(&mut html_output, parser);
+
+    Ok(html_output.into())
 }
