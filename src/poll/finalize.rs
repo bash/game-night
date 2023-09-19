@@ -88,18 +88,23 @@ fn choose_option(mut candidates: Vec<PollOption>, poll: &Poll) -> Option<PollOpt
     match poll.strategy {
         AtRandom => candidates.choose(&mut thread_rng()).cloned(),
         ToMaximizeParticipants => {
-            let max_participants = min(
-                poll.max_participants,
-                candidates
-                    .iter()
-                    .map(|o| o.count_yes_answers())
-                    .max()
-                    .unwrap_or(usize::MAX),
-            );
-            candidates.retain(|o| (o.count_yes_answers()) >= max_participants);
+            if let Some(max) = max_participants(&candidates, poll.max_participants) {
+                candidates.retain(|o| (o.count_yes_answers()) >= max);
+            }
             candidates.choose(&mut thread_rng()).cloned()
         }
     }
+}
+
+fn max_participants<Id, UserRef>(
+    options: &[PollOption<Id, UserRef>],
+    max_allowed_participants: usize,
+) -> Option<usize> {
+    options
+        .into_iter()
+        .map(|o| o.count_yes_answers())
+        .max()
+        .map(|max| min(max, max_allowed_participants))
 }
 
 fn choose_participants(answers: &[Answer], max_participants: usize) -> (Vec<UserId>, Vec<UserId>) {
@@ -122,4 +127,61 @@ fn pre_partition_by_attendance(answers: &[Answer]) -> (Vec<UserId>, Vec<UserId>)
             Attendance::Required => Either::Left(a.1),
             Attendance::Optional => Either::Right(a.1),
         })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    mod max_participants {
+        use super::*;
+        use crate::poll::AnswerValue;
+
+        const MAX_ALLOWED_PARTICIPANTS: usize = 5;
+
+        #[test]
+        fn max_is_none_if_options_are_empty() {
+            assert!(max_participants::<(), ()>(&[], MAX_ALLOWED_PARTICIPANTS).is_none());
+        }
+
+        #[test]
+        fn max_is_max_of_all_yes_answers() {
+            assert_eq!(
+                Some(4),
+                max_participants(
+                    &[poll_option(0), poll_option(1), poll_option(4)],
+                    MAX_ALLOWED_PARTICIPANTS
+                )
+            );
+        }
+
+        // This is important to ensure that options that have at least MAX_ALLOWED_PARTICIPANTS participants
+        // but not overall maximal participants are still considered. The effectively invited
+        // participants are also capped at MAX_ALLOWED_PARTICIPANTS, so excluding these options from the selection
+        // would not make sense.
+        #[test]
+        fn max_is_clamped_at_max_allowed_participants() {
+            assert_eq!(
+                Some(MAX_ALLOWED_PARTICIPANTS),
+                max_participants(
+                    &[poll_option(MAX_ALLOWED_PARTICIPANTS + 1)],
+                    MAX_ALLOWED_PARTICIPANTS
+                )
+            );
+        }
+
+        fn poll_option(yes_answers: usize) -> PollOption<(), ()> {
+            PollOption {
+                id: (),
+                datetime: OffsetDateTime::now_utc(),
+                answers: (0..yes_answers)
+                    .map(|_| Answer {
+                        value: AnswerValue::yes(Attendance::Optional),
+                        id: (),
+                        user: (),
+                    })
+                    .collect(),
+            }
+        }
+    }
 }
