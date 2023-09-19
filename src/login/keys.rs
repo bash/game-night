@@ -1,4 +1,4 @@
-use anyhow::{Context, Result};
+use anyhow::{Context as _, Result};
 use dirs::data_local_dir;
 use rand::{thread_rng, RngCore};
 use serde::{Deserialize, Serialize};

@@ -8,7 +8,7 @@ use crate::login::{with_autologin_token, LoginToken};
 use crate::template::{PageBuilder, PageType};
 use crate::users::{User, UserId};
 use crate::UrlPrefix;
-use anyhow::{Context, Error, Result};
+use anyhow::{Context as _, Error, Result};
 use itertools::Itertools;
 use rocket::form::Form;
 use rocket::response::{Debug, Redirect};
