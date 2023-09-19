@@ -1,5 +1,5 @@
 use super::LoginToken;
-use crate::authentication::CookieJarExt;
+use crate::auth::CookieJarExt;
 use crate::database::Repository;
 use crate::users::User;
 use rocket::fairing::{self, Fairing};

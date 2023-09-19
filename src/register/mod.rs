@@ -1,4 +1,4 @@
-use crate::authentication::CookieJarExt;
+use crate::auth::CookieJarExt;
 use crate::database::Repository;
 use crate::email::EmailSender;
 use crate::email_verification_code::EmailVerificationCode;

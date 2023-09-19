@@ -1,5 +1,5 @@
 use super::{page_type_from_redirect_uri, redirect_to};
-use crate::authentication::CookieJarExt;
+use crate::auth::CookieJarExt;
 use crate::database::Repository;
 use crate::template::PageBuilder;
 use anyhow::Error;

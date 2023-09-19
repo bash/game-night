@@ -1,6 +1,6 @@
 use super::{rocket_uri_macro_poll_page, Answer, AnswerValue, Attendance, Location};
 use super::{DateSelectionStrategy, Poll, PollOption};
-use crate::authorization::{AuthorizedTo, ManagePoll};
+use crate::auth::{AuthorizedTo, ManagePoll};
 use crate::database::Repository;
 use crate::email::EmailSender;
 use crate::emails::PollEmail;

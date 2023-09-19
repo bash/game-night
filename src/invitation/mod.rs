@@ -1,4 +1,4 @@
-use crate::authorization::{AuthorizedTo, Invite};
+use crate::auth::{AuthorizedTo, Invite};
 use crate::database::Repository;
 use crate::template::{PageBuilder, PageType};
 use crate::users::{Role, User, UserId};

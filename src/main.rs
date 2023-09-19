@@ -1,7 +1,6 @@
 use anyhow::{Context, Result};
 use database::Repository;
 use email::{EmailSender, EmailSenderImpl};
-use keys::GameNightKeys;
 use poll::poll_finalizer;
 use rocket::fairing::{self, Fairing};
 use rocket::figment::Figment;
@@ -19,15 +18,13 @@ use std::collections::HashMap;
 use template::{PageBuilder, PageType};
 use users::User;
 
-mod authentication;
-mod authorization;
+mod auth;
 mod database;
 mod email;
 mod email_verification_code;
 mod emails;
 mod event;
 mod invitation;
-mod keys;
 mod login;
 mod poll;
 mod register;
@@ -44,7 +41,7 @@ fn rocket() -> _ {
         .mount("/", users::routes())
         .mount("/", login::routes())
         .register("/", login::catchers())
-        .register("/", authorization::catchers())
+        .register("/", auth::catchers())
         .register("/", catchers![not_found])
         .mount("/", file_server())
         .attach(Template::custom(configure_template_engines))
@@ -56,7 +53,7 @@ fn rocket() -> _ {
 }
 
 fn figment() -> Figment {
-    let keys = GameNightKeys::read_or_generate().unwrap();
+    let keys = login::GameNightKeys::read_or_generate().unwrap();
     Config::figment().merge(("secret_key", &keys.rocket_secret_key))
 }
 

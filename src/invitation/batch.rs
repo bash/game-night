@@ -1,5 +1,5 @@
 use super::{Invitation, InvitationLifetime, Passphrase};
-use crate::authorization::{AuthorizedTo, Invite};
+use crate::auth::{AuthorizedTo, Invite};
 use crate::database::Repository;
 use crate::users::{Role, User};
 use anyhow::{Error, Result};

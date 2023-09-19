@@ -1,4 +1,4 @@
-use crate::authorization::{AuthorizedTo, ManageUsers};
+use crate::auth::{AuthorizedTo, ManageUsers};
 use crate::database::Repository;
 use crate::template::{PageBuilder, PageType};
 use anyhow::{Error, Result};

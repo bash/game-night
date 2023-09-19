@@ -1,4 +1,4 @@
-use crate::authentication::CookieJarExt;
+use crate::auth::CookieJarExt;
 use crate::database::Repository;
 use crate::email::EmailSender;
 use crate::emails::LoginEmail;
@@ -22,6 +22,8 @@ pub(crate) use auto_login::*;
 use serde::Serialize;
 use time::{Duration, OffsetDateTime};
 mod code;
+mod keys;
+pub(crate) use keys::*;
 
 pub(crate) fn routes() -> Vec<Route> {
     routes![
