@@ -69,16 +69,16 @@ async fn login(
 
 #[derive(Debug, Responder)]
 enum Login {
-    Success(Redirect),
+    Success(Box<Redirect>),
     #[response(status = 400)]
     Failure(Template),
 }
 
 impl Login {
     fn success(redirect: Option<&str>) -> Login {
-        Self::Success(Redirect::to(uri!(code::login_with_code_page(
+        Self::Success(Box::new(Redirect::to(uri!(code::login_with_code_page(
             redirect = redirect
-        ))))
+        )))))
     }
 
     fn failure(builder: PageBuilder, redirect: Option<&str>, form: LoginData<'_>) -> Login {
