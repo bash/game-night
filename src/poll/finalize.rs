@@ -1,7 +1,7 @@
 use super::{Answer, Attendance, DateSelectionStrategy, Poll, PollOption, PollState};
 use crate::database::Repository;
 use crate::event::Event;
-use crate::users::UserId;
+use crate::users::{AsUserId, UserId};
 use crate::RocketExt;
 use anyhow::Result;
 use itertools::{Either, Itertools};
@@ -101,13 +101,16 @@ fn max_participants<Id, UserRef>(
     max_allowed_participants: usize,
 ) -> Option<usize> {
     options
-        .into_iter()
+        .iter()
         .map(|o| o.count_yes_answers())
         .max()
         .map(|max| min(max, max_allowed_participants))
 }
 
-fn choose_participants(answers: &[Answer], max_participants: usize) -> (Vec<UserId>, Vec<UserId>) {
+fn choose_participants<Id, UserRef: AsUserId>(
+    answers: &[Answer<Id, UserRef>],
+    max_participants: usize,
+) -> (Vec<UserId>, Vec<UserId>) {
     let (mut accepted, mut rejected): (Vec<_>, Vec<_>) = pre_partition_by_attendance(answers);
 
     let available = max_participants.saturating_sub(accepted.len());
@@ -119,9 +122,11 @@ fn choose_participants(answers: &[Answer], max_participants: usize) -> (Vec<User
     (accepted, rejected)
 }
 
-fn pre_partition_by_attendance(answers: &[Answer]) -> (Vec<UserId>, Vec<UserId>) {
+fn pre_partition_by_attendance<Id, UserRef: AsUserId>(
+    answers: &[Answer<Id, UserRef>],
+) -> (Vec<UserId>, Vec<UserId>) {
     answers
-        .into_iter()
+        .iter()
         .filter_map(|a| a.yes())
         .partition_map(|a| match a.0 {
             Attendance::Required => Either::Left(a.1),
@@ -132,10 +137,40 @@ fn pre_partition_by_attendance(answers: &[Answer]) -> (Vec<UserId>, Vec<UserId>)
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::poll::AnswerValue;
+
+    mod choose_participants {
+        use super::*;
+
+        const MAX_ALLOWED_PARTICIPANTS: usize = 5;
+
+        #[test]
+        fn accepted_and_rejected_participants_are_empty_for_empty_answers() {
+            let (accepted, rejected) =
+                choose_participants::<(), UserId>(&[], MAX_ALLOWED_PARTICIPANTS);
+            assert!(accepted.is_empty());
+            assert!(rejected.is_empty());
+        }
+
+        #[test]
+        fn accepts_more_than_max_if_all_have_required_attendance() {
+            let (accepted, rejected) = choose_participants(
+                &[
+                    answer(AnswerValue::yes(Attendance::Required), UserId(1)),
+                    answer(AnswerValue::yes(Attendance::Required), UserId(2)),
+                    answer(AnswerValue::yes(Attendance::Required), UserId(3)),
+                ],
+                2,
+            );
+            assert_eq!(vec![UserId(1), UserId(2), UserId(3)], accepted);
+            assert!(rejected.is_empty());
+        }
+
+        // TODO: more tests
+    }
 
     mod max_participants {
         use super::*;
-        use crate::poll::AnswerValue;
 
         const MAX_ALLOWED_PARTICIPANTS: usize = 5;
 
@@ -169,19 +204,23 @@ mod tests {
                 )
             );
         }
+    }
 
-        fn poll_option(yes_answers: usize) -> PollOption<(), ()> {
-            PollOption {
-                id: (),
-                datetime: OffsetDateTime::now_utc(),
-                answers: (0..yes_answers)
-                    .map(|_| Answer {
-                        value: AnswerValue::yes(Attendance::Optional),
-                        id: (),
-                        user: (),
-                    })
-                    .collect(),
-            }
+    fn poll_option(yes_answers: usize) -> PollOption<(), ()> {
+        PollOption {
+            id: (),
+            datetime: OffsetDateTime::now_utc(),
+            answers: (0..yes_answers)
+                .map(|_| answer(AnswerValue::yes(Attendance::Optional), ()))
+                .collect(),
+        }
+    }
+
+    fn answer<UserRef>(value: AnswerValue, user: UserRef) -> Answer<(), UserRef> {
+        Answer {
+            value,
+            id: (),
+            user,
         }
     }
 }

@@ -26,7 +26,7 @@ impl Event<(), UserId, i64> {
             location: poll.location.id,
             created_by: poll.created_by.id,
             participants: participants
-                .into_iter()
+                .iter()
                 .copied()
                 .map(|user| Participant { id: (), user })
                 .collect(),

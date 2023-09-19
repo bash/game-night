@@ -1,7 +1,7 @@
 use self::open::open_poll_page;
 use crate::database::Repository;
 use crate::template::{PageBuilder, PageType};
-use crate::users::{User, UserId};
+use crate::users::{AsUserId, User, UserId};
 use anyhow::Error;
 use rocket::http::Status;
 use rocket::outcome::try_outcome;
@@ -147,12 +147,12 @@ impl<Id, UserRef> Answer<Id, UserRef> {
 #[derive(Debug)]
 pub(crate) struct YesAnswer(pub(crate) Attendance, pub(crate) UserId);
 
-impl Answer {
+impl<Id, UserId: AsUserId> Answer<Id, UserId> {
     pub(crate) fn yes(&self) -> Option<YesAnswer> {
         use AnswerValue::*;
         match self.value {
             No => None,
-            Yes { attendance } => Some(YesAnswer(attendance, self.user.id)),
+            Yes { attendance } => Some(YesAnswer(attendance, self.user.as_user_id())),
         }
     }
 }
