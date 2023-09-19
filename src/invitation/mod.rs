@@ -94,6 +94,7 @@ pub(crate) struct Invitation<Id = InvitationId> {
     pub(crate) created_by: Option<UserId>,
     pub(crate) passphrase: Passphrase,
     pub(crate) valid_until: Option<OffsetDateTime>,
+    pub(crate) used_by: Option<UserId>,
 }
 
 impl Invitation<()> {
@@ -103,6 +104,7 @@ impl Invitation<()> {
             role: self.role,
             created_by: self.created_by,
             passphrase: self.passphrase,
+            used_by: self.used_by,
             valid_until: self.valid_until,
         }
     }
@@ -161,6 +163,7 @@ impl Invitation<()> {
             role,
             created_by,
             valid_until,
+            used_by: None,
             passphrase: generate_passphrase(),
         }
     }

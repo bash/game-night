@@ -110,24 +110,29 @@ impl Repository for SqliteRepository {
 
     async fn add_user(&mut self, invitation: Invitation, user: User<()>) -> Result<UserId> {
         let mut transaction = self.0.begin().await?;
-        let delete_result = sqlx::query("DELETE FROM invitations WHERE id = ?")
-            .bind(invitation.id)
-            .execute(&mut *transaction)
-            .await?;
-        if delete_result.rows_affected() >= 1 {
-            let insert_result = sqlx::query(
-                "INSERT INTO users (name, role, email_address, invited_by, campaign)
-                 VALUES (?1, ?2, ?3, ?4, ?5)",
-            )
-            .bind(user.name)
-            .bind(user.role)
-            .bind(user.email_address)
-            .bind(user.invited_by)
-            .bind(user.campaign)
-            .execute(&mut *transaction)
-            .await?;
+
+        let user_id = sqlx::query(
+            "INSERT INTO users (name, role, email_address, invited_by, campaign)
+             VALUES (?1, ?2, ?3, ?4, ?5)",
+        )
+        .bind(user.name)
+        .bind(user.role)
+        .bind(user.email_address)
+        .bind(user.invited_by)
+        .bind(user.campaign)
+        .execute(&mut *transaction)
+        .await?
+        .last_insert_rowid();
+
+        let update_result =
+            sqlx::query("UPDATE invitations SET used_by = ?2 WHERE id = ?1 AND used_by IS NULL")
+                .bind(invitation.id)
+                .bind(user_id)
+                .execute(&mut *transaction)
+                .await?;
+        if update_result.rows_affected() >= 1 {
             transaction.commit().await?;
-            Ok(UserId(insert_result.last_insert_rowid()))
+            Ok(UserId(user_id))
         } else {
             transaction.rollback().await?;
             Err(anyhow!("Invalid invitation"))

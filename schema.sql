@@ -13,6 +13,8 @@ CREATE TABLE invitations
     , 'role' INTEGER NOT NULL
     , created_by INTEGER NULL
     , passphrase TEXT NOT NULL UNIQUE
+    , comment TEXT NOT NULL DEFAULT ''
+    , used_by INTEGER NULL REFERENCES users(id)
     , valid_until TEXT NULL
     , created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
     );

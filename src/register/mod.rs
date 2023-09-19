@@ -33,6 +33,15 @@ macro_rules! unwrap_or_return {
     };
 }
 
+macro_rules! pending {
+    () => {
+        Ok(Pending(None))
+    };
+    ($e:expr) => {
+        Ok(Pending(Some($e.into())))
+    };
+}
+
 pub(crate) fn routes() -> Vec<Route> {
     routes![register_page, register]
 }
@@ -108,11 +117,16 @@ async fn invitation_code_step(
     repository: &mut dyn Repository,
 ) -> Result<StepResult<Invitation>> {
     let passphrase = Passphrase(form.words.clone());
-    Ok(repository
-        .get_invitation_by_passphrase(&passphrase)
-        .await?
-        .map(Complete)
-        .unwrap_or_else(|| Pending(Some("That's not a valid invitation passphrase".into()))))
+    let invitation = match repository.get_invitation_by_passphrase(&passphrase).await? {
+        Some(invitation) => invitation,
+        None => return pending!("That's not a valid invitation passphrase"),
+    };
+
+    if invitation.used_by.is_some() {
+        return pending!("*Ruh-roh* Are you trying to use an invitation twice? Naughty! Naughty!");
+    }
+
+    Ok(Complete(invitation))
 }
 
 async fn user_details_step(
@@ -125,9 +139,7 @@ async fn user_details_step(
     let email_address = user_details.email_address.as_str();
 
     if repository.get_user_by_email(email_address).await?.is_some() {
-        return Ok(Pending(Some(
-            "You are already registered, you should try logging in instead :)".into(),
-        )));
+        return pending!("You are already registered, you should try logging in instead :)");
     }
 
     if !repository.has_verification_code(email_address).await? {
@@ -140,13 +152,13 @@ async fn user_details_step(
 fn get_user_details_from_form(form: &RegisterForm<'_>) -> Result<StepResult<UserDetails>> {
     let name = match form.name {
         Some(name) if !name.is_empty() => name,
-        Some(_) => return Ok(Pending(Some("Please enter your name".into()))),
-        None => return Ok(Pending(None)),
+        Some(_) => return pending!("Please enter your name"),
+        None => return pending!(),
     };
     let email_address = match form.email_address.map(EmailAddress::from_str) {
         Some(Ok(addr)) => addr,
-        Some(Err(_)) => return Ok(Pending(Some("Please enter a valid email address".into()))),
-        None => return Ok(Pending(None)),
+        Some(Err(_)) => return pending!("Please enter a valid email address"),
+        None => return pending!(),
     };
     Ok(Complete(UserDetails {
         name: name.to_string(),
@@ -197,10 +209,8 @@ async fn use_verification_code(
     let email = user_details.email_address.as_str();
     match form.email_verification_code {
         Some(code) if repository.use_verification_code(code, email).await? => Ok(Complete(())),
-        Some(_) => Ok(Pending(Some(
-            "That's not the correct code, maybe it has expired?".into(),
-        ))),
-        None => Ok(Pending(None)),
+        Some(_) => pending!("That's not the correct code, maybe it has expired?"),
+        None => pending!(),
     }
 }
 
