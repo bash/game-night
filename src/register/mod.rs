@@ -123,6 +123,13 @@ async fn user_details_step(
     let user_details = unwrap_or_return!(get_user_details_from_form(form)?, e => Ok(Pending(e)));
 
     let email_address = user_details.email_address.as_str();
+
+    if repository.get_user_by_email(email_address).await?.is_some() {
+        return Ok(Pending(Some(
+            "You are already registered, you should try logging in instead :)".into(),
+        )));
+    }
+
     if !repository.has_verification_code(email_address).await? {
         send_verification_email(repository, email_sender, &user_details).await?;
     }
