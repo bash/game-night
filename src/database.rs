@@ -1,4 +1,5 @@
 use crate::email_verification_code::EmailVerificationCode;
+use crate::event::Event;
 use crate::invitation::{Invitation, InvitationId, Passphrase};
 use crate::login::{LoginToken, LoginTokenType};
 use crate::poll::{Answer, Location, Poll, PollOption};
@@ -59,6 +60,8 @@ pub(crate) trait Repository: Send {
     async fn close_poll(&mut self, id: i64) -> Result<()>;
 
     async fn get_location(&mut self) -> Result<Location>;
+
+    async fn add_event(&mut self, event: &Event<(), UserId, i64>) -> Result<()>;
 
     async fn prune(&mut self) -> Result<()>;
 }
@@ -356,6 +359,32 @@ impl Repository for SqliteRepository {
         Ok(sqlx::query_as("SELECT * FROM locations LIMIT 1")
             .fetch_one(&mut *self.0)
             .await?)
+    }
+
+    async fn add_event(&mut self, event: &Event<(), UserId, i64>) -> Result<()> {
+        let mut transaction: sqlx::Transaction<'_, Sqlite> = self.0.begin().await?;
+        let event_id = sqlx::query(
+            "INSERT INTO events (datetime, description, location_id, created_by)
+             VALUES (?1, ?2, ?3, ?4)",
+        )
+        .bind(event.datetime)
+        .bind(&event.description)
+        .bind(event.location)
+        .bind(event.created_by)
+        .execute(&mut *transaction)
+        .await?
+        .last_insert_rowid();
+
+        for participant in event.participants.iter() {
+            sqlx::query("INSERT INTO participants (event_id, user_id) VALUES (?1, ?2)")
+                .bind(event_id)
+                .bind(participant.user)
+                .execute(&mut *transaction)
+                .await?;
+        }
+
+        transaction.commit().await?;
+        Ok(())
     }
 
     async fn prune(&mut self) -> Result<()> {

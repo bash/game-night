@@ -1,5 +1,6 @@
 use super::{Answer, Attendance, DateSelectionStrategy, Poll, PollOption, PollState};
 use crate::database::Repository;
+use crate::event::Event;
 use crate::users::UserId;
 use crate::RocketExt;
 use anyhow::Result;
@@ -63,8 +64,9 @@ async fn try_finalize_poll(repository: &mut dyn Repository, poll: Poll) -> Resul
     let candidates = get_candidates(&poll);
 
     if let Some(chosen_option) = choose_option(candidates, &poll) {
-        let (_, _) = choose_participants(chosen_option.answers, poll.max_participants);
-        // TODO: create event
+        let (accepted, _) = choose_participants(&chosen_option.answers, poll.max_participants);
+        let event = Event::new(&poll, &chosen_option, &accepted);
+        repository.add_event(&event).await?;
         // TODO: send email
     } else {
         // No date found, send email to everyone
@@ -100,22 +102,19 @@ fn choose_option(mut candidates: Vec<PollOption>, poll: &Poll) -> Option<PollOpt
     }
 }
 
-fn choose_participants(
-    answers: Vec<Answer>,
-    max_participants: usize,
-) -> (Vec<UserId>, Vec<UserId>) {
+fn choose_participants(answers: &[Answer], max_participants: usize) -> (Vec<UserId>, Vec<UserId>) {
     let (mut accepted, mut rejected): (Vec<_>, Vec<_>) = pre_partition_by_attendance(answers);
 
     let available = max_participants.saturating_sub(accepted.len());
     if available > 0 {
         rejected.shuffle(&mut thread_rng());
-        accepted.extend(rejected.drain(..available));
+        accepted.extend(rejected.drain(..min(available, rejected.len())));
     }
 
     (accepted, rejected)
 }
 
-fn pre_partition_by_attendance(answers: Vec<Answer>) -> (Vec<UserId>, Vec<UserId>) {
+fn pre_partition_by_attendance(answers: &[Answer]) -> (Vec<UserId>, Vec<UserId>) {
     answers
         .into_iter()
         .filter_map(|a| a.yes())

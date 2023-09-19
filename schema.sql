@@ -64,6 +64,21 @@ CREATE TABLE poll_answers
     , UNIQUE (poll_option_id, user_id) ON CONFLICT REPLACE
     );
 
+CREATE TABLE events
+    ( id INTEGER PRIMARY KEY
+    , datetime TEXT NOT NULL
+    , description TEXT NOT NULL
+    , location_id INTEGER NOT NULL REFERENCES locations(id) ON DELETE RESTRICT
+    , created_by INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT
+    , created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+    );
+
+CREATE TABLE participants
+    ( id INTEGER PRIMARY KEY
+    , event_id INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE
+    , user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT
+    );
+
 CREATE TABLE locations
     ( id INTEGER PRIMARY KEY
     , nameplate TEXT NOT NULL
