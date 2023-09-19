@@ -1,7 +1,6 @@
 use crate::auth::CookieJarExt;
 use crate::database::Repository;
-use crate::email::EmailSender;
-use crate::emails::LoginEmail;
+use crate::email::{EmailMessage, EmailSender};
 use crate::template::{PageBuilder, PageType};
 use crate::users::{User, UserId};
 use anyhow::{Error, Result};
@@ -20,6 +19,7 @@ use rocket_dyn_templates::{context, Template};
 mod auto_login;
 pub(crate) use auto_login::*;
 use serde::Serialize;
+use tera::Context;
 use time::{Duration, OffsetDateTime};
 mod code;
 mod keys;
@@ -215,4 +215,24 @@ fn generate_one_time_code() -> String {
         .take(6)
         .map(|d| d.to_string())
         .collect()
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct LoginEmail {
+    name: String,
+    code: String,
+}
+
+impl EmailMessage for LoginEmail {
+    fn subject(&self) -> String {
+        "Let's Get You Logged In".to_owned()
+    }
+
+    fn template_name(&self) -> String {
+        "login".to_owned()
+    }
+
+    fn template_context(&self) -> Context {
+        Context::from_serialize(self).unwrap()
+    }
 }

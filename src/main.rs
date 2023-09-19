@@ -22,7 +22,6 @@ mod auth;
 mod database;
 mod email;
 mod email_verification_code;
-mod emails;
 mod event;
 mod invitation;
 mod login;

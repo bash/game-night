@@ -6,11 +6,11 @@ use time::{OffsetDateTime, PrimitiveDateTime};
 use time_tz::{timezones, OffsetDateTimeExt};
 
 #[derive(Debug, Clone, Serialize)]
-pub(crate) struct PollEmail {
-    pub(crate) name: String,
+pub(super) struct PollEmail {
+    pub(super) name: String,
     #[serde(serialize_with = "serialize_as_cet")]
-    pub(crate) poll_closes_at: OffsetDateTime,
-    pub(crate) poll_url: String,
+    pub(super) poll_closes_at: OffsetDateTime,
+    pub(super) poll_url: String,
 }
 
 impl EmailMessage for PollEmail {

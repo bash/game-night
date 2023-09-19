@@ -17,6 +17,8 @@ use time::OffsetDateTime;
 
 mod finalize;
 pub(crate) use finalize::*;
+mod email;
+use email::PollEmail;
 mod new;
 mod open;
 

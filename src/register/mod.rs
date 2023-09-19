@@ -2,7 +2,6 @@ use crate::auth::CookieJarExt;
 use crate::database::Repository;
 use crate::email::EmailSender;
 use crate::email_verification_code::EmailVerificationCode;
-use crate::emails::VerificationEmail;
 use crate::invitation::{Invitation, Passphrase};
 use crate::template::{PageBuilder, PageType};
 use crate::users::{rocket_uri_macro_list_users, User, UserId};
@@ -17,10 +16,12 @@ use rocket::{get, post, routes, uri, Either, FromForm, Route, State};
 use rocket_dyn_templates::{context, Template};
 use serde::Serialize;
 use std::str::FromStr;
+use verification::VerificationEmail;
 use Either::*;
 use StepResult::*;
 
 mod campaign;
+mod verification;
 
 macro_rules! unwrap_or_return {
     ($result:expr, $e:ident => $ret:expr) => {

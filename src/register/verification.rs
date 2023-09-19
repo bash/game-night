@@ -3,7 +3,7 @@ use serde::Serialize;
 use tera::Context;
 
 #[derive(Debug, Clone, Serialize)]
-pub(crate) struct VerificationEmail {
+pub(super) struct VerificationEmail {
     pub(crate) name: String,
     pub(crate) code: String,
 }
