@@ -1,0 +1,13 @@
+{% macro campaign_ps(campaign) %}
+    {% if campaign == 'super-secrit-beta' %}
+        <p>
+            <strong>P.S.</strong> Congratulations! 🎉 You made sense of my <em>interesting</em> invitation puzzle.
+            I will have a <em>special</em> present ready for you the first time you participate in a game night~ ✨
+        </p>
+    {% elif campaign == 'penis' %}
+        <p>
+            <strong>P.S.</strong> You're <em>very</em> funny ha ha.<br>
+            <strong>P.P.S.</strong> I have forwarded a formal complaint to Santa's naughty list.
+        </p>
+    {% endif %}
+{% endmacro %}

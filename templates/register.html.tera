@@ -1,3 +1,5 @@
+{% import 'campaign-macros' as campaign_macros %}
+
 {% extends 'base' %}
 
 {% block title %}Invited{% endblock title %}
@@ -59,6 +61,8 @@
         <fieldset class="-actions">
             <button type="submit">Neext!</button>
         </fieldset>
+
+        {{ campaign_macros::campaign_ps(campaign=campaign) }}
 
         <script type="module" src="/js/overflow-to.js"></script>
         {% else %}
