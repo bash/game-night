@@ -159,6 +159,7 @@ fn get_random_skin_tone_modifier() -> &'static str {
         "\u{1F3FD}",
         "\u{1F3FE}",
         "\u{1F3FF}",
+        "",
     ];
     thread_rng().sample(distributions::Slice::new(SKIN_TONE_MODIFIERS).unwrap())
 }
