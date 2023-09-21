@@ -12,7 +12,8 @@
         There's no need for you to register again :)</em>
     </p>
     <fieldset class="-actions">
-        <a href="/poll" class="link-button">Take me to the poll!</a>
+        <a href="/poll" class="link-button">Onward to the poll!</a>
+        <a href="/register/profile" class="link-button">Can I edit my profile please?</a>
         {% if users_url %}
             <a href="{{users_url}}" class="link-button">Show me the list of users!</a>
         {% endif %}

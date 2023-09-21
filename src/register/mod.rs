@@ -21,6 +21,7 @@ use StepResult::*;
 
 mod campaign;
 mod email_verification_code;
+mod profile;
 mod verification;
 pub(crate) use email_verification_code::*;
 
@@ -43,7 +44,12 @@ macro_rules! pending {
 }
 
 pub(crate) fn routes() -> Vec<Route> {
-    routes![register_page, register]
+    routes![
+        register_page,
+        register,
+        profile::profile,
+        profile::update_profile,
+    ]
 }
 
 #[get("/register")]

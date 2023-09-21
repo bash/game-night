@@ -3,7 +3,7 @@ use crate::invitation::{Invitation, InvitationId, Passphrase};
 use crate::login::{LoginToken, LoginTokenType};
 use crate::poll::{Answer, Location, Poll, PollOption};
 use crate::register::EmailVerificationCode;
-use crate::users::{User, UserId};
+use crate::users::{User, UserId, UserPatch};
 use crate::GameNightDatabase;
 use anyhow::{anyhow, Error, Result};
 use rocket::request::{FromRequest, Outcome};
@@ -36,6 +36,8 @@ pub(crate) trait Repository: Send {
     async fn get_user_by_email(&mut self, email: &str) -> Result<Option<User>>;
 
     async fn get_users(&mut self) -> Result<Vec<User>>;
+
+    async fn update_user(&mut self, id: UserId, patch: UserPatch) -> Result<()>;
 
     async fn add_verification_code(&mut self, code: &EmailVerificationCode) -> Result<()>;
 
@@ -166,6 +168,15 @@ impl Repository for SqliteRepository {
         Ok(sqlx::query_as("SELECT * FROM users")
             .fetch_all(&mut *self.0)
             .await?)
+    }
+
+    async fn update_user(&mut self, id: UserId, patch: UserPatch) -> Result<()> {
+        sqlx::query("UPDATE users SET name = ?2 WHERE id = ?1")
+            .bind(id)
+            .bind(patch.name)
+            .execute(&mut *self.0)
+            .await?;
+        Ok(())
     }
 
     async fn add_verification_code(&mut self, code: &EmailVerificationCode) -> Result<()> {

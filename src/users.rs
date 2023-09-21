@@ -4,7 +4,7 @@ use crate::template::{PageBuilder, PageType};
 use anyhow::{Error, Result};
 use lettre::message::Mailbox;
 use rocket::response::Debug;
-use rocket::{get, routes, Route};
+use rocket::{get, routes, FromForm, Route};
 use rocket_db_pools::sqlx;
 use rocket_dyn_templates::{context, Template};
 use serde::Serialize;
@@ -53,6 +53,12 @@ pub(crate) struct User<Id = UserId> {
     pub(crate) email_address: String,
     pub(crate) invited_by: Option<UserId>,
     pub(crate) campaign: Option<String>,
+}
+
+#[derive(Debug, FromForm)]
+pub(crate) struct UserPatch {
+    #[form(validate = len(1..))]
+    pub(crate) name: String,
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, sqlx::Type, Serialize)]

@@ -1,0 +1,21 @@
+{% extends 'base' %}
+
+{% block title %}Profile{% endblock title %}
+
+{% block content %}
+<form method="post">
+    <p>
+        Hi, my name is
+        <input type="text" class="-inline" placeholder="Name" name="name" value="{{user.name}}" required autocomplete="name" size="15">
+        and <br>
+        my email address is
+        <input type="email" class="-inline" value="{{user.email_address}}" disabled>.
+    </p>
+    <fieldset class="-actions">
+        <button type="submit">Save my details</button>
+    </fieldset>
+    <p>
+        <strong>P.S.</strong> You can't yet change your email address. I will add that feature soooon-ish, *pinky-promise*.
+    </p>
+</form>
+{% endblock %}
