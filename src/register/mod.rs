@@ -122,7 +122,12 @@ async fn invitation_code_step(
     form: &RegisterForm<'_>,
     repository: &mut dyn Repository,
 ) -> Result<StepResult<Invitation>> {
-    let passphrase = Passphrase(form.words.clone());
+    let passphrase = Passphrase(
+        form.words
+            .iter()
+            .map(|w| w.to_lowercase().trim().to_owned())
+            .collect(),
+    );
     let invitation = match repository.get_invitation_by_passphrase(&passphrase).await? {
         Some(invitation) => invitation,
         None => return pending!("That's not a valid invitation passphrase"),
