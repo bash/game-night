@@ -15,7 +15,7 @@
 <fieldset class="-actions">
     <a href="{{new_poll_uri}}" class="link-button">Start a new poll</a>
 </fieldset>
+{% endif %}
 
 {{ campaign_macros::campaign_ps(campaign=user.campaign) }}
-{% endif %}
 {% endblock content %}

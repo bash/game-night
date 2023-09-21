@@ -62,7 +62,7 @@
             <button type="submit">Neext!</button>
         </fieldset>
 
-        {{ campaign_macros::campaign_ps(campaign=campaign) }}
+        {{ campaign_macros::campaign_ps(campaign=campaign, level=1) }}
 
         <script type="module" src="/js/overflow-to.js"></script>
         {% else %}
@@ -100,6 +100,8 @@
             <fieldset class="-actions">
                 <button type="submit">Neeext!</button>
             </fieldset>
+
+            {{ campaign_macros::campaign_ps(campaign=campaign) }}
 
             <script type="module" src="/js/bind-to.js"></script>
         {% else %}

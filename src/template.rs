@@ -1,5 +1,6 @@
 use crate::users::User;
 use anyhow::Error;
+use json::from_value;
 use rocket::http::uri::Origin;
 use rocket::request::{FromRequest, Outcome};
 use rocket::{async_trait, Request};
@@ -7,6 +8,7 @@ use rocket_dyn_templates::{Engines, Template};
 use serde::Serialize;
 use std::borrow::Cow;
 use std::collections::HashMap;
+use std::iter;
 
 pub(crate) struct PageBuilder<'r> {
     user: Option<User>,
@@ -129,6 +131,26 @@ impl<'r> TryFrom<Origin<'r>> for PageType {
 
 pub(crate) fn configure_template_engines(engines: &mut Engines) {
     engines.tera.register_filter("markdown", markdown_filter);
+    engines.tera.register_function("ps", ps_prefix);
+}
+
+fn ps_prefix(args: &HashMap<String, tera::Value>) -> tera::Result<tera::Value> {
+    let level: usize = args
+        .get("level")
+        .map(|l| {
+            from_value(l.clone()).map_err(|_| {
+                tera::Error::msg(format!(
+                    "Function `ps` received level={l} but `level` can only be a positive integer"
+                ))
+            })
+        })
+        .unwrap_or(Ok(0))?;
+    Ok(tera::Value::String(
+        iter::repeat("P.")
+            .take(level + 1)
+            .chain(iter::once("S."))
+            .collect(),
+    ))
 }
 
 fn markdown_filter(
