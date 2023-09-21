@@ -26,6 +26,16 @@ nav {
 footer {
     padding: 0 var(--content-padding) var(--content-padding) var(--content-padding);
     font-size: .875em;
+    display: grid;
+    grid-auto-flow: column;
+    justify-content: start;
+    align-items: center;
+    gap: .5rem;
+
+    &::before {
+        @extend %fleuron;
+        content: '';
+    }
 
     @media (hover: hover) and (not (prefers-contrast: more)) {
         opacity: .4;
@@ -34,14 +44,5 @@ footer {
         &:hover {
             opacity: 1;
         }
-    }
-
-    &::before {
-        content: '';
-        border-top: 1px solid currentColor;
-        display: block;
-        max-width: 200px;
-        width: 100%;
-        margin-bottom: 10px;
     }
 }

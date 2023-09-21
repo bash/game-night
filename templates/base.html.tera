@@ -53,6 +53,10 @@
                 <input type="hidden" name="redirect" value="{{page.uri}}">
             </form>
         </footer>
+    {% else %}
+        <footer>
+            <span>a website by <a href="https://tau.garden">Tau</a>.</span>
+        </footer>
     {% endif %}
 </body>
 </html>
