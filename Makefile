@@ -55,6 +55,7 @@ publish: all
 	cargo build --release
 	cp target/release/game-night $(PUBLISH_DIR)/
 	cp -R {public,templates,emails} $(PUBLISH_DIR)/
+	find $(PUBLISH_DIR) -name '.DS_Store' -exec rm {} +
 
 deploy: publish
 	rsync --archive --verbose --human-readable --delete $(PUBLISH_DIR)/ root@fedora-01.infra.tau.garden:/opt/game-night/bin/
