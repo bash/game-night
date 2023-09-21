@@ -102,7 +102,7 @@ async fn register(
         user_details_step(&form, repository.as_mut(), email_sender.as_ref()).await?,
         error_message => Ok(Left(page.render(
             "register",
-            context! { step: "user_details", error_message, form },
+            context! { step: "user_details", error_message, form, campaign },
         )))
     );
 
@@ -110,7 +110,7 @@ async fn register(
         email_verification_step(repository.as_mut(), &form, invitation, user_details, campaign).await?,
         error_message => Ok(Left(page.render(
             "register",
-            context! { step: "verify_email", error_message, form },
+            context! { step: "verify_email", error_message, form, campaign },
         )))
     );
 

@@ -3,7 +3,7 @@ use rocket::request::{FromRequest, Outcome};
 use rocket::{async_trait, Request};
 use serde::Serialize;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Copy, Clone, Serialize)]
 #[serde(transparent)]
 pub(super) struct Campaign<'a>(Option<&'a str>);
 
