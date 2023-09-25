@@ -1,8 +1,7 @@
-use serde::Serialize;
-use time::OffsetDateTime;
-
 use crate::poll::{Location, Poll, PollOption};
 use crate::users::{User, UserId};
+use serde::Serialize;
+use time::OffsetDateTime;
 
 #[derive(Debug, sqlx::FromRow, Serialize)]
 pub(crate) struct Event<Id = i64, UserRef = User, LocationRef = Location> {
@@ -34,9 +33,33 @@ impl Event<(), UserId, i64> {
     }
 }
 
+impl Event<i64, UserId, i64> {
+    pub(crate) fn materialize(
+        self,
+        location: Location,
+        created_by: User,
+        participants: Vec<Participant>,
+    ) -> Event {
+        Event {
+            id: self.id,
+            datetime: self.datetime,
+            description: self.description,
+            location,
+            created_by,
+            participants,
+        }
+    }
+}
+
 #[derive(Debug, sqlx::FromRow, Serialize)]
 pub(crate) struct Participant<Id = i64, UserRef = User> {
     pub(crate) id: Id,
     #[sqlx(rename = "user_id")]
     pub(crate) user: UserRef,
+}
+
+impl Participant<i64, UserId> {
+    pub(crate) fn materialize(self, user: User) -> Participant {
+        Participant { id: self.id, user }
+    }
 }

@@ -1,11 +1,11 @@
-use crate::event::Event;
+use crate::event::{Event, Participant};
 use crate::invitation::{Invitation, InvitationId, Passphrase};
 use crate::login::{LoginToken, LoginTokenType};
 use crate::poll::{Answer, Location, Poll, PollOption};
 use crate::register::EmailVerificationCode;
 use crate::users::{User, UserId, UserPatch};
 use crate::GameNightDatabase;
-use anyhow::{anyhow, Error, Result};
+use anyhow::{anyhow, Error, Ok, Result};
 use rocket::request::{FromRequest, Outcome};
 use rocket::{async_trait, Request};
 use rocket_db_pools::Connection;
@@ -64,6 +64,8 @@ pub(crate) trait Repository: Send {
     async fn get_location(&mut self) -> Result<Location>;
 
     async fn add_event(&mut self, event: &Event<(), UserId, i64>) -> Result<()>;
+
+    async fn get_next_event(&mut self) -> Result<Option<Event>>;
 
     async fn prune(&mut self) -> Result<()>;
 }
@@ -326,7 +328,7 @@ impl Repository for SqliteRepository {
 
     async fn get_current_poll(&mut self) -> Result<Option<Poll>> {
         let poll: Option<Poll<i64, UserId, i64>> =
-            sqlx::query_as("SELECT * FROM polls ORDER BY polls.open_until DESC LIMIT 1")
+            sqlx::query_as("SELECT * FROM polls ORDER BY open_until DESC LIMIT 1")
                 .fetch_optional(self.executor())
                 .await?;
         match poll {
@@ -409,6 +411,23 @@ impl Repository for SqliteRepository {
         Ok(())
     }
 
+    async fn get_next_event(&mut self) -> Result<Option<Event>> {
+        const EXPECTED_EVENT_DURATION: &str = "+04:00";
+        let event: Option<Event<i64, UserId, i64>> = sqlx::query_as(
+            "SELECT * FROM events
+             WHERE unixepoch(datetime) - unixepoch('now', ?1) >= 0
+             ORDER BY datetime ASC
+             LIMIT 1",
+        )
+        .bind(EXPECTED_EVENT_DURATION)
+        .fetch_optional(self.executor())
+        .await?;
+        match event {
+            None => Ok(None),
+            Some(event) => Ok(Some(self.materialize_event(event).await?)),
+        }
+    }
+
     async fn prune(&mut self) -> Result<()> {
         sqlx::query("DELETE FROM login_tokens WHERE unixepoch(valid_until) - unixepoch('now') < 0")
             .execute(self.executor())
@@ -459,6 +478,45 @@ impl SqliteRepository {
             .fetch_one(self.executor())
             .await?;
         Ok(answer.materialize(user))
+    }
+
+    async fn materialize_event(&mut self, event: Event<i64, UserId, i64>) -> Result<Event> {
+        let created_by = sqlx::query_as("SELECT * FROM users WHERE id = ?1")
+            .bind(event.created_by)
+            .fetch_one(self.executor())
+            .await?;
+        let location = sqlx::query_as("SELECT * FROM locations WHERE id = ?1")
+            .bind(event.location)
+            .fetch_one(self.executor())
+            .await?;
+        let participants = sqlx::query_as("SELECT * FROM participants WHERE event_id = ?1")
+            .bind(event.id)
+            .fetch_all(self.executor())
+            .await?;
+        let participants = self.materialize_participants(participants).await?;
+        Ok(event.materialize(location, created_by, participants))
+    }
+
+    async fn materialize_participants(
+        &mut self,
+        participants: Vec<Participant<i64, UserId>>,
+    ) -> Result<Vec<Participant>> {
+        let mut materialized = Vec::new();
+        for participant in participants {
+            materialized.push(self.materialize_participant(participant).await?);
+        }
+        Ok(materialized)
+    }
+
+    async fn materialize_participant(
+        &mut self,
+        participant: Participant<i64, UserId>,
+    ) -> Result<Participant> {
+        let user = sqlx::query_as("SELECT * FROM users WHERE id = ?1")
+            .bind(participant.user)
+            .fetch_one(self.executor())
+            .await?;
+        Ok(participant.materialize(user))
     }
 }
 
