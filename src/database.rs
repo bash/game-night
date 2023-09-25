@@ -72,7 +72,7 @@ pub(crate) struct SqliteRepository(pub(crate) SqliteConnection);
 
 impl SqliteRepository {
     fn executor(&mut self) -> &mut <SqliteConnection as Deref>::Target {
-        &mut *self.0
+        &mut self.0
     }
 }
 
