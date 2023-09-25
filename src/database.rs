@@ -11,7 +11,7 @@ use rocket::{async_trait, Request};
 use rocket_db_pools::Connection;
 use sqlx::pool::PoolConnection;
 use sqlx::{Connection as _, Executor, Sqlite};
-use std::ops::DerefMut;
+use std::ops::Deref;
 
 type SqliteConnection = PoolConnection<Sqlite>;
 
@@ -70,6 +70,12 @@ pub(crate) trait Repository: Send {
 
 pub(crate) struct SqliteRepository(pub(crate) SqliteConnection);
 
+impl SqliteRepository {
+    fn executor(&mut self) -> &mut <SqliteConnection as Deref>::Target {
+        &mut *self.0
+    }
+}
+
 #[async_trait]
 impl Repository for SqliteRepository {
     async fn add_invitation(&mut self, invitation: Invitation<()>) -> Result<Invitation> {
@@ -81,7 +87,7 @@ impl Repository for SqliteRepository {
         .bind(invitation.created_by)
         .bind(invitation.valid_until)
         .bind(&invitation.passphrase)
-        .execute(self.0.deref_mut())
+        .execute(self.executor())
         .await?;
         Ok(invitation.with_id(InvitationId(result.last_insert_rowid())))
     }
@@ -90,7 +96,7 @@ impl Repository for SqliteRepository {
         let invitation = sqlx::query_as(
             "SELECT * FROM invitations WHERE role = 'admin' AND created_by IS NULL LIMIT 1",
         )
-        .fetch_optional(self.0.deref_mut())
+        .fetch_optional(self.executor())
         .await?;
         Ok(invitation)
     }
@@ -105,7 +111,7 @@ impl Repository for SqliteRepository {
                AND (valid_until IS NULL OR unixepoch(valid_until) - unixepoch('now') >= 0)",
         )
         .bind(passphrase)
-        .fetch_optional(self.0.deref_mut())
+        .fetch_optional(self.executor())
         .await?;
         Ok(invitation)
     }
@@ -143,7 +149,7 @@ impl Repository for SqliteRepository {
 
     async fn has_users(&mut self) -> Result<bool> {
         let user_count: i64 = sqlx::query_scalar("SELECT count(1) FROM users")
-            .fetch_one(self.0.deref_mut())
+            .fetch_one(self.executor())
             .await?;
         Ok(user_count >= 1)
     }
@@ -151,7 +157,7 @@ impl Repository for SqliteRepository {
     async fn get_user_by_id(&mut self, user_id: UserId) -> Result<Option<User>> {
         let user = sqlx::query_as("SELECT * FROM users WHERE id = ?1")
             .bind(user_id)
-            .fetch_optional(self.0.deref_mut())
+            .fetch_optional(self.executor())
             .await?;
         Ok(user)
     }
@@ -159,14 +165,14 @@ impl Repository for SqliteRepository {
     async fn get_user_by_email(&mut self, email: &str) -> Result<Option<User>> {
         let user = sqlx::query_as("SELECT * FROM users WHERE email_address = ?1")
             .bind(email)
-            .fetch_optional(self.0.deref_mut())
+            .fetch_optional(self.executor())
             .await?;
         Ok(user)
     }
 
     async fn get_users(&mut self) -> Result<Vec<User>> {
         Ok(sqlx::query_as("SELECT * FROM users")
-            .fetch_all(&mut *self.0)
+            .fetch_all(self.executor())
             .await?)
     }
 
@@ -174,7 +180,7 @@ impl Repository for SqliteRepository {
         sqlx::query("UPDATE users SET name = ?2 WHERE id = ?1")
             .bind(id)
             .bind(patch.name)
-            .execute(&mut *self.0)
+            .execute(self.executor())
             .await?;
         Ok(())
     }
@@ -187,7 +193,7 @@ impl Repository for SqliteRepository {
         .bind(&code.code)
         .bind(&code.email_address)
         .bind(code.valid_until)
-        .execute(self.0.deref_mut())
+        .execute(self.executor())
         .await?;
         Ok(())
     }
@@ -199,7 +205,7 @@ impl Repository for SqliteRepository {
                AND unixepoch(valid_until) - unixepoch('now') >= 0",
         )
         .bind(email_address)
-        .fetch_one(self.0.deref_mut())
+        .fetch_one(self.executor())
         .await?;
         Ok(result >= 1)
     }
@@ -213,7 +219,7 @@ impl Repository for SqliteRepository {
         )
         .bind(code)
         .bind(email_address)
-        .execute(self.0.deref_mut())
+        .execute(self.executor())
         .await?;
         Ok(result.rows_affected() >= 1)
     }
@@ -227,7 +233,7 @@ impl Repository for SqliteRepository {
         .bind(&token.token)
         .bind(token.user_id)
         .bind(token.valid_until)
-        .execute(self.0.deref_mut())
+        .execute(self.executor())
         .await?;
         Ok(())
     }
@@ -313,7 +319,7 @@ impl Repository for SqliteRepository {
         sqlx::query("UPDATE polls SET description = ?1 WHERE id = ?2")
             .bind(description)
             .bind(id)
-            .execute(self.0.deref_mut())
+            .execute(self.executor())
             .await?;
         Ok(())
     }
@@ -321,7 +327,7 @@ impl Repository for SqliteRepository {
     async fn get_current_poll(&mut self) -> Result<Option<Poll>> {
         let poll: Option<Poll<i64, UserId, i64>> =
             sqlx::query_as("SELECT * FROM polls ORDER BY polls.open_until DESC LIMIT 1")
-                .fetch_optional(self.0.deref_mut())
+                .fetch_optional(self.executor())
                 .await?;
         match poll {
             Some(poll) => Ok(Some(self.materialize_poll(poll).await?)),
@@ -366,14 +372,14 @@ impl Repository for SqliteRepository {
         sqlx::query("UPDATE polls SET closed = ?1 WHERE id = ?2")
             .bind(true)
             .bind(id)
-            .execute(self.0.deref_mut())
+            .execute(self.executor())
             .await?;
         Ok(())
     }
 
     async fn get_location(&mut self) -> Result<Location> {
         Ok(sqlx::query_as("SELECT * FROM locations LIMIT 1")
-            .fetch_one(&mut *self.0)
+            .fetch_one(self.executor())
             .await?)
     }
 
@@ -405,10 +411,10 @@ impl Repository for SqliteRepository {
 
     async fn prune(&mut self) -> Result<()> {
         sqlx::query("DELETE FROM login_tokens WHERE unixepoch(valid_until) - unixepoch('now') < 0")
-            .execute(&mut *self.0)
+            .execute(self.executor())
             .await?;
         sqlx::query("DELETE FROM email_verification_codes WHERE unixepoch(valid_until) - unixepoch('now') < 0")
-            .execute(&mut *self.0)
+            .execute(self.executor())
             .await?;
         Ok(())
     }
@@ -420,24 +426,24 @@ impl SqliteRepository {
         // but it's very inconvenient as I can't use the auto-derived FromRow impl :/
         let user: User = sqlx::query_as("SELECT * FROM users WHERE id = ?1")
             .bind(poll.created_by)
-            .fetch_one(self.0.deref_mut())
+            .fetch_one(self.executor())
             .await?;
 
         let location: Location = sqlx::query_as("SELECT * FROM locations WHERE id = ?1")
             .bind(poll.location)
-            .fetch_one(self.0.deref_mut())
+            .fetch_one(self.executor())
             .await?;
 
         let mut options: Vec<PollOption> =
             sqlx::query_as("SELECT * FROM poll_options WHERE poll_id = ?1")
                 .bind(poll.id)
-                .fetch_all(self.0.deref_mut())
+                .fetch_all(self.executor())
                 .await?;
 
         for option in &mut options {
             for answer in sqlx::query_as("SELECT * FROM poll_answers WHERE poll_option_id = ?1")
                 .bind(option.id)
-                .fetch_all(self.0.deref_mut())
+                .fetch_all(self.executor())
                 .await?
             {
                 option.answers.push(self.materialize_answer(answer).await?);
@@ -450,7 +456,7 @@ impl SqliteRepository {
     async fn materialize_answer(&mut self, answer: Answer<i64, UserId>) -> Result<Answer> {
         let user: User = sqlx::query_as("SELECT * FROM users WHERE id = ?1")
             .bind(answer.user)
-            .fetch_one(self.0.deref_mut())
+            .fetch_one(self.executor())
             .await?;
         Ok(answer.materialize(user))
     }
