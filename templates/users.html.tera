@@ -16,7 +16,7 @@
     <tbody align="center">
         {% for user in users %}
             <tr id="user-{{user.id}}">
-                <td><a href="mailto:{{user.email_address}}">{{user.name}}</a></td>
+                <td style="word-break: break-word;"><a href="mailto:{{user.email_address}}">{{user.name}}</a></td>
                 <td>{{user.role}}</td>
                 <td>
                     {% if user.invited_by %}
