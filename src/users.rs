@@ -53,12 +53,13 @@ pub(crate) struct User<Id = UserId> {
     pub(crate) email_address: String,
     pub(crate) invited_by: Option<UserId>,
     pub(crate) campaign: Option<String>,
+    pub(crate) can_update_name: bool,
 }
 
 #[derive(Debug, FromForm)]
 pub(crate) struct UserPatch {
     #[form(validate = len(1..))]
-    pub(crate) name: String,
+    pub(crate) name: Option<String>,
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, sqlx::Type, Serialize)]
@@ -86,5 +87,9 @@ impl<Id> User<Id> {
 
     pub(crate) fn can_manage_users(&self) -> bool {
         self.role == Role::Admin
+    }
+
+    pub(crate) fn can_update_name(&self) -> bool {
+        self.can_update_name
     }
 }

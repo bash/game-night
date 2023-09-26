@@ -183,6 +183,7 @@ impl<Id> Invitation<Id> {
             role: self.role,
             invited_by: self.created_by,
             campaign,
+            can_update_name: true,
         }
     }
 }

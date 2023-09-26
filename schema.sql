@@ -5,6 +5,7 @@ CREATE TABLE users
     , email_address TEXT NOT NULL UNIQUE
     , invited_by INTEGER NULL REFERENCES users(id) ON DELETE RESTRICT
     , campaign TEXT NULL
+    , can_update_name INTEGER NOT NULL DEFAULT 1
     , created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
     );
 

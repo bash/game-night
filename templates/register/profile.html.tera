@@ -6,7 +6,11 @@
 <form method="post">
     <p>
         Hi, my name is
+        {% if can_update_name %}
         <input type="text" class="-inline" placeholder="Name" name="name" value="{{user.name}}" required autocomplete="name" size="15">
+        {% else %}
+        <input type="text" class="-inline" value="{{user.name}}" size="15" disabled>
+        {% endif %}
         and <br>
         my email address is
         <input type="email" class="-inline" value="{{user.email_address}}" disabled>.

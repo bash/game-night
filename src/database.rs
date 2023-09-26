@@ -179,11 +179,13 @@ impl Repository for SqliteRepository {
     }
 
     async fn update_user(&mut self, id: UserId, patch: UserPatch) -> Result<()> {
-        sqlx::query("UPDATE users SET name = ?2 WHERE id = ?1")
-            .bind(id)
-            .bind(patch.name)
-            .execute(self.executor())
-            .await?;
+        if let Some(name) = patch.name {
+            sqlx::query("UPDATE users SET name = ?2 WHERE id = ?1")
+                .bind(id)
+                .bind(name)
+                .execute(self.executor())
+                .await?;
+        }
         Ok(())
     }
 
