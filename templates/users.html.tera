@@ -1,3 +1,5 @@
+{% import 'user-macros' as user_macros %}
+
 {% extends 'base' %}
 
 {% block title %}Users{% endblock title %}
@@ -6,6 +8,7 @@
 <table>
     <thead>
         <tr>
+            <th></th>
             <th>Name</th>
             <th>Role</th>
             <th>Invited By</th>
@@ -16,6 +19,9 @@
     <tbody align="center">
         {% for user in users %}
             <tr id="user-{{user.id}}">
+                <td>
+                    {{user_macros::avatar(user=user)}}
+                </td>
                 <td style="word-break: break-word;"><a href="mailto:{{user.email_address}}">{{user.name}}</a></td>
                 <td>{{user.role}}</td>
                 <td>

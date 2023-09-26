@@ -1,5 +1,9 @@
 use crate::users::User;
 use anyhow::Error;
+use rand::seq::SliceRandom as _;
+use rand::RngCore;
+use rand_pcg::Pcg64;
+use rand_seeder::Seeder;
 use rocket::http::uri::Origin;
 use rocket::request::{FromRequest, Outcome};
 use rocket::{async_trait, Request};
@@ -133,6 +137,12 @@ impl<'r> TryFrom<Origin<'r>> for PageType {
 
 pub(crate) fn configure_template_engines(engines: &mut Engines) {
     engines.tera.register_filter("markdown", markdown_filter);
+    engines
+        .tera
+        .register_function("random_accent_color", random_accent_color);
+    engines
+        .tera
+        .register_function("random_avatar_symbol", random_avatar_symbol);
     engines.tera.register_function("ps", ps_prefix);
 }
 
@@ -144,6 +154,34 @@ tera_function! {
                 .chain(iter::once("S."))
                 .collect(),
         ))
+    }
+}
+
+tera_function! {
+    fn random_accent_color(seed: String) {
+        const ACCENT_COLORS: &[&str] = &[
+            "var(--home-color)",
+            "var(--invite-color)",
+            "var(--register-color)",
+            "var(--poll-color)",
+            "var(--play-color)"];
+        let mut rng: Pcg64 = Seeder::from(seed).make_rng();
+        rng.next_u32(); // Throw away the first number as it is very low quality entropy.
+        rng.next_u32(); // Throw away the first number as it is very low quality entropy.
+        Ok(tera::Value::String(ACCENT_COLORS.choose(&mut rng).unwrap().to_string()))
+    }
+}
+
+tera_function! {
+    fn random_avatar_symbol(seed: String) {
+        const SYMBOLS: &[&str] = &[
+            "☉", "☿", "♀", "🜨", "☾", "♂", "♃", "♄", "⛢", "♆", "⯓",
+            "α", "β", "γ", "δ", "ε", "ζ", "η", "θ", "ι", "κ", "λ", "μ",
+            "ν", "ξ", "ο", "π", "ρ", "σ", "τ", "υ", "φ", "χ", "ψ", "ω"];
+        let mut rng: Pcg64 = Seeder::from(seed).make_rng();
+        rng.next_u32(); // Throw away the first number as it is very low quality entropy.
+        rng.next_u32(); // Throw away the first number as it is very low quality entropy.
+        Ok(tera::Value::String(SYMBOLS.choose(&mut rng).unwrap().to_string()))
     }
 }
 
