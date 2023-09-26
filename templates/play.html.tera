@@ -1,11 +1,50 @@
+{% import 'play/location-macros' as location_macros %}
+{% import 'user-macros' as user_macros %}
+
 {% extends 'base' %}
 
 {% block title %}Play{% endblock title %}
 
 {% block content %}
-<p>
-    <em>Yayy, you're all set! However, there is currently no event planned.<br>
-    I will send you an email to <strong>{{user.email_address}}</strong>
-    once it's time to vote for a date.</em>
-</p>
+{% if event %}
+    <p>
+        {{event.created_by.name}} is organizing a <em>game night</em>
+        on  <strong>{{event.datetime | date(format='%d. %B')}}</strong> at
+        <strong>{{event.datetime | date(format='%k:%M')}}</strong>
+        and you're invited 🥳
+    </p>
+
+    <section>
+        {{event.description | markdown | safe}}
+    </section>
+
+    <section>
+        <h2>Where?</h2>
+        {{ location_macros::postal_address(location=event.location) }}
+    </section>
+
+    <section>
+        <h2>Who?</h2>
+        <ul class="users-list">
+            {% for participant in event.participants %}
+                <li>
+                    {{user_macros::avatar(user=participant.user)}}
+                    <span>
+                        {{participant.user.name}}
+                        {% if participant.user.id == user.id %}
+                            <small><strong>← this is you!</strong></small>
+                        {% endif %}
+                    </span>
+                </li>
+            {% endfor %}
+        </ul>
+    </section>
+{% else %}
+    <p>
+        <em>Yayy, you're all set! However, there is currently no event planned.<br>
+        I will send you an email to <strong>{{user.email_address}}</strong>
+        once it's time to vote for a date.</em>
+    </p>
+{% endif %}
+
 {% endblock content %}

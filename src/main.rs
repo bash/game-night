@@ -1,4 +1,4 @@
-use anyhow::{Context as _, Result};
+use anyhow::{Context as _, Error, Result};
 use database::Repository;
 use email::{EmailSender, EmailSenderImpl};
 use poll::poll_finalizer;
@@ -7,6 +7,7 @@ use rocket::figment::Figment;
 use rocket::http::uri::Absolute;
 use rocket::http::Status;
 use rocket::request::{FromRequest, Outcome};
+use rocket::response::Debug;
 use rocket::{
     async_trait, catch, catchers, error, get, launch, routes, Build, Config, Phase, Request,
     Rocket, Route,
@@ -71,8 +72,15 @@ fn get_index_page(page: PageBuilder<'_>) -> Template {
 }
 
 #[get("/play")]
-fn get_play_page(page: PageBuilder<'_>, _user: User) -> Template {
-    page.type_(PageType::Play).render("play", context! {})
+async fn get_play_page(
+    mut repository: Box<dyn Repository>,
+    page: PageBuilder<'_>,
+    _user: User,
+) -> Result<Template, Debug<Error>> {
+    let event = repository.get_next_event().await?;
+    Ok(page
+        .type_(PageType::Play)
+        .render("play", context! { event }))
 }
 
 #[catch(404)]
