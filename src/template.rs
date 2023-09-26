@@ -166,8 +166,7 @@ tera_function! {
             "var(--poll-color)",
             "var(--play-color)"];
         let mut rng: Pcg64 = Seeder::from(seed).make_rng();
-        rng.next_u32(); // Throw away the first number as it is very low quality entropy.
-        rng.next_u32(); // Throw away the first number as it is very low quality entropy.
+        for _ in 0..100 { rng.next_u32(); } // Throw away the first few number as it is very low quality entropy.
         Ok(tera::Value::String(ACCENT_COLORS.choose(&mut rng).unwrap().to_string()))
     }
 }
@@ -179,8 +178,7 @@ tera_function! {
             "α", "β", "γ", "δ", "ε", "ζ", "η", "θ", "ι", "κ", "λ", "μ",
             "ν", "ξ", "ο", "π", "ρ", "σ", "τ", "υ", "φ", "χ", "ψ", "ω"];
         let mut rng: Pcg64 = Seeder::from(seed).make_rng();
-        rng.next_u32(); // Throw away the first number as it is very low quality entropy.
-        rng.next_u32(); // Throw away the first number as it is very low quality entropy.
+        for _ in 0..100 { rng.next_u32(); } // Throw away the first few number as it is very low quality entropy.
         Ok(tera::Value::String(SYMBOLS.choose(&mut rng).unwrap().to_string()))
     }
 }
