@@ -1,6 +1,6 @@
 {% macro avatar(user) %}
     <svg width="1.4em" height="1.4em" viewBox="0 0 24 24" style="font-family: 'Vollkorn', 'Symbola', serif; vertical-align: middle;">
-        <circle cx="50%" cy="50%" r="50%" fill="{{random_accent_color(seed=user.name~'')}}" />
-        <text fill="#fff" x="50%" y="50%" dominant-baseline="central" text-anchor="middle" style="font-size: 50%">{{random_avatar_symbol(seed=user.name~'')}}</text>
+        <circle cx="50%" cy="50%" r="50%" fill="{{random_accent_color(seed=user.id)}}" />
+        <text fill="#fff" x="50%" y="50%" dominant-baseline="central" text-anchor="middle" style="font-size: 50%">{{random_avatar_symbol(seed=user.id)}}</text>
     </svg>
 {% endmacro %}

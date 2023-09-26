@@ -137,12 +137,10 @@ impl<'r> TryFrom<Origin<'r>> for PageType {
 
 pub(crate) fn configure_template_engines(engines: &mut Engines) {
     engines.tera.register_filter("markdown", markdown_filter);
+    engines.tera.register_function("accent_color", accent_color);
     engines
         .tera
-        .register_function("random_accent_color", random_accent_color);
-    engines
-        .tera
-        .register_function("random_avatar_symbol", random_avatar_symbol);
+        .register_function("avatar_symbol", avatar_symbol);
     engines.tera.register_function("ps", ps_prefix);
 }
 
@@ -158,28 +156,24 @@ tera_function! {
 }
 
 tera_function! {
-    fn random_accent_color(seed: String) {
+    fn accent_color(index: usize) {
         const ACCENT_COLORS: &[&str] = &[
             "var(--home-color)",
             "var(--invite-color)",
             "var(--register-color)",
             "var(--poll-color)",
             "var(--play-color)"];
-        let mut rng: Pcg64 = Seeder::from(seed).make_rng();
-        for _ in 0..100 { rng.next_u32(); } // Throw away the first few number as it is very low quality entropy.
-        Ok(tera::Value::String(ACCENT_COLORS.choose(&mut rng).unwrap().to_string()))
+        Ok(tera::Value::String(ACCENT_COLORS[index % ACCENT_COLORS.len()].to_string()))
     }
 }
 
 tera_function! {
-    fn random_avatar_symbol(seed: String) {
+    fn avatar_symbol(index: usize) {
         const SYMBOLS: &[&str] = &[
             "☉", "☿", "♀", "🜨", "☾", "♂", "♃", "♄", "⛢", "♆", "⯓",
             "α", "β", "γ", "δ", "ε", "ζ", "η", "θ", "ι", "κ", "λ", "μ",
             "ν", "ξ", "ο", "π", "ρ", "σ", "τ", "υ", "φ", "χ", "ψ", "ω"];
-        let mut rng: Pcg64 = Seeder::from(seed).make_rng();
-        for _ in 0..100 { rng.next_u32(); } // Throw away the first few number as it is very low quality entropy.
-        Ok(tera::Value::String(SYMBOLS.choose(&mut rng).unwrap().to_string()))
+        Ok(tera::Value::String(SYMBOLS[index % SYMBOLS.len()].to_string()))
     }
 }
 
