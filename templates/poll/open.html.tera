@@ -1,3 +1,5 @@
+{% import 'play/location-macros' as location_macros %}
+
 {% extends 'base' %}
 
 {% block title %}Poll{% endblock title %}
@@ -13,21 +15,7 @@
 
 <section>
     <p>The <em>Game Night</em> will take place at</p>
-    <div class="postal-address">
-        <div class="nameplate">
-            <div>
-                {% for name in poll.location.nameplate | split(pat=', ') %}
-                    {{name}}
-                    {% if not loop.last %}<br>{% endif %}
-                {% endfor %}
-            </div>
-        </div>
-        <div class="floor" aria-label="Floor"><span>{{poll.location.floor}}</span></div>
-        <div class="address">
-            {{poll.location.street}} {{poll.location.street_number}}<br>
-            {{poll.location.plz}} {{poll.location.city}}
-        </div>
-    </div>
+    {{ location_macros::postal_address(location=poll.location) }}
 </section>
 
 <p>
