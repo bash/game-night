@@ -19,7 +19,6 @@ use rocket_dyn_templates::{context, Template};
 mod auto_login;
 pub(crate) use auto_login::*;
 use serde::Serialize;
-use tera::Context;
 use time::{Duration, OffsetDateTime};
 mod code;
 mod keys;
@@ -230,9 +229,5 @@ impl EmailMessage for LoginEmail {
 
     fn template_name(&self) -> String {
         "login".to_owned()
-    }
-
-    fn template_context(&self) -> Context {
-        Context::from_serialize(self).unwrap()
     }
 }

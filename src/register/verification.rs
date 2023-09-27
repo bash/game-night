@@ -1,6 +1,5 @@
 use crate::email::EmailMessage;
 use serde::Serialize;
-use tera::Context;
 
 #[derive(Debug, Clone, Serialize)]
 pub(super) struct VerificationEmail {
@@ -15,9 +14,5 @@ impl EmailMessage for VerificationEmail {
 
     fn template_name(&self) -> String {
         "verification".to_owned()
-    }
-
-    fn template_context(&self) -> Context {
-        Context::from_serialize(self).unwrap()
     }
 }

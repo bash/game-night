@@ -9,7 +9,7 @@ use rocket::figment::value::magic::RelativePathBuf;
 use rocket::figment::Figment;
 use rocket::tokio::fs::{create_dir_all, read_to_string, rename, OpenOptions};
 use rocket::tokio::io::AsyncWriteExt;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use tera::{Context, Tera};
 use uuid::Uuid;
@@ -24,13 +24,22 @@ pub(crate) trait EmailSender: Send + Sync + DynClone {
 
 dyn_clone::clone_trait_object!(EmailSender);
 
-pub(crate) trait EmailMessage: Send + Sync {
+pub(crate) trait EmailMessage: Send + Sync + EmailMessageContext {
     fn subject(&self) -> String;
 
     fn template_name(&self) -> String;
+}
 
-    fn template_context(&self) -> Context {
-        Context::new()
+pub(crate) trait EmailMessageContext {
+    fn template_context(&self) -> Result<Context>;
+}
+
+impl<T> EmailMessageContext for T
+where
+    T: Serialize,
+{
+    fn template_context(&self) -> Result<Context> {
+        Context::from_serialize(self).map_err(Into::into)
     }
 }
 
@@ -109,7 +118,7 @@ impl EmailSenderImpl {
 
     fn render_email_body(&self, email: &dyn EmailMessage) -> Result<MultiPart> {
         let template_name = email.template_name();
-        let mut template_context = email.template_context();
+        let mut template_context = email.template_context()?;
         template_context.insert("greeting", get_random_greeting());
         template_context.insert("skin_tone", get_random_skin_tone_modifier());
         template_context.insert("css", &self.css);

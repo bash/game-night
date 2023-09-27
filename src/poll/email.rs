@@ -1,6 +1,5 @@
 use crate::email::EmailMessage;
 use serde::{Serialize, Serializer};
-use tera::Context;
 use time::macros::format_description;
 use time::{OffsetDateTime, PrimitiveDateTime};
 use time_tz::{timezones, OffsetDateTimeExt};
@@ -20,10 +19,6 @@ impl EmailMessage for PollEmail {
 
     fn template_name(&self) -> String {
         "poll".to_owned()
-    }
-
-    fn template_context(&self) -> Context {
-        Context::from_serialize(self).unwrap()
     }
 }
 
