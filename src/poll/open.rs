@@ -5,7 +5,7 @@ use crate::poll::{Poll, PollOption};
 use crate::template::{PageBuilder, PageType};
 use crate::users::{User, UserId};
 use anyhow::Error;
-use itertools::Itertools;
+use itertools::Itertools as _;
 use rocket::form::Form;
 use rocket::response::{Debug, Redirect};
 use rocket::{post, uri, FromForm};

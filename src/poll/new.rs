@@ -9,7 +9,7 @@ use crate::template::{PageBuilder, PageType};
 use crate::users::{User, UserId};
 use crate::UrlPrefix;
 use anyhow::{Context as _, Error, Result};
-use itertools::Itertools;
+use itertools::Itertools as _;
 use rocket::form::Form;
 use rocket::response::{Debug, Redirect};
 use rocket::{get, post, uri, FromForm, State};

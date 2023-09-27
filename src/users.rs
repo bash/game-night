@@ -24,7 +24,7 @@ async fn list_users(
         .render("users", context! { users: repository.get_users().await? }))
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, sqlx::Type, Serialize)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, sqlx::Type, Serialize)]
 #[sqlx(transparent)]
 #[serde(transparent)]
 pub(crate) struct UserId(pub(crate) i64);

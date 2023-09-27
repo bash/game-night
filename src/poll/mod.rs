@@ -3,6 +3,7 @@ use crate::database::Repository;
 use crate::template::{PageBuilder, PageType};
 use crate::users::{User, UserId};
 use anyhow::Error;
+use itertools::Itertools as _;
 use rocket::http::Status;
 use rocket::outcome::try_outcome;
 use rocket::request::{FromRequest, Outcome};
@@ -104,6 +105,15 @@ impl<Id> Poll<Id> {
 
     pub(crate) fn is_open(&self, now: OffsetDateTime) -> bool {
         self.state(now).is_open()
+    }
+
+    pub(crate) fn potential_participants<'a>(&'a self) -> impl Iterator<Item = &'a User> {
+        self.options
+            .iter()
+            .flat_map(|o| o.answers.iter())
+            .filter(|a| a.value.is_yes())
+            .map(|a| &a.user)
+            .unique_by(|u| u.id)
     }
 }
 
