@@ -29,22 +29,6 @@ async fn list_users(
 #[serde(transparent)]
 pub(crate) struct UserId(pub(crate) i64);
 
-pub(crate) trait AsUserId {
-    fn as_user_id(&self) -> UserId;
-}
-
-impl AsUserId for UserId {
-    fn as_user_id(&self) -> UserId {
-        *self
-    }
-}
-
-impl AsUserId for User {
-    fn as_user_id(&self) -> UserId {
-        self.id
-    }
-}
-
 #[derive(Debug, Clone, sqlx::FromRow, Serialize)]
 pub(crate) struct User<Id = UserId> {
     pub(crate) id: Id,

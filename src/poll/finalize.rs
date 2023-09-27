@@ -1,7 +1,6 @@
 use super::{Answer, Attendance, DateSelectionStrategy, Poll, PollOption, PollState};
 use crate::database::Repository;
 use crate::event::Event;
-use crate::users::{AsUserId, UserId};
 use crate::RocketExt;
 use anyhow::Result;
 use itertools::{Either, Itertools};
@@ -107,10 +106,10 @@ fn max_participants<Id, UserRef>(
         .map(|max| min(max, max_allowed_participants))
 }
 
-fn choose_participants<Id, UserRef: AsUserId>(
+fn choose_participants<Id, UserRef: Clone>(
     answers: &[Answer<Id, UserRef>],
     max_participants: usize,
-) -> (Vec<UserId>, Vec<UserId>) {
+) -> (Vec<UserRef>, Vec<UserRef>) {
     let (mut accepted, mut rejected): (Vec<_>, Vec<_>) = pre_partition_by_attendance(answers);
 
     let available = max_participants.saturating_sub(accepted.len());
@@ -122,9 +121,9 @@ fn choose_participants<Id, UserRef: AsUserId>(
     (accepted, rejected)
 }
 
-fn pre_partition_by_attendance<Id, UserRef: AsUserId>(
+fn pre_partition_by_attendance<Id, UserRef: Clone>(
     answers: &[Answer<Id, UserRef>],
-) -> (Vec<UserId>, Vec<UserId>) {
+) -> (Vec<UserRef>, Vec<UserRef>) {
     answers
         .iter()
         .filter_map(|a| a.yes())
@@ -138,6 +137,7 @@ fn pre_partition_by_attendance<Id, UserRef: AsUserId>(
 mod tests {
     use super::*;
     use crate::poll::AnswerValue;
+    use crate::users::UserId;
 
     mod choose_participants {
         use super::*;

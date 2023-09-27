@@ -17,7 +17,7 @@ pub(crate) struct Event<Id = i64, UserRef = User, LocationRef = Location> {
 }
 
 impl Event<(), UserId, i64> {
-    pub(crate) fn new(poll: &Poll, chosen_option: &PollOption, participants: &[UserId]) -> Self {
+    pub(crate) fn new(poll: &Poll, chosen_option: &PollOption, participants: &[User]) -> Self {
         Self {
             id: (),
             datetime: chosen_option.datetime,
@@ -26,8 +26,10 @@ impl Event<(), UserId, i64> {
             created_by: poll.created_by.id,
             participants: participants
                 .iter()
-                .copied()
-                .map(|user| Participant { id: (), user })
+                .map(|user| Participant {
+                    id: (),
+                    user: user.id,
+                })
                 .collect(),
         }
     }
