@@ -18,12 +18,18 @@ pub(crate) fn poll_finalizer() -> impl Fairing {
 }
 
 async fn start_finalizer(rocket: &Rocket<Orbit>) -> Result<()> {
-    let context = FinalizeContext {
-        repository: rocket.repository().await?,
-        email_sender: rocket.email_sender()?,
-    };
+    let context = FinalizeContext::from_rocket(rocket).await?;
     tokio::spawn(run_finalizer(rocket.shutdown(), context));
     Ok(())
+}
+
+impl FinalizeContext {
+    async fn from_rocket(rocket: &Rocket<Orbit>) -> Result<Self> {
+        Ok(Self {
+            repository: rocket.repository().await?,
+            email_sender: rocket.email_sender()?,
+        })
+    }
 }
 
 async fn run_finalizer(mut shutdown: Shutdown, mut context: FinalizeContext) {
