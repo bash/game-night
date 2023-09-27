@@ -1,6 +1,4 @@
-use super::finalize;
-use crate::database::Repository;
-use crate::email::EmailSender;
+use super::{finalize, FinalizeContext};
 use crate::RocketExt;
 use anyhow::Result;
 use rocket::fairing::{self, Fairing};
@@ -20,32 +18,27 @@ pub(crate) fn poll_finalizer() -> impl Fairing {
 }
 
 async fn start_finalizer(rocket: &Rocket<Orbit>) -> Result<()> {
-    let repository = rocket.repository().await?;
-    let email_sender = rocket.email_sender()?;
-    tokio::spawn(run_finalizer(rocket.shutdown(), repository, email_sender));
+    let context = FinalizeContext {
+        repository: rocket.repository().await?,
+        email_sender: rocket.email_sender()?,
+    };
+    tokio::spawn(run_finalizer(rocket.shutdown(), context));
     Ok(())
 }
 
-async fn run_finalizer(
-    mut shutdown: Shutdown,
-    mut repository: Box<dyn Repository>,
-    email_sender: Box<dyn EmailSender>,
-) {
+async fn run_finalizer(mut shutdown: Shutdown, mut context: FinalizeContext) {
     const MINUTE: Duration = Duration::from_secs(60);
     let mut interval = interval(5 * MINUTE);
     loop {
         select! {
             _  = &mut shutdown => break,
-            _ = interval.tick() => finalize_with_error_handling(&mut *repository, &*email_sender).await
+            _ = interval.tick() => finalize_with_error_handling(&mut context).await
         }
     }
 }
 
-async fn finalize_with_error_handling(
-    repository: &mut dyn Repository,
-    email_sender: &dyn EmailSender,
-) {
-    if let Err(error) = finalize(repository, email_sender).await {
+async fn finalize_with_error_handling(context: &mut FinalizeContext) {
+    if let Err(error) = finalize(context).await {
         warn!("poll finalization failed: {error:?}");
     }
 }

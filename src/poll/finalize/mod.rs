@@ -14,33 +14,31 @@ mod scheduling;
 pub(crate) use scheduling::*;
 mod emails;
 
-pub(crate) async fn finalize(
-    repository: &mut dyn Repository,
-    email_sender: &dyn EmailSender,
-) -> Result<()> {
+async fn finalize(ctx: &mut FinalizeContext) -> Result<()> {
     // not using a transaction here because we're the only ones setting polls to closed.
-    if let Some(poll) = repository.get_current_poll().await? {
+    if let Some(poll) = ctx.repository.get_current_poll().await? {
         if poll.state(OffsetDateTime::now_utc()) == PollState::PendingClosure {
-            try_finalize_poll(repository, email_sender, poll).await?;
+            try_finalize_poll(ctx, poll).await?;
         }
     }
 
     Ok(())
 }
 
-async fn try_finalize_poll(
-    repository: &mut dyn Repository,
-    email_sender: &dyn EmailSender,
-    poll: Poll,
-) -> Result<()> {
-    repository.close_poll(poll.id).await?;
+struct FinalizeContext {
+    repository: Box<dyn Repository>,
+    email_sender: Box<dyn EmailSender>,
+}
+
+async fn try_finalize_poll(ctx: &mut FinalizeContext, poll: Poll) -> Result<()> {
+    ctx.repository.close_poll(poll.id).await?;
 
     let result = finalize_poll_dry_run(poll);
 
     if let FinalizeResult::Success(event, ..) = &result {
-        repository.add_event(event).await?;
+        ctx.repository.add_event(event).await?;
     }
-    emails::send_notification_emails(email_sender, &result).await?;
+    emails::send_notification_emails(&*ctx.email_sender, &result).await?;
 
     Ok(())
 }
