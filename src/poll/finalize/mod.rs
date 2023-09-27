@@ -1,6 +1,8 @@
 use super::{Answer, Attendance, DateSelectionStrategy, Poll, PollOption, PollState};
 use crate::database::Repository;
+use crate::email::EmailSender;
 use crate::event::Event;
+use crate::users::{User, UserId};
 use anyhow::Result;
 use itertools::{Either, Itertools};
 use rand::seq::SliceRandom;
@@ -11,32 +13,77 @@ use time::OffsetDateTime;
 mod scheduling;
 pub(crate) use scheduling::*;
 
-pub(crate) async fn finalize(repository: &mut dyn Repository) -> Result<()> {
+pub(crate) async fn finalize(
+    repository: &mut dyn Repository,
+    email_sender: &dyn EmailSender,
+) -> Result<()> {
     // not using a transaction here because we're the only ones setting polls to closed.
     if let Some(poll) = repository.get_current_poll().await? {
         if poll.state(OffsetDateTime::now_utc()) == PollState::PendingClosure {
-            try_finalize_poll(repository, poll).await?;
+            try_finalize_poll(repository, email_sender, poll).await?;
         }
     }
 
     Ok(())
 }
 
-async fn try_finalize_poll(repository: &mut dyn Repository, poll: Poll) -> Result<()> {
+async fn try_finalize_poll(
+    repository: &mut dyn Repository,
+    email_sender: &dyn EmailSender,
+    poll: Poll,
+) -> Result<()> {
     repository.close_poll(poll.id).await?;
 
-    let candidates = get_candidates(&poll);
-
-    if let Some(chosen_option) = choose_option(candidates, &poll) {
-        let (accepted, _) = choose_participants(&chosen_option.answers, poll.max_participants);
-        let event = Event::new(&poll, &chosen_option, &accepted);
-        repository.add_event(&event).await?;
-        // TODO: send email
-    } else {
-        // No date found, send email to everyone
+    match finalize_poll_dry_run(poll) {
+        FinalizeResult::Success(event, invited, not_invited) => {
+            repository.add_event(&event).await?;
+            send_invited_email(email_sender, &event, &invited).await?;
+            send_not_invited_email(email_sender, &event, &not_invited).await?;
+        }
+        FinalizeResult::Failure(poll) => send_failure_email(email_sender, &poll).await?,
     }
 
     Ok(())
+}
+
+async fn send_invited_email(
+    _email_sender: &dyn EmailSender,
+    _event: &Event<(), UserId, i64>,
+    _users: &[User],
+) -> Result<()> {
+    todo!()
+}
+
+async fn send_not_invited_email(
+    _email_sender: &dyn EmailSender,
+    _event: &Event<(), UserId, i64>,
+    _users: &[User],
+) -> Result<()> {
+    todo!()
+}
+
+async fn send_failure_email(_email_sender: &dyn EmailSender, _poll: &Poll) -> Result<()> {
+    todo!()
+}
+
+fn finalize_poll_dry_run(poll: Poll) -> FinalizeResult {
+    let candidates = get_candidates(&poll);
+    if let Some(chosen_option) = choose_option(candidates, &poll) {
+        let (invited, not_invited) =
+            choose_participants(&chosen_option.answers, poll.max_participants);
+        let event = Event::new(&poll, &chosen_option, &invited);
+        FinalizeResult::Success(event, invited, not_invited)
+    } else {
+        FinalizeResult::Failure(poll)
+    }
+}
+
+#[derive(Debug)]
+enum FinalizeResult {
+    /// Date selected, some people might not be invited though.
+    Success(Event<(), UserId, i64>, Vec<User>, Vec<User>),
+    /// No date found because there weren't enough people.
+    Failure(Poll),
 }
 
 fn get_candidates(poll: &Poll) -> Vec<PollOption> {

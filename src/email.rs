@@ -1,4 +1,5 @@
 use anyhow::{anyhow, Context as _, Result};
+use dyn_clone::DynClone;
 use lettre::message::header::{Header, HeaderName, HeaderValue};
 use lettre::message::{Mailbox, MultiPart};
 use lettre::Message;
@@ -17,9 +18,11 @@ const DEFAULT_EMAIL_TEMPLATE_DIR: &str = "emails";
 const DEFAULT_OUTBOX_DIR: &str = "outbox";
 
 #[async_trait]
-pub(crate) trait EmailSender: Send + Sync {
+pub(crate) trait EmailSender: Send + Sync + DynClone {
     async fn send(&self, recipient: Mailbox, email: &dyn EmailMessage) -> Result<()>;
 }
+
+dyn_clone::clone_trait_object!(EmailSender);
 
 pub(crate) trait EmailMessage: Send + Sync {
     fn subject(&self) -> String;
@@ -31,6 +34,7 @@ pub(crate) trait EmailMessage: Send + Sync {
     }
 }
 
+#[derive(Clone)]
 pub(crate) struct EmailSenderImpl {
     sender: Mailbox,
     outbox_dir: PathBuf,
