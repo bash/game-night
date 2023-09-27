@@ -12,6 +12,7 @@ use time::OffsetDateTime;
 
 mod scheduling;
 pub(crate) use scheduling::*;
+mod emails;
 
 pub(crate) async fn finalize(
     repository: &mut dyn Repository,
@@ -34,36 +35,14 @@ async fn try_finalize_poll(
 ) -> Result<()> {
     repository.close_poll(poll.id).await?;
 
-    match finalize_poll_dry_run(poll) {
-        FinalizeResult::Success(event, invited, not_invited) => {
-            repository.add_event(&event).await?;
-            send_invited_email(email_sender, &event, &invited).await?;
-            send_not_invited_email(email_sender, &event, &not_invited).await?;
-        }
-        FinalizeResult::Failure(poll) => send_failure_email(email_sender, &poll).await?,
+    let result = finalize_poll_dry_run(poll);
+
+    if let FinalizeResult::Success(event, ..) = &result {
+        repository.add_event(event).await?;
     }
+    emails::send_notification_emails(email_sender, &result).await?;
 
     Ok(())
-}
-
-async fn send_invited_email(
-    _email_sender: &dyn EmailSender,
-    _event: &Event<(), UserId, i64>,
-    _users: &[User],
-) -> Result<()> {
-    todo!()
-}
-
-async fn send_not_invited_email(
-    _email_sender: &dyn EmailSender,
-    _event: &Event<(), UserId, i64>,
-    _users: &[User],
-) -> Result<()> {
-    todo!()
-}
-
-async fn send_failure_email(_email_sender: &dyn EmailSender, _poll: &Poll) -> Result<()> {
-    todo!()
 }
 
 fn finalize_poll_dry_run(poll: Poll) -> FinalizeResult {
