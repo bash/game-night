@@ -102,11 +102,11 @@ pub(crate) struct UrlPrefix<'a>(pub(crate) Absolute<'a>);
 
 #[async_trait]
 impl<'r> FromRequest<'r> for UrlPrefix<'r> {
-    type Error = rocket::figment::Error;
+    type Error = Error;
 
     async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
-        match request.rocket().figment().extract_inner("url_prefix") {
-            Ok(value) => Outcome::Success(UrlPrefix(value)),
+        match request.rocket().url_prefix() {
+            Ok(value) => Outcome::Success(value),
             Err(e) => Outcome::Failure((Status::InternalServerError, e)),
         }
     }
@@ -149,6 +149,8 @@ fn initialize_email_sender() -> impl Fairing {
 #[async_trait]
 trait RocketExt {
     async fn repository(&self) -> Result<Box<dyn Repository>>;
+
+    fn url_prefix<'a>(&'a self) -> Result<UrlPrefix<'a>>;
 }
 
 #[async_trait]
@@ -160,5 +162,12 @@ impl<P: Phase> RocketExt for Rocket<P> {
             .await
             .context("failed to retrieve database")?;
         Ok(database::create_repository(database))
+    }
+
+    fn url_prefix<'a>(&'a self) -> Result<UrlPrefix<'a>> {
+        self.figment()
+            .extract_inner("url_prefix")
+            .map(UrlPrefix)
+            .map_err(Into::into)
     }
 }
