@@ -1,9 +1,5 @@
 use crate::users::User;
 use anyhow::Error;
-use rand::seq::SliceRandom as _;
-use rand::RngCore;
-use rand_pcg::Pcg64;
-use rand_seeder::Seeder;
 use rocket::http::uri::Origin;
 use rocket::request::{FromRequest, Outcome};
 use rocket::{async_trait, Request};
