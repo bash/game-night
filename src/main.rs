@@ -7,7 +7,6 @@ use rocket::figment::Figment;
 use rocket::http::uri::Absolute;
 use rocket::http::Status;
 use rocket::request::{FromRequest, Outcome};
-use rocket::response::Debug;
 use rocket::{
     async_trait, catch, catchers, error, get, launch, routes, Build, Config, Phase, Request,
     Rocket, Route,
@@ -16,8 +15,7 @@ use rocket_db_pools::{sqlx::SqlitePool, Database, Pool};
 use rocket_dyn_templates::{context, Template};
 use serde::Deserialize;
 use template::configure_template_engines;
-use template::{PageBuilder, PageType};
-use users::User;
+use template::PageBuilder;
 
 mod auth;
 mod database;
@@ -25,6 +23,7 @@ mod email;
 mod event;
 mod invitation;
 mod login;
+mod play;
 mod poll;
 mod register;
 mod serde_formats;
@@ -34,10 +33,11 @@ mod users;
 #[launch]
 fn rocket() -> _ {
     rocket::custom(figment())
-        .mount("/", routes![get_index_page, get_play_page])
+        .mount("/", routes![get_index_page])
         .mount("/", invitation::routes())
         .mount("/", register::routes())
         .mount("/", poll::routes())
+        .mount("/", play::routes())
         .mount("/", users::routes())
         .mount("/", login::routes())
         .register("/", login::catchers())
@@ -70,18 +70,6 @@ fn file_server() -> impl Into<Vec<Route>> {
 #[get("/")]
 fn get_index_page(page: PageBuilder<'_>) -> Template {
     page.render("index", context! {})
-}
-
-#[get("/play")]
-async fn get_play_page(
-    mut repository: Box<dyn Repository>,
-    page: PageBuilder<'_>,
-    _user: User,
-) -> Result<Template, Debug<Error>> {
-    let event = repository.get_next_event().await?;
-    Ok(page
-        .type_(PageType::Play)
-        .render("play", context! { event }))
 }
 
 #[catch(404)]

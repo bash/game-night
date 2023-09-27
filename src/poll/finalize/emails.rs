@@ -2,7 +2,7 @@ use super::FinalizeContext;
 use super::FinalizeResult::{self, *};
 use crate::email::EmailMessage;
 use crate::login::{with_autologin_token, LoginToken};
-use crate::rocket_uri_macro_get_play_page;
+use crate::play::rocket_uri_macro_play_page;
 use crate::users::{User, UserId};
 use anyhow::Result;
 use rocket::uri;
@@ -63,7 +63,7 @@ async fn event_url(ctx: &mut FinalizeContext, user: &User, event: &Event) -> Res
     let token = LoginToken::generate_reusable(user.id, event.datetime);
     ctx.repository.add_login_token(&token).await?;
     Ok(with_autologin_token(
-        uri!(ctx.url_prefix.0.clone(), get_play_page()),
+        uri!(ctx.url_prefix.0.clone(), play_page()),
         &token,
     ))
 }
