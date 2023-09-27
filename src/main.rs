@@ -100,6 +100,12 @@ pub(crate) struct GameNightDatabase(SqlitePool);
 #[serde(transparent)]
 pub(crate) struct UrlPrefix<'a>(pub(crate) Absolute<'a>);
 
+impl<'a> UrlPrefix<'a> {
+    fn to_static(&self) -> UrlPrefix<'static> {
+        UrlPrefix(Absolute::parse_owned(self.0.to_string()).unwrap())
+    }
+}
+
 #[async_trait]
 impl<'r> FromRequest<'r> for UrlPrefix<'r> {
     type Error = Error;

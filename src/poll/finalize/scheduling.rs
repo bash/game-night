@@ -28,6 +28,7 @@ impl FinalizeContext {
         Ok(Self {
             repository: rocket.repository().await?,
             email_sender: rocket.email_sender()?,
+            url_prefix: rocket.url_prefix()?.to_static(),
         })
     }
 }
