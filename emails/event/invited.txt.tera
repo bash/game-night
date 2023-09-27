@@ -1,0 +1,10 @@
+{{greeting}} {{name}},
+
+You're Invited to Tau's Game Night 🥳
+
+The next instance of Tau's Game Night is happening on
+{{event_datetime | date(format = "%e. %B")}} at {{event_datetime | date(format = "%H:%M")}} and you are warmly invited {{heart}}
+
+Be sure to add this date to your calendar ASAP :)
+
+→ Show me all the deets! {{event_url}}

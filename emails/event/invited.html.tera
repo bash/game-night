@@ -1,0 +1,23 @@
+{% extends 'base.html.tera' %}
+
+{% block content %}
+<h1>
+    You're Invited to <em>Tau's Game Night</em> 🥳
+</h1>
+
+<p>
+    The next instance of <em>Tau's Game Night</em>
+    is happening on <strong>{{event_datetime | date(format = "%e. %B")}}</strong>
+    at <strong>{{event_datetime | date(format = "%H:%M")}}</strong>
+    and you are warmly invited {{heart}}
+</p>
+
+<p>
+    Be sure to add this date to your calendar ASAP :)
+</p>
+
+<a href="{{event_url}}">
+    <span class="arrow" role="presentation">→</span>
+    Show me all the deets!
+</a>
+{% endblock content %}

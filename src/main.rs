@@ -27,6 +27,7 @@ mod invitation;
 mod login;
 mod poll;
 mod register;
+mod serde_formats;
 mod template;
 mod users;
 
