@@ -107,7 +107,7 @@ impl<Id> Poll<Id> {
         self.state(now).is_open()
     }
 
-    pub(crate) fn potential_participants<'a>(&'a self) -> impl Iterator<Item = &'a User> {
+    pub(crate) fn potential_participants(&self) -> impl Iterator<Item = &'_ User> {
         self.options
             .iter()
             .flat_map(|o| o.answers.iter())

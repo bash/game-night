@@ -150,7 +150,7 @@ fn initialize_email_sender() -> impl Fairing {
 trait RocketExt {
     async fn repository(&self) -> Result<Box<dyn Repository>>;
 
-    fn url_prefix<'a>(&'a self) -> Result<UrlPrefix<'a>>;
+    fn url_prefix(&self) -> Result<UrlPrefix<'_>>;
 
     fn email_sender(&self) -> Result<Box<dyn EmailSender>>;
 }
@@ -166,7 +166,7 @@ impl<P: Phase> RocketExt for Rocket<P> {
         Ok(database::create_repository(database))
     }
 
-    fn url_prefix<'a>(&'a self) -> Result<UrlPrefix<'a>> {
+    fn url_prefix(&self) -> Result<UrlPrefix<'_>> {
         self.figment()
             .extract_inner("url_prefix")
             .map(UrlPrefix)
