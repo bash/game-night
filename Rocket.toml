@@ -7,7 +7,5 @@ url = "database.sqlite"
 
 [default.email]
 sender = "Tau's Game Night <game-night@tau.garden>"
-smtp_server = "localhost"
-smtp_port = 1025
-smtp_tls = "none" # or: "required"
-# smtp_credentials = { username = "foo", password = "bar" }
+# template_dir = "<path to email templates>"
+# outbox_dir = "<path to outbox dir>"
