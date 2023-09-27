@@ -151,6 +151,8 @@ trait RocketExt {
     async fn repository(&self) -> Result<Box<dyn Repository>>;
 
     fn url_prefix<'a>(&'a self) -> Result<UrlPrefix<'a>>;
+
+    fn email_sender(&self) -> Result<Box<dyn EmailSender>>;
 }
 
 #[async_trait]
@@ -169,5 +171,11 @@ impl<P: Phase> RocketExt for Rocket<P> {
             .extract_inner("url_prefix")
             .map(UrlPrefix)
             .map_err(Into::into)
+    }
+
+    fn email_sender(&self) -> Result<Box<dyn EmailSender>> {
+        self.state::<Box<dyn EmailSender>>()
+            .context("email sender not configured")
+            .map(Clone::clone)
     }
 }

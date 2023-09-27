@@ -2,7 +2,7 @@ use super::finalize;
 use crate::database::Repository;
 use crate::email::EmailSender;
 use crate::RocketExt;
-use anyhow::{Context as _, Result};
+use anyhow::Result;
 use rocket::fairing::{self, Fairing};
 use rocket::tokio::time::interval;
 use rocket::tokio::{self, select};
@@ -21,8 +21,7 @@ pub(crate) fn poll_finalizer() -> impl Fairing {
 
 async fn start_finalizer(rocket: &Rocket<Orbit>) -> Result<()> {
     let repository = rocket.repository().await?;
-    let email_sender =
-        rocket.state::<Box<dyn EmailSender>>().context("email sender not found")?.clone();
+    let email_sender = rocket.email_sender()?;
     tokio::spawn(run_finalizer(rocket.shutdown(), repository, email_sender));
     Ok(())
 }
