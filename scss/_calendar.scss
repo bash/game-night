@@ -19,7 +19,7 @@
     > ul > li,
     > .placeholder {
         border-top: 1px dashed var(--secondary-text-color);
-        padding: 8px 0;
+        padding: 13px 0;
     }
 
     > h2 {
@@ -32,7 +32,7 @@
         display: grid;
         grid-template-columns: subgrid;
         align-items: center;
-        gap: 10px;
+        column-gap: 10px;
     }
 
     > ul > li > label {
@@ -41,11 +41,40 @@
         grid-column: span 2;
         gap: 10px;
 
-        > .day { text-align: right; }
+        > .day { text-align: center; }
+    }
+
+    > ul > li > .answers-list {
+        grid-column: 1 / 5;
+        justify-content: start;
     }
 
     .placeholder {
         text-align: center;
         color: var(--secondary-text-color);
+    }
+}
+
+.answers-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .8em;
+
+    @media (hover: hover) and (not (prefers-contrast: more)) {
+        opacity: .4;
+        transition: opacity 125ms;
+
+        &:hover {
+            opacity: 1;
+        }
+    }
+
+    > .answer {
+        font-size: .7em;
+        display: grid;
+        grid-auto-flow: column;
+        align-items: center;
+        gap: .4em;
     }
 }

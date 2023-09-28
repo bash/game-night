@@ -1,4 +1,5 @@
 {% import 'play/location-macros' as location_macros %}
+{% import 'user-macros' as user_macros %}
 
 {% extends 'base' %}
 
@@ -60,7 +61,16 @@
                             <span class="day">{{option.datetime | date(format="%e")}}</span>
                             <span class="weekday">{{option.datetime | date(format="%A")}}</span>
                         </label>
+
                         <input type="time" readonly value="{{option.datetime | date(format='%H:%M')}}" disabled>
+
+                        <div class="answers-list">
+                            {% for user in option.yes_answers %}
+                                <span class="answer">
+                                    {{user_macros::avatar(user=user)}} <span>{{user.name}}</span>
+                                </span>
+                            {% endfor %}
+                        </div>
                     </li>
                 {% endfor %}
             </ul>

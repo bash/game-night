@@ -1,5 +1,5 @@
 {% macro avatar(user) %}
-    <svg width="1.4em" height="1.4em" viewBox="0 0 24 24" style="font-family: 'Vollkorn', 'Symbola', serif; vertical-align: middle;">
+    <svg width="1.4em" height="1.4em" viewBox="0 0 24 24" style="font-family: 'Vollkorn', 'Symbola', serif; vertical-align: middle;" title="{{user.name}}">
         <circle cx="50%" cy="50%" r="50%" fill="{{accent_color(index=user.id)}}" />
         <text fill="#fff" x="50%" y="50%" dominant-baseline="central" text-anchor="middle" style="font-size: 50%">{{avatar_symbol(index=user.id)}}</text>
     </svg>

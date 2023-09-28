@@ -65,6 +65,12 @@ fn to_open_poll_option(option: &PollOption, user: &User) -> OpenPollOption {
         id: option.id,
         datetime: option.datetime,
         answer,
+        yes_answers: option
+            .answers
+            .iter()
+            .filter(|a| a.value.is_yes() && a.user.id != user.id)
+            .map(|a| a.user.clone())
+            .collect(),
     }
 }
 
@@ -88,6 +94,7 @@ struct OpenPollOption {
     #[serde(with = "time::serde::iso8601")]
     datetime: OffsetDateTime,
     answer: Option<AnswerValue>,
+    yes_answers: Vec<User>,
 }
 
 #[post("/poll", data = "<form>")]
