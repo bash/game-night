@@ -5,7 +5,7 @@ use time::OffsetDateTime;
 #[derive(Debug, Clone, Serialize)]
 pub(super) struct PollEmail {
     pub(super) name: String,
-    #[serde(serialize_with = "crate::serde_formats::serialize_as_cet")]
+    #[serde(with = "time::serde::iso8601")]
     pub(super) poll_closes_at: OffsetDateTime,
     pub(super) poll_url: String,
 }

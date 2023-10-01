@@ -26,7 +26,6 @@ mod login;
 mod play;
 mod poll;
 mod register;
-mod serde_formats;
 mod template;
 mod users;
 

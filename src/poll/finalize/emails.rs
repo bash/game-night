@@ -38,7 +38,7 @@ async fn send_invited_email(ctx: &mut FinalizeContext, event: &Event, user: &Use
 
 #[derive(Debug, Serialize)]
 struct InvitedEmail<'a> {
-    #[serde(serialize_with = "crate::serde_formats::serialize_as_cet")]
+    #[serde(with = "time::serde::iso8601")]
     event_datetime: OffsetDateTime,
     name: &'a str,
     event_url: String,

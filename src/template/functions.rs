@@ -5,6 +5,7 @@ use tera::Tera;
 use time::format_description::FormatItem;
 use time::macros::format_description;
 use time::{format_description, OffsetDateTime};
+use time_tz::{timezones, OffsetDateTimeExt};
 
 pub(crate) fn register_custom_functions(tera: &mut Tera) {
     tera.register_filter("markdown", markdown);
@@ -70,7 +71,7 @@ struct OffsetDateTimeIsoFormat(#[serde(with = "time::serde::iso8601")] OffsetDat
 
 tera_filter! {
     fn time_format(input: OffsetDateTimeIsoFormat, format: String) {
-        let input = input.0;
+        let input = input.0.to_timezone(timezones::db::CET);
         let format = match parse_format(&format) {
             Ok(f) => f,
             Err(e) => return Err(tera::Error::msg(format!("Invalid format description: {e}"))),
