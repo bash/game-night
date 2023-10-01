@@ -145,6 +145,7 @@ fn create_tera(template_dir: &Path) -> Result<Tera> {
     let mut tera = Tera::new(templates).context("failed to initialize Tera")?;
     tera.build_inheritance_chains()
         .context("failed to build tera's inheritance chain")?;
+    crate::template::register_custom_functions(&mut tera);
     Ok(tera)
 }
 
