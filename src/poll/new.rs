@@ -139,7 +139,8 @@ fn to_poll_options<'a>(
 fn to_poll_option(option: &NewPollOption, user: &User) -> Result<PollOption<(), UserId>> {
     Ok(PollOption {
         id: (),
-        datetime: to_cet(option.date, option.time)?,
+        starts_at: to_cet(option.date, option.start_time)?,
+        ends_at: to_cet(option.date, option.end_time)?,
         // The user creating the poll is automatically added with a required attendance.
         answers: vec![Answer {
             id: (),
@@ -178,7 +179,9 @@ pub(super) struct NewPollData<'r> {
 pub(super) struct NewPollOption {
     date: Date,
     #[field(default_with = Some(Time::MIDNIGHT))]
-    time: Time,
+    start_time: Time,
+    #[field(default_with = Some(Time::MIDNIGHT))]
+    end_time: Time,
     enabled: bool,
 }
 

@@ -111,7 +111,9 @@ impl<Id> Poll<Id> {
 pub(crate) struct PollOption<Id = i64, UserRef = User> {
     pub(crate) id: Id,
     #[serde(with = "time::serde::iso8601")]
-    pub(crate) datetime: OffsetDateTime,
+    pub(crate) starts_at: OffsetDateTime,
+    #[serde(with = "time::serde::iso8601")]
+    pub(crate) ends_at: OffsetDateTime,
     #[sqlx(skip)]
     pub(crate) answers: Vec<Answer<Id, UserRef>>,
 }
@@ -315,7 +317,8 @@ mod tests {
         fn option_with_no_answers_has_zero_yes_answers() {
             let option: PollOption<_, ()> = PollOption {
                 id: (),
-                datetime: OffsetDateTime::now_utc(),
+                starts_at: OffsetDateTime::now_utc(),
+                ends_at: OffsetDateTime::now_utc(),
                 answers: vec![],
             };
             assert_eq!(0, option.count_yes_answers());
@@ -325,7 +328,8 @@ mod tests {
         fn counts_yes_answers() {
             let option: PollOption<_, ()> = PollOption {
                 id: (),
-                datetime: OffsetDateTime::now_utc(),
+                starts_at: OffsetDateTime::now_utc(),
+                ends_at: OffsetDateTime::now_utc(),
                 answers: vec![
                     answer(AnswerValue::yes(Attendance::Optional)),
                     answer(AnswerValue::yes(Attendance::Required)),
@@ -338,7 +342,8 @@ mod tests {
         fn counts_yes_answers_while_ignoring_no_values() {
             let option: PollOption<_, ()> = PollOption {
                 id: (),
-                datetime: OffsetDateTime::now_utc(),
+                starts_at: OffsetDateTime::now_utc(),
+                ends_at: OffsetDateTime::now_utc(),
                 answers: vec![
                     answer(AnswerValue::No),
                     answer(AnswerValue::yes(Attendance::Optional)),

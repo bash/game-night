@@ -28,7 +28,7 @@ pub(super) async fn send_notification_emails(
 async fn send_invited_email(ctx: &mut FinalizeContext, event: &Event, user: &User) -> Result<()> {
     let event_url = event_url(ctx, user, event).await?;
     let email = InvitedEmail {
-        event_datetime: event.datetime,
+        event_datetime: event.starts_at,
         name: &user.name,
         event_url,
     };
@@ -60,7 +60,7 @@ impl<'a> EmailMessage for InvitedEmail<'a> {
 }
 
 async fn event_url(ctx: &mut FinalizeContext, user: &User, event: &Event) -> Result<String> {
-    let token = LoginToken::generate_reusable(user.id, event.datetime);
+    let token = LoginToken::generate_reusable(user.id, event.ends_at);
     ctx.repository.add_login_token(&token).await?;
     Ok(with_autologin_token(
         uri!(ctx.url_prefix.0.clone(), play_page()),

@@ -58,11 +58,15 @@
 
                         <input type="checkbox" name="options[{{option.id}}]" id="option-{{option.id}}" {{checked}} {{disabled}}>
                         <label for="option-{{option.id}}">
-                            <span class="day">{{option.datetime | time(format="[day]")}}</span>
-                            <span class="weekday">{{option.datetime | time(format="[weekday repr:long]")}}</span>
+                            <span class="day">{{option.starts_at | time(format="[day padding:none]")}}</span>
+                            <span class="weekday">{{option.starts_at | time(format="[weekday repr:long]")}}</span>
                         </label>
 
-                        <input type="time" readonly value="{{option.datetime | time(format='[hour]:[minute]')}}" disabled>
+                        <div class="time-range">
+                            <input type="time" readonly value="{{option.starts_at | time(format='[hour]:[minute]')}}" disabled>
+                            &ndash;
+                            <input type="time" readonly value="{{option.ends_at | time(format='[hour]:[minute]')}}" disabled>
+                        </div>
 
                         <div class="answers-list">
                             {% for user in option.yes_answers %}

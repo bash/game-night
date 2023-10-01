@@ -7,7 +7,9 @@ use time::OffsetDateTime;
 pub(crate) struct Event<Id = i64, UserRef = User, LocationRef = Location> {
     pub(crate) id: Id,
     #[serde(with = "time::serde::iso8601")]
-    pub(crate) datetime: OffsetDateTime,
+    pub(crate) starts_at: OffsetDateTime,
+    #[serde(with = "time::serde::iso8601")]
+    pub(crate) ends_at: OffsetDateTime,
     pub(crate) description: String,
     #[sqlx(rename = "location_id")]
     pub(crate) location: LocationRef,
@@ -20,7 +22,8 @@ impl Event<(), UserId, i64> {
     pub(crate) fn new(poll: &Poll, chosen_option: &PollOption, participants: &[User]) -> Self {
         Self {
             id: (),
-            datetime: chosen_option.datetime,
+            starts_at: chosen_option.starts_at,
+            ends_at: chosen_option.ends_at,
             description: poll.description.clone(),
             location: poll.location.id,
             created_by: poll.created_by.id,
@@ -44,7 +47,8 @@ impl Event<i64, UserId, i64> {
     ) -> Event {
         Event {
             id: self.id,
-            datetime: self.datetime,
+            starts_at: self.starts_at,
+            ends_at: self.ends_at,
             description: self.description,
             location,
             created_by,

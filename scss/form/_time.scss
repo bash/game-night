@@ -43,3 +43,9 @@ input[type=time] {
         visibility: visible;
     }
 }
+
+.time-range {
+    display: flex;
+    align-items: center;
+    gap: .4em;
+}

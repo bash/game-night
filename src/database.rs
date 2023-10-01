@@ -294,13 +294,15 @@ impl Repository for SqliteRepository {
         .last_insert_rowid();
 
         for option in poll.options.iter() {
-            let option_id =
-                sqlx::query("INSERT INTO poll_options (poll_id, datetime) VALUES (?1, ?2)")
-                    .bind(poll_id)
-                    .bind(option.datetime)
-                    .execute(&mut *transaction)
-                    .await?
-                    .last_insert_rowid();
+            let option_id = sqlx::query(
+                "INSERT INTO poll_options (poll_id, starts_at, ends_at) VALUES (?1, ?2, ?3)",
+            )
+            .bind(poll_id)
+            .bind(option.starts_at)
+            .bind(option.ends_at)
+            .execute(&mut *transaction)
+            .await?
+            .last_insert_rowid();
             for answer in option.answers.iter() {
                 sqlx::query(
                     "INSERT INTO poll_answers (poll_option_id, value, user_id)
@@ -390,10 +392,11 @@ impl Repository for SqliteRepository {
     async fn add_event(&mut self, event: &Event<(), UserId, i64>) -> Result<()> {
         let mut transaction: sqlx::Transaction<'_, Sqlite> = self.0.begin().await?;
         let event_id = sqlx::query(
-            "INSERT INTO events (datetime, description, location_id, created_by)
-             VALUES (?1, ?2, ?3, ?4)",
+            "INSERT INTO events (starts_at, ends_at, description, location_id, created_by)
+             VALUES (?1, ?2, ?3, ?4, ?5)",
         )
-        .bind(event.datetime)
+        .bind(event.starts_at)
+        .bind(event.ends_at)
         .bind(&event.description)
         .bind(event.location)
         .bind(event.created_by)
@@ -414,14 +417,12 @@ impl Repository for SqliteRepository {
     }
 
     async fn get_next_event(&mut self) -> Result<Option<Event>> {
-        const EXPECTED_EVENT_DURATION: &str = "+04:00";
         let event: Option<Event<i64, UserId, i64>> = sqlx::query_as(
             "SELECT * FROM events
-             WHERE unixepoch(datetime) - unixepoch('now', ?1) >= 0
-             ORDER BY datetime ASC
+             WHERE unixepoch(ends_at) - unixepoch('now') >= 0
+             ORDER BY starts_at ASC
              LIMIT 1",
         )
-        .bind(EXPECTED_EVENT_DURATION)
         .fetch_optional(self.executor())
         .await?;
         match event {

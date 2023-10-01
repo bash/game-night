@@ -32,7 +32,11 @@
                             <span class="day">{{day.day}}</span>
                             <span class="weekday">{{day.weekday}}</span>
                         </label>
-                        <input type="time" name="options[{{day.date}}][time]" data-bind-disabled-to="days-{{day.date}}" step="{{60 * 15}}" disabled>
+                        <div class="time-range">
+                            <input type="time" name="options[{{day.date}}][start_time]" id="options-{{day.date}}-start-time" data-bind-disabled-to="days-{{day.date}}" step="{{60 * 15}}" disabled>
+                            &ndash;
+                            <input type="time" name="options[{{day.date}}][end_time]" data-bind-disabled-to="days-{{day.date}}" step="{{60 * 15}}" disabled data-validate-gte="options-{{day.date}}-start-time">
+                        </div>
                     </li>
                 {% endfor %}
             </ul>
@@ -61,10 +65,10 @@
     const validate = (left, right) => left.setCustomValidity(
         left.valueAsNumber >= right.valueAsNumber
             ? ''
-            : `Please select a value that is no less than ${right.valueAsNumber}`)
+            : `Please select a value that is no less than ${right.value}`)
 
     for (const left of document.querySelectorAll('[data-validate-gte]')) {
-        const right = document.querySelector(`#${left.dataset.validateGte}`)
+        const right = document.getElementById(left.dataset.validateGte)
         left.addEventListener('input', () => validate(left, right))
         right.addEventListener('input', () => validate(left, right))
         validate(left, right)

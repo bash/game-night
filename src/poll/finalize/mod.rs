@@ -200,7 +200,8 @@ mod tests {
     fn poll_option(yes_answers: usize) -> PollOption<(), ()> {
         PollOption {
             id: (),
-            datetime: OffsetDateTime::now_utc(),
+            starts_at: OffsetDateTime::now_utc(),
+            ends_at: OffsetDateTime::now_utc(),
             answers: (0..yes_answers)
                 .map(|_| answer(AnswerValue::yes(Attendance::Optional), ()))
                 .collect(),

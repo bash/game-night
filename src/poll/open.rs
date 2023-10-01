@@ -37,7 +37,7 @@ fn to_open_poll_options<'a>(
     user: &User,
 ) -> Vec<OpenPollOptionsGroup> {
     options
-        .group_by(|o| o.datetime.month())
+        .group_by(|o| o.starts_at.month())
         .into_iter()
         .map(|(month, options)| to_open_poll_options_group(month, options, user))
         .collect()
@@ -63,7 +63,8 @@ fn to_open_poll_option(option: &PollOption, user: &User) -> OpenPollOption {
         .map(|a| a.value);
     OpenPollOption {
         id: option.id,
-        datetime: option.datetime,
+        starts_at: option.starts_at,
+        ends_at: option.ends_at,
         answer,
         yes_answers: option
             .answers
@@ -92,7 +93,9 @@ struct OpenPollOptionsGroup {
 struct OpenPollOption {
     id: i64,
     #[serde(with = "time::serde::iso8601")]
-    datetime: OffsetDateTime,
+    starts_at: OffsetDateTime,
+    #[serde(with = "time::serde::iso8601")]
+    ends_at: OffsetDateTime,
     answer: Option<AnswerValue>,
     yes_answers: Vec<User>,
 }
