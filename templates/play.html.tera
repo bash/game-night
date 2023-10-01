@@ -14,6 +14,10 @@
             and you're invited 🥳
         </p>
 
+        <fieldset>
+            <a class="link-button" href="/play/event.ics" download="game-night-{{event.id}}">Save to Calendar</a>
+        </fieldset>
+
         <section>
             <h2>What?</h2>
             {{event.description | markdown | safe}}

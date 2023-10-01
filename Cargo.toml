@@ -29,6 +29,7 @@ time = { version = "0.3.28", features = ["formatting", "serde", "local-offset", 
 time-tz = "2.0.0"
 pulldown-cmark = "0.9.3"
 dyn-clone = "1.0.14"
+ics = "0.5.8"
 
 [features]
 tls = ["rocket/tls"]

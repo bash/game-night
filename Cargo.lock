@@ -935,6 +935,7 @@ dependencies = [
  "dyn-clone",
  "email_address",
  "hex",
+ "ics",
  "itertools",
  "lettre",
  "opener",
@@ -1239,6 +1240,12 @@ checksum = "f31827a206f56af32e590ba56d5d2d085f558508192593743f16b2306495269f"
 dependencies = [
  "cc",
 ]
+
+[[package]]
+name = "ics"
+version = "0.5.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3ebec52f461ade2d19e7b594ecbcd0723ba0ab0eefa8aae2281b78ff461a91fa"
 
 [[package]]
 name = "idna"
