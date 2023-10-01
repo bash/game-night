@@ -152,7 +152,8 @@ a {
         display: grid;
         align-items: center;
         grid-template-columns: auto 1fr auto;
-        gap: 50px;
+        gap: max(.5em, min(4lvmin, 50px));
+        font-size: max(.8em, min(4lvmin, 1em));
         border: 4px double currentColor;
         padding: 10px;
         border-radius: 6px;
