@@ -132,7 +132,7 @@ impl<'r> TryFrom<Origin<'r>> for PageType {
 }
 
 pub(crate) fn configure_template_engines(engines: &mut Engines) {
-    engines.tera.register_filter("markdown", markdown_filter);
+    engines.tera.register_filter("markdown", markdown);
     engines.tera.register_function("accent_color", accent_color);
     engines
         .tera
@@ -173,24 +173,19 @@ tera_function! {
     }
 }
 
-fn markdown_filter(
-    value: &tera::Value,
-    _args: &HashMap<String, tera::Value>,
-) -> tera::Result<tera::Value> {
-    use pulldown_cmark::{html, Options, Parser};
+tera_filter! {
+    fn markdown(input: String) {
+        use pulldown_cmark::{html, Options, Parser};
 
-    const OPTIONS: Options = Options::empty()
-        .union(Options::ENABLE_TABLES)
-        .union(Options::ENABLE_FOOTNOTES)
-        .union(Options::ENABLE_STRIKETHROUGH);
+        const OPTIONS: Options = Options::empty()
+            .union(Options::ENABLE_TABLES)
+            .union(Options::ENABLE_FOOTNOTES)
+            .union(Options::ENABLE_STRIKETHROUGH);
 
-    let input = value
-        .as_str()
-        .ok_or_else(|| tera::Error::msg("This filter expects a string as input"))?;
+        let parser = Parser::new_ext(&input, OPTIONS);
+        let mut html_output = String::new();
+        html::push_html(&mut html_output, parser);
 
-    let parser = Parser::new_ext(input, OPTIONS);
-    let mut html_output = String::new();
-    html::push_html(&mut html_output, parser);
-
-    Ok(html_output.into())
+        Ok(html_output.into())
+    }
 }
