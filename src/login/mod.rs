@@ -40,9 +40,26 @@ pub(crate) fn catchers() -> Vec<Catcher> {
 }
 
 #[get("/login?<redirect>")]
-async fn login_page<'r>(redirect: Option<&'r str>, page: PageBuilder<'r>) -> Template {
-    page.type_(page_type_from_redirect_uri(redirect))
-        .render("login", context! { has_redirect: redirect.is_some() })
+async fn login_page<'r>(
+    redirect: Option<&'r str>,
+    page: PageBuilder<'r>,
+    user: Option<User>,
+) -> LoginPage {
+    match user {
+        Some(_) => {
+            LoginPage::AlreadyLoggedIn(redirect_to(redirect).unwrap_or_else(|| Redirect::to("/")))
+        }
+        None => LoginPage::LoginRequired(
+            page.type_(page_type_from_redirect_uri(redirect))
+                .render("login", context! { has_redirect: redirect.is_some() }),
+        ),
+    }
+}
+
+#[derive(Debug, Responder)]
+enum LoginPage {
+    LoginRequired(Template),
+    AlreadyLoggedIn(Redirect),
 }
 
 fn page_type_from_redirect_uri(redirect: Option<&str>) -> PageType {
