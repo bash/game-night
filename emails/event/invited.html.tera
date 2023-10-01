@@ -7,8 +7,8 @@
 
 <p>
     The next instance of <em>Tau's Game Night</em>
-    is happening on <strong>{{event_datetime | date(format = "%e. %B")}}</strong>
-    at <strong>{{event_datetime | date(format = "%H:%M")}}</strong>
+    is happening on <strong>{{event_datetime | time(format = "{date}")}}</strong>
+    at <strong>{{event_datetime | time(format = "{time}")}}</strong>
     and you are warmly invited {{heart}}
 </p>
 

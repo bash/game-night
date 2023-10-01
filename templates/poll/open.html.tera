@@ -9,8 +9,8 @@
 <p>
     Hurray, Tau is inviting you to another <em>Game Night</em> 🎉 <br>
     Fill out the poll until
-        <strong>{{poll.open_until | date(format = "%B %e")}}</strong>
-        at <strong>{{poll.open_until | date(format='%H:%M')}}</strong>
+        <strong>{{poll.open_until | time(format="{date}")}}</strong>
+        at <strong>{{poll.open_until | time(format='{time}')}}</strong>
         to help pick the date.
 </p>
 
@@ -58,11 +58,11 @@
 
                         <input type="checkbox" name="options[{{option.id}}]" id="option-{{option.id}}" {{checked}} {{disabled}}>
                         <label for="option-{{option.id}}">
-                            <span class="day">{{option.datetime | date(format="%e")}}</span>
-                            <span class="weekday">{{option.datetime | date(format="%A")}}</span>
+                            <span class="day">{{option.datetime | time(format="[day]")}}</span>
+                            <span class="weekday">{{option.datetime | time(format="[weekday repr:long]")}}</span>
                         </label>
 
-                        <input type="time" readonly value="{{option.datetime | date(format='%H:%M')}}" disabled>
+                        <input type="time" readonly value="{{option.datetime | time(format='[hour]:[minute]')}}" disabled>
 
                         <div class="answers-list">
                             {% for user in option.yes_answers %}
@@ -79,8 +79,8 @@
     {% if has_answers %}
         <p class="success-message">
             Thank you for participating in the poll 😊 You can change your answer
-            as often as you'd like until the deadline on <strong>{{poll.open_until | date(format = "%B %e")}}</strong>
-            at <strong>{{poll.open_until | date(format='%H:%M')}}</strong>.
+            as often as you'd like until the deadline on <strong>{{poll.open_until | time(format="{date}")}}</strong>
+            at <strong>{{poll.open_until | time(format='{time}')}}</strong>.
         </p>
     {% endif %}
     <fieldset>

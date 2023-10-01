@@ -9,8 +9,8 @@
     {% if event %}
         <p>
             {{event.created_by.name}} is organizing a <em>game night</em>
-            on  <strong>{{event.datetime | date(format='%d. %B')}}</strong> at
-            <strong>{{event.datetime | date(format='%k:%M')}}</strong>
+            on <strong>{{event.datetime | time(format='{date}')}}</strong> at
+            <strong>{{event.datetime | time(format='{time}')}}</strong>
             and you're invited 🥳
         </p>
 

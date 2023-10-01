@@ -11,7 +11,7 @@
 </p>
 
 <p>
-    The poll closes on <strong>{{poll_closes_at | date(format = "%B %e")}}</strong> at <strong>{{poll_closes_at | date(format='%H:%M')}}</strong> after which
+    The poll closes on <strong>{{poll_closes_at | time(format = "{date}")}}</strong> at <strong>{{poll_closes_at | time(format='{time}')}}</strong> after which
     the definitive date will be announced.
 </p>
 
