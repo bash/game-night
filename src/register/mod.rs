@@ -64,7 +64,7 @@ fn register_page(
             Cookie::build("vary-smart", "A_cookie_for_very_smart_people")
                 .http_only(true)
                 .secure(true)
-                .same_site(SameSite::Strict)
+                .same_site(SameSite::Lax)
                 .finish(),
         );
     }
