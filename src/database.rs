@@ -63,7 +63,7 @@ pub(crate) trait Repository: Send {
 
     async fn get_location(&mut self) -> Result<Location>;
 
-    async fn add_event(&mut self, event: &Event<(), UserId, i64>) -> Result<()>;
+    async fn add_event(&mut self, event: Event<(), UserId, i64>) -> Result<Event>;
 
     async fn get_next_event(&mut self) -> Result<Option<Event>>;
 
@@ -389,7 +389,7 @@ impl Repository for SqliteRepository {
             .await?)
     }
 
-    async fn add_event(&mut self, event: &Event<(), UserId, i64>) -> Result<()> {
+    async fn add_event(&mut self, event: Event<(), UserId, i64>) -> Result<Event> {
         let mut transaction: sqlx::Transaction<'_, Sqlite> = self.0.begin().await?;
         let event_id = sqlx::query(
             "INSERT INTO events (starts_at, ends_at, description, location_id, created_by)
@@ -413,7 +413,8 @@ impl Repository for SqliteRepository {
         }
 
         transaction.commit().await?;
-        Ok(())
+
+        Ok(self.materialize_event(event.with_id(event_id)).await?)
     }
 
     async fn get_next_event(&mut self) -> Result<Option<Event>> {
@@ -483,7 +484,10 @@ impl SqliteRepository {
         Ok(answer.materialize(user))
     }
 
-    async fn materialize_event(&mut self, event: Event<i64, UserId, i64>) -> Result<Event> {
+    async fn materialize_event<Participants: Default>(
+        &mut self,
+        event: Event<i64, UserId, i64, Participants>,
+    ) -> Result<Event> {
         let created_by = sqlx::query_as("SELECT * FROM users WHERE id = ?1")
             .bind(event.created_by)
             .fetch_one(self.executor())

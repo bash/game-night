@@ -4,7 +4,14 @@ use serde::Serialize;
 use time::OffsetDateTime;
 
 #[derive(Debug, sqlx::FromRow, Serialize)]
-pub(crate) struct Event<Id = i64, UserRef = User, LocationRef = Location> {
+pub(crate) struct Event<
+    Id = i64,
+    UserRef = User,
+    LocationRef = Location,
+    Participants = Vec<Participant<Id, UserRef>>,
+> where
+    Participants: Default,
+{
     pub(crate) id: Id,
     #[serde(with = "time::serde::iso8601")]
     pub(crate) starts_at: OffsetDateTime,
@@ -15,7 +22,7 @@ pub(crate) struct Event<Id = i64, UserRef = User, LocationRef = Location> {
     pub(crate) location: LocationRef,
     pub(crate) created_by: UserRef,
     #[sqlx(skip)]
-    pub(crate) participants: Vec<Participant<Id, UserRef>>,
+    pub(crate) participants: Participants,
 }
 
 impl Event<(), UserId, i64> {
@@ -38,7 +45,21 @@ impl Event<(), UserId, i64> {
     }
 }
 
-impl Event<i64, UserId, i64> {
+impl<UserRef, LocationRef, Participants: Default> Event<(), UserRef, LocationRef, Participants> {
+    pub(crate) fn with_id(self, id: i64) -> Event<i64, UserRef, LocationRef, Participants> {
+        Event {
+            id,
+            starts_at: self.starts_at,
+            ends_at: self.ends_at,
+            description: self.description,
+            location: self.location,
+            created_by: self.created_by,
+            participants: self.participants,
+        }
+    }
+}
+
+impl<Participants: Default> Event<i64, UserId, i64, Participants> {
     pub(crate) fn materialize(
         self,
         location: Location,

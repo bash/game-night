@@ -1,36 +1,36 @@
 use super::FinalizeContext;
-use super::FinalizeResult::{self, *};
 use crate::email::EmailMessage;
+use crate::event::Event;
 use crate::login::{with_autologin_token, LoginToken};
 use crate::play::rocket_uri_macro_play_page;
-use crate::users::{User, UserId};
+use crate::users::User;
 use anyhow::Result;
+use lettre::message::header::ContentType;
+use lettre::message::{Attachment, SinglePart};
 use rocket::uri;
 use serde::Serialize;
 use time::format_description::FormatItem;
 use time::macros::format_description;
-use time::OffsetDateTime;
-
-type Event = crate::event::Event<(), UserId, i64>;
 
 pub(super) async fn send_notification_emails(
     ctx: &mut FinalizeContext,
-    result: &FinalizeResult,
+    event: &Event,
+    invited: &[User],
 ) -> Result<()> {
-    if let Success(event, invited, _) = result {
-        for user in invited {
-            send_invited_email(ctx, event, user).await?;
-        }
+    for user in invited {
+        send_invited_email(ctx, event, user).await?;
     }
     Ok(())
 }
 
 async fn send_invited_email(ctx: &mut FinalizeContext, event: &Event, user: &User) -> Result<()> {
     let event_url = event_url(ctx, user, event).await?;
-    let email = InvitedEmail {
-        event_datetime: event.starts_at,
-        name: &user.name,
+    let ics_file = crate::play::to_calendar(Some(event), &ctx.url_prefix.0)?.to_string();
+    let email: InvitedEmail<'_> = InvitedEmail {
+        event,
         event_url,
+        name: &user.name,
+        ics_file,
     };
     ctx.email_sender.send(user.mailbox()?, &email).await?;
     Ok(())
@@ -38,10 +38,10 @@ async fn send_invited_email(ctx: &mut FinalizeContext, event: &Event, user: &Use
 
 #[derive(Debug, Serialize)]
 struct InvitedEmail<'a> {
-    #[serde(with = "time::serde::iso8601")]
-    event_datetime: OffsetDateTime,
+    event: &'a Event,
     name: &'a str,
     event_url: String,
+    ics_file: String,
 }
 
 impl<'a> EmailMessage for InvitedEmail<'a> {
@@ -50,12 +50,18 @@ impl<'a> EmailMessage for InvitedEmail<'a> {
             format_description!("[day padding:none]. [month repr:long]");
         format!(
             "You're invited to Tau's Game Night on {date}!",
-            date = self.event_datetime.format(FORMAT).unwrap()
+            date = self.event.starts_at.format(FORMAT).unwrap()
         )
     }
 
     fn template_name(&self) -> String {
         "event/invited".to_string()
+    }
+
+    fn attachments(&self) -> Result<Vec<SinglePart>> {
+        let ics_attachment = Attachment::new("game-night.ics".to_string())
+            .body(self.ics_file.clone(), ContentType::parse("text/calendar")?);
+        Ok(vec![ics_attachment])
     }
 }
 

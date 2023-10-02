@@ -47,7 +47,7 @@ async fn event_ics(
     Ok(Ics(calendar.to_string()))
 }
 
-fn to_calendar<'a>(
+pub(crate) fn to_calendar<'a>(
     event: Option<&'a Event>,
     url_prefix: &'a Absolute<'a>,
 ) -> Result<ICalendar<'a>> {

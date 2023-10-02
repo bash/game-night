@@ -37,10 +37,10 @@ async fn try_finalize_poll(ctx: &mut FinalizeContext, poll: Poll) -> Result<()> 
 
     let result = finalize_poll_dry_run(poll);
 
-    if let FinalizeResult::Success(event, ..) = &result {
-        ctx.repository.add_event(event).await?;
+    if let FinalizeResult::Success(event, invited, _) = result {
+        let event = ctx.repository.add_event(event).await?;
+        emails::send_notification_emails(ctx, &event, &invited).await?;
     }
-    emails::send_notification_emails(ctx, &result).await?;
 
     Ok(())
 }
