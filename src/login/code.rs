@@ -1,5 +1,5 @@
 use super::{page_type_from_redirect_uri, redirect_to};
-use crate::auth::CookieJarExt;
+use crate::auth::{CookieJarExt, LoginState};
 use crate::database::Repository;
 use crate::template::PageBuilder;
 use anyhow::Error;
@@ -28,7 +28,7 @@ pub(super) async fn login_with_code<'r>(
 ) -> Result<LoginWithCodeResult, Debug<Error>> {
     use LoginWithCodeResult::*;
     if let Some(user_id) = repository.use_login_token(form.code).await? {
-        cookies.set_user_id(user_id);
+        cookies.set_login_state(LoginState::Authenticated(user_id, None));
         Ok(LoginWithCodeResult::success(
             redirect_to(redirect).unwrap_or_else(|| Redirect::to("/")),
         ))

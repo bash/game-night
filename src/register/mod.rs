@@ -1,4 +1,4 @@
-use crate::auth::CookieJarExt;
+use crate::auth::{CookieJarExt, LoginState};
 use crate::database::Repository;
 use crate::email::EmailSender;
 use crate::invitation::{Invitation, Passphrase};
@@ -114,7 +114,7 @@ async fn register(
         )))
     );
 
-    cookies.set_user_id(user_id);
+    cookies.set_login_state(LoginState::Authenticated(user_id, None));
     Ok(Right(Redirect::to("/poll")))
 }
 

@@ -13,6 +13,7 @@
             <th>Role</th>
             <th>Invited By</th>
             <th>Campaign</th>
+            <th></th>
             <th style="border: none"></th>
         </tr>
     </thead>
@@ -32,6 +33,7 @@
                     {% endif %}
                 </td>
                 <td>{{user.campaign | default(value="∅")}}</td>
+                <td><form action="/sudo/enter" method="post"><input type="hidden" name="user" value="{{user.id}}"><button type="submit">Sudo</button></form></td>
                 <td style="border: none; background-color: transparent" align="left"><a href="#user-{{user.id}}">#</a></td>
             </tr>
         {% endfor %}

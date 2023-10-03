@@ -1,5 +1,5 @@
 use super::LoginToken;
-use crate::auth::CookieJarExt;
+use crate::auth::{CookieJarExt, LoginState};
 use crate::database::Repository;
 use crate::users::User;
 use rocket::fairing::{self, Fairing};
@@ -61,7 +61,9 @@ async fn try_login(request: &Request<'_>, token: &str) {
     if let Outcome::Success(mut repository) = request.guard::<Box<dyn Repository>>().await {
         if request.guard::<Option<User>>().await.unwrap().is_none() {
             if let Ok(Some(user_id)) = repository.use_login_token(token).await {
-                request.cookies().set_user_id(user_id);
+                request
+                    .cookies()
+                    .set_login_state(LoginState::Authenticated(user_id, None));
             }
         }
     }

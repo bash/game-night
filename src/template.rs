@@ -1,6 +1,8 @@
+use crate::auth::LoginState;
 use crate::users::User;
 use anyhow::Error;
 use rocket::http::uri::Origin;
+use rocket::outcome::try_outcome;
 use rocket::request::{FromRequest, Outcome};
 use rocket::{async_trait, Request};
 use rocket_dyn_templates::{Engines, Template};
@@ -14,6 +16,7 @@ pub(crate) use functions::*;
 
 pub(crate) struct PageBuilder<'r> {
     user: Option<User>,
+    login_state: LoginState,
     uri: &'r Origin<'r>,
     type_: PageType,
 }
@@ -34,6 +37,7 @@ impl<'r> PageBuilder<'r> {
             TemplateContext {
                 context,
                 user: self.user.as_ref(),
+                sudo: self.login_state.is_sudo(),
                 page: Page {
                     uri: self.uri,
                     path: self.uri.path().as_str(),
@@ -51,6 +55,7 @@ where
     C: Serialize,
 {
     user: Option<&'a User>,
+    sudo: bool,
     page: Page<'a>,
     #[serde(flatten)]
     context: C,
@@ -74,11 +79,13 @@ impl<'r> FromRequest<'r> for PageBuilder<'r> {
             .guard()
             .await
             .expect("Option<T> guard is infallible");
+        let login_state: LoginState = try_outcome!(request.guard().await);
         let uri = request.uri();
         Outcome::Success(PageBuilder {
             user,
             uri,
             type_: PageType::Home,
+            login_state,
         })
     }
 }

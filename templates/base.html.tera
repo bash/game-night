@@ -14,6 +14,14 @@
 <body>
     <a href="#main" tabindex="0" class="skip-link">Skip to content</a>
 
+    {% if sudo %}
+        <form class="page-banner" action="/sudo/exit" method="post">
+            You are acting on behalf of <strong>{{user.name}}</strong>
+            <input type="hidden" name="redirect" value="{{page.uri}}">
+            <button type="submit">Exit</button>
+        </form>
+    {% endif %}
+
     <nav>
         <a href="/" class="_home{% if page.type == 'home' %} -active{% endif %}" title="Home" accesskey="h">
             <svg role="img" aria-label="Home"><use href="/icons/home.svg#icon" aria-hidden="true" /></svg>

@@ -1,4 +1,4 @@
-use crate::auth::CookieJarExt;
+use crate::auth::{CookieJarExt, LoginState};
 use crate::database::Repository;
 use crate::email::{EmailMessage, EmailSender};
 use crate::template::{PageBuilder, PageType};
@@ -23,6 +23,7 @@ use time::{Duration, OffsetDateTime};
 mod code;
 mod keys;
 pub(crate) use keys::*;
+mod sudo;
 
 pub(crate) fn routes() -> Vec<Route> {
     routes![
@@ -31,7 +32,9 @@ pub(crate) fn routes() -> Vec<Route> {
         code::login_with_code,
         code::login_with_code_page,
         logout,
-        auto_login::auto_login_redirect
+        auto_login::auto_login_redirect,
+        sudo::enter,
+        sudo::exit
     ]
 }
 
@@ -146,7 +149,7 @@ struct LoginData<'r> {
 
 #[post("/logout", data = "<form>")]
 async fn logout<'r>(cookies: &'r CookieJar<'r>, form: Form<LogoutData<'r>>) -> Logout<'r> {
-    cookies.remove_user_id();
+    cookies.set_login_state(LoginState::Anonymous);
     Logout(form.redirect)
 }
 
@@ -171,7 +174,7 @@ async fn redirect_to_login(request: &Request<'_>) -> Redirect {
     Redirect::to(uri!(login_page(redirect = Some(origin))))
 }
 
-fn redirect_to(redirect: Option<&str>) -> Option<Redirect> {
+pub(crate) fn redirect_to(redirect: Option<&str>) -> Option<Redirect> {
     redirect
         .and_then(|r| Origin::parse_owned(r.to_string()).ok())
         .map(Redirect::to)

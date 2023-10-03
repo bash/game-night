@@ -35,41 +35,83 @@ impl<'r> FromRequest<'r> for User {
     }
 }
 
+#[async_trait]
+impl<'r> FromRequest<'r> for LoginState {
+    type Error = Error;
+
+    async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
+        match request.cookies().login_state() {
+            Ok(s) => Outcome::Success(s),
+            Err(e) => Outcome::Failure((Status::InternalServerError, e)),
+        }
+    }
+}
+
 async fn fetch_user(
     request: &Request<'_>,
     repository: &mut dyn Repository,
 ) -> Result<Option<User>> {
-    match request.cookies().user_id()? {
-        Some(i) => Ok(repository.get_user_by_id(i).await?),
-        None => Ok(None),
+    match request.cookies().login_state()? {
+        LoginState::Authenticated(e, _) => Ok(repository.get_user_by_id(e).await?),
+        LoginState::Anonymous => Ok(None),
     }
 }
 
 pub(crate) trait CookieJarExt {
-    fn user_id(&self) -> Result<Option<UserId>>;
+    fn login_state(&self) -> Result<LoginState>;
 
-    fn set_user_id(&self, user_id: UserId);
+    fn set_login_state(&self, state: LoginState);
+}
 
-    fn remove_user_id(&self);
+#[derive(Debug)]
+pub(crate) enum LoginState {
+    Authenticated(UserId, Option<UserId>),
+    Anonymous,
+}
+
+impl LoginState {
+    pub(crate) fn is_sudo(&self) -> bool {
+        matches!(self, LoginState::Authenticated(_, Some(_)))
+    }
 }
 
 impl<'r> CookieJarExt for CookieJar<'r> {
-    fn user_id(&self) -> Result<Option<UserId>> {
-        let cookie = self.get_private(USER_ID_COOKIE_NAME);
-        Ok(cookie.map(|c| c.value().parse()).transpose()?.map(UserId))
+    fn login_state(&self) -> Result<LoginState> {
+        let effective = parse_user_id_cookie(self.get_private(USER_ID_COOKIE_NAME))?;
+        let original = parse_user_id_cookie(self.get_private(ORIGINAL_USER_ID_COOKIE_NAME))?;
+        match effective {
+            None => Ok(LoginState::Anonymous),
+            Some(u) => Ok(LoginState::Authenticated(u, original)),
+        }
     }
 
-    fn set_user_id(&self, user_id: UserId) {
-        self.add_private(user_id_cookie(user_id.0.to_string()));
-    }
-
-    fn remove_user_id(&self) {
-        self.remove_private(user_id_cookie(""))
+    fn set_login_state(&self, state: LoginState) {
+        match state {
+            LoginState::Anonymous => {
+                self.remove_private(user_id_cookie(USER_ID_COOKIE_NAME, ""));
+                self.remove_private(user_id_cookie(ORIGINAL_USER_ID_COOKIE_NAME, ""));
+            }
+            LoginState::Authenticated(e, Some(o)) => {
+                self.add_private(user_id_cookie(USER_ID_COOKIE_NAME, e.0.to_string()));
+                self.add_private(user_id_cookie(
+                    ORIGINAL_USER_ID_COOKIE_NAME,
+                    o.0.to_string(),
+                ));
+            }
+            LoginState::Authenticated(e, None) => {
+                self.add_private(user_id_cookie(USER_ID_COOKIE_NAME, e.0.to_string()));
+                self.remove_private(user_id_cookie(ORIGINAL_USER_ID_COOKIE_NAME, ""));
+            }
+        }
     }
 }
 
-fn user_id_cookie<'a>(value: impl Into<Cow<'a, str>>) -> Cookie<'a> {
-    Cookie::build(USER_ID_COOKIE_NAME, value)
+fn parse_user_id_cookie(cookie: Option<Cookie>) -> Result<Option<UserId>> {
+    Ok(cookie.map(|c| c.value().parse()).transpose()?.map(UserId))
+}
+
+fn user_id_cookie<'a>(name: &'a str, value: impl Into<Cow<'a, str>>) -> Cookie<'a> {
+    Cookie::build(name, value)
         .http_only(true)
         .secure(true)
         .permanent()
@@ -78,3 +120,4 @@ fn user_id_cookie<'a>(value: impl Into<Cow<'a, str>>) -> Cookie<'a> {
 }
 
 const USER_ID_COOKIE_NAME: &str = "user-id";
+const ORIGINAL_USER_ID_COOKIE_NAME: &str = "original-user-id";
