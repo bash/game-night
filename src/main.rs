@@ -26,12 +26,14 @@ mod login;
 mod play;
 mod poll;
 mod register;
+mod systemd;
 mod template;
 mod users;
 
 #[launch]
 fn rocket() -> _ {
     rocket::custom(figment())
+        .attach(systemd::SystemdNotify)
         .mount("/", routes![get_index_page])
         .mount("/", invitation::routes())
         .mount("/", register::routes())
