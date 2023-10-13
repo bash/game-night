@@ -4,10 +4,5 @@
             <strong>{{ps(level=level)}}</strong> Congratulations! 🎉 You made sense of my <em>interesting</em> invitation puzzle.
             I will have a <em>special</em> present ready for you the first time you participate in a game night~ ✨
         </p>
-    {% elif campaign == 'penis' %}
-        <p>
-            <strong>{{ps(level=level)}}</strong> You're <em>very</em> funny ha ha.<br>
-            <strong>{{ps(level=level + 1)}}</strong> I have forwarded a formal complaint to Santa's naughty list.
-        </p>
     {% endif %}
 {% endmacro %}
