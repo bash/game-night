@@ -20,28 +20,15 @@
         Participants have <input type="number" class="-inline" name="duration" size="2" inputmode="numeric" placeholder="72" required min="1" value="72"> hours to complete the poll.
     </p>
 
-    <div class="calendar-list">
-        {% for month in calendar %}
-            <h2>{{month.name}}</h2>
-            <ul>
-                {% for day in month.days %}
-                    <li>
-                        <input type="hidden" name="options[{{day.date}}][date]" value="{{day.date}}">
-                        <input type="checkbox" name="options[{{day.date}}][enabled]" id="days-{{day.date}}">
-                        <label for="days-{{day.date}}">
-                            <span class="day">{{day.day}}</span>
-                            <span class="weekday">{{day.weekday}}</span>
-                        </label>
-                        <div class="time-range">
-                            <input type="time" name="options[{{day.date}}][start_time]" id="options-{{day.date}}-start-time" data-bind-disabled-to="days-{{day.date}}" step="{{60 * 15}}" disabled>
-                            &ndash;
-                            <input type="time" name="options[{{day.date}}][end_time]" data-bind-disabled-to="days-{{day.date}}" step="{{60 * 15}}" disabled data-validate-gte="options-{{day.date}}-start-time">
-                        </div>
-                    </li>
-                {% endfor %}
-            </ul>
-        {% endfor %}
+    <div class="calendar-list" id="calendar">
+        {% include 'poll/calendar' %}
     </div>
+
+    <p>
+        <button type="button"
+            data-fetch-more-target="calendar"
+            data-fetch-more-url="{{calendar_uri}}">Show me more dates</button>
+    </p>
 
     <fieldset>
         <label for="description">Here's space for me to write down some extra information for the event using markdown:</label>
@@ -53,25 +40,5 @@
     </fieldset>
 </form>
 
-<script type="module">
-    for (const target of document.querySelectorAll('[data-bind-disabled-to]')) {
-        const source = document.querySelector(`#${target.dataset.bindDisabledTo}`)
-        target.disabled = !source.checked
-        source.addEventListener('input', () => target.disabled = !source.checked)
-    }
-</script>
-
-<script type="module">
-    const validate = (left, right) => left.setCustomValidity(
-        left.valueAsNumber >= right.valueAsNumber
-            ? ''
-            : `Please select a value that is no less than ${right.value}`)
-
-    for (const left of document.querySelectorAll('[data-validate-gte]')) {
-        const right = document.getElementById(left.dataset.validateGte)
-        left.addEventListener('input', () => validate(left, right))
-        right.addEventListener('input', () => validate(left, right))
-        validate(left, right)
-    }
-</script>
+<script type="module" src="/js/calendar.js"></script>
 {% endblock content %}

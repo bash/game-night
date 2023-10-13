@@ -26,34 +26,78 @@ pub(super) fn new_poll_page(
     page: PageBuilder<'_>,
     _user: AuthorizedTo<ManagePoll>,
 ) -> Result<Template, Debug<Error>> {
-    let calendar = get_calendar(OffsetDateTime::now_utc(), 14);
-    Ok(page
-        .type_(PageType::Poll)
-        .render("poll/new", context! { calendar, strategies: strategies() }))
+    let calendar = get_calendar(
+        OffsetDateTime::now_utc(),
+        14,
+        &mut CalendarDayPrefill::empty,
+    );
+    Ok(page.type_(PageType::Poll).render(
+        "poll/new",
+        context! { calendar, strategies: strategies(), calendar_uri: uri!(calendar()) },
+    ))
 }
 
-fn get_calendar(start: OffsetDateTime, days: usize) -> Vec<CalendarMonth> {
+#[post("/poll/new/_calendar", data = "<form>")]
+pub(super) fn calendar(
+    page: PageBuilder<'_>,
+    _user: AuthorizedTo<ManagePoll>,
+    form: Form<CalendarData>,
+) -> Template {
+    let mut prefill = find_prefill(&form);
+    let calendar = get_calendar(OffsetDateTime::now_utc(), 14 * form.count, &mut prefill);
+    page.type_(PageType::Poll).render(
+        "poll/calendar",
+        context! { calendar, strategies: strategies() },
+    )
+}
+
+fn find_prefill(form: &CalendarData) -> impl Fn(Date) -> CalendarDayPrefill + '_ {
+    |date| {
+        form.options
+            .iter()
+            .find(|o| o.date == date)
+            .cloned()
+            .unwrap_or_else(|| CalendarDayPrefill::empty(date))
+    }
+}
+
+#[derive(FromForm)]
+pub(super) struct CalendarData {
+    count: usize,
+    options: Vec<CalendarDayPrefill>,
+}
+
+fn get_calendar(
+    start: OffsetDateTime,
+    days: usize,
+    prefill: &mut impl Fn(Date) -> CalendarDayPrefill,
+) -> Vec<CalendarMonth> {
     iter::successors(Some(start.date()), |d| d.next_day())
         .take(days)
         .group_by(|d| d.month())
         .into_iter()
-        .map(|(month, days)| to_calendar_month(month, days))
+        .map(|(month, days)| to_calendar_month(month, days, prefill))
         .collect()
 }
 
-fn to_calendar_month(month: Month, days: impl Iterator<Item = Date>) -> CalendarMonth {
+fn to_calendar_month(
+    month: Month,
+    days: impl Iterator<Item = Date>,
+    prefill: &mut impl Fn(Date) -> CalendarDayPrefill,
+) -> CalendarMonth {
     CalendarMonth {
         name: month.to_string(),
-        days: days.map(to_calendar_day).collect(),
+        days: days.map(|d| to_calendar_day(d, prefill)).collect(),
     }
 }
 
-fn to_calendar_day(date: Date) -> CalendarDay {
+fn to_calendar_day(date: Date, prefill: &mut impl Fn(Date) -> CalendarDayPrefill) -> CalendarDay {
     const WEEKDAY_FORMAT: &[FormatItem<'_>] = format_description!("[weekday repr:long]");
     CalendarDay {
         date,
         day: date.day(),
         weekday: date.format(WEEKDAY_FORMAT).unwrap(),
+        prefill: prefill(date),
     }
 }
 
@@ -91,9 +135,33 @@ struct CalendarDay {
     date: Date,
     day: u8,
     weekday: String,
+    prefill: CalendarDayPrefill,
+}
+
+#[derive(Debug, Serialize, FromForm, Clone)]
+struct CalendarDayPrefill {
+    #[serde(with = "iso8601_date")]
+    date: Date,
+    enabled: bool,
+    #[serde(with = "iso8601_time::option")]
+    start_time: Option<Time>,
+    #[serde(with = "iso8601_time::option")]
+    end_time: Option<Time>,
+}
+
+impl CalendarDayPrefill {
+    fn empty(date: Date) -> Self {
+        Self {
+            date,
+            enabled: false,
+            start_time: None,
+            end_time: None,
+        }
+    }
 }
 
 time::serde::format_description!(iso8601_date, Date, "[year]-[month]-[day]");
+time::serde::format_description!(iso8601_time, Time, "[hour]:[minute]");
 
 #[post("/poll/new", data = "<form>")]
 pub(super) async fn new_poll(

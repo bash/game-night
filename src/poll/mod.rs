@@ -27,6 +27,7 @@ pub(crate) fn routes() -> Vec<Route> {
         poll_page,
         new::new_poll_page,
         new::new_poll,
+        new::calendar,
         open::update_answers,
     ]
 }
