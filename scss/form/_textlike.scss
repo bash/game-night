@@ -25,6 +25,10 @@
         min-width: 0;
     }
 
+    &[size='2'] {
+        width: 2.5em; // The extra 0.5em are there to make space for WebKit's *beautiful* spinner button.
+    }
+
     &.-inline {
         --vertical-padding: 0px; // The unit is important here so that the max() function understands that this is a length value
         --horizontal-padding: 0px;
