@@ -64,7 +64,7 @@ async fn register_page(
 ) -> Result<Either<Template, Redirect>, Debug<Error>> {
     if let Some(user) = user {
         let users_url = user.can_manage_users().then(|| uri!(list_users));
-        Ok(Left(page.render(
+        Ok(Left(page.type_(PageType::Register).render(
             "register/authenticated",
             context! { step: "invitation_code", users_url },
         )))
