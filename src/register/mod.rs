@@ -46,7 +46,7 @@ macro_rules! pending {
 pub(crate) fn routes() -> Vec<Route> {
     routes![
         register_page,
-        register,
+        register_form,
         profile::profile,
         profile::update_profile,
     ]
@@ -69,21 +69,50 @@ async fn register_page(
             context! { step: "invitation_code", users_url },
         )))
     } else {
-        let form = RegisterForm::new_with_passphrase(passphrase).into();
-        register(cookies, repository, email_sender, page, campaign, form).await
+        let form = RegisterForm::new_with_passphrase(passphrase);
+        register(
+            cookies,
+            repository,
+            email_sender.as_ref(),
+            page,
+            campaign,
+            form,
+            PassphraseSource::Query,
+        )
+        .await
     }
 }
 
 #[post("/register", data = "<form>")]
-async fn register(
+async fn register_form(
     cookies: &CookieJar<'_>,
-    mut repository: Box<dyn Repository>,
+    repository: Box<dyn Repository>,
     email_sender: &State<Box<dyn EmailSender>>,
     page: PageBuilder<'_>,
     campaign: Option<Campaign<'_>>,
     form: Form<RegisterForm<'_>>,
 ) -> Result<Either<Template, Redirect>, Debug<Error>> {
-    let form = form.into_inner();
+    register(
+        cookies,
+        repository,
+        email_sender.as_ref(),
+        page,
+        campaign,
+        form.into_inner(),
+        PassphraseSource::Form,
+    )
+    .await
+}
+
+async fn register(
+    cookies: &CookieJar<'_>,
+    mut repository: Box<dyn Repository>,
+    email_sender: &dyn EmailSender,
+    page: PageBuilder<'_>,
+    campaign: Option<Campaign<'_>>,
+    form: RegisterForm<'_>,
+    passphrase_source: PassphraseSource,
+) -> Result<Either<Template, Redirect>, Debug<Error>> {
     let page = page.type_(PageType::Register);
 
     let campaign = if let Some(campaign) = campaign {
@@ -101,10 +130,10 @@ async fn register(
     );
 
     let user_details = unwrap_or_return!(
-        user_details_step(&form, repository.as_mut(), email_sender.as_ref()).await?,
+        user_details_step(&form, repository.as_mut(), email_sender).await?,
         error_message => Ok(Left(page.render(
             "register",
-            context! { step: "user_details", error_message, form, campaign },
+            context! { step: "user_details", error_message, form, campaign, passphrase_source },
         )))
     );
 
@@ -257,6 +286,13 @@ pub(crate) struct RegisterForm<'r> {
     name: Option<&'r str>,
     email_address: Option<&'r str>,
     email_verification_code: Option<&'r str>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "snake_case")]
+enum PassphraseSource {
+    Query,
+    Form,
 }
 
 impl<'a> RegisterForm<'a> {

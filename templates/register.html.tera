@@ -54,9 +54,15 @@
     {% if step == 'user_details' %}
         {% include 'error_message' %}
 
-        <p>
-            Ding ding ding! You have entered the correct words.
-        </p>
+        {% if passphrase_source == 'query' %}
+            <p>
+                Congratulations! Tau has invited you to their amazing game night 🎉
+            </p>
+        {% else %}
+            <p>
+                Ding ding ding! You have entered the correct words.
+            </p>
+        {% endif %}
 
         <p>
             First, let's introduce ourselves. My name is Tau, and what's yours?
