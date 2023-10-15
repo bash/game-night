@@ -14,7 +14,12 @@
         <small>
             <button type="button" class="-icon" data-copy-to-clipboard="{{passphrase | join(sep=' ')}}" data-icon="/icons/clipboard-copy.svg">
                 <svg><use href="/icons/clipboard-copy.svg#icon" /></svg>
-                <span>Copy to Clipboard</span>
+                <span>Copy Words to Clipboard</span>
+            </button>
+            <br>
+            <button type="button" class="-icon" data-copy-to-clipboard="{{register_uri}}" data-icon="/icons/clipboard-copy.svg">
+                <svg><use href="/icons/clipboard-copy.svg#icon" /></svg>
+                <span>Copy Link to Clipboard</span>
             </button>
         </small>
     </fieldset>

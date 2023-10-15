@@ -1,7 +1,9 @@
 use crate::auth::{AuthorizedTo, Invite};
 use crate::database::Repository;
+use crate::register::rocket_uri_macro_register_page;
 use crate::template::{PageBuilder, PageType};
 use crate::users::{Role, User, UserId};
+use crate::UrlPrefix;
 use anyhow::{Error, Result};
 use rand::prelude::*;
 use rocket::form::Form;
@@ -43,6 +45,7 @@ async fn generate_invitation(
     mut repository: Box<dyn Repository>,
     form: Form<GenerateInvitationData>,
     user: AuthorizedTo<Invite>,
+    url_prefix: UrlPrefix<'_>,
 ) -> Result<Template, Debug<Error>> {
     let lifetime: Duration = form.lifetime.into();
     let valid_until = OffsetDateTime::now_utc() + lifetime;
@@ -52,8 +55,9 @@ async fn generate_invitation(
     Ok(page.type_(PageType::Invite).render(
         "invitation",
         context! {
-            passphrase: invitation.passphrase,
-            lifetime: form.lifetime
+            passphrase: invitation.passphrase.clone(),
+            lifetime: form.lifetime,
+            register_uri: uri!(url_prefix.0, register_page(passphrase = Some(invitation.passphrase))),
         },
     ))
 }
