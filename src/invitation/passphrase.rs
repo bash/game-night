@@ -20,6 +20,30 @@ impl fmt::Display for Passphrase {
     }
 }
 
+impl<'v> FromFormField<'v> for Passphrase {
+    fn from_value(field: rocket::form::ValueField<'v>) -> rocket::form::Result<'v, Self> {
+        Ok(Passphrase::from_form_field(field.value))
+    }
+}
+
+impl_from_uri_param_identity!([Query] Passphrase);
+
+impl UriDisplay<Query> for Passphrase {
+    fn fmt(&self, f: &mut rocket::http::uri::fmt::Formatter<'_, Query>) -> fmt::Result {
+        f.write_value(self.to_form_field())
+    }
+}
+
+impl Passphrase {
+    fn from_form_field(value: &str) -> Self {
+        Self(value.split('-').map(ToOwned::to_owned).collect())
+    }
+
+    fn to_form_field(&self) -> String {
+        self.0.join("-")
+    }
+}
+
 impl<'r, DB: Database> Decode<'r, DB> for Passphrase
 where
     &'r str: Decode<'r, DB>,
@@ -67,7 +91,7 @@ impl<'v> FromFormField<'v> for Passphrases {
             field
                 .value
                 .split(',')
-                .map(|p| Passphrase(p.split('-').map(ToOwned::to_owned).collect()))
+                .map(Passphrase::from_form_field)
                 .collect(),
         ))
     }
@@ -80,7 +104,7 @@ impl UriDisplay<Query> for Passphrases {
         let value = self
             .0
             .iter()
-            .map(|p| p.0.join("-"))
+            .map(Passphrase::to_form_field)
             .collect::<Vec<_>>()
             .join(",");
         f.write_value(value)
