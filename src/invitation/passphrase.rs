@@ -10,7 +10,7 @@ use sqlx::sqlite::SqliteArgumentValue;
 use sqlx::{Database, Decode, Encode, Sqlite};
 use std::fmt;
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Default, Clone, Serialize)]
 #[serde(transparent)]
 pub(crate) struct Passphrase(pub(crate) Vec<String>);
 
@@ -36,7 +36,11 @@ impl UriDisplay<Query> for Passphrase {
 
 impl Passphrase {
     fn from_form_field(value: &str) -> Self {
-        Self(value.split('-').map(ToOwned::to_owned).collect())
+        Self::from_form_fields(value.split('-'))
+    }
+
+    pub(crate) fn from_form_fields<'a>(values: impl Iterator<Item = &'a str>) -> Self {
+        Self(values.map(|w| w.to_lowercase().trim().to_owned()).collect())
     }
 
     fn to_form_field(&self) -> String {

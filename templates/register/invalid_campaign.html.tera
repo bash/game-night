@@ -1,0 +1,15 @@
+{% extends 'base' %}
+
+{% block title %}Invited{% endblock title %}
+
+{% block content %}
+<p>
+    <strong>Helloooo there 👋</strong>
+    You seem to have fumbled around with the URL, namely the <strong>campaign</strong> query parameter.
+    You must feel <em>prettyyyyyyyy</em> smart.
+    Here, have a cookie: 🍪
+</p>
+<p>
+    <a href="{{page.path}}" class="link-button">Onward to the registration!</a>
+</p>
+{% endblock %}

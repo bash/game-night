@@ -52,43 +52,45 @@ pub(crate) fn routes() -> Vec<Route> {
     ]
 }
 
-#[get("/register")]
-fn register_page(
+#[get("/register?<passphrase>")]
+async fn register_page(
     cookies: &CookieJar<'_>,
+    repository: Box<dyn Repository>,
+    email_sender: &State<Box<dyn EmailSender>>,
     page: PageBuilder<'_>,
-    campaign: Option<Campaign<'_>>,
     user: Option<User>,
-) -> Template {
-    if campaign.is_none() {
-        cookies.add(
-            Cookie::build("vary-smart", "A_cookie_for_very_smart_people")
-                .http_only(true)
-                .secure(true)
-                .same_site(SameSite::Lax)
-                .finish(),
-        );
+    campaign: Option<Campaign<'_>>,
+    passphrase: Option<Passphrase>,
+) -> Result<Either<Template, Redirect>, Debug<Error>> {
+    if let Some(user) = user {
+        let users_url = user.can_manage_users().then(|| uri!(list_users));
+        Ok(Left(page.render(
+            "register/authenticated",
+            context! { step: "invitation_code", users_url },
+        )))
+    } else {
+        let form = RegisterForm::new_with_passphrase(passphrase).into();
+        register(cookies, repository, email_sender, page, campaign, form).await
     }
-
-    let users_url = user
-        .filter(|u| u.can_manage_users())
-        .map(|_| uri!(list_users));
-    page.type_(PageType::Register).render(
-        "register",
-        context! { step: "invitation_code", form: context! {}, invalid_campaign: campaign.is_none(), campaign, users_url },
-    )
 }
 
 #[post("/register", data = "<form>")]
 async fn register(
     cookies: &CookieJar<'_>,
-    form: Form<RegisterForm<'_>>,
     mut repository: Box<dyn Repository>,
     email_sender: &State<Box<dyn EmailSender>>,
     page: PageBuilder<'_>,
-    campaign: Campaign<'_>,
+    campaign: Option<Campaign<'_>>,
+    form: Form<RegisterForm<'_>>,
 ) -> Result<Either<Template, Redirect>, Debug<Error>> {
     let form = form.into_inner();
     let page = page.type_(PageType::Register);
+
+    let campaign = if let Some(campaign) = campaign {
+        campaign
+    } else {
+        return Ok(Left(invalid_campaign(cookies, page)));
+    };
 
     let invitation = unwrap_or_return!(
         invitation_code_step(&form, repository.as_mut()).await?,
@@ -118,16 +120,27 @@ async fn register(
     Ok(Right(Redirect::to("/poll")))
 }
 
+fn invalid_campaign(cookies: &CookieJar<'_>, page: PageBuilder<'_>) -> Template {
+    cookies.add(
+        Cookie::build("vary-smart", "A_cookie_for_very_smart_people")
+            .http_only(true)
+            .secure(true)
+            .same_site(SameSite::Lax)
+            .finish(),
+    );
+    page.render("register/invalid_campaign", context! {})
+}
+
 async fn invitation_code_step(
     form: &RegisterForm<'_>,
     repository: &mut dyn Repository,
 ) -> Result<StepResult<Invitation>> {
-    let passphrase = Passphrase(
-        form.words
-            .iter()
-            .map(|w| w.to_lowercase().trim().to_owned())
-            .collect(),
-    );
+    let passphrase = if let Some(words) = &form.words {
+        Passphrase::from_form_fields(words.iter().map(|w| w.as_str()))
+    } else {
+        return pending!();
+    };
+
     let invitation = match repository.get_invitation_by_passphrase(&passphrase).await? {
         Some(invitation) => invitation,
         None => return pending!("That's not a valid invitation passphrase"),
@@ -240,10 +253,21 @@ enum StepResult<T> {
 
 #[derive(FromForm, Serialize)]
 pub(crate) struct RegisterForm<'r> {
-    words: Vec<String>,
+    words: Option<Vec<String>>,
     name: Option<&'r str>,
     email_address: Option<&'r str>,
     email_verification_code: Option<&'r str>,
+}
+
+impl<'a> RegisterForm<'a> {
+    fn new_with_passphrase(passphrase: Option<Passphrase>) -> Self {
+        Self {
+            email_address: None,
+            words: passphrase.map(|p| p.0),
+            name: None,
+            email_verification_code: None,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]

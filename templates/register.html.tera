@@ -5,136 +5,111 @@
 {% block title %}Invited{% endblock title %}
 
 {% block content %}
-{% if user %}
+<form method="post">
+    {% if step == 'invitation_code' %}
     <p>
-        <em>Congratulations <strong>{{user.name}}</strong>! You have already been invited
-        to Tau's Game Night and are even signed in on this website.
-        There's no need for you to register again :)</em>
+        Congratulations! Tau has invited you to their amazing
+        game night by providing you with four secret words.
     </p>
+
+    <p>
+        Enter those secret words below to continue.
+    </p>
+
+    {% include 'error_message' %}
+
+    <fieldset class="-two-column">
+        <input type="text" placeholder="1st word" name="words[0]" data-overflow-to="words[1]" value="{{form.words | default(value=[]) | nth(n=0)}}" required>
+        <input type="text" placeholder="2nd word" name="words[1]" data-overflow-to="words[2]" value="{{form.words | default(value=[]) | nth(n=1)}}" required>
+        <input type="text" placeholder="3rd word" name="words[2]" data-overflow-to="words[3]" value="{{form.words | default(value=[]) | nth(n=2)}}" required>
+        <input type="text" placeholder="4th word" name="words[3]" value="{{form.words | default(value=[]) | nth(n=3)}}" required>
+    </fieldset>
+
+    {% if campaign %}
+    <p>
+        <small>
+            <strong>P.S.</strong> I'm tracking that you are registering via the «<strong>{{campaign}}</strong>» campaign.
+            I will only use it for—*paper rustling*—special reward purposes.
+            You can <a href="{{page.path}}">opt out</a> if you don't want that.
+        </small>
+    </p>
+    {% endif %}
+
     <fieldset class="-actions">
-        <a href="/poll" class="link-button">Onward to the poll!</a>
-        <a href="/register/profile" class="link-button">Can I edit my profile please?</a>
-        {% if users_url %}
-            <a href="{{users_url}}" class="link-button">Show me the list of users!</a>
-        {% endif %}
-    </p>
-{% elif invalid_campaign %}
-    <p>
-        <strong>Helloooo there 👋</strong>
-        You seem to have fumbled around with the URL, namely the <strong>campaign</strong> query parameter.
-        You must feel <em>prettyyyyyyyy</em> smart.
-        Here, have a cookie: 🍪
-    </p>
-    <p>
-        <a href="{{page.path}}" class="link-button">Onward to the registration!</a>
-    </p>
-{% else %}
-    <form method="post">
-        {% if step == 'invitation_code' %}
+        <button type="submit">Neext!</button>
+    </fieldset>
+
+    {% if campaign %}
+        {{ campaign_macros::campaign_ps(campaign=campaign, level=1) }}
+    {% endif %}
+
+    <script type="module" src="/js/overflow-to.js"></script>
+    {% else %}
+        <input type="hidden" name="words[]" value="{{form.words | default(value=[]) | nth(n=0)}}">
+        <input type="hidden" name="words[]" value="{{form.words | default(value=[]) | nth(n=1)}}">
+        <input type="hidden" name="words[]" value="{{form.words | default(value=[]) | nth(n=2)}}">
+        <input type="hidden" name="words[]" value="{{form.words | default(value=[]) | nth(n=3)}}">
+    {% endif %}
+
+    {% if step == 'user_details' %}
+        {% include 'error_message' %}
+
         <p>
-            Congratulations! Tau has invited you to their amazing
-            game night by providing you with four secret words.
+            Ding ding ding! You have entered the correct words.
         </p>
 
         <p>
-            Enter those secret words below to continue.
+            First, let's introduce ourselves. My name is Tau, and what's yours?
+        </p>
+
+        <fieldset>
+            <input type="text" placeholder="Name" name="name" value="{{form.name | default(value='')}}" required autocomplete="name">
+        </fieldset>
+
+        <p>
+            Hiiii <strong data-bind-to="name"></strong> and welcome to my game night.
+            I will need your email address to notify you when the next game night is happening.
+            I will only use it for game night related purposes–pinky promise~
+        </p>
+
+        <fieldset>
+            <input type="email" inputmode="email" placeholder="awesome-person@example.com" name="email_address" value="{{form.email_address | default(value='')}}" autocomplete="email" required>
+        </fieldset>
+
+        <fieldset class="-actions">
+            <button type="submit">Neeext!</button>
+        </fieldset>
+
+        {% if campaign %}
+            {{ campaign_macros::campaign_ps(campaign=campaign) }}
+        {% endif %}
+
+        <script type="module" src="/js/bind-to.js"></script>
+    {% else %}
+        {% if form.name %}
+            <input type="hidden" name="name" value="{{form.name | default(value='')}}">
+        {% endif %}
+        {% if form.email_address %}
+            <input type="hidden" name="email_address" value="{{form.email_address | default(value='')}}">
+        {% endif %}
+    {% endif %}
+
+    {% if step == 'verify_email' %}
+        <p>
+            We're almost there.
+            I have sent you an email to <strong>{{form.email_address}}</strong> with a six-digit code.
+            Enter the code below to complete the registration.
         </p>
 
         {% include 'error_message' %}
 
-        <fieldset class="-two-column">
-            <input type="text" placeholder="1st word" name="words[0]" data-overflow-to="words[1]" value="{{form.words | default(value=[]) | nth(n=0)}}" required>
-            <input type="text" placeholder="2nd word" name="words[1]" data-overflow-to="words[2]" value="{{form.words | default(value=[]) | nth(n=1)}}" required>
-            <input type="text" placeholder="3rd word" name="words[2]" data-overflow-to="words[3]" value="{{form.words | default(value=[]) | nth(n=2)}}" required>
-            <input type="text" placeholder="4th word" name="words[3]" value="{{form.words | default(value=[]) | nth(n=3)}}" required>
+        <fieldset>
+            <input type="number" name="email_verification_code" size="6" placeholder="123456" value="{{form.email_verification_code | default(value='')}}" autocomplete="off" inputmode="numeric" data-1p-ignore required>
         </fieldset>
-
-        {% if campaign %}
-        <p>
-            <small>
-                <strong>P.S.</strong> I'm tracking that you are registering via the «<strong>{{campaign}}</strong>» campaign.
-                I will only use it for—*paper rustling*—special reward purposes.
-                You can <a href="{{page.path}}">opt out</a> if you don't want that.
-            </small>
-        </p>
-        {% endif %}
 
         <fieldset class="-actions">
-            <button type="submit">Neext!</button>
+            <button type="submit">Neeeext!</button>
         </fieldset>
-
-        {% if campaign %}
-            {{ campaign_macros::campaign_ps(campaign=campaign, level=1) }}
-        {% endif %}
-
-        <script type="module" src="/js/overflow-to.js"></script>
-        {% else %}
-            <input type="hidden" name="words[]" value="{{form.words | default(value=[]) | nth(n=0)}}">
-            <input type="hidden" name="words[]" value="{{form.words | default(value=[]) | nth(n=1)}}">
-            <input type="hidden" name="words[]" value="{{form.words | default(value=[]) | nth(n=2)}}">
-            <input type="hidden" name="words[]" value="{{form.words | default(value=[]) | nth(n=3)}}">
-        {% endif %}
-
-        {% if step == 'user_details' %}
-            {% include 'error_message' %}
-
-            <p>
-                Ding ding ding! You have entered the correct words.
-            </p>
-
-            <p>
-                First, let's introduce ourselves. My name is Tau, and what's yours?
-            </p>
-
-            <fieldset>
-                <input type="text" placeholder="Name" name="name" value="{{form.name | default(value='')}}" required autocomplete="name">
-            </fieldset>
-
-            <p>
-                Hiiii <strong data-bind-to="name"></strong> and welcome to my game night.
-                I will need your email address to notify you when the next game night is happening.
-                I will only use it for game night related purposes–pinky promise~
-            </p>
-
-            <fieldset>
-                <input type="email" inputmode="email" placeholder="awesome-person@example.com" name="email_address" value="{{form.email_address | default(value='')}}" autocomplete="email" required>
-            </fieldset>
-
-            <fieldset class="-actions">
-                <button type="submit">Neeext!</button>
-            </fieldset>
-
-            {% if campaign %}
-                {{ campaign_macros::campaign_ps(campaign=campaign) }}
-            {% endif %}
-
-            <script type="module" src="/js/bind-to.js"></script>
-        {% else %}
-            {% if form.name %}
-                <input type="hidden" name="name" value="{{form.name | default(value='')}}">
-            {% endif %}
-            {% if form.email_address %}
-                <input type="hidden" name="email_address" value="{{form.email_address | default(value='')}}">
-            {% endif %}
-        {% endif %}
-
-        {% if step == 'verify_email' %}
-            <p>
-                We're almost there.
-                I have sent you an email to <strong>{{form.email_address}}</strong> with a six-digit code.
-                Enter the code below to complete the registration.
-            </p>
-
-            {% include 'error_message' %}
-
-            <fieldset>
-                <input type="number" name="email_verification_code" size="6" placeholder="123456" value="{{form.email_verification_code | default(value='')}}" autocomplete="off" inputmode="numeric" data-1p-ignore required>
-            </fieldset>
-
-            <fieldset class="-actions">
-                <button type="submit">Neeeext!</button>
-            </fieldset>
-        {% endif %}
-    </form>
-{% endif %}
+    {% endif %}
+</form>
 {% endblock content %}
