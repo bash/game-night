@@ -1,15 +1,12 @@
-use super::{Invitation, InvitationLifetime, Passphrase};
+use super::Passphrases;
+use super::{Invitation, InvitationLifetime};
 use crate::auth::{AuthorizedTo, Invite};
 use crate::database::Repository;
 use crate::users::{Role, User};
 use anyhow::{Error, Result};
-use rocket::form::FromFormField;
-use rocket::http::impl_from_uri_param_identity;
-use rocket::http::uri::fmt::{Query, UriDisplay};
 use rocket::response::{Debug, Redirect};
 use rocket::{get, post, uri};
 use rocket_dyn_templates::{context, Template};
-use std::fmt;
 use time::{Duration, OffsetDateTime};
 
 const INVITATIONS_PER_SHEET: usize = 10;
@@ -50,39 +47,4 @@ async fn save_invitations(
 fn generate_invitation(user: &User, now: OffsetDateTime) -> Invitation<()> {
     let valid_until = now + Duration::from(InvitationLifetime::Long);
     Invitation::generate(Role::Guest, Some(user.id), Some(valid_until))
-}
-
-#[derive(Debug)]
-pub(super) struct Passphrases(Vec<Passphrase>);
-
-impl Passphrases {
-    fn from_invitations<'a>(iter: impl Iterator<Item = &'a Invitation>) -> Self {
-        Self(iter.map(|i| i.passphrase.clone()).collect())
-    }
-}
-
-impl<'v> FromFormField<'v> for Passphrases {
-    fn from_value(field: rocket::form::ValueField<'v>) -> rocket::form::Result<'v, Self> {
-        Ok(Passphrases(
-            field
-                .value
-                .split(',')
-                .map(|p| Passphrase(p.split('-').map(ToOwned::to_owned).collect()))
-                .collect(),
-        ))
-    }
-}
-
-impl_from_uri_param_identity!([Query] Passphrases);
-
-impl UriDisplay<Query> for Passphrases {
-    fn fmt(&self, f: &mut rocket::http::uri::fmt::Formatter<'_, Query>) -> fmt::Result {
-        let value = self
-            .0
-            .iter()
-            .map(|p| p.0.join("-"))
-            .collect::<Vec<_>>()
-            .join(",");
-        f.write_value(value)
-    }
 }
