@@ -69,6 +69,7 @@ fn get_candidates(poll: &Poll) -> Vec<PollOption> {
     poll.options
         .iter()
         .cloned()
+        .filter(|o| !o.has_veto())
         .filter(|o| o.count_yes_answers() >= poll.min_participants)
         .collect()
 }
