@@ -45,7 +45,7 @@
             <h2>{{group.name}}</h2>
             <ul>
                 {% for option in group.options %}
-                    <li>
+                    <li {% if option.vetoed %}class="-vetoed"{% endif %}>
                         {% if option.yes %}
                             {% set yes_checked = 'checked' %}
                         {% else %}
