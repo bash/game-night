@@ -82,9 +82,9 @@
                         </label>
 
                         <div class="time-range">
-                            <input type="time" readonly value="{{option.starts_at | time(format='[hour]:[minute]')}}" disabled>
+                            <input type="time" readonly value="{{option.starts_at | time(format='[hour]:[minute]')}}" tabindex="-1">
                             &ndash;
-                            <input type="time" readonly value="{{option.ends_at | time(format='[hour]:[minute]')}}" disabled>
+                            <input type="time" readonly value="{{option.ends_at | time(format='[hour]:[minute]')}}" tabindex="-1">
                         </div>
 
                         <div class="answers-list">
