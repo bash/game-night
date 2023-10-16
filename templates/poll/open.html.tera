@@ -27,6 +27,8 @@
 </p>
 
 {% if poll.description %}
+    <hr>
+
     <section>
         {{poll.description | markdown | safe}}
     </section>
