@@ -44,22 +44,41 @@
             <ul>
                 {% for option in group.options %}
                     <li>
-                        {% if option.answer and option.answer.type == 'yes' %}
-                            {% set checked = 'checked' %}
+                        {% if option.yes %}
+                            {% set yes_checked = 'checked' %}
                         {% else %}
-                            {% set checked = '' %}
+                            {% set yes_checked = '' %}
                         {% endif %}
 
-                        {% if option.answer and option.answer.type == 'yes' and option.answer.attendance == 'required' %}
-                            {% set disabled = 'disabled' %}
+                        {% if option.strong %}
+                            {% set strong_checked = 'checked' %}
                         {% else %}
-                            {% set disabled = '' %}
+                            {% set strong_checked = '' %}
                         {% endif %}
 
-                        <input type="checkbox" name="options[{{option.id}}]" id="option-{{option.id}}" {{checked}} {{disabled}}>
+                        <div style="display: flex; align-items: center; gap: .2em;">
+                            <input type="checkbox" name="options[{{option.id}}][yes]" id="option-{{option.id}}" {{yes_checked}}>
+
+                            {% if can_answer_strongly %}
+                            <span class="toggle-button">
+                                <input type="checkbox" name="options[{{option.id}}][strong]" id="option-{{option.id}}-strong" {{strong_checked}}>
+                                <label for="option-{{option.id}}-strong" tabindex="0">
+                                    <span class="veto">Veto</span>
+                                    <span class="required">Required</span>
+                                </label>
+                            </span>
+
+                            {% if option.vetoed %}
+                                <span class="error-message -inline">Vetoed!</span>
+                            {% endif %}
+                            {% endif %}
+                        </div>
+
                         <label for="option-{{option.id}}">
                             <span class="day">{{option.starts_at | time(format="[day padding:none]")}}</span>
-                            <span class="weekday">{{option.starts_at | time(format="[weekday repr:long]")}}</span>
+                            <span class="weekday">
+                                {{option.starts_at | time(format="[weekday repr:long]")}}
+                            </span>
                         </label>
 
                         <div class="time-range">
@@ -94,4 +113,7 @@
         <strong>P.S.</strong> You can select any number of dates.
     </p>
 </form>
+
+<script type="module" src="/js/toggle-button.js"></script>
+
 {% endblock content %}

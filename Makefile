@@ -50,6 +50,7 @@ $(EMAIL_CSS): emails/email.scss
 	sass --no-source-map --style compressed $< $@
 
 publish: all
+	@set -e
 	@rm -rf $(PUBLISH_DIR)
 	@mkdir -p $(PUBLISH_DIR)
 	cargo build --release

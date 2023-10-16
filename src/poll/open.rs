@@ -1,5 +1,5 @@
 use super::{rocket_uri_macro_poll_page, Open};
-use super::{Answer, AnswerValue, Attendance};
+use super::{Answer, AnswerValue};
 use crate::database::Repository;
 use crate::poll::{Poll, PollOption};
 use crate::template::{PageBuilder, PageType};
@@ -24,6 +24,7 @@ fn to_open_poll(poll: Poll, user: &User) -> OpenPoll {
         option_groups: to_open_poll_options(poll.options.iter(), user),
         date_selection_strategy: poll.strategy.to_string(),
         has_answers: has_answers(&poll, user),
+        can_answer_strongly: user.can_answer_strongly(),
         poll,
     }
 }
@@ -37,6 +38,7 @@ fn to_open_poll_options<'a>(
     user: &User,
 ) -> Vec<OpenPollOptionsGroup> {
     options
+        .filter(|o: &&PollOption| !o.has_veto() || user.can_answer_strongly())
         .group_by(|o| o.starts_at.month())
         .into_iter()
         .map(|(month, options)| to_open_poll_options_group(month, options, user))
@@ -61,11 +63,14 @@ fn to_open_poll_option(option: &PollOption, user: &User) -> OpenPollOption {
         .iter()
         .find(|a| a.user.id == user.id)
         .map(|a| a.value);
+    let (yes, strong) = answer.map(|a| a.to_bools()).unwrap_or_default();
     OpenPollOption {
         id: option.id,
         starts_at: option.starts_at,
         ends_at: option.ends_at,
-        answer,
+        yes,
+        strong,
+        vetoed: option.has_veto(),
         yes_answers: option
             .answers
             .iter()
@@ -81,6 +86,7 @@ struct OpenPoll {
     option_groups: Vec<OpenPollOptionsGroup>,
     date_selection_strategy: String,
     has_answers: bool,
+    can_answer_strongly: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -96,7 +102,9 @@ struct OpenPollOption {
     starts_at: OffsetDateTime,
     #[serde(with = "time::serde::iso8601")]
     ends_at: OffsetDateTime,
-    answer: Option<AnswerValue>,
+    yes: bool,
+    strong: bool,
+    vetoed: bool,
     yes_answers: Vec<User>,
 }
 
@@ -120,7 +128,6 @@ fn apply_updates(
 ) -> Vec<(i64, Answer<(), UserId>)> {
     poll.options
         .iter()
-        .filter(|option| !is_answered_with_yes_and_required_attendance(option, user)) // required attendences cannot currently not be updated
         .map(|option| (option.id, get_answer(user, &updates, option)))
         .collect()
 }
@@ -129,33 +136,27 @@ fn get_answer(user: &User, updates: &AnswerUpdates, option: &PollOption) -> Answ
     Answer {
         id: (),
         user: user.id,
-        value: get_answer_value(updates, option.id),
+        value: get_answer_value(updates, option.id, user),
     }
 }
 
-fn get_answer_value(updates: &AnswerUpdates, option_id: i64) -> AnswerValue {
-    let yes = updates.options.get(&option_id).copied().unwrap_or_default();
-    if yes {
-        AnswerValue::yes(Attendance::Optional)
+fn get_answer_value(updates: &AnswerUpdates, option_id: i64, user: &User) -> AnswerValue {
+    let update = updates.options.get(&option_id).copied().unwrap_or_default();
+    let value = AnswerValue::from_bools((update.yes, update.strong));
+    if user.can_answer_strongly() {
+        value
     } else {
-        AnswerValue::No
+        value.ensure_weak()
     }
-}
-
-fn is_answered_with_yes_and_required_attendance(option: &PollOption, user: &User) -> bool {
-    matches!(option.get_answer(user.id), Some(answer) if is_required(answer))
-}
-
-fn is_required(answer: &Answer) -> bool {
-    matches!(
-        answer.value,
-        AnswerValue::Yes {
-            attendance: Attendance::Required
-        }
-    )
 }
 
 #[derive(Debug, FromForm)]
 pub(super) struct AnswerUpdates {
-    options: HashMap<i64, bool>,
+    options: HashMap<i64, AnswerUpdate>,
+}
+
+#[derive(Debug, Copy, Clone, Default, FromForm)]
+pub(super) struct AnswerUpdate {
+    yes: bool,
+    strong: bool,
 }

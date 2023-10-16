@@ -38,6 +38,7 @@ pub(crate) struct User<Id = UserId> {
     pub(crate) invited_by: Option<UserId>,
     pub(crate) campaign: Option<String>,
     pub(crate) can_update_name: bool,
+    pub(crate) can_answer_strongly: bool,
 }
 
 #[derive(Debug, FromForm)]
@@ -71,6 +72,10 @@ impl<Id> User<Id> {
 
     pub(crate) fn can_manage_users(&self) -> bool {
         self.role == Role::Admin
+    }
+
+    pub(crate) fn can_answer_strongly(&self) -> bool {
+        self.can_answer_strongly || self.role == Role::Admin
     }
 
     pub(crate) fn can_update_name(&self) -> bool {
