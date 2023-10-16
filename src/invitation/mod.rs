@@ -143,6 +143,7 @@ impl<Id> Invitation<Id> {
             invited_by: self.created_by,
             campaign,
             can_update_name: true,
+            can_answer_strongly: false,
         }
     }
 }
