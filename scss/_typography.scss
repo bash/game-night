@@ -124,6 +124,16 @@ a {
     margin-bottom: 1rem;
 }
 
+.user-avatar {
+    width: 1.4em;
+    height: 1.4em;
+
+    @supports (width: #{"round(up, 1em, 1px)"}) {
+        width: #{"round(up, 1.4em, 1px)"};
+        height: #{"round(up, 1.4em, 1px)"};
+    }
+}
+
 .error-message {
     font-size: 1rem;
     background-color: color-mix(in srgb, #d20f39, var(--background-color) 70%);

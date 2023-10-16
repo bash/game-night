@@ -63,6 +63,7 @@
 
     @media (hover: hover) and (not (prefers-contrast: more)) {
         opacity: .4;
+        will-change: opacity; // Creates a stacking context which fixes clipping in Safari
         transition: opacity 125ms;
 
         &:hover {
