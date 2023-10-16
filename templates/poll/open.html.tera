@@ -107,64 +107,7 @@
         <strong>P.S.</strong> You can select any number of dates.
     </p>
 </form>
-<style>
-    .toggle-button {
-        --toggle-button-accent: #d20f39;
-    }
 
-    .toggle-button .required { display: none; }
-
-    input:checked + .toggle-button .required { display: initial; }
-    input:checked + .toggle-button .veto { display: none; }
-
-    input:checked + .toggle-button {
-        --toggle-button-accent: #40a02b;
-    }
-
-    .toggle-button input {
-        display: none;
-    }
-
-    .toggle-button label {
-        font-family: var(--sans-serif);
-        font-weight: bold;
-        font-size: .75rem;
-        padding: .2em .4rem;
-        border: .1rem solid color-mix(in srgb, var(--toggle-button-accent), var(--background-color) 70%);
-        border-radius: 6px;
-        user-select: none;
-    }
-
-    .toggle-button input:checked + label {
-        background-color: color-mix(in srgb, var(--toggle-button-accent), var(--background-color) 10%);
-        border-color: color-mix(in srgb, var(--toggle-button-accent), var(--background-color) 10%);
-        color: #fff;
-    }
-
-</style>
-
-<script type="module">
-    for (const button of document.querySelectorAll('.toggle-button')) {
-        const label = button.querySelector(':scope > label');
-        const input = document.getElementById(label.htmlFor)
-
-        label.addEventListener('keydown', event => {
-            if (event.key == ' ' || event.key == 'Enter') event.preventDefault()
-        })
-
-        label.addEventListener('keyup', (event) => {
-            switch (event.key) {
-                case ' ':
-                    event.preventDefault()
-                    input.checked = !input.checked
-                    break
-                case 'Enter':
-                    event.preventDefault()
-                    input.form.submit()
-                    break
-            }
-        })
-    }
-</script>
+<script type="module" src="/js/toggle-button.js"></script>
 
 {% endblock content %}

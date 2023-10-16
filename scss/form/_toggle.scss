@@ -1,0 +1,28 @@
+.toggle-button {
+    --toggle-button-accent: #d20f39;
+
+    input, .required { display: none; }
+
+    label {
+        font-family: var(--sans-serif);
+        font-weight: bold;
+        font-size: .75rem;
+        padding: .2em .4rem;
+        border: .1rem solid color-mix(in srgb, var(--toggle-button-accent), var(--background-color) 70%);
+        border-radius: 6px;
+        user-select: none;
+    }
+
+    input:checked + label {
+        background-color: color-mix(in srgb, var(--toggle-button-accent), var(--background-color) 10%);
+        border-color: color-mix(in srgb, var(--toggle-button-accent), var(--background-color) 10%);
+        color: #fff;
+    }
+}
+
+input:checked + .toggle-button {
+    --toggle-button-accent: #40a02b;
+
+    .required { display: initial; }
+    .veto { display: none; }
+}
