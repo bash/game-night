@@ -1,14 +1,17 @@
 .toggle-button {
     --toggle-button-accent: #d20f39;
 
+    display: grid;
+
     input, .required { display: none; }
 
     label {
+        display: inline-block;
         font-family: var(--sans-serif);
         font-weight: bold;
         font-size: .75rem;
-        padding: .2em .4rem;
-        border: .1rem solid color-mix(in srgb, var(--toggle-button-accent), var(--background-color) 70%);
+        padding: .2em .4em;
+        border: .1em solid color-mix(in srgb, var(--toggle-button-accent), var(--background-color) 70%);
         border-radius: 6px;
         user-select: none;
     }

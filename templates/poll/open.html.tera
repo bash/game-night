@@ -67,12 +67,18 @@
                                     <span class="required">Required</span>
                                 </label>
                             </span>
+
+                            {% if option.vetoed %}
+                                <span class="error-message -inline">Vetoed!</span>
+                            {% endif %}
                             {% endif %}
                         </div>
 
                         <label for="option-{{option.id}}">
                             <span class="day">{{option.starts_at | time(format="[day padding:none]")}}</span>
-                            <span class="weekday">{{option.starts_at | time(format="[weekday repr:long]")}}</span>
+                            <span class="weekday">
+                                {{option.starts_at | time(format="[weekday repr:long]")}}
+                            </span>
                         </label>
 
                         <div class="time-range">

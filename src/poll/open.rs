@@ -38,6 +38,7 @@ fn to_open_poll_options<'a>(
     user: &User,
 ) -> Vec<OpenPollOptionsGroup> {
     options
+        .filter(|o: &&PollOption| !o.has_veto() || user.can_answer_strongly())
         .group_by(|o| o.starts_at.month())
         .into_iter()
         .map(|(month, options)| to_open_poll_options_group(month, options, user))
@@ -69,6 +70,7 @@ fn to_open_poll_option(option: &PollOption, user: &User) -> OpenPollOption {
         ends_at: option.ends_at,
         yes,
         strong,
+        vetoed: option.has_veto(),
         yes_answers: option
             .answers
             .iter()
@@ -102,6 +104,7 @@ struct OpenPollOption {
     ends_at: OffsetDateTime,
     yes: bool,
     strong: bool,
+    vetoed: bool,
     yes_answers: Vec<User>,
 }
 

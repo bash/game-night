@@ -123,6 +123,12 @@ impl<Id, UserRef> PollOption<Id, UserRef> {
     pub(crate) fn count_yes_answers(&self) -> usize {
         self.answers.iter().filter(|a| a.value.is_yes()).count()
     }
+
+    pub(crate) fn has_veto(&self) -> bool {
+        self.answers
+            .iter()
+            .any(|a| matches!(a.value, AnswerValue::No { veto: true }))
+    }
 }
 
 impl PollOption {

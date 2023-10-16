@@ -130,6 +130,17 @@ a {
     border-radius: 8px;
     padding: 10px;
     margin-bottom: 1rem;
+
+    &.-inline {
+        border-radius: 6px;
+        font-family: var(--sans-serif);
+        font-weight: bold;
+        font-size: .75rem;
+        display: inline-block;
+        padding: .3em .4em;
+        margin-bottom: 0;
+        vertical-align: middle;
+    }
 }
 
 .success-message {
