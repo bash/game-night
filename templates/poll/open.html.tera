@@ -62,17 +62,13 @@
                             <input type="checkbox" name="options[{{option.id}}][yes]" id="option-{{option.id}}" {{yes_checked}}>
 
                             {% if can_answer_strongly %}
-                            <span class="toggle-button">
-                                <input type="checkbox" name="options[{{option.id}}][strong]" id="option-{{option.id}}-strong" {{strong_checked}}>
-                                <label for="option-{{option.id}}-strong" tabindex="0">
-                                    <span class="veto">Veto</span>
-                                    <span class="required">Required</span>
-                                </label>
-                            </span>
-
-                            {% if option.vetoed %}
-                                <span class="error-message -inline">Vetoed!</span>
-                            {% endif %}
+                                <span class="toggle-button">
+                                    <input type="checkbox" name="options[{{option.id}}][strong]" id="option-{{option.id}}-strong" {{strong_checked}}>
+                                    <label for="option-{{option.id}}-strong" tabindex="0">
+                                        <span class="veto">Veto</span>
+                                        <span class="required">Required</span>
+                                    </label>
+                                </span>
                             {% endif %}
                         </div>
 
@@ -89,13 +85,20 @@
                             <input type="time" readonly value="{{option.ends_at | time(format='[hour]:[minute]')}}" tabindex="-1">
                         </div>
 
-                        <div class="answers-list">
-                            {% for user in option.yes_answers %}
-                                <span class="answer">
-                                    {{user_macros::avatar(user=user)}} <span>{{user.name}}</span>
-                                </span>
-                            {% endfor %}
-                        </div>
+                        {% if option.vetoed %}
+                           <div class="answer-list">
+                                <span class="error-message -inline">Vetoed!</span>
+                           </div>
+                        {% else %}
+                            <div class="answers-list">
+                                {% for user in option.yes_answers %}
+                                    <span class="answer">
+                                        {{user_macros::avatar(user=user)}} <span>{{user.name}}</span>
+                                    </span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
                     </li>
                 {% endfor %}
             </ul>
