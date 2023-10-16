@@ -11,6 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+    - name: Install SASS
+      run: npm install -g sass
     - name: Publish
       run: make publish
     - name: Run tests
