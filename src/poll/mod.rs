@@ -156,7 +156,7 @@ impl<Id, UserRef: Clone> Answer<Id, UserRef> {
     pub(crate) fn yes(&self) -> Option<YesAnswer<UserRef>> {
         use AnswerValue::*;
         match self.value {
-            No => None,
+            No { .. } => None,
             Yes { attendance } => Some(YesAnswer(attendance, self.user.clone())),
         }
     }
@@ -165,17 +165,43 @@ impl<Id, UserRef: Clone> Answer<Id, UserRef> {
 #[derive(Debug, Copy, Clone, Serialize)]
 #[serde(rename_all = "snake_case", tag = "type")]
 pub(crate) enum AnswerValue {
-    No,
+    No { veto: bool },
     Yes { attendance: Attendance },
 }
 
 impl AnswerValue {
+    fn no(veto: bool) -> Self {
+        Self::No { veto }
+    }
+
     fn yes(attendance: Attendance) -> Self {
         Self::Yes { attendance }
     }
 
     fn is_yes(self) -> bool {
         matches!(self, AnswerValue::Yes { .. })
+    }
+
+    fn to_bools(self) -> (bool, bool) {
+        match self {
+            AnswerValue::Yes { attendance } => (true, attendance == Attendance::Required),
+            AnswerValue::No { veto } => (false, veto),
+        }
+    }
+
+    fn from_bools((yes, strong): (bool, bool)) -> Self {
+        match (yes, strong) {
+            (true, true) => Self::yes(Attendance::Required),
+            (true, false) => Self::yes(Attendance::Optional),
+            (false, veto) => Self::no(veto),
+        }
+    }
+
+    fn ensure_weak(self) -> Self {
+        match self {
+            Self::Yes { .. } => Self::yes(Attendance::Optional),
+            Self::No { .. } => Self::no(false),
+        }
     }
 }
 
@@ -200,7 +226,8 @@ where
         use AnswerValue::*;
         use Attendance::*;
         match self {
-            No => "no".encode_by_ref(buf),
+            No { veto: true } => "veto".encode_by_ref(buf),
+            No { veto: false } => "no".encode_by_ref(buf),
             Yes {
                 attendance: Optional,
             } => "yes:optional".encode_by_ref(buf),
@@ -216,7 +243,8 @@ impl<'r> Decode<'r, Sqlite> for AnswerValue {
         use Attendance::*;
         let text = <&str as Decode<'r, Sqlite>>::decode(value)?;
         match text {
-            "no" => Ok(AnswerValue::No),
+            "no" => Ok(AnswerValue::no(false)),
+            "veto" => Ok(AnswerValue::no(true)),
             "yes:optional" => Ok(AnswerValue::yes(Optional)),
             "yes:required" => Ok(AnswerValue::yes(Required)),
             other => Err(format!("Invalid answer value: {other}").into()),
@@ -346,7 +374,7 @@ mod tests {
                 starts_at: OffsetDateTime::now_utc(),
                 ends_at: OffsetDateTime::now_utc(),
                 answers: vec![
-                    answer(AnswerValue::No),
+                    answer(AnswerValue::no(false)),
                     answer(AnswerValue::yes(Attendance::Optional)),
                 ],
             };

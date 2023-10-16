@@ -73,6 +73,11 @@ impl<Id> User<Id> {
         self.role == Role::Admin
     }
 
+    // TODO: allow non-admin users to vote strongly
+    pub(crate) fn can_answer_strongly(&self) -> bool {
+        self.role == Role::Admin
+    }
+
     pub(crate) fn can_update_name(&self) -> bool {
         self.can_update_name
     }
