@@ -110,13 +110,12 @@ fn parse_user_id_cookie(cookie: Option<Cookie>) -> Result<Option<UserId>> {
     Ok(cookie.map(|c| c.value().parse()).transpose()?.map(UserId))
 }
 
-fn user_id_cookie<'a>(name: &'a str, value: impl Into<Cow<'a, str>>) -> Cookie<'a> {
-    Cookie::build(name, value)
+fn user_id_cookie<'a>(name: &'a str, value: impl Into<Cow<'a, str>>) -> impl Into<Cookie<'a>> {
+    Cookie::build((name, value))
         .http_only(true)
         .secure(true)
         .permanent()
         .same_site(SameSite::Strict)
-        .finish()
 }
 
 const USER_ID_COOKIE_NAME: &str = "user-id";

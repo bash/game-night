@@ -10,7 +10,7 @@ diceware_wordlists = "1.2.1"
 dirs = "5.0.1"
 email_address = "0.2.4"
 hex = { version = "0.4.3", features = ["serde"] }
-lettre = { version = "0.10.4", default-features = false, features = ["builder", "file-transport", "smtp-transport", "async-std1", "async-std1-rustls-tls", "serde"] }
+lettre = { version = "0.11.0", default-features = false, features = ["builder", "file-transport", "smtp-transport", "async-std1", "async-std1-rustls-tls", "serde"] }
 rand = "0.8.5"
 rocket = { version = "=0.5.0-rc.3", features = ["secrets", "json"] }
 rocket_db_pools = { version = "=0.1.0-rc.3", features = ["sqlx_sqlite"] }
@@ -38,9 +38,9 @@ systemd = "0.10.0"
 tls = ["rocket/tls"]
 
 [patch.crates-io]
-rocket = { git = "https://github.com/bash/Rocket/", branch = "game-night" }
-rocket_codegen = { git = "https://github.com/bash/Rocket/", branch = "game-night" }
-rocket_http = { git = "https://github.com/bash/Rocket/", branch = "game-night" }
-rocket_db_pools = { git = "https://github.com/bash/Rocket/", branch = "game-night" }
-rocket_db_pools_codegen = { git = "https://github.com/bash/Rocket/", branch = "game-night" }
-rocket_dyn_templates = { git = "https://github.com/bash/Rocket/", branch = "game-night" }
+rocket = { git = "https://github.com/SergioBenitez/Rocket/", branch = "master" }
+rocket_codegen = { git = "https://github.com/SergioBenitez/Rocket/", branch = "master" }
+rocket_http = { git = "https://github.com/SergioBenitez/Rocket/", branch = "master" }
+rocket_db_pools = { git = "https://github.com/SergioBenitez/Rocket/", branch = "master" }
+rocket_db_pools_codegen = { git = "https://github.com/SergioBenitez/Rocket/", branch = "master" }
+rocket_dyn_templates = { git = "https://github.com/SergioBenitez/Rocket/", branch = "master" }

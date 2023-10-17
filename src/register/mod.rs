@@ -151,11 +151,10 @@ async fn register(
 
 fn invalid_campaign(cookies: &CookieJar<'_>, page: PageBuilder<'_>) -> Template {
     cookies.add(
-        Cookie::build("vary-smart", "A_cookie_for_very_smart_people")
+        Cookie::build(("vary-smart", "A_cookie_for_very_smart_people"))
             .http_only(true)
             .secure(true)
-            .same_site(SameSite::Lax)
-            .finish(),
+            .same_site(SameSite::Lax),
     );
     page.render("register/invalid_campaign", context! {})
 }
