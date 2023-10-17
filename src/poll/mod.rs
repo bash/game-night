@@ -40,7 +40,12 @@ async fn poll_page(
 ) -> Result<Template, Debug<Error>> {
     let now = OffsetDateTime::now_utc();
     match repository.get_current_poll().await? {
-        Some(poll) if poll.is_open(now) => Ok(open_poll_page(page, poll, user)),
+        Some(poll) if poll.is_open(now) => Ok(open_poll_page(
+            page,
+            poll,
+            user,
+            repository.get_users().await?,
+        )),
         _ => Ok(no_open_poll_page(page, user)),
     }
 }
@@ -108,6 +113,16 @@ impl<Id> Poll<Id> {
     }
 }
 
+impl Poll {
+    pub(crate) fn has_answer(&self, user: UserId) -> bool {
+        self.options.iter().any(|o| o.has_answer(user))
+    }
+
+    pub(crate) fn has_yes_answer(&self, user: UserId) -> bool {
+        self.options.iter().any(|o| o.has_yes_answer(user))
+    }
+}
+
 #[derive(Debug, Clone, sqlx::FromRow, Serialize)]
 pub(crate) struct PollOption<Id = i64, UserRef = User> {
     pub(crate) id: Id,
@@ -132,8 +147,14 @@ impl<Id, UserRef> PollOption<Id, UserRef> {
 }
 
 impl PollOption {
-    pub(crate) fn get_answer(&self, user: UserId) -> Option<&Answer> {
-        self.answers.iter().find(|a| a.user.id == user)
+    pub(crate) fn has_answer(&self, user: UserId) -> bool {
+        self.answers.iter().any(|a| a.user.id == user)
+    }
+
+    pub(crate) fn has_yes_answer(&self, user: UserId) -> bool {
+        self.answers
+            .iter()
+            .any(|a| a.user.id == user && a.value.is_yes())
     }
 }
 

@@ -5,7 +5,7 @@ use crate::poll::{Poll, PollOption};
 use crate::template::{PageBuilder, PageType};
 use crate::users::{User, UserId};
 use anyhow::Error;
-use itertools::Itertools as _;
+use itertools::{Either, Itertools as _};
 use rocket::form::Form;
 use rocket::response::{Debug, Redirect};
 use rocket::{post, uri, FromForm};
@@ -14,23 +14,51 @@ use serde::Serialize;
 use std::collections::HashMap;
 use time::{Month, OffsetDateTime};
 
-pub(super) fn open_poll_page(page: PageBuilder<'_>, poll: Poll, user: User) -> Template {
+pub(super) fn open_poll_page(
+    page: PageBuilder<'_>,
+    poll: Poll,
+    user: User,
+    users: Vec<User>,
+) -> Template {
     page.type_(PageType::Poll)
-        .render("poll/open", to_open_poll(poll, &user))
+        .render("poll/open", to_open_poll(poll, &user, users))
 }
 
-fn to_open_poll(poll: Poll, user: &User) -> OpenPoll {
+fn to_open_poll(poll: Poll, user: &User, users: Vec<User>) -> OpenPoll {
+    let (not_answered, no_date_answered_with_yes) = if user.can_manage_poll() {
+        users_with_no_yes(&poll, users)
+    } else {
+        Default::default()
+    };
+
     OpenPoll {
         option_groups: to_open_poll_options(poll.options.iter(), user),
         date_selection_strategy: poll.strategy.to_string(),
-        has_answers: has_answers(&poll, user),
+        has_answers: poll.has_answer(user.id),
         can_answer_strongly: user.can_answer_strongly(),
         poll,
+        not_answered,
+        no_date_answered_with_yes,
     }
 }
 
-fn has_answers(poll: &Poll, user: &User) -> bool {
-    poll.options.iter().any(|o| o.get_answer(user.id).is_some())
+fn users_with_no_yes(poll: &Poll, users: Vec<User>) -> (Vec<User>, Vec<User>) {
+    let (answered, not_answered) = partition_by_answered(&poll, users);
+    let no_date_answered_with_yes = answered
+        .into_iter()
+        .filter(|u| !poll.has_yes_answer(u.id))
+        .collect();
+    (not_answered, no_date_answered_with_yes)
+}
+
+fn partition_by_answered(poll: &Poll, users: Vec<User>) -> (Vec<User>, Vec<User>) {
+    users.into_iter().partition_map(|user| {
+        if poll.has_answer(user.id) {
+            Either::Left(user)
+        } else {
+            Either::Right(user)
+        }
+    })
 }
 
 fn to_open_poll_options<'a>(
@@ -87,6 +115,8 @@ struct OpenPoll {
     date_selection_strategy: String,
     has_answers: bool,
     can_answer_strongly: bool,
+    no_date_answered_with_yes: Vec<User>,
+    not_answered: Vec<User>,
 }
 
 #[derive(Debug, Serialize)]

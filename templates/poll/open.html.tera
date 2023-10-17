@@ -98,11 +98,38 @@
                                 {% endfor %}
                             </div>
                         {% endif %}
-
                     </li>
                 {% endfor %}
             </ul>
         {% endfor %}
+        {% if no_date_answered_with_yes %}
+            <h2>None of the Above</h2>
+            <ul>
+                <li>
+                    <div class="answers-list">
+                        {% for user in no_date_answered_with_yes %}
+                            <span class="answer">
+                                {{user_macros::avatar(user=user)}} <span>{{user.name}}</span>
+                            </span>
+                        {% endfor %}
+                    </div>
+                </li>
+            </ul>
+        {% endif %}
+        {% if not_answered %}
+            <h2>No answer</h2>
+            <ul>
+                <li>
+                    <div class="answers-list">
+                        {% for user in not_answered %}
+                            <span class="answer">
+                                {{user_macros::avatar(user=user)}} <span>{{user.name}}</span>
+                            </span>
+                        {% endfor %}
+                    </div>
+                </li>
+            </ul>
+        {% endif %}
     </div>
     {% if has_answers %}
         <p class="success-message">
