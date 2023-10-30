@@ -31,14 +31,9 @@ recreate-db:
 
 certs:
 	@mkdir -p private
-	openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes \
-		-keyout private/key.pem \
-		-out private/cert.pem \
-		-subj "/CN=localhost" \
-		-addext "subjectAltName=DNS:localhost,IP:127.0.0.1"
-
+	(cd private && mkcert localhost 127.0.0.1 ::1)
 run:
-	ROCKET_TLS={certs="private/cert.pem",key="private/key.pem"} cargo run --features tls
+	ROCKET_TLS={certs="private/localhost+2.pem",key="private/localhost+2-key.pem"} cargo run --features tls
 
 $(MAIN_CSS): $(SCSS_FILES)
 	sass scss/main.scss $@ $(SASS_FLAGS)
