@@ -25,22 +25,18 @@
         <input type="text" placeholder="4th word" name="words[3]" value="{{form.words | default(value=[]) | nth(n=3)}}" required>
     </fieldset>
 
-    {% if campaign %}
-    <p>
-        <small>
-            <strong>P.S.</strong> I'm tracking that you are registering via the «<strong>{{campaign.name}}</strong>» campaign.
-            I will only use it for—*paper rustling*—special reward purposes.
-            You can <a href="{{page.path}}">opt out</a> if you don't want that.
-        </small>
-    </p>
-    {% endif %}
-
     <fieldset class="-actions">
         <button type="submit">Neext!</button>
     </fieldset>
 
     {% if campaign %}
-        {{ campaign_macros::campaign_ps(campaign=campaign, level=1) }}
+    <p>
+        <strong>P.S.</strong> I'm tracking that you are registering via the «<strong>{{campaign.name}}</strong>» campaign.
+        I will only use it for—*paper rustling*—special reward purposes.
+        You can <a href="{{page.path}}">opt out</a> if you don't want that.
+    </p>
+
+    {{ campaign_macros::campaign_ps(campaign=campaign, level=1) }}
     {% endif %}
 
     <script type="module" src="/js/overflow-to.js"></script>
