@@ -7,47 +7,32 @@
 </head>
 <body>
     {% for cards in pages %}
-        {% if loop.index % 2 == 0 %}
-            {% set even_page = true %}
-        {% else %}
-            {% set even_page = false %}
-        {% endif %}
-        <section class="page">
-            <div class="guide -bottom"></div>
-            <div class="guide -bottom"></div>
-            <div class="guide -bottom"></div>
-            <div class="guide -bottom"></div>
-            <div class="guide -bottom"></div>
-            {% for passphrase in cards %}
-                {% if even_page %}
-                    {% include "cards/back" %}
-                {% else %}
-                    {% include "cards/front" %}
-                {% endif %}
-                {% if loop.index % 3 == 0 %}
-                    <div class="guide -top -bottom"></div>
-                    <div class="guide -top -bottom"></div>
-                    <div class="guide -top -bottom"></div>
-                    <div class="guide -top -bottom"></div>
-                    <div class="guide -top -bottom"></div>
-                    <div class="guide -top -bottom"></div>
-                    <div class="guide -top -bottom"></div>
-                    <div class="guide -top -bottom"></div>
-                    <div class="guide -top -bottom"></div>
-                    <div class="guide -top -bottom"></div>
-                {% endif %}
-                {% if even_page %}
-                    {% include "cards/front" %}
-                {% else %}
-                    {% include "cards/back" %}
-                {% endif %}
-            {% endfor %}
-            <div class="guide -top"></div>
-            <div class="guide -top"></div>
-            <div class="guide -top"></div>
-            <div class="guide -top"></div>
-            <div class="guide -top"></div>
-        </section>
+    <div class="page">
+        {% for passphrase in cards %}
+            <div class="meeting-notes">
+                <h1>Meeting of the Sun, Planets, et al.</h1>
+                <section class="-horizontal">
+                    <h2>Attendees</h2>
+                    <p style="font-family: 'Symbola'; font-weight: bold; letter-spacing: .2em;">REDACTED</p>
+                </section>
+                <section class="-horizontal">
+                    <h2>Agenda</h2>
+                    <p>{{passphrase | join(sep=' ')}}</p>
+                </section>
+                <section>
+                    <h2>Transcript</h2>
+                    <p>
+                        «<em>Positions</em> everyone!» exclaimed the sun.
+                        Can anyone tell me what to do with these words?
+                    </p>
+                    <p>
+                        «Maybe we can <em>call</em> someone for help» contemplated
+                        one of the others.
+                    </p>
+                </section>
+            </div>
+        {% endfor %}
     {% endfor %}
+    </div>
 </body>
 </html>

@@ -9,8 +9,8 @@ use rocket::{get, post, uri};
 use rocket_dyn_templates::{context, Template};
 use time::{Duration, OffsetDateTime};
 
-const INVITATIONS_PER_SHEET: usize = 10;
-const INVITATIONS_PER_PAGE: usize = INVITATIONS_PER_SHEET / 2;
+const INVITATIONS_PER_SHEET: usize = 20;
+const INVITATIONS_PER_PAGE: usize = 2;
 
 #[post("/invite/batch")]
 pub(super) async fn invite(
