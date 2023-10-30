@@ -1,8 +1,7 @@
 {% macro campaign_ps(campaign, level=0) %}
-    {% if campaign == 'super-secrit-beta' %}
+    {% if campaign %}
         <p>
-            <strong>{{ps(level=level)}}</strong> Congratulations! 🎉 You made sense of my <em>interesting</em> invitation puzzle.
-            I will have a <em>special</em> present ready for you the first time you participate in a game night~ ✨
+            <strong>{{ps(level=level)}}</strong> {{campaign.message | safe}}
         </p>
     {% endif %}
 {% endmacro %}

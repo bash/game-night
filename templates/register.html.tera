@@ -28,7 +28,7 @@
     {% if campaign %}
     <p>
         <small>
-            <strong>P.S.</strong> I'm tracking that you are registering via the «<strong>{{campaign}}</strong>» campaign.
+            <strong>P.S.</strong> I'm tracking that you are registering via the «<strong>{{campaign.name}}</strong>» campaign.
             I will only use it for—*paper rustling*—special reward purposes.
             You can <a href="{{page.path}}">opt out</a> if you don't want that.
         </small>

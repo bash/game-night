@@ -17,5 +17,4 @@
 </fieldset>
 {% endif %}
 
-{{ campaign_macros::campaign_ps(campaign=user.campaign) }}
 {% endblock content %}

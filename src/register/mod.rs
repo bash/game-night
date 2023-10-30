@@ -5,7 +5,7 @@ use crate::invitation::{Invitation, Passphrase};
 use crate::template::{PageBuilder, PageType};
 use crate::users::{rocket_uri_macro_list_users, User, UserId};
 use anyhow::{Error, Result};
-use campaign::Campaign;
+use campaign::{Campaign, ProvidedCampaign};
 use email_address::EmailAddress;
 use lettre::message::Mailbox;
 use rocket::form::Form;
@@ -59,7 +59,7 @@ async fn register_page(
     email_sender: &State<Box<dyn EmailSender>>,
     page: PageBuilder<'_>,
     user: Option<User>,
-    campaign: Option<Campaign<'_>>,
+    campaign: Option<ProvidedCampaign<'_>>,
     passphrase: Option<Passphrase>,
 ) -> Result<Either<Template, Redirect>, Debug<Error>> {
     if let Some(user) = user {
@@ -89,7 +89,7 @@ async fn register_form(
     repository: Box<dyn Repository>,
     email_sender: &State<Box<dyn EmailSender>>,
     page: PageBuilder<'_>,
-    campaign: Option<Campaign<'_>>,
+    campaign: Option<ProvidedCampaign<'_>>,
     form: Form<RegisterForm<'_>>,
 ) -> Result<Either<Template, Redirect>, Debug<Error>> {
     register(
@@ -109,7 +109,7 @@ async fn register(
     mut repository: Box<dyn Repository>,
     email_sender: &dyn EmailSender,
     page: PageBuilder<'_>,
-    campaign: Option<Campaign<'_>>,
+    campaign: Option<ProvidedCampaign<'_>>,
     form: RegisterForm<'_>,
     passphrase_source: PassphraseSource,
 ) -> Result<Either<Template, Redirect>, Debug<Error>> {
@@ -138,7 +138,7 @@ async fn register(
     );
 
     let user_id = unwrap_or_return!(
-        email_verification_step(repository.as_mut(), &form, invitation, user_details, campaign).await?,
+        email_verification_step(repository.as_mut(), &form, invitation, user_details, campaign.clone()).await?,
         error_message => Ok(Left(page.render(
             "register",
             context! { step: "verify_email", error_message, form, campaign },
@@ -238,7 +238,7 @@ async fn email_verification_step(
     form: &RegisterForm<'_>,
     invitation: Invitation,
     user_details: UserDetails,
-    campaign: Campaign<'_>,
+    campaign: ProvidedCampaign<'_>,
 ) -> Result<StepResult<UserId>> {
     if let Pending(e) = use_verification_code(repository, form, &user_details).await? {
         return Ok(Pending(e));
@@ -247,7 +247,7 @@ async fn email_verification_step(
     let user_id = repository
         .add_user(
             invitation.clone(),
-            new_user(invitation, user_details, campaign),
+            new_user(invitation, user_details, campaign.into_inner()),
         )
         .await?;
     Ok(Complete(user_id))
@@ -266,11 +266,15 @@ async fn use_verification_code(
     }
 }
 
-fn new_user(invitation: Invitation, user_details: UserDetails, campaign: Campaign<'_>) -> User<()> {
+fn new_user(
+    invitation: Invitation,
+    user_details: UserDetails,
+    campaign: Option<Campaign<'_>>,
+) -> User<()> {
     invitation.to_user(
         user_details.name,
         user_details.email_address.to_string(),
-        campaign.into_inner().map(|c| c.to_owned()),
+        campaign.map(|c| c.name.to_owned()),
     )
 }
 

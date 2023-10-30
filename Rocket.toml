@@ -1,6 +1,9 @@
 [default]
 url_prefix = "http://localhost:8000"
-allowed_campaigns = ['super-secrit-beta']
+
+[default.campaign.example]
+message = """
+Congratulations! 🎉 You used the <em>example</em> campaign to register."""
 
 [default.databases.sqlite]
 url = "database.sqlite"
