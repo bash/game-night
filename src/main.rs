@@ -21,10 +21,12 @@ mod auth;
 mod database;
 mod email;
 mod event;
+mod fs;
 mod invitation;
 mod login;
 mod play;
 mod poll;
+mod push;
 mod register;
 #[cfg(target_os = "linux")]
 mod systemd;
