@@ -351,13 +351,13 @@ impl<'r> FromRequest<'r> for Open<Poll> {
     async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
         let mut repository: Box<dyn Repository> = try_outcome!(FromRequest::from_request(request)
             .await
-            .map_failure(|(s, e)| (s, Some(e))));
+            .map_error(|(s, e)| (s, Some(e))));
         match repository.get_current_poll().await {
             Ok(Some(poll)) if poll.is_open(OffsetDateTime::now_utc()) => {
                 Outcome::Success(Open(poll))
             }
-            Ok(_) => Outcome::Failure((Status::BadRequest, None)),
-            Err(error) => Outcome::Failure((Status::InternalServerError, Some(error))),
+            Ok(_) => Outcome::Error((Status::BadRequest, None)),
+            Err(error) => Outcome::Error((Status::InternalServerError, Some(error))),
         }
     }
 }

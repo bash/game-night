@@ -556,7 +556,7 @@ impl<'r> FromRequest<'r> for Box<dyn Repository> {
         Connection::<GameNightDatabase>::from_request(request)
             .await
             .map(|c| create_repository(c.into_inner()))
-            .map_failure(|(status, error)| (status, into_anyhow_error(error)))
+            .map_error(|(status, error)| (status, into_anyhow_error(error)))
     }
 }
 

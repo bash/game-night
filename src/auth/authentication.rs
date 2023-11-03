@@ -26,11 +26,11 @@ impl<'r> FromRequest<'r> for User {
         let mut repository = try_outcome!(request
             .guard::<Box<dyn Repository>>()
             .await
-            .map_failure(|(s, e)| (s, Some(e))));
+            .map_error(|(s, e)| (s, Some(e))));
         match fetch_user(request, repository.as_mut()).await {
             Ok(Some(user)) => Outcome::Success(user),
-            Ok(None) => Outcome::Failure((Status::Unauthorized, None)),
-            Err(e) => Outcome::Failure((Status::InternalServerError, Some(e))),
+            Ok(None) => Outcome::Error((Status::Unauthorized, None)),
+            Err(e) => Outcome::Error((Status::InternalServerError, Some(e))),
         }
     }
 }
@@ -42,7 +42,7 @@ impl<'r> FromRequest<'r> for LoginState {
     async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
         match request.cookies().login_state() {
             Ok(s) => Outcome::Success(s),
-            Err(e) => Outcome::Failure((Status::InternalServerError, e)),
+            Err(e) => Outcome::Error((Status::InternalServerError, e)),
         }
     }
 }

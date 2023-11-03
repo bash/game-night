@@ -108,7 +108,7 @@ impl<'r> FromRequest<'r> for UrlPrefix<'r> {
     async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
         match request.rocket().url_prefix() {
             Ok(value) => Outcome::Success(value),
-            Err(e) => Outcome::Failure((Status::InternalServerError, e)),
+            Err(e) => Outcome::Error((Status::InternalServerError, e)),
         }
     }
 }

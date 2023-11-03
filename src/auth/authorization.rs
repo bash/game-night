@@ -28,7 +28,7 @@ impl<'r, P: UserPredicate> FromRequest<'r> for AuthorizedTo<P> {
         if let Some(result) = AuthorizedTo::new(user) {
             Outcome::Success(result)
         } else {
-            Outcome::Failure((Status::Forbidden, None))
+            Outcome::Error((Status::Forbidden, None))
         }
     }
 }

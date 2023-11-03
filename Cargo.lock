@@ -2307,8 +2307,9 @@ dependencies = [
 
 [[package]]
 name = "rocket"
-version = "0.5.0-rc.3"
-source = "git+https://github.com/SergioBenitez/Rocket/?branch=master#07fe79796f058ab12683ff9e344558bece263274"
+version = "0.5.0-rc.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "85ae34c956708013335f62150ff64e133be7f9e8ca60203852bc7b13d6044d01"
 dependencies = [
  "async-stream",
  "async-trait",
@@ -2344,8 +2345,9 @@ dependencies = [
 
 [[package]]
 name = "rocket_codegen"
-version = "0.5.0-rc.3"
-source = "git+https://github.com/SergioBenitez/Rocket/?branch=master#07fe79796f058ab12683ff9e344558bece263274"
+version = "0.5.0-rc.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "896efc56a554a4e1fd03df1d8186c955b803aa652bbe8725a731f64e20f9cee8"
 dependencies = [
  "devise",
  "glob",
@@ -2360,8 +2362,9 @@ dependencies = [
 
 [[package]]
 name = "rocket_db_pools"
-version = "0.1.0-rc.3"
-source = "git+https://github.com/SergioBenitez/Rocket/?branch=master#07fe79796f058ab12683ff9e344558bece263274"
+version = "0.1.0-rc.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "07442bdd9c491414bc1ec4019c92a2cec55971bdb9a7a3c1072fa695b50d5635"
 dependencies = [
  "rocket",
  "rocket_db_pools_codegen",
@@ -2371,8 +2374,9 @@ dependencies = [
 
 [[package]]
 name = "rocket_db_pools_codegen"
-version = "0.1.0-rc.3"
-source = "git+https://github.com/SergioBenitez/Rocket/?branch=master#07fe79796f058ab12683ff9e344558bece263274"
+version = "0.1.0-rc.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "256459847a854aacad39fc3d4ff3b05610a66bcd21da42d293248fffc8d730ef"
 dependencies = [
  "devise",
  "quote",
@@ -2380,8 +2384,9 @@ dependencies = [
 
 [[package]]
 name = "rocket_dyn_templates"
-version = "0.1.0-rc.3"
-source = "git+https://github.com/SergioBenitez/Rocket/?branch=master#07fe79796f058ab12683ff9e344558bece263274"
+version = "0.1.0-rc.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f44ce172f8a9070daf777dec707273ee042223ad9b030d780349baa0b660ae4f"
 dependencies = [
  "normpath",
  "notify",
@@ -2392,8 +2397,9 @@ dependencies = [
 
 [[package]]
 name = "rocket_http"
-version = "0.5.0-rc.3"
-source = "git+https://github.com/SergioBenitez/Rocket/?branch=master#07fe79796f058ab12683ff9e344558bece263274"
+version = "0.5.0-rc.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a1b9b7377bab513717a00ca4f91fe1378328b078e7705bfe5f6b69635e9f1719"
 dependencies = [
  "cookie",
  "either",
