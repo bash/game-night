@@ -23,9 +23,15 @@ self.addEventListener('push', event => {
 self.addEventListener('notificationclick', event => {
     const { data } = event.notification
     const actions = data.actions ?? []
-    const onClick = event.action == '' ? data.onClick : actions.find(a => a.action == event.action)?.onClick
+    const onClick = hasAction(event) ? actions.find(a => a.action == event.action)?.onClick : data.onClick
     event.waitUntil(executeAction(onClick))
 })
+
+function hasAction(event) {
+    // If the notification is clicked directly, browsers that support
+    // actions set the action to '' while browser that don't support actions omit the action property.
+    return event.action != '' && event.action != null
+}
 
 async function executeAction(onClick) {
     if (onClick == null) return
