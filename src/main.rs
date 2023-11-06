@@ -2,6 +2,7 @@ use anyhow::{Context as _, Error, Result};
 use database::Repository;
 use email::{EmailSender, EmailSenderImpl};
 use poll::poll_finalizer;
+use push::read_or_generate_web_push_key_pair;
 use rocket::fairing::{self, Fairing};
 use rocket::figment::Figment;
 use rocket::http::uri::Absolute;
@@ -58,6 +59,7 @@ fn rocket() -> _ {
         .attach(invite_admin_user())
         .attach(login::auto_login_fairing())
         .attach(poll_finalizer())
+        .manage(read_or_generate_web_push_key_pair().unwrap())
 }
 
 fn figment() -> Figment {
