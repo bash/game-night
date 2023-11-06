@@ -1,0 +1,12 @@
+{
+    "name": "Tau's Game Night",
+    "short_name": "Game Night",
+    "start_url": "/",
+    "display": "browser",
+    "icons": [
+        {
+            "src": "/favicon.svg",
+            "sizes": "any"
+        }
+    ]
+}
