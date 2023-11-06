@@ -48,7 +48,9 @@ publish: all
 	@set -e
 	@rm -rf $(PUBLISH_DIR)
 	@mkdir -p $(PUBLISH_DIR)
-	cargo build --release
+	podman build -t game-night-build .
+	podman volume create --ignore game-night-cargo-registry
+	podman run --rm -v game-night-cargo-registry:/root/.cargo/registry -v ./:/build:z --workdir /build game-night-build cargo build --release
 	cp target/release/game-night $(PUBLISH_DIR)/
 	cp -R {public,templates,emails} $(PUBLISH_DIR)/
 	find $(PUBLISH_DIR) -name '.DS_Store' -exec rm {} +
