@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" class="_home">
+<html lang="en" class="_{{active_chapter.accent_color}}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -32,21 +32,13 @@
     {% endif %}
 
     <nav>
-        <a href="/" class="_home" title="Home">
-            <svg role="img" aria-label="Home"><use href="/icons/home.svg#icon" aria-hidden="true" /></svg>
-        </a>
-        <a href="/invite" class="_invite" title="Get Invited">
-            <svg role="img" aria-label="Mail Open"><use href="/icons/mail-open.svg#icon" aria-hidden="true" /></svg>
-        </a>
-        <a href="/register" class="_register" title="Register">
-            <svg role="img" aria-label="Clipboard Signature"><use href="/icons/clipboard-signature.svg#icon" aria-hidden="true" /></svg>
-        </a>
-        <a href="/poll" class="_poll" title="Poll">
-            <svg role="img" aria-label="Calendar Check"><use href="/icons/calendar-check.svg#icon" aria-hidden="true" /></svg>
-        </a>
-        <a href="/play" class="_play" title="Play">
-            <svg role="img" aria-label="Dices"><use href="/icons/dices.svg#icon" aria-hidden="true" /></svg>
-        </a>
+        {% for chapter in chapters %}
+            <a href="{{chapter.uri}}" class="_{{chapter.accent_color}}{% if chapter.uri == active_chapter.uri %} -active{% endif%}" title="{{chapter.title}}">
+                <svg role="img" aria-label="{{chapter.icon.aria_label}}">
+                    <use href="/icons/{{chapter.icon.name}}.svg#icon" aria-hidden="true" />
+                </svg>
+            </a>
+        {% endfor %}
     </nav>
 
     <main id="main">

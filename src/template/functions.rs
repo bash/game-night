@@ -1,3 +1,4 @@
+use super::AccentColor;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::iter;
@@ -28,13 +29,8 @@ tera_function! {
 
 tera_function! {
     fn accent_color(index: usize) {
-        const ACCENT_COLORS: &[&str] = &[
-            "var(--home-color)",
-            "var(--invite-color)",
-            "var(--register-color)",
-            "var(--poll-color)",
-            "var(--play-color)"];
-        Ok(tera::Value::String(ACCENT_COLORS[index % ACCENT_COLORS.len()].to_string()))
+        let accent_colors = AccentColor::as_slice();
+        Ok(tera::Value::String(accent_colors[index % accent_colors.len()].css_value().to_string()))
     }
 }
 
