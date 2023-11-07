@@ -1,4 +1,5 @@
 use crate::auth::LoginState;
+use crate::login::rocket_uri_macro_login;
 use crate::login::rocket_uri_macro_logout;
 use crate::users::User;
 use anyhow::Error;
@@ -111,52 +112,62 @@ lazy_static! {
     static ref CHAPTERS: Vec<Chapter> = vec![
         Chapter {
             uri: Origin::ROOT,
-            title: "Home",
-            visible_if: |_| true,
-            accent_color: AccentColor::Purple,
-            icon: SvgIcon {
-                name: "home",
-                aria_label: "Home"
-            }
-        },
-        Chapter {
-            uri: uri!("/invite"),
-            title: "Get Invited",
-            visible_if: |_| true,
-            accent_color: AccentColor::Red,
-            icon: SvgIcon {
-                name: "mail-open",
-                aria_label: "Mail"
-            }
-        },
-        Chapter {
-            uri: uri!("/register"),
             title: "Register",
-            accent_color: AccentColor::Green,
-            visible_if: |_| true,
+            visible_if: Option::is_none,
+            accent_color: AccentColor::Purple,
             icon: SvgIcon {
                 name: "clipboard-signature",
                 aria_label: "Clipboard Signature"
             }
         },
         Chapter {
-            uri: uri!("/poll"),
-            title: "Poll",
-            visible_if: |_| true,
-            accent_color: AccentColor::Teal,
-            icon: SvgIcon {
-                name: "calendar-check",
-                aria_label: "Calendar Check"
-            }
-        },
-        Chapter {
-            uri: uri!("/play"),
+            uri: uri!(login(redirect = Some("/"))),
             title: "Play",
-            visible_if: |_| true,
+            visible_if: Option::is_none,
             accent_color: AccentColor::Blue,
             icon: SvgIcon {
                 name: "dices",
                 aria_label: "Dices"
+            }
+        },
+        Chapter {
+            uri: Origin::ROOT,
+            title: "Play",
+            visible_if: Option::is_some,
+            accent_color: AccentColor::Blue,
+            icon: SvgIcon {
+                name: "dices",
+                aria_label: "Dices"
+            }
+        },
+        Chapter {
+            uri: uri!("/profile"),
+            title: "User Profile",
+            accent_color: AccentColor::Teal,
+            visible_if: |_| true,
+            icon: SvgIcon {
+                name: "user",
+                aria_label: "User"
+            }
+        },
+        Chapter {
+            uri: uri!("/news"),
+            title: "News",
+            visible_if: |_| true,
+            accent_color: AccentColor::Green,
+            icon: SvgIcon {
+                name: "megaphone",
+                aria_label: "Megaphone"
+            }
+        },
+        Chapter {
+            uri: uri!("/invite"),
+            title: "Invite",
+            visible_if: |u| u.as_ref().map(|u| u.can_invite()).unwrap_or_default(),
+            accent_color: AccentColor::Red,
+            icon: SvgIcon {
+                name: "mail-open",
+                aria_label: "Mail"
             }
         },
     ];
