@@ -32,7 +32,7 @@
     {% endif %}
 
     <nav>
-        <a href="/" class="_home{% if page.type == 'home' %} -active{% endif %}" title="Home" accesskey="h">
+        <a href="/" class="_home{% if page.type == 'home' %} -active{% endif %}" title="Home">
             <svg role="img" aria-label="Home"><use href="/icons/home.svg#icon" aria-hidden="true" /></svg>
         </a>
         <a href="/invite" class="_invite{% if page.type == 'invite' %} -active{% endif %}" title="Get Invited">
