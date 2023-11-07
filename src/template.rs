@@ -42,7 +42,6 @@ impl<'r> PageBuilder<'r> {
                     uri: self.uri,
                     path: self.uri.path().as_str(),
                     type_: self.type_,
-                    chapter_number: self.type_.chapter_number(),
                 },
             },
         )
@@ -67,7 +66,6 @@ struct Page<'a> {
     path: &'a str,
     #[serde(rename = "type")]
     type_: PageType,
-    chapter_number: &'a str,
 }
 
 #[async_trait]
@@ -99,19 +97,6 @@ pub(crate) enum PageType {
     Register,
     Poll,
     Play,
-}
-
-impl PageType {
-    fn chapter_number(self) -> &'static str {
-        use PageType::*;
-        match self {
-            Home => "Zero",
-            Invite => "One",
-            Register => "Two",
-            Poll => "Three",
-            Play => "Four",
-        }
-    }
 }
 
 impl<'a, 'r> TryFrom<&'a Origin<'r>> for PageType {

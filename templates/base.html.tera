@@ -51,9 +51,6 @@
 
     <main id="main">
         <header>
-            <div class="chapter-number">
-                Chapter {{page.chapter_number}}
-            </div>
             <h1>
                 {% block title %}
                 {% endblock title %}
