@@ -1,10 +1,11 @@
 use crate::auth::LoginState;
+use crate::login::rocket_uri_macro_logout;
 use crate::users::User;
 use anyhow::Error;
 use rocket::http::uri::Origin;
 use rocket::outcome::try_outcome;
 use rocket::request::{FromRequest, Outcome};
-use rocket::{async_trait, Request};
+use rocket::{async_trait, uri, Request};
 use rocket_dyn_templates::{Engines, Template};
 use serde::Serialize;
 use std::borrow::Cow;
@@ -37,6 +38,7 @@ impl<'r> PageBuilder<'r> {
             TemplateContext {
                 context,
                 user: self.user.as_ref(),
+                logout_uri: uri!(logout()),
                 sudo: self.login_state.is_sudo(),
                 page: Page {
                     uri: self.uri,
@@ -54,6 +56,7 @@ where
     C: Serialize,
 {
     user: Option<&'a User>,
+    logout_uri: Origin<'a>,
     sudo: bool,
     page: Page<'a>,
     #[serde(flatten)]
