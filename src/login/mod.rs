@@ -1,7 +1,7 @@
 use crate::auth::{CookieJarExt, LoginState};
 use crate::database::Repository;
 use crate::email::{EmailMessage, EmailSender};
-use crate::template::{PageBuilder, PageType};
+use crate::template::PageBuilder;
 use crate::users::{User, UserId};
 use anyhow::{Error, Result};
 use lettre::message::Mailbox;
@@ -53,8 +53,7 @@ async fn login_page<'r>(
             LoginPage::AlreadyLoggedIn(redirect_to(redirect).unwrap_or_else(|| Redirect::to("/")))
         }
         None => LoginPage::LoginRequired(
-            page.type_(page_type_from_redirect_uri(redirect))
-                .render("login", context! { has_redirect: redirect.is_some() }),
+            page.render("login", context! { has_redirect: redirect.is_some() }),
         ),
     }
 }
@@ -63,13 +62,6 @@ async fn login_page<'r>(
 enum LoginPage {
     LoginRequired(Template),
     AlreadyLoggedIn(Redirect),
-}
-
-fn page_type_from_redirect_uri(redirect: Option<&str>) -> PageType {
-    redirect
-        .and_then(|r| Origin::parse(r).ok())
-        .and_then(|o| o.try_into().ok())
-        .unwrap_or_default()
 }
 
 #[post("/login?<redirect>", data = "<form>")]
@@ -108,11 +100,7 @@ impl Login {
             form,
             error_message: "I don't know what to do with this email address, are you sure that you spelled it correctly? 🤔"
         };
-        Self::Failure(
-            builder
-                .type_(page_type_from_redirect_uri(redirect))
-                .render("login", context),
-        )
+        Self::Failure(builder.render("login", context))
     }
 }
 

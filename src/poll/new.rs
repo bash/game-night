@@ -5,7 +5,7 @@ use crate::auth::{AuthorizedTo, ManagePoll};
 use crate::database::Repository;
 use crate::email::EmailSender;
 use crate::login::{with_autologin_token, LoginToken};
-use crate::template::{PageBuilder, PageType};
+use crate::template::PageBuilder;
 use crate::users::{User, UserId};
 use crate::UrlPrefix;
 use anyhow::{Context as _, Error, Result};
@@ -31,7 +31,7 @@ pub(super) fn new_poll_page(
         14,
         &mut CalendarDayPrefill::empty,
     );
-    Ok(page.type_(PageType::Poll).render(
+    Ok(page.render(
         "poll/new",
         context! { calendar, strategies: strategies(), calendar_uri: uri!(calendar()) },
     ))
@@ -45,7 +45,7 @@ pub(super) fn calendar(
 ) -> Template {
     let mut prefill = find_prefill(&form);
     let calendar = get_calendar(OffsetDateTime::now_utc(), 14 * form.count, &mut prefill);
-    page.type_(PageType::Poll).render(
+    page.render(
         "poll/calendar",
         context! { calendar, strategies: strategies() },
     )

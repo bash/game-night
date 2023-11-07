@@ -2,7 +2,7 @@ use super::{rocket_uri_macro_poll_page, Open};
 use super::{Answer, AnswerValue};
 use crate::database::Repository;
 use crate::poll::{Poll, PollOption};
-use crate::template::{PageBuilder, PageType};
+use crate::template::PageBuilder;
 use crate::users::{User, UserId};
 use anyhow::Error;
 use itertools::{Either, Itertools as _};
@@ -20,8 +20,7 @@ pub(super) fn open_poll_page(
     user: User,
     users: Vec<User>,
 ) -> Template {
-    page.type_(PageType::Poll)
-        .render("poll/open", to_open_poll(poll, &user, users))
+    page.render("poll/open", to_open_poll(poll, &user, users))
 }
 
 fn to_open_poll(poll: Poll, user: &User, users: Vec<User>) -> OpenPoll {

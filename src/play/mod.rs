@@ -1,7 +1,7 @@
 use crate::database::Repository;
 use crate::event::Event;
 use crate::poll::Location;
-use crate::template::{PageBuilder, PageType};
+use crate::template::PageBuilder;
 use crate::users::User;
 use crate::UrlPrefix;
 use anyhow::{Error, Result};
@@ -31,9 +31,7 @@ async fn play_page(
     _user: User,
 ) -> Result<Template, Debug<Error>> {
     let event = repository.get_next_event().await?;
-    Ok(page
-        .type_(PageType::Play)
-        .render("play", context! { event }))
+    Ok(page.render("play", context! { event }))
 }
 
 #[get("/play/event.ics")]

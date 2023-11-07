@@ -79,6 +79,5 @@ async fn forbidden(request: &Request<'_>) -> Template {
     let page = PageBuilder::from_request(request)
         .await
         .expect("Page builder guard is infallible");
-    let type_ = request.uri().try_into().unwrap_or_default();
-    page.type_(type_).render("errors/403", context! {})
+    page.render("errors/403", context! {})
 }

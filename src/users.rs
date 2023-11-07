@@ -1,6 +1,6 @@
 use crate::auth::{AuthorizedTo, ManageUsers};
 use crate::database::Repository;
-use crate::template::{PageBuilder, PageType};
+use crate::template::PageBuilder;
 use anyhow::{Error, Result};
 use lettre::message::Mailbox;
 use rocket::response::Debug;
@@ -19,9 +19,7 @@ async fn list_users(
     mut repository: Box<dyn Repository>,
     _guard: AuthorizedTo<ManageUsers>,
 ) -> Result<Template, Debug<Error>> {
-    Ok(page
-        .type_(PageType::Register)
-        .render("users", context! { users: repository.get_users().await? }))
+    Ok(page.render("users", context! { users: repository.get_users().await? }))
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, sqlx::Type, Serialize)]

@@ -1,4 +1,4 @@
-use super::{page_type_from_redirect_uri, redirect_to};
+use super::redirect_to;
 use crate::auth::{CookieJarExt, LoginState};
 use crate::database::Repository;
 use crate::template::PageBuilder;
@@ -14,8 +14,7 @@ pub(super) async fn login_with_code_page<'r>(
     redirect: Option<&'r str>,
     page: PageBuilder<'r>,
 ) -> Template {
-    page.type_(page_type_from_redirect_uri(redirect))
-        .render("login_code", context! {})
+    page.render("login_code", context! {})
 }
 
 #[post("/login/code?<redirect>", data = "<form>")]
@@ -34,8 +33,7 @@ pub(super) async fn login_with_code<'r>(
         ))
     } else {
         Ok(Error(
-            page.type_(page_type_from_redirect_uri(redirect))
-                .render("login_code", context! { invalid_code: true }),
+            page.render("login_code", context! { invalid_code: true }),
         ))
     }
 }

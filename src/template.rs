@@ -19,15 +19,9 @@ pub(crate) struct PageBuilder<'r> {
     user: Option<User>,
     login_state: LoginState,
     uri: &'r Origin<'r>,
-    type_: PageType,
 }
 
 impl<'r> PageBuilder<'r> {
-    pub(crate) fn type_(mut self, type_: PageType) -> Self {
-        self.type_ = type_;
-        self
-    }
-
     pub(crate) fn render(
         &self,
         name: impl Into<Cow<'static, str>>,
@@ -43,7 +37,6 @@ impl<'r> PageBuilder<'r> {
                 page: Page {
                     uri: self.uri,
                     path: self.uri.path().as_str(),
-                    type_: self.type_,
                 },
             },
         )
@@ -67,8 +60,6 @@ where
 struct Page<'a> {
     uri: &'a Origin<'a>,
     path: &'a str,
-    #[serde(rename = "type")]
-    type_: PageType,
 }
 
 #[async_trait]
@@ -85,44 +76,8 @@ impl<'r> FromRequest<'r> for PageBuilder<'r> {
         Outcome::Success(PageBuilder {
             user,
             uri,
-            type_: PageType::Home,
             login_state,
         })
-    }
-}
-
-#[derive(Debug, Copy, Clone, Serialize, Default)]
-#[serde(rename_all = "snake_case")]
-pub(crate) enum PageType {
-    #[default]
-    Home,
-    Invite,
-    Register,
-    Poll,
-    Play,
-}
-
-impl<'a, 'r> TryFrom<&'a Origin<'r>> for PageType {
-    type Error = ();
-
-    fn try_from(value: &'a Origin<'r>) -> Result<Self, Self::Error> {
-        use PageType::*;
-        match value.path().segments().get(0) {
-            None => Ok(Home),
-            Some("invite") => Ok(Invite),
-            Some("register") => Ok(Register),
-            Some("poll") => Ok(Poll),
-            Some("play") => Ok(Play),
-            _ => Err(()),
-        }
-    }
-}
-
-impl<'r> TryFrom<Origin<'r>> for PageType {
-    type Error = ();
-
-    fn try_from(value: Origin<'r>) -> Result<Self, Self::Error> {
-        (&value).try_into()
     }
 }
 

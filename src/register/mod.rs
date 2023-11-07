@@ -2,7 +2,7 @@ use crate::auth::{CookieJarExt, LoginState};
 use crate::database::Repository;
 use crate::email::EmailSender;
 use crate::invitation::{Invitation, Passphrase};
-use crate::template::{PageBuilder, PageType};
+use crate::template::PageBuilder;
 use crate::users::{rocket_uri_macro_list_users, User, UserId};
 use anyhow::{Error, Result};
 use campaign::{Campaign, ProvidedCampaign};
@@ -64,7 +64,7 @@ async fn register_page(
 ) -> Result<Either<Template, Redirect>, Debug<Error>> {
     if let Some(user) = user {
         let users_url = user.can_manage_users().then(|| uri!(list_users));
-        Ok(Left(page.type_(PageType::Register).render(
+        Ok(Left(page.render(
             "register/authenticated",
             context! { step: "invitation_code", users_url },
         )))
@@ -113,8 +113,6 @@ async fn register(
     form: RegisterForm<'_>,
     passphrase_source: PassphraseSource,
 ) -> Result<Either<Template, Redirect>, Debug<Error>> {
-    let page = page.type_(PageType::Register);
-
     let campaign = if let Some(campaign) = campaign {
         campaign
     } else {

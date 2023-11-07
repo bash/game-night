@@ -1,5 +1,5 @@
 use crate::database::Repository;
-use crate::template::{PageBuilder, PageType};
+use crate::template::PageBuilder;
 use crate::users::{User, UserPatch};
 use anyhow::{Error, Result};
 use rocket::form::Form;
@@ -9,7 +9,7 @@ use rocket_dyn_templates::{context, Template};
 
 #[get("/register/profile")]
 pub(super) fn profile(page: PageBuilder, user: User) -> Template {
-    page.type_(PageType::Register).render(
+    page.render(
         "register/profile",
         context! { can_update_name: user.can_update_name() },
     )
