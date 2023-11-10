@@ -7,6 +7,7 @@ use crate::users::{User, UserId};
 use anyhow::Error;
 use itertools::{Either, Itertools as _};
 use rocket::form::Form;
+use rocket::http::uri::Origin;
 use rocket::response::{Debug, Redirect};
 use rocket::{post, uri, FromForm};
 use rocket_dyn_templates::Template;
@@ -38,6 +39,7 @@ fn to_open_poll(poll: Poll, user: &User, users: Vec<User>) -> OpenPoll {
         poll,
         not_answered,
         no_date_answered_with_yes,
+        update_answers_uri: uri!(update_answers()),
     }
 }
 
@@ -116,6 +118,7 @@ struct OpenPoll {
     can_answer_strongly: bool,
     no_date_answered_with_yes: Vec<User>,
     not_answered: Vec<User>,
+    update_answers_uri: Origin<'static>,
 }
 
 #[derive(Debug, Serialize)]
