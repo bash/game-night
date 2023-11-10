@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="color-scheme" content="light dark">
     <link rel="manifest" href="/manifest.json" />
-    <!-- Chrome only picks the SVG over the PNG icon if it has sizes=any -->
+    {# Chrome only picks the SVG over the PNG icon if it has sizes=any #}
     <link rel="icon" sizes="any" href="/favicon.svg" type="image/svg+xml">
-    <!-- Firefox only picks the SVG over the PNG icon if its size >= the size of the PNG -->
+    {# Firefox only picks the SVG over the PNG icon if its size >= the size of the PNG #}
     <link rel="icon" sizes="512x512" href="/favicon.svg" type="image/svg+xml">
     <link rel="icon" sizes="192x192" href="/favicon-192x192.png" type="image/png">
     <link rel="icon" sizes="512x512" href="/favicon-512x512.png" type="image/png">
