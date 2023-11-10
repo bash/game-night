@@ -30,6 +30,7 @@ mod sudo;
 pub(crate) fn routes() -> Vec<Route> {
     routes![
         login,
+        login_redirect,
         login_page,
         code::login_with_code,
         code::login_with_code_page,
@@ -44,25 +45,17 @@ pub(crate) fn catchers() -> Vec<Catcher> {
     catchers![redirect_to_login]
 }
 
-#[get("/login?<redirect>")]
-async fn login_page(
-    redirect: Option<RedirectUri>,
-    page: PageBuilder<'_>,
-    user: Option<User>,
-) -> LoginPage {
-    match user {
-        Some(_) => LoginPage::AlreadyLoggedIn(Redirect::to(redirect.or_root())),
-        None => LoginPage::LoginRequired(page.uri(redirect.clone()).render(
-            "login",
-            context! { has_redirect: redirect.is_some(), getting_invited_uri: uri!(getting_invited_page()) },
-        )),
-    }
+#[get("/login?<redirect>", rank = 10)]
+fn login_redirect(_user: User, redirect: Option<RedirectUri>) -> Redirect {
+    Redirect::to(redirect.or_root())
 }
 
-#[derive(Debug, Responder)]
-enum LoginPage {
-    LoginRequired(Template),
-    AlreadyLoggedIn(Redirect),
+#[get("/login?<redirect>", rank = 20)]
+fn login_page(redirect: Option<RedirectUri>, page: PageBuilder<'_>) -> Template {
+    page.uri(redirect.clone()).render(
+        "login",
+        context! { has_redirect: redirect.is_some(), getting_invited_uri: uri!(getting_invited_page()) },
+    )
 }
 
 #[post("/login?<redirect>", data = "<form>")]
