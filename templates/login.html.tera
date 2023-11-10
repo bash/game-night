@@ -14,7 +14,7 @@
     {% include 'error_message' %}
 
     <fieldset>
-        <input type="email" autocomplete="email" inputmode="email" placeholder="awesome-person@example.com" name="email" required />
+        <input type="email" autocomplete="email" inputmode="email" placeholder="awesome-person@example.com" name="email" required autofocus />
     </fieldset>
 
     <fieldset class="-actions">
