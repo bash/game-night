@@ -101,17 +101,22 @@ fn visible_chapters(user: &Option<User>) -> Vec<Chapter> {
 fn active_chapter(chapters: &[Chapter], uri: &Origin<'_>) -> Chapter {
     chapters
         .iter()
-        .filter(|c| uri.path().starts_with(c.uri.path().as_str()))
+        .filter(|c| path_matches(uri, &c.uri) || c.match_uris.iter().any(|u| path_matches(uri, u)))
         .sorted_by_key(|c| cmp::Reverse(c.uri.path().segments().len()))
         .next()
         .cloned()
         .expect("Root chapter should always match")
 }
 
+fn path_matches(uri: &Origin<'_>, expected_prefix: &Origin<'_>) -> bool {
+    uri.path().starts_with(expected_prefix.path().as_str())
+}
+
 lazy_static! {
     static ref CHAPTERS: Vec<Chapter> = vec![
         Chapter {
             uri: Origin::ROOT,
+            match_uris: vec![],
             title: "Register",
             visible_if: Option::is_none,
             accent_color: AccentColor::Purple,
@@ -122,6 +127,7 @@ lazy_static! {
         },
         Chapter {
             uri: uri!(login(redirect = Some("/"))),
+            match_uris: vec![],
             title: "Play",
             visible_if: Option::is_none,
             accent_color: AccentColor::Blue,
@@ -132,6 +138,7 @@ lazy_static! {
         },
         Chapter {
             uri: Origin::ROOT,
+            match_uris: vec![],
             title: "Play",
             visible_if: Option::is_some,
             accent_color: AccentColor::Blue,
@@ -142,6 +149,7 @@ lazy_static! {
         },
         Chapter {
             uri: uri!("/profile"),
+            match_uris: vec![uri!("/users")],
             title: "User Profile",
             accent_color: AccentColor::Teal,
             visible_if: |_| true,
@@ -152,6 +160,7 @@ lazy_static! {
         },
         Chapter {
             uri: uri!("/news"),
+            match_uris: vec![],
             title: "News",
             visible_if: |_| true,
             accent_color: AccentColor::Green,
@@ -162,6 +171,7 @@ lazy_static! {
         },
         Chapter {
             uri: uri!("/invite"),
+            match_uris: vec![],
             title: "Invite",
             visible_if: |u| u.as_ref().map(|u| u.can_invite()).unwrap_or_default(),
             accent_color: AccentColor::Red,
@@ -176,6 +186,7 @@ lazy_static! {
 #[derive(Debug, Clone, Serialize)]
 pub(crate) struct Chapter {
     uri: Origin<'static>,
+    match_uris: Vec<Origin<'static>>,
     title: &'static str,
     #[serde(skip)]
     visible_if: fn(&Option<User>) -> bool,

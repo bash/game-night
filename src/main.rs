@@ -76,7 +76,7 @@ fn file_server() -> impl Into<Vec<Route>> {
     routes![]
 }
 
-#[get("/")]
+#[get("/", rank = 20)]
 fn get_index_page(page: PageBuilder<'_>) -> Template {
     page.render("index", context! {})
 }

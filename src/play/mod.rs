@@ -12,8 +12,10 @@ use ics::properties::{
 };
 use ics::{escape_text, ICalendar};
 use rocket::http::uri::Absolute;
+use rocket::outcome::try_outcome;
+use rocket::request::{FromRequest, Outcome};
 use rocket::response::Debug;
-use rocket::{get, routes, uri, Responder, Route};
+use rocket::{async_trait, get, routes, uri, Request, Responder, Route};
 use rocket_dyn_templates::{context, Template};
 use time::format_description::FormatItem;
 use time::macros::format_description;
@@ -24,14 +26,29 @@ pub(crate) fn routes() -> Vec<Route> {
     routes![play_page, event_ics]
 }
 
-#[get("/play")]
+#[get("/", rank = 0)]
 async fn play_page(
-    mut repository: Box<dyn Repository>,
+    event: NextEvent,
     page: PageBuilder<'_>,
     _user: User,
 ) -> Result<Template, Debug<Error>> {
-    let event = repository.get_next_event().await?;
-    Ok(page.render("play", context! { event }))
+    Ok(page.render("play", context! { event: event.0 }))
+}
+
+struct NextEvent(Event);
+
+#[async_trait]
+impl<'r> FromRequest<'r> for NextEvent {
+    type Error = Error;
+
+    async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
+        let mut repository: Box<dyn Repository> = try_outcome!(request.guard().await);
+        match repository.get_next_event().await {
+            Ok(Some(event)) => Outcome::Success(NextEvent(event)),
+            Ok(None) => Outcome::Forward(rocket::http::Status::NotFound),
+            Err(e) => Outcome::Error((rocket::http::Status::InternalServerError, e)),
+        }
+    }
 }
 
 #[get("/play/event.ics")]

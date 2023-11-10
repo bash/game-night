@@ -17,9 +17,9 @@
     </p>
     <fieldset class="-actions">
         <button type="submit">Save my details</button>
+        {% if list_users_uri %}
+            <a href="{{list_users_uri}}" class="link-button">Show me the list of users, please</a>
+        {% endif %}
     </fieldset>
-    <p>
-        <strong>P.S.</strong> You can't yet change your email address. I will add that feature soooon-ish, *pinky-promise*.
-    </p>
 </form>
 {% endblock %}

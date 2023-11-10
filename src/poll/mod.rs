@@ -32,7 +32,7 @@ pub(crate) fn routes() -> Vec<Route> {
     ]
 }
 
-#[get("/poll")]
+#[get("/", rank = 10)]
 async fn poll_page(
     mut repository: Box<dyn Repository>,
     page: PageBuilder<'_>,
