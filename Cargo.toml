@@ -17,7 +17,7 @@ rocket_dyn_templates = { version = "=0.1.0-rc.4", features = ["tera"] }
 serde = { version = "1.0", features = ["derive"] }
 json = { package = "serde_json", version = "1.0.105" }
 sqlx = { version = "0.7", features = ["time"] }
-constcat = "0.3.0"
+constcat = "0.4.0"
 url = "2.4"
 uuid = { version = "1.4.1", features = ["v4"] }
 itertools = "0.11.0"
