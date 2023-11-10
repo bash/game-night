@@ -9,7 +9,7 @@ pub(crate) fn read_or_generate<F: GeneratedFile>(f: &F) -> Result<F::Value> {
     create_dir_all(file_path.parent().unwrap())?;
     match write(f, &file_path) {
         Err(e) if is_already_exists_error(&e) => Ok(read(f, &file_path)?),
-        result => Ok(result?),
+        result => result,
     }
 }
 
