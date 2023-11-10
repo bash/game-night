@@ -8,7 +8,6 @@ publish = false
 anyhow = "1.0.74"
 dirs = "5.0.1"
 email_address = "0.2.4"
-hex = { version = "0.4.3", features = ["serde"] }
 lettre = { version = "0.11.0", default-features = false, features = ["builder", "file-transport", "smtp-transport", "async-std1", "async-std1-rustls-tls", "serde"] }
 rand = "0.8.5"
 rocket = { version = "=0.5.0-rc.4", features = ["secrets", "json"] }
@@ -29,6 +28,7 @@ dyn-clone = "1.0.14"
 ics = "0.5.8"
 lazy_static = "1.4.0"
 web-push = { package = "web-push-native", version = "0.3.0" }
+pem = { package = "pem-rfc7468", version = "0.7.0", features = ["std"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 systemd = "0.10.0"
