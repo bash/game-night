@@ -3,6 +3,7 @@ use crate::auth::{AuthorizedTo, CookieJarExt, LoginState, ManageUsers};
 use crate::users::{User, UserId};
 use anyhow::Error;
 use rocket::form::Form;
+use rocket::http::uri::Origin;
 use rocket::http::CookieJar;
 use rocket::response::{Debug, Redirect};
 use rocket::{post, FromForm};
@@ -21,7 +22,7 @@ pub(super) fn enter(
         ));
     }
 
-    Ok(Redirect::to(form.into_inner().redirect))
+    Ok(Redirect::to(Origin::ROOT))
 }
 
 #[post("/sudo/exit", data = "<form>")]
@@ -40,7 +41,6 @@ pub(super) fn exit(
 #[derive(Debug, FromForm)]
 pub(super) struct SudoForm {
     user: i64,
-    redirect: RedirectUri,
 }
 
 #[derive(Debug, FromForm)]
