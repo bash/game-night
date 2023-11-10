@@ -9,9 +9,9 @@ use rocket::figment::value::magic::RelativePathBuf;
 use rocket::figment::Figment;
 use rocket::tokio::fs::{create_dir_all, read_to_string, rename, OpenOptions};
 use rocket::tokio::io::AsyncWriteExt;
+use rocket_dyn_templates::tera::{Context, Tera};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
-use tera::{Context, Tera};
 use uuid::Uuid;
 
 const DEFAULT_EMAIL_TEMPLATE_DIR: &str = "emails";

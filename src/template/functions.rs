@@ -1,8 +1,8 @@
 use super::AccentColor;
+use rocket_dyn_templates::tera::{self, Tera};
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::iter;
-use tera::Tera;
 use time::format_description::FormatItem;
 use time::macros::format_description;
 use time::{format_description, OffsetDateTime};

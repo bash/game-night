@@ -661,12 +661,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "diceware_wordlists"
-version = "1.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "826be3843cd33a890e8d423dce8533eb4cd0cabfb3821f5aaa7b815ff8a2a1eb"
-
-[[package]]
 name = "digest"
 version = "0.10.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -707,9 +701,9 @@ checksum = "1aaf95b3e5c8f23aa320147307562d361db0ae0d51242340f558153b4eb2439b"
 
 [[package]]
 name = "dyn-clone"
-version = "1.0.14"
+version = "1.0.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "23d2f3407d9a573d666de4b5bdf10569d73ca9478087346697dcbae6244bfbcd"
+checksum = "545b22097d44f8a9581187cdf93de7a71e4722bf51200cfaba810865b49a495d"
 
 [[package]]
 name = "either"
@@ -1008,7 +1002,6 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "constcat",
- "diceware_wordlists",
  "dirs",
  "dyn-clone",
  "email_address",
@@ -1027,12 +1020,10 @@ dependencies = [
  "serde_json",
  "sqlx",
  "systemd",
- "tera",
  "time",
  "time-tz",
  "url",
  "uuid",
- "yansi",
 ]
 
 [[package]]

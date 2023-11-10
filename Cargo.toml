@@ -6,7 +6,6 @@ publish = false
 
 [dependencies]
 anyhow = "1.0.74"
-diceware_wordlists = "1.2.1"
 dirs = "5.0.1"
 email_address = "0.2.4"
 hex = { version = "0.4.3", features = ["serde"] }
@@ -18,8 +17,6 @@ rocket_dyn_templates = { version = "=0.1.0-rc.4", features = ["tera"] }
 serde = { version = "1.0", features = ["derive"] }
 json = { package = "serde_json", version = "1.0.105" }
 sqlx = { version = "0.7", features = ["time"] }
-tera = "1.19.0"
-yansi = "1.0.0-rc"
 constcat = "0.3.0"
 url = "2.4"
 uuid = { version = "1.4.1", features = ["v4"] }
