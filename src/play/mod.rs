@@ -14,7 +14,7 @@ use ics::{escape_text, ICalendar};
 use rocket::http::uri::Absolute;
 use rocket::outcome::try_outcome;
 use rocket::request::{FromRequest, Outcome};
-use rocket::response::Debug;
+use rocket::response::{Debug, Redirect};
 use rocket::{async_trait, get, routes, uri, Request, Responder, Route};
 use rocket_dyn_templates::{context, Template};
 use time::format_description::FormatItem;
@@ -23,11 +23,18 @@ use time::OffsetDateTime;
 use time_tz::{timezones, OffsetDateTimeExt};
 
 pub(crate) fn routes() -> Vec<Route> {
-    routes![play_page, event_ics]
+    routes![play_page, play_redirect, event_ics]
+}
+
+// This is a bit of an ugly workaround to
+// make the login show play as the active chapter.
+#[get("/play")]
+fn play_redirect(_user: User) -> Redirect {
+    Redirect::to(uri!(play_page()))
 }
 
 #[get("/", rank = 0)]
-async fn play_page(event: NextEvent, page: PageBuilder<'_>, _user: User) -> Template {
+fn play_page(event: NextEvent, page: PageBuilder<'_>, _user: User) -> Template {
     page.render("play", context! { event: event.0 })
 }
 

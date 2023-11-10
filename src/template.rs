@@ -1,9 +1,8 @@
 use crate::auth::LoginState;
 use crate::invitation::rocket_uri_macro_invite_page;
 use crate::invitation::Passphrase;
-use crate::login::rocket_uri_macro_login;
 use crate::login::rocket_uri_macro_logout;
-use crate::play::rocket_uri_macro_play_page;
+use crate::play::{rocket_uri_macro_play_page, rocket_uri_macro_play_redirect};
 use crate::register::{rocket_uri_macro_profile, rocket_uri_macro_register_page};
 use crate::users::rocket_uri_macro_list_users;
 use crate::users::User;
@@ -27,10 +26,17 @@ pub(crate) use functions::*;
 pub(crate) struct PageBuilder<'r> {
     user: Option<User>,
     login_state: LoginState,
-    uri: &'r Origin<'r>,
+    uri: Cow<'r, Origin<'r>>,
 }
 
 impl<'r> PageBuilder<'r> {
+    pub(crate) fn uri(mut self, uri: Option<impl Into<Origin<'static>>>) -> Self {
+        if let Some(uri) = uri {
+            self.uri = Cow::Owned(uri.into());
+        }
+        self
+    }
+
     pub(crate) fn render(
         &self,
         name: impl Into<Cow<'static, str>>,
@@ -44,10 +50,10 @@ impl<'r> PageBuilder<'r> {
                 user: self.user.as_ref(),
                 logout_uri: uri!(logout()),
                 sudo: self.login_state.is_sudo(),
-                active_chapter: active_chapter(&chapters, self.uri),
+                active_chapter: active_chapter(&chapters, &self.uri),
                 chapters,
                 page: Page {
-                    uri: self.uri,
+                    uri: &self.uri,
                     path: self.uri.path().as_str(),
                 },
             },
@@ -86,7 +92,7 @@ impl<'r> FromRequest<'r> for PageBuilder<'r> {
             .await
             .expect("Option<T> guard is infallible");
         let login_state: LoginState = try_outcome!(request.guard().await);
-        let uri = request.uri();
+        let uri = Cow::Borrowed(request.uri());
         Outcome::Success(PageBuilder {
             user,
             uri,
@@ -120,8 +126,8 @@ fn path_matches(uri: &Origin<'_>, expected_prefix: &Origin<'_>) -> bool {
 lazy_static! {
     static ref CHAPTERS: Vec<Chapter> = vec![
         Chapter {
-            uri: uri!(register_page(passphrase = Option::<Passphrase>::None)),
-            match_uris: vec![],
+            uri: Origin::ROOT,
+            match_uris: vec![uri!(register_page(passphrase = Option::<Passphrase>::None))],
             title: "Register",
             visible_if: Option::is_none,
             accent_color: AccentColor::Purple,
@@ -131,7 +137,7 @@ lazy_static! {
             }
         },
         Chapter {
-            uri: uri!(login(redirect = Some(uri!(play_page()).to_string()))),
+            uri: uri!(play_redirect()),
             match_uris: vec![],
             title: "Play",
             visible_if: Option::is_none,
