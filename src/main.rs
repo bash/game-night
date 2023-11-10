@@ -8,7 +8,7 @@ use rocket::http::uri::Absolute;
 use rocket::http::Status;
 use rocket::request::{FromRequest, Outcome};
 use rocket::{
-    async_trait, catch, catchers, error, get, launch, routes, Build, Config, Phase, Request,
+    async_trait, catch, catchers, error, get, launch, routes, uri, Build, Config, Phase, Request,
     Rocket, Route,
 };
 use rocket_db_pools::{sqlx::SqlitePool, Database, Pool};
@@ -65,7 +65,10 @@ fn figment() -> Figment {
 
 #[cfg(debug_assertions)]
 fn file_server() -> impl Into<Vec<Route>> {
-    rocket::fs::FileServer::from("public")
+    // The goal here is that the file server is alwaays checked first,
+    // so that Forwards from User or AuthorizedTo guards
+    // are not overruled by the file server's Forward(404).
+    rocket::fs::FileServer::from("public").rank(-100)
 }
 
 #[cfg(not(debug_assertions))]
@@ -73,9 +76,12 @@ fn file_server() -> impl Into<Vec<Route>> {
     routes![]
 }
 
-#[get("/")]
+#[get("/", rank = 20)]
 fn get_index_page(page: PageBuilder<'_>) -> Template {
-    page.render("index", context! {})
+    page.render(
+        "index",
+        context! { getting_invited_uri: uri!(register::getting_invited_page())},
+    )
 }
 
 #[catch(404)]
@@ -83,8 +89,7 @@ async fn not_found(request: &Request<'_>) -> Template {
     let page = PageBuilder::from_request(request)
         .await
         .expect("Page builder guard is infallible");
-    let type_ = request.uri().try_into().unwrap_or_default();
-    page.type_(type_).render("errors/404", ())
+    page.render("errors/404", ())
 }
 
 #[derive(Debug, Database)]

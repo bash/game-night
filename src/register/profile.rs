@@ -1,5 +1,6 @@
 use crate::database::Repository;
-use crate::template::{PageBuilder, PageType};
+use crate::template::PageBuilder;
+use crate::users::rocket_uri_macro_list_users;
 use crate::users::{User, UserPatch};
 use anyhow::{Error, Result};
 use rocket::form::Form;
@@ -7,15 +8,18 @@ use rocket::response::{Debug, Redirect};
 use rocket::{get, post, uri};
 use rocket_dyn_templates::{context, Template};
 
-#[get("/register/profile")]
-pub(super) fn profile(page: PageBuilder, user: User) -> Template {
-    page.type_(PageType::Register).render(
+#[get("/profile")]
+pub(crate) fn profile(page: PageBuilder, user: User) -> Template {
+    page.render(
         "register/profile",
-        context! { can_update_name: user.can_update_name() },
+        context! {
+            can_update_name: user.can_update_name(),
+            list_users_uri: user.can_manage_users().then(|| uri!(list_users())),
+        },
     )
 }
 
-#[post("/register/profile", data = "<form>")]
+#[post("/profile", data = "<form>")]
 pub(super) async fn update_profile(
     mut repository: Box<dyn Repository>,
     form: Form<UserPatch>,

@@ -21,14 +21,14 @@ pub(crate) trait UserPredicate {
 
 #[async_trait]
 impl<'r, P: UserPredicate> FromRequest<'r> for AuthorizedTo<P> {
-    type Error = Option<Error>;
+    type Error = Error;
 
     async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
         let user: User = try_outcome!(request.guard().await);
         if let Some(result) = AuthorizedTo::new(user) {
             Outcome::Success(result)
         } else {
-            Outcome::Error((Status::Forbidden, None))
+            Outcome::Forward(Status::Forbidden)
         }
     }
 }
@@ -79,6 +79,5 @@ async fn forbidden(request: &Request<'_>) -> Template {
     let page = PageBuilder::from_request(request)
         .await
         .expect("Page builder guard is infallible");
-    let type_ = request.uri().try_into().unwrap_or_default();
-    page.type_(type_).render("errors/403", context! {})
+    page.render("errors/403", context! {})
 }

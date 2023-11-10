@@ -30,6 +30,7 @@ time-tz = "2.0.0"
 pulldown-cmark = "0.9.3"
 dyn-clone = "1.0.14"
 ics = "0.5.8"
+lazy_static = "1.4.0"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 systemd = "0.10.0"

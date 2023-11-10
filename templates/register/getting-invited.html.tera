@@ -1,0 +1,16 @@
+{% extends 'base' %}
+
+{% block title %}Getting Invited{% endblock title %}
+
+{% block content %}
+    <p>
+        It's easy, really! Just meet Tau IRL—they'll happily invite you if you ask nicely.
+    </p>
+    <p>
+        If you have met Tau IRL but are too shy or too lazy to ask
+        you can alternatively send an email to <a href="mailto:game-night@tau.garden">game-night@tau.garden</a>.
+    </p>
+    <p>
+        <a href="{{register_uri}}" class="link-button">I have an invitation!</a>
+    </p>
+{% endblock content %}

@@ -27,11 +27,11 @@
     }
 }
 
-@include accent-color(home, #8839ef);
-@include accent-color(invite, #d20f39);
-@include accent-color(register, #40a02b);
-@include accent-color(poll, #179299);
-@include accent-color(play, #04a5e5);
+@include accent-color("purple", #8839ef);
+@include accent-color("blue", #04a5e5);
+@include accent-color("teal", #179299);
+@include accent-color("green", #40a02b);
+@include accent-color("red", #d20f39);
 
 :root {
     color-scheme: light dark;

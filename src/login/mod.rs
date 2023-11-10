@@ -1,14 +1,14 @@
 use crate::auth::{CookieJarExt, LoginState};
 use crate::database::Repository;
 use crate::email::{EmailMessage, EmailSender};
-use crate::template::{PageBuilder, PageType};
+use crate::register::rocket_uri_macro_getting_invited_page;
+use crate::template::PageBuilder;
 use crate::users::{User, UserId};
 use anyhow::{Error, Result};
 use lettre::message::Mailbox;
 use rand::distributions::{Alphanumeric, Uniform};
 use rand::Rng;
 use rocket::form::Form;
-use rocket::http::uri::Origin;
 use rocket::http::CookieJar;
 use rocket::response::{self, Debug, Redirect, Responder};
 use rocket::{
@@ -23,11 +23,14 @@ use time::{Duration, OffsetDateTime};
 mod code;
 mod keys;
 pub(crate) use keys::*;
+mod redirect;
+pub(crate) use redirect::*;
 mod sudo;
 
 pub(crate) fn routes() -> Vec<Route> {
     routes![
         login,
+        login_redirect,
         login_page,
         code::login_with_code,
         code::login_with_code_page,
@@ -42,34 +45,17 @@ pub(crate) fn catchers() -> Vec<Catcher> {
     catchers![redirect_to_login]
 }
 
-#[get("/login?<redirect>")]
-async fn login_page<'r>(
-    redirect: Option<&'r str>,
-    page: PageBuilder<'r>,
-    user: Option<User>,
-) -> LoginPage {
-    match user {
-        Some(_) => {
-            LoginPage::AlreadyLoggedIn(redirect_to(redirect).unwrap_or_else(|| Redirect::to("/")))
-        }
-        None => LoginPage::LoginRequired(
-            page.type_(page_type_from_redirect_uri(redirect))
-                .render("login", context! { has_redirect: redirect.is_some() }),
-        ),
-    }
+#[get("/login?<redirect>", rank = 10)]
+fn login_redirect(_user: User, redirect: Option<RedirectUri>) -> Redirect {
+    Redirect::to(redirect.or_root())
 }
 
-#[derive(Debug, Responder)]
-enum LoginPage {
-    LoginRequired(Template),
-    AlreadyLoggedIn(Redirect),
-}
-
-fn page_type_from_redirect_uri(redirect: Option<&str>) -> PageType {
-    redirect
-        .and_then(|r| Origin::parse(r).ok())
-        .and_then(|o| o.try_into().ok())
-        .unwrap_or_default()
+#[get("/login?<redirect>", rank = 20)]
+fn login_page(redirect: Option<RedirectUri>, page: PageBuilder<'_>) -> Template {
+    page.uri(redirect.clone()).render(
+        "login",
+        context! { has_redirect: redirect.is_some(), getting_invited_uri: uri!(getting_invited_page()) },
+    )
 }
 
 #[post("/login?<redirect>", data = "<form>")]
@@ -77,7 +63,7 @@ async fn login(
     builder: PageBuilder<'_>,
     mut repository: Box<dyn Repository>,
     email_sender: &State<Box<dyn EmailSender>>,
-    redirect: Option<&str>,
+    redirect: Option<RedirectUri>,
     form: Form<LoginData<'_>>,
 ) -> Result<Login, Debug<Error>> {
     if let Some((mailbox, email)) = login_email_for(repository.as_mut(), form.email).await? {
@@ -96,23 +82,19 @@ enum Login {
 }
 
 impl Login {
-    fn success(redirect: Option<&str>) -> Login {
+    fn success(redirect: Option<RedirectUri>) -> Login {
         Self::Success(Box::new(Redirect::to(uri!(code::login_with_code_page(
-            redirect = redirect
+            redirect
         )))))
     }
 
-    fn failure(builder: PageBuilder, redirect: Option<&str>, form: LoginData<'_>) -> Login {
+    fn failure(builder: PageBuilder, redirect: Option<RedirectUri>, form: LoginData<'_>) -> Login {
         let context = context! {
             has_redirect: redirect.is_some(),
             form,
             error_message: "I don't know what to do with this email address, are you sure that you spelled it correctly? 🤔"
         };
-        Self::Failure(
-            builder
-                .type_(page_type_from_redirect_uri(redirect))
-                .render("login", context),
-        )
+        Self::Failure(builder.render("login", context))
     }
 }
 
@@ -148,21 +130,21 @@ struct LoginData<'r> {
 }
 
 #[post("/logout", data = "<form>")]
-async fn logout<'r>(cookies: &'r CookieJar<'r>, form: Form<LogoutData<'r>>) -> Logout<'r> {
+async fn logout<'r>(cookies: &'r CookieJar<'r>, form: Form<LogoutData>) -> Logout {
     cookies.set_login_state(LoginState::Anonymous);
-    Logout(form.redirect)
+    Logout(form.into_inner().redirect)
 }
 
 #[derive(FromForm)]
-struct LogoutData<'r> {
-    redirect: Option<&'r str>,
+struct LogoutData {
+    redirect: RedirectUri,
 }
 
-struct Logout<'r>(Option<&'r str>);
+struct Logout(RedirectUri);
 
-impl<'r> Responder<'r, 'static> for Logout<'r> {
+impl<'r> Responder<'r, 'static> for Logout {
     fn respond_to(self, request: &'r Request<'_>) -> response::Result<'static> {
-        Response::build_from(redirect_to(self.0).respond_to(request)?)
+        Response::build_from(Redirect::to(self.0).respond_to(request)?)
             .raw_header("Clear-Site-Data", "\"*\"")
             .ok()
     }
@@ -170,14 +152,7 @@ impl<'r> Responder<'r, 'static> for Logout<'r> {
 
 #[catch(401)]
 async fn redirect_to_login(request: &Request<'_>) -> Redirect {
-    let origin = request.uri().to_string();
-    Redirect::to(uri!(login_page(redirect = Some(origin))))
-}
-
-pub(crate) fn redirect_to(redirect: Option<&str>) -> Option<Redirect> {
-    redirect
-        .and_then(|r| Origin::parse_owned(r.to_string()).ok())
-        .map(Redirect::to)
+    Redirect::to(uri!(login_page(redirect = Some(request.uri()))))
 }
 
 #[derive(Debug, Clone, sqlx::FromRow)]

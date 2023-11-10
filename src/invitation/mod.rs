@@ -1,7 +1,7 @@
 use crate::auth::{AuthorizedTo, Invite};
 use crate::database::Repository;
 use crate::register::rocket_uri_macro_register_page;
-use crate::template::{PageBuilder, PageType};
+use crate::template::PageBuilder;
 use crate::users::{Role, User, UserId};
 use crate::UrlPrefix;
 use anyhow::{Error, Result};
@@ -31,12 +31,8 @@ pub(crate) fn routes() -> Vec<Route> {
 }
 
 #[get("/invite")]
-fn invite_page(page: PageBuilder<'_>, user: Option<User>) -> Template {
-    let can_invite = user.map(|u| u.can_invite()).unwrap_or_default();
-    page.type_(PageType::Invite).render(
-        "invite",
-        context! { can_invite, batch_invite_uri: uri!(batch::invite) },
-    )
+fn invite_page(page: PageBuilder<'_>, _user: AuthorizedTo<Invite>) -> Template {
+    page.render("invite", context! { batch_invite_uri: uri!(batch::invite) })
 }
 
 #[post("/invite", data = "<form>")]
@@ -52,7 +48,7 @@ async fn generate_invitation(
     let invitation = Invitation::generate(Role::Guest, Some(user.id), Some(valid_until));
     let invitation = repository.add_invitation(invitation).await?;
 
-    Ok(page.type_(PageType::Invite).render(
+    Ok(page.render(
         "invitation",
         context! {
             passphrase: invitation.passphrase.clone(),

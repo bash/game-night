@@ -1,7 +1,7 @@
 use crate::database::Repository;
 use crate::event::Event;
 use crate::poll::Location;
-use crate::template::{PageBuilder, PageType};
+use crate::template::PageBuilder;
 use crate::users::User;
 use crate::UrlPrefix;
 use anyhow::{Error, Result};
@@ -12,8 +12,10 @@ use ics::properties::{
 };
 use ics::{escape_text, ICalendar};
 use rocket::http::uri::Absolute;
-use rocket::response::Debug;
-use rocket::{get, routes, uri, Responder, Route};
+use rocket::outcome::try_outcome;
+use rocket::request::{FromRequest, Outcome};
+use rocket::response::{Debug, Redirect};
+use rocket::{async_trait, get, routes, uri, Request, Responder, Route};
 use rocket_dyn_templates::{context, Template};
 use time::format_description::FormatItem;
 use time::macros::format_description;
@@ -21,22 +23,41 @@ use time::OffsetDateTime;
 use time_tz::{timezones, OffsetDateTimeExt};
 
 pub(crate) fn routes() -> Vec<Route> {
-    routes![play_page, event_ics]
+    routes![play_page, play_redirect, event_ics]
 }
 
+// This is a bit of an ugly workaround to
+// make the login show play as the active chapter.
 #[get("/play")]
-async fn play_page(
-    mut repository: Box<dyn Repository>,
-    page: PageBuilder<'_>,
-    _user: User,
-) -> Result<Template, Debug<Error>> {
-    let event = repository.get_next_event().await?;
-    Ok(page
-        .type_(PageType::Play)
-        .render("play", context! { event }))
+fn play_redirect(_user: User) -> Redirect {
+    Redirect::to(uri!(play_page()))
 }
 
-#[get("/play/event.ics")]
+#[get("/", rank = 0)]
+fn play_page(event: NextEvent, page: PageBuilder<'_>, _user: User) -> Template {
+    page.render(
+        "play",
+        context! { event: event.0, ics_uri: uri!(event_ics()) },
+    )
+}
+
+struct NextEvent(Event);
+
+#[async_trait]
+impl<'r> FromRequest<'r> for NextEvent {
+    type Error = Error;
+
+    async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
+        let mut repository: Box<dyn Repository> = try_outcome!(request.guard().await);
+        match repository.get_next_event().await {
+            Ok(Some(event)) => Outcome::Success(NextEvent(event)),
+            Ok(None) => Outcome::Forward(rocket::http::Status::NotFound),
+            Err(e) => Outcome::Error((rocket::http::Status::InternalServerError, e)),
+        }
+    }
+}
+
+#[get("/event.ics")]
 async fn event_ics(
     mut repository: Box<dyn Repository>,
     url_prefix: UrlPrefix<'_>,

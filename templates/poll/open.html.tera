@@ -36,7 +36,7 @@
 
 <hr>
 
-<form method="post">
+<form action="{{update_answers_uri}}" method="post">
     <p>
         I would like to attend <em>Tau's Game Night</em> on one of the following dates:
     </p>

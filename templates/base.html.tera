@@ -1,13 +1,13 @@
 <!doctype html>
-<html lang="en" class="_{{ page.type }}">
+<html lang="en" class="_{{active_chapter.accent_color}}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="color-scheme" content="light dark">
     <link rel="manifest" href="/manifest.json" />
-    <!-- Chrome only picks the SVG over the PNG icon if it has sizes=any -->
+    {# Chrome only picks the SVG over the PNG icon if it has sizes=any #}
     <link rel="icon" sizes="any" href="/favicon.svg" type="image/svg+xml">
-    <!-- Firefox only picks the SVG over the PNG icon if its size >= the size of the PNG -->
+    {# Firefox only picks the SVG over the PNG icon if its size >= the size of the PNG #}
     <link rel="icon" sizes="512x512" href="/favicon.svg" type="image/svg+xml">
     <link rel="icon" sizes="192x192" href="/favicon-192x192.png" type="image/png">
     <link rel="icon" sizes="512x512" href="/favicon-512x512.png" type="image/png">
@@ -32,28 +32,17 @@
     {% endif %}
 
     <nav>
-        <a href="/" class="_home{% if page.type == 'home' %} -active{% endif %}" title="Home">
-            <svg role="img" aria-label="Home"><use href="/icons/home.svg#icon" aria-hidden="true" /></svg>
-        </a>
-        <a href="/invite" class="_invite{% if page.type == 'invite' %} -active{% endif %}" title="Get Invited">
-            <svg role="img" aria-label="Mail Open"><use href="/icons/mail-open.svg#icon" aria-hidden="true" /></svg>
-        </a>
-        <a href="/register" class="_register{% if page.type == 'register' %} -active{% endif %}" title="Register">
-            <svg role="img" aria-label="Clipboard Signature"><use href="/icons/clipboard-signature.svg#icon" aria-hidden="true" /></svg>
-        </a>
-        <a href="/poll" class="_poll{% if page.type == 'poll' %} -active{% endif %}" title="Poll">
-            <svg role="img" aria-label="Calendar Check"><use href="/icons/calendar-check.svg#icon" aria-hidden="true" /></svg>
-        </a>
-        <a href="/play" class="_play{% if page.type == 'play' %} -active{% endif %}" title="Play">
-            <svg role="img" aria-label="Dices"><use href="/icons/dices.svg#icon" aria-hidden="true" /></svg>
-        </a>
+        {% for chapter in chapters %}
+            <a href="{{chapter.uri}}" class="_{{chapter.accent_color}}{% if chapter.uri == active_chapter.uri %} -active{% endif%}" title="{{chapter.title}}">
+                <svg role="img" aria-label="{{chapter.icon.aria_label}}">
+                    <use href="/icons/{{chapter.icon.name}}.svg#icon" aria-hidden="true" />
+                </svg>
+            </a>
+        {% endfor %}
     </nav>
 
     <main id="main">
         <header>
-            <div class="chapter-number">
-                Chapter {{page.chapter_number}}
-            </div>
             <h1>
                 {% block title %}
                 {% endblock title %}
@@ -64,7 +53,7 @@
 
     {% if user %}
         <footer>
-            <form action="/logout" method="post" class="logout-form">
+            <form action="{{logout_uri}}" method="post" class="logout-form">
                 <span>Signed in as <strong>{{user.name}}</strong></span>
                 <button type="submit">Log out</button>
                 <input type="hidden" name="redirect" value="{{page.uri}}">

@@ -19,7 +19,7 @@
     {% include 'error_message' %}
 
     <fieldset class="-two-column">
-        <input type="text" placeholder="1st word" name="words[0]" data-overflow-to="words[1]" value="{{form.words | default(value=[]) | nth(n=0)}}" required>
+        <input type="text" placeholder="1st word" name="words[0]" data-overflow-to="words[1]" value="{{form.words | default(value=[]) | nth(n=0)}}" required autofocus>
         <input type="text" placeholder="2nd word" name="words[1]" data-overflow-to="words[2]" value="{{form.words | default(value=[]) | nth(n=1)}}" required>
         <input type="text" placeholder="3rd word" name="words[2]" data-overflow-to="words[3]" value="{{form.words | default(value=[]) | nth(n=2)}}" required>
         <input type="text" placeholder="4th word" name="words[3]" value="{{form.words | default(value=[]) | nth(n=3)}}" required>
@@ -65,7 +65,7 @@
         </p>
 
         <fieldset>
-            <input type="text" placeholder="Name" name="name" value="{{form.name | default(value='')}}" required autocomplete="name">
+            <input type="text" placeholder="Name" name="name" value="{{form.name | default(value='')}}" required autocomplete="name" autofocus>
         </fieldset>
 
         <p>
@@ -106,7 +106,7 @@
         {% include 'error_message' %}
 
         <fieldset>
-            <input type="number" name="email_verification_code" size="6" placeholder="123456" value="{{form.email_verification_code | default(value='')}}" autocomplete="off" inputmode="numeric" data-1p-ignore required>
+            <input type="number" name="email_verification_code" size="6" placeholder="123456" value="{{form.email_verification_code | default(value='')}}" autocomplete="off" inputmode="numeric" data-1p-ignore required autofocus>
         </fieldset>
 
         <fieldset class="-actions">

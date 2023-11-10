@@ -1,8 +1,9 @@
-use super::redirect_to;
+use super::RedirectUri;
 use crate::auth::{AuthorizedTo, CookieJarExt, LoginState, ManageUsers};
 use crate::users::{User, UserId};
 use anyhow::Error;
 use rocket::form::Form;
+use rocket::http::uri::Origin;
 use rocket::http::CookieJar;
 use rocket::response::{Debug, Redirect};
 use rocket::{post, FromForm};
@@ -10,7 +11,7 @@ use LoginState::*;
 
 #[post("/sudo/enter", data = "<form>")]
 pub(super) fn enter(
-    form: Form<SudoForm<'_>>,
+    form: Form<SudoForm>,
     cookies: &'_ CookieJar<'_>,
     _guard: AuthorizedTo<ManageUsers>,
 ) -> Result<Redirect, Debug<Error>> {
@@ -21,12 +22,12 @@ pub(super) fn enter(
         ));
     }
 
-    Ok(redirect_to(form.redirect).unwrap_or_else(|| Redirect::to("/")))
+    Ok(Redirect::to(Origin::ROOT))
 }
 
 #[post("/sudo/exit", data = "<form>")]
 pub(super) fn exit(
-    form: Form<ExitSudoForm<'_>>,
+    form: Form<ExitSudoForm>,
     cookies: &'_ CookieJar<'_>,
     _guard: User,
 ) -> Result<Redirect, Debug<Error>> {
@@ -34,16 +35,15 @@ pub(super) fn exit(
         cookies.set_login_state(Authenticated(original, None));
     }
 
-    Ok(redirect_to(form.redirect).unwrap_or_else(|| Redirect::to("/")))
+    Ok(Redirect::to(form.into_inner().redirect))
 }
 
 #[derive(Debug, FromForm)]
-pub(super) struct SudoForm<'r> {
+pub(super) struct SudoForm {
     user: i64,
-    redirect: Option<&'r str>,
 }
 
 #[derive(Debug, FromForm)]
-pub(super) struct ExitSudoForm<'r> {
-    redirect: Option<&'r str>,
+pub(super) struct ExitSudoForm {
+    redirect: RedirectUri,
 }

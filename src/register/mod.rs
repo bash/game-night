@@ -2,13 +2,14 @@ use crate::auth::{CookieJarExt, LoginState};
 use crate::database::Repository;
 use crate::email::EmailSender;
 use crate::invitation::{Invitation, Passphrase};
-use crate::template::{PageBuilder, PageType};
-use crate::users::{rocket_uri_macro_list_users, User, UserId};
+use crate::template::PageBuilder;
+use crate::users::{User, UserId};
 use anyhow::{Error, Result};
 use campaign::{Campaign, ProvidedCampaign};
 use email_address::EmailAddress;
 use lettre::message::Mailbox;
 use rocket::form::Form;
+use rocket::http::uri::Origin;
 use rocket::http::{Cookie, CookieJar, SameSite};
 use rocket::response::{Debug, Redirect};
 use rocket::{get, post, routes, uri, Either, FromForm, Route, State};
@@ -24,6 +25,7 @@ mod email_verification_code;
 mod profile;
 mod verification;
 pub(crate) use email_verification_code::*;
+pub(crate) use profile::*;
 
 macro_rules! unwrap_or_return {
     ($result:expr, $e:ident => $ret:expr) => {
@@ -45,6 +47,9 @@ macro_rules! pending {
 
 pub(crate) fn routes() -> Vec<Route> {
     routes![
+        getting_invited_redirect,
+        getting_invited_page,
+        register_redirect,
         register_page,
         register_form,
         profile::profile,
@@ -52,35 +57,44 @@ pub(crate) fn routes() -> Vec<Route> {
     ]
 }
 
-#[get("/register?<passphrase>")]
+#[get("/getting-invited", rank = 10)]
+async fn getting_invited_redirect(_user: User) -> Redirect {
+    Redirect::to(Origin::ROOT)
+}
+
+#[get("/getting-invited", rank = 20)]
+pub(crate) async fn getting_invited_page(page: PageBuilder<'_>) -> Template {
+    page.render(
+        "register/getting-invited",
+        context! { register_uri: uri!(register_page(passphrase = Option::<Passphrase>::None)) },
+    )
+}
+
+#[get("/register", rank = 10)]
+async fn register_redirect(_user: User) -> Redirect {
+    Redirect::to(uri!(profile::profile()))
+}
+
+#[get("/register?<passphrase>", rank = 20)]
 async fn register_page(
     cookies: &CookieJar<'_>,
     repository: Box<dyn Repository>,
     email_sender: &State<Box<dyn EmailSender>>,
     page: PageBuilder<'_>,
-    user: Option<User>,
     campaign: Option<ProvidedCampaign<'_>>,
     passphrase: Option<Passphrase>,
 ) -> Result<Either<Template, Redirect>, Debug<Error>> {
-    if let Some(user) = user {
-        let users_url = user.can_manage_users().then(|| uri!(list_users));
-        Ok(Left(page.type_(PageType::Register).render(
-            "register/authenticated",
-            context! { step: "invitation_code", users_url },
-        )))
-    } else {
-        let form = RegisterForm::new_with_passphrase(passphrase);
-        register(
-            cookies,
-            repository,
-            email_sender.as_ref(),
-            page,
-            campaign,
-            form,
-            PassphraseSource::Query,
-        )
-        .await
-    }
+    let form = RegisterForm::new_with_passphrase(passphrase);
+    register(
+        cookies,
+        repository,
+        email_sender.as_ref(),
+        page,
+        campaign,
+        form,
+        PassphraseSource::Query,
+    )
+    .await
 }
 
 #[post("/register", data = "<form>")]
@@ -113,8 +127,6 @@ async fn register(
     form: RegisterForm<'_>,
     passphrase_source: PassphraseSource,
 ) -> Result<Either<Template, Redirect>, Debug<Error>> {
-    let page = page.type_(PageType::Register);
-
     let campaign = if let Some(campaign) = campaign {
         campaign
     } else {
@@ -146,7 +158,7 @@ async fn register(
     );
 
     cookies.set_login_state(LoginState::Authenticated(user_id, None));
-    Ok(Right(Redirect::to("/poll")))
+    Ok(Right(Redirect::to(uri!(crate::poll::poll_page()))))
 }
 
 fn invalid_campaign(cookies: &CookieJar<'_>, page: PageBuilder<'_>) -> Template {

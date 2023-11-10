@@ -1,4 +1,4 @@
-use super::{page_type_from_redirect_uri, redirect_to};
+use super::{RedirectUri, RedirectUriExt as _};
 use crate::auth::{CookieJarExt, LoginState};
 use crate::database::Repository;
 use crate::template::PageBuilder;
@@ -11,11 +11,10 @@ use rocket_dyn_templates::{context, Template};
 
 #[get("/login/code?<redirect>")]
 pub(super) async fn login_with_code_page<'r>(
-    redirect: Option<&'r str>,
+    redirect: Option<RedirectUri>,
     page: PageBuilder<'r>,
 ) -> Template {
-    page.type_(page_type_from_redirect_uri(redirect))
-        .render("login_code", context! {})
+    page.uri(redirect).render("login_code", context! {})
 }
 
 #[post("/login/code?<redirect>", data = "<form>")]
@@ -24,18 +23,17 @@ pub(super) async fn login_with_code<'r>(
     form: Form<LoginWithCodeData<'r>>,
     cookies: &'r CookieJar<'r>,
     mut repository: Box<dyn Repository>,
-    redirect: Option<&'r str>,
+    redirect: Option<RedirectUri>,
 ) -> Result<LoginWithCodeResult, Debug<Error>> {
     use LoginWithCodeResult::*;
     if let Some(user_id) = repository.use_login_token(form.code).await? {
         cookies.set_login_state(LoginState::Authenticated(user_id, None));
-        Ok(LoginWithCodeResult::success(
-            redirect_to(redirect).unwrap_or_else(|| Redirect::to("/")),
-        ))
+        Ok(LoginWithCodeResult::success(Redirect::to(
+            redirect.or_root(),
+        )))
     } else {
         Ok(Error(
-            page.type_(page_type_from_redirect_uri(redirect))
-                .render("login_code", context! { invalid_code: true }),
+            page.render("login_code", context! { invalid_code: true }),
         ))
     }
 }
