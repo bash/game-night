@@ -48,6 +48,7 @@ pub(crate) fn routes() -> Vec<Route> {
     routes![
         getting_invited_redirect,
         getting_invited_page,
+        register_redirect,
         register_page,
         register_form,
         profile::profile,
@@ -67,34 +68,32 @@ pub(crate) async fn getting_invited_page(page: PageBuilder<'_>) -> Template {
         context! { register_uri: uri!(register_page(passphrase = Option::<Passphrase>::None)) },
     )
 }
+
+#[get("/register", rank = 10)]
+async fn register_redirect(_user: User) -> Redirect {
+    Redirect::to(uri!(profile::profile()))
+}
+
+#[get("/register?<passphrase>", rank = 20)]
 async fn register_page(
     cookies: &CookieJar<'_>,
     repository: Box<dyn Repository>,
     email_sender: &State<Box<dyn EmailSender>>,
     page: PageBuilder<'_>,
-    user: Option<User>,
     campaign: Option<ProvidedCampaign<'_>>,
     passphrase: Option<Passphrase>,
 ) -> Result<Either<Template, Redirect>, Debug<Error>> {
-    if let Some(user) = user {
-        let users_url = user.can_manage_users().then(|| uri!(list_users));
-        Ok(Left(page.render(
-            "register/authenticated",
-            context! { step: "invitation_code", users_url },
-        )))
-    } else {
-        let form = RegisterForm::new_with_passphrase(passphrase);
-        register(
-            cookies,
-            repository,
-            email_sender.as_ref(),
-            page,
-            campaign,
-            form,
-            PassphraseSource::Query,
-        )
-        .await
-    }
+    let form = RegisterForm::new_with_passphrase(passphrase);
+    register(
+        cookies,
+        repository,
+        email_sender.as_ref(),
+        page,
+        campaign,
+        form,
+        PassphraseSource::Query,
+    )
+    .await
 }
 
 #[post("/register", data = "<form>")]
@@ -158,7 +157,7 @@ async fn register(
     );
 
     cookies.set_login_state(LoginState::Authenticated(user_id, None));
-    Ok(Right(Redirect::to("/poll")))
+    Ok(Right(Redirect::to(uri!(crate::poll::poll_page()))))
 }
 
 fn invalid_campaign(cookies: &CookieJar<'_>, page: PageBuilder<'_>) -> Template {
