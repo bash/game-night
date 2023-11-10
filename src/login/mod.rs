@@ -1,6 +1,7 @@
 use crate::auth::{CookieJarExt, LoginState};
 use crate::database::Repository;
 use crate::email::{EmailMessage, EmailSender};
+use crate::register::rocket_uri_macro_getting_invited_page;
 use crate::template::PageBuilder;
 use crate::users::{User, UserId};
 use anyhow::{Error, Result};
@@ -51,10 +52,10 @@ async fn login_page(
 ) -> LoginPage {
     match user {
         Some(_) => LoginPage::AlreadyLoggedIn(Redirect::to(redirect.or_root())),
-        None => LoginPage::LoginRequired(
-            page.uri(redirect.clone())
-                .render("login", context! { has_redirect: redirect.is_some() }),
-        ),
+        None => LoginPage::LoginRequired(page.uri(redirect.clone()).render(
+            "login",
+            context! { has_redirect: redirect.is_some(), getting_invited_uri: uri!(getting_invited_page()) },
+        )),
     }
 }
 

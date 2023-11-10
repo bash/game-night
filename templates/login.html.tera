@@ -19,7 +19,7 @@
 
     <fieldset class="-actions">
         <button type="submit">Send Login Code</button>
-        <a href="/invite" class="link-button">I don't have an account</a>
+        <a href="{{getting_invited_uri}}" class="link-button">I don't have an account :/</a>
     </fieldset>
 </form>
 {% endblock content %}
