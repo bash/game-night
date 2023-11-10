@@ -49,7 +49,7 @@ impl<'r> PageBuilder<'r> {
                 context,
                 user: self.user.as_ref(),
                 logout_uri: uri!(logout()),
-                sudo: self.login_state.is_sudo(),
+                sudo: self.login_state.is_impersonating(),
                 active_chapter: active_chapter(&chapters, &self.uri),
                 chapters,
                 page: Page {

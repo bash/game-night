@@ -157,7 +157,7 @@ async fn register(
         )))
     );
 
-    cookies.set_login_state(LoginState::Authenticated(user_id, None));
+    cookies.set_login_state(LoginState::Authenticated(user_id));
     Ok(Right(Redirect::to(uri!(crate::poll::poll_page()))))
 }
 

@@ -15,13 +15,7 @@ pub(super) fn enter(
     cookies: &'_ CookieJar<'_>,
     _guard: AuthorizedTo<ManageUsers>,
 ) -> Result<Redirect, Debug<Error>> {
-    if let Authenticated(user, original) = cookies.login_state()? {
-        cookies.set_login_state(Authenticated(
-            UserId(form.user),
-            Some(original.unwrap_or(user)),
-        ));
-    }
-
+    cookies.set_login_state(cookies.login_state()?.impersonate(UserId(form.user)));
     Ok(Redirect::to(Origin::ROOT))
 }
 
@@ -31,8 +25,8 @@ pub(super) fn exit(
     cookies: &'_ CookieJar<'_>,
     _guard: User,
 ) -> Result<Redirect, Debug<Error>> {
-    if let Authenticated(_, Some(original)) = cookies.login_state()? {
-        cookies.set_login_state(Authenticated(original, None));
+    if let Impersonating { original, .. } = cookies.login_state()? {
+        cookies.set_login_state(Authenticated(original));
     }
 
     Ok(Redirect::to(form.into_inner().redirect))

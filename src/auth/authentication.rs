@@ -37,9 +37,9 @@ async fn fetch_user(
     request: &Request<'_>,
     repository: &mut dyn Repository,
 ) -> Result<Option<User>> {
-    match request.cookies().login_state()? {
-        LoginState::Authenticated(e, _) => Ok(repository.get_user_by_id(e).await?),
-        LoginState::Anonymous => Ok(None),
+    match request.cookies().login_state()?.effective_user_id() {
+        Some(user_id) => Ok(repository.get_user_by_id(user_id).await?),
+        None => Ok(None),
     }
 }
 
@@ -51,13 +51,37 @@ pub(crate) trait CookieJarExt {
 
 #[derive(Debug)]
 pub(crate) enum LoginState {
-    Authenticated(UserId, Option<UserId>),
+    Authenticated(UserId),
+    Impersonating { effective: UserId, original: UserId },
     Anonymous,
 }
 
 impl LoginState {
-    pub(crate) fn is_sudo(&self) -> bool {
-        matches!(self, LoginState::Authenticated(_, Some(_)))
+    pub(crate) fn effective_user_id(&self) -> Option<UserId> {
+        match self {
+            LoginState::Authenticated(user) => Some(*user),
+            LoginState::Impersonating { effective, .. } => Some(*effective),
+            LoginState::Anonymous => None,
+        }
+    }
+
+    pub(crate) fn is_impersonating(&self) -> bool {
+        matches!(self, LoginState::Impersonating { .. })
+    }
+
+    pub(crate) fn impersonate(self, effective: UserId) -> LoginState {
+        use LoginState::*;
+        match self {
+            Authenticated(original) => Impersonating {
+                effective,
+                original,
+            },
+            Impersonating { original, .. } => Impersonating {
+                effective,
+                original,
+            },
+            Anonymous => Anonymous,
+        }
     }
 }
 
@@ -65,9 +89,13 @@ impl<'r> CookieJarExt for CookieJar<'r> {
     fn login_state(&self) -> Result<LoginState> {
         let effective = parse_user_id_cookie(self.get_private(USER_ID_COOKIE_NAME))?;
         let original = parse_user_id_cookie(self.get_private(ORIGINAL_USER_ID_COOKIE_NAME))?;
-        match effective {
-            None => Ok(LoginState::Anonymous),
-            Some(u) => Ok(LoginState::Authenticated(u, original)),
+        match (effective, original) {
+            (None, _) => Ok(LoginState::Anonymous),
+            (Some(effective), None) => Ok(LoginState::Authenticated(effective)),
+            (Some(effective), Some(original)) => Ok(LoginState::Impersonating {
+                effective,
+                original,
+            }),
         }
     }
 
@@ -77,15 +105,18 @@ impl<'r> CookieJarExt for CookieJar<'r> {
                 self.remove_private(user_id_cookie(USER_ID_COOKIE_NAME, ""));
                 self.remove_private(user_id_cookie(ORIGINAL_USER_ID_COOKIE_NAME, ""));
             }
-            LoginState::Authenticated(e, Some(o)) => {
-                self.add_private(user_id_cookie(USER_ID_COOKIE_NAME, e.0.to_string()));
+            LoginState::Impersonating {
+                effective,
+                original,
+            } => {
+                self.add_private(user_id_cookie(USER_ID_COOKIE_NAME, effective.0.to_string()));
                 self.add_private(user_id_cookie(
                     ORIGINAL_USER_ID_COOKIE_NAME,
-                    o.0.to_string(),
+                    original.0.to_string(),
                 ));
             }
-            LoginState::Authenticated(e, None) => {
-                self.add_private(user_id_cookie(USER_ID_COOKIE_NAME, e.0.to_string()));
+            LoginState::Authenticated(user) => {
+                self.add_private(user_id_cookie(USER_ID_COOKIE_NAME, user.0.to_string()));
                 self.remove_private(user_id_cookie(ORIGINAL_USER_ID_COOKIE_NAME, ""));
             }
         }

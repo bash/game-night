@@ -27,7 +27,7 @@ pub(super) async fn login_with_code<'r>(
 ) -> Result<LoginWithCodeResult, Debug<Error>> {
     use LoginWithCodeResult::*;
     if let Some(user_id) = repository.use_login_token(form.code).await? {
-        cookies.set_login_state(LoginState::Authenticated(user_id, None));
+        cookies.set_login_state(LoginState::Authenticated(user_id));
         Ok(LoginWithCodeResult::success(Redirect::to(
             redirect.or_root(),
         )))

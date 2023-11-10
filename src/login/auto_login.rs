@@ -63,7 +63,7 @@ async fn try_login(request: &Request<'_>, token: &str) {
             if let Ok(Some(user_id)) = repository.use_login_token(token).await {
                 request
                     .cookies()
-                    .set_login_state(LoginState::Authenticated(user_id, None));
+                    .set_login_state(LoginState::Authenticated(user_id));
             }
         }
     }
