@@ -9,6 +9,7 @@ use campaign::{Campaign, ProvidedCampaign};
 use email_address::EmailAddress;
 use lettre::message::Mailbox;
 use rocket::form::Form;
+use rocket::http::uri::Origin;
 use rocket::http::{Cookie, CookieJar, SameSite};
 use rocket::response::{Debug, Redirect};
 use rocket::{get, post, routes, uri, Either, FromForm, Route, State};
@@ -45,6 +46,8 @@ macro_rules! pending {
 
 pub(crate) fn routes() -> Vec<Route> {
     routes![
+        getting_invited_redirect,
+        getting_invited_page,
         register_page,
         register_form,
         profile::profile,
@@ -52,7 +55,18 @@ pub(crate) fn routes() -> Vec<Route> {
     ]
 }
 
-#[get("/register?<passphrase>")]
+#[get("/getting-invited", rank = 10)]
+async fn getting_invited_redirect(_user: User) -> Redirect {
+    Redirect::to(Origin::ROOT)
+}
+
+#[get("/getting-invited", rank = 20)]
+pub(crate) async fn getting_invited_page(page: PageBuilder<'_>) -> Template {
+    page.render(
+        "register/getting-invited",
+        context! { register_uri: uri!(register_page(passphrase = Option::<Passphrase>::None)) },
+    )
+}
 async fn register_page(
     cookies: &CookieJar<'_>,
     repository: Box<dyn Repository>,

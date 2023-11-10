@@ -8,7 +8,7 @@ use rocket::http::uri::Absolute;
 use rocket::http::Status;
 use rocket::request::{FromRequest, Outcome};
 use rocket::{
-    async_trait, catch, catchers, error, get, launch, routes, Build, Config, Phase, Request,
+    async_trait, catch, catchers, error, get, launch, routes, uri, Build, Config, Phase, Request,
     Rocket, Route,
 };
 use rocket_db_pools::{sqlx::SqlitePool, Database, Pool};
@@ -78,7 +78,10 @@ fn file_server() -> impl Into<Vec<Route>> {
 
 #[get("/", rank = 20)]
 fn get_index_page(page: PageBuilder<'_>) -> Template {
-    page.render("index", context! {})
+    page.render(
+        "index",
+        context! { getting_invited_uri: uri!(register::getting_invited_page())},
+    )
 }
 
 #[catch(404)]

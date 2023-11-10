@@ -31,12 +31,8 @@ pub(crate) fn routes() -> Vec<Route> {
 }
 
 #[get("/invite")]
-fn invite_page(page: PageBuilder<'_>, user: Option<User>) -> Template {
-    let can_invite = user.map(|u| u.can_invite()).unwrap_or_default();
-    page.render(
-        "invite",
-        context! { can_invite, batch_invite_uri: uri!(batch::invite) },
-    )
+fn invite_page(page: PageBuilder<'_>, _user: AuthorizedTo<Invite>) -> Template {
+    page.render("invite", context! { batch_invite_uri: uri!(batch::invite) })
 }
 
 #[post("/invite", data = "<form>")]

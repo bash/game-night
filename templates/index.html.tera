@@ -8,6 +8,6 @@
     Participating requires an invitation from <a href="https://tau.garden">Tau</a>.
 </p>
 <p>
-    <a href="/invite" class="link-button">Learn More</a>
+    <a href="{{getting_invited_uri}}" class="link-button">Learn More</a>
 </p>
 {% endblock content %}

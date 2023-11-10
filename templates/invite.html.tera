@@ -1,22 +1,9 @@
 {% extends 'base' %}
 
-{% block title %}
-    {% if can_invite %}
-        Inviting Others
-    {% else %}
-        Getting Invited
-    {% endif %}
-{% endblock title %}
+{% block title %}Invite{% endblock title %}
 
 {% block content %}
-{% if can_invite %}
-
 <form method="post">
-    <p>
-        Congratulations <strong>{{user.name}}</strong>!
-        You have already been invited to Tau's Game Night and you can invite others if you'd like.
-    </p>
-
     <fieldset>
         <label for="lifetime">Invitation Lifetime:</label>
         <select name="lifetime" id="lifetime">
@@ -30,27 +17,4 @@
         <button type="submit" formaction="{{batch_invite_uri}}">Generate Invitation Cards</button>
     </fieldset>
 </form>
-
-{% elif user %}
-    <p><em>
-        Congratulations <strong>{{user.name}}</strong>! You have already been invited
-        to Tau's Game Night.
-        There's no need to get invited again :)
-    </em></p>
-    <p>
-        <a href="/poll" class="link-button">Take me to the poll!</a>
-    </p>
-{% else %}
-    <p>
-        It's easy, really! Just meet Tau IRL—they'll happily invite you if you ask nicely.
-    </p>
-    <p>
-        If you have met Tau IRL but are too shy or too lazy to ask
-        you can alternatively send an email to <a href="mailto:game-night@tau.garden">game-night@tau.garden</a>.
-    </p>
-    <p>
-        <a href="/register" class="link-button">I have an invitation!</a>
-    </p>
-{% endif %}
-
 {% endblock content %}
