@@ -22,4 +22,31 @@
         {% endif %}
     </fieldset>
 </form>
+
+<form method="post" action="/web-push/subscribe">
+    <input type="hidden" name="endpoint">
+    <input type="hidden" name="auth">
+    <input type="hidden" name="p256dh">
+    <button type="button" data-web-push-subscribe-button>Subscribe</button>
+</form>
+
+<script type="module">
+    const webPushKey = {{push_key | json_encode | safe}}
+    const button = document.querySelector('[data-web-push-subscribe-button]')
+    const form = button.form
+    const endpointField = form.querySelector('[name="endpoint"]')
+    const authField = form.querySelector('[name="auth"]')
+    const p256dhField = form.querySelector('[name="p256dh"]')
+
+    button.addEventListener('click', async () => {
+        button.disabled = true
+        const registration = await navigator.serviceWorker.ready
+        const subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: webPushKey })
+        const { endpoint, keys: { auth, p256dh } } = subscription.toJSON()
+        endpointField.value = endpoint
+        authField.value = auth
+        p256dhField.value = p256dh
+        form.submit()
+    })
+</script>
 {% endblock %}

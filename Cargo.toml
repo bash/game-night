@@ -29,6 +29,7 @@ ics = "0.5.8"
 lazy_static = "1.4.0"
 web-push = { package = "web-push-native", version = "0.3.0" }
 pem = { package = "pem-rfc7468", version = "0.7.0", features = ["std"] }
+base64 = "0.21.5"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 systemd = "0.10.0"
