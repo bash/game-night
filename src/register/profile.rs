@@ -9,7 +9,7 @@ use rocket::{get, post, uri};
 use rocket_dyn_templates::{context, Template};
 
 #[get("/profile")]
-pub(super) fn profile(page: PageBuilder, user: User) -> Template {
+pub(crate) fn profile(page: PageBuilder, user: User) -> Template {
     page.render(
         "register/profile",
         context! {

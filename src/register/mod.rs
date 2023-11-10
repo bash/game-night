@@ -3,7 +3,7 @@ use crate::database::Repository;
 use crate::email::EmailSender;
 use crate::invitation::{Invitation, Passphrase};
 use crate::template::PageBuilder;
-use crate::users::{rocket_uri_macro_list_users, User, UserId};
+use crate::users::{User, UserId};
 use anyhow::{Error, Result};
 use campaign::{Campaign, ProvidedCampaign};
 use email_address::EmailAddress;
@@ -25,6 +25,7 @@ mod email_verification_code;
 mod profile;
 mod verification;
 pub(crate) use email_verification_code::*;
+pub(crate) use profile::*;
 
 macro_rules! unwrap_or_return {
     ($result:expr, $e:ident => $ret:expr) => {

@@ -1,6 +1,11 @@
 use crate::auth::LoginState;
+use crate::invitation::rocket_uri_macro_invite_page;
+use crate::invitation::Passphrase;
 use crate::login::rocket_uri_macro_login;
 use crate::login::rocket_uri_macro_logout;
+use crate::play::rocket_uri_macro_play_page;
+use crate::register::{rocket_uri_macro_profile, rocket_uri_macro_register_page};
+use crate::users::rocket_uri_macro_list_users;
 use crate::users::User;
 use anyhow::Error;
 use itertools::Itertools;
@@ -115,7 +120,7 @@ fn path_matches(uri: &Origin<'_>, expected_prefix: &Origin<'_>) -> bool {
 lazy_static! {
     static ref CHAPTERS: Vec<Chapter> = vec![
         Chapter {
-            uri: Origin::ROOT,
+            uri: uri!(register_page(passphrase = Option::<Passphrase>::None)),
             match_uris: vec![],
             title: "Register",
             visible_if: Option::is_none,
@@ -126,7 +131,7 @@ lazy_static! {
             }
         },
         Chapter {
-            uri: uri!(login(redirect = Some("/"))),
+            uri: uri!(login(redirect = Some(uri!(play_page()).to_string()))),
             match_uris: vec![],
             title: "Play",
             visible_if: Option::is_none,
@@ -137,7 +142,7 @@ lazy_static! {
             }
         },
         Chapter {
-            uri: Origin::ROOT,
+            uri: uri!(play_page()),
             match_uris: vec![],
             title: "Play",
             visible_if: Option::is_some,
@@ -148,8 +153,8 @@ lazy_static! {
             }
         },
         Chapter {
-            uri: uri!("/profile"),
-            match_uris: vec![uri!("/users")],
+            uri: uri!(profile()),
+            match_uris: vec![uri!(list_users())],
             title: "User Profile",
             accent_color: AccentColor::Teal,
             visible_if: |_| true,
@@ -170,7 +175,7 @@ lazy_static! {
             }
         },
         Chapter {
-            uri: uri!("/invite"),
+            uri: uri!(invite_page()),
             match_uris: vec![],
             title: "Invite",
             visible_if: |u| u.as_ref().map(|u| u.can_invite()).unwrap_or_default(),
