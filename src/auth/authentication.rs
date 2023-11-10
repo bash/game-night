@@ -6,31 +6,17 @@ use rocket::outcome::try_outcome;
 use rocket::request::{FromRequest, Outcome};
 use rocket::{async_trait, Request};
 use std::borrow::Cow;
-use std::ops::Deref;
-
-pub(crate) struct UserGuard(User);
-
-impl Deref for UserGuard {
-    type Target = User;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
 
 #[async_trait]
 impl<'r> FromRequest<'r> for User {
-    type Error = Option<Error>;
+    type Error = Error;
 
     async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
-        let mut repository = try_outcome!(request
-            .guard::<Box<dyn Repository>>()
-            .await
-            .map_error(|(s, e)| (s, Some(e))));
+        let mut repository = try_outcome!(request.guard::<Box<dyn Repository>>().await);
         match fetch_user(request, repository.as_mut()).await {
             Ok(Some(user)) => Outcome::Success(user),
-            Ok(None) => Outcome::Error((Status::Unauthorized, None)),
-            Err(e) => Outcome::Error((Status::InternalServerError, Some(e))),
+            Ok(None) => Outcome::Forward(Status::Unauthorized),
+            Err(e) => Outcome::Error((Status::InternalServerError, e)),
         }
     }
 }

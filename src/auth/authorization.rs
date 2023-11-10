@@ -21,14 +21,14 @@ pub(crate) trait UserPredicate {
 
 #[async_trait]
 impl<'r, P: UserPredicate> FromRequest<'r> for AuthorizedTo<P> {
-    type Error = Option<Error>;
+    type Error = Error;
 
     async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
         let user: User = try_outcome!(request.guard().await);
         if let Some(result) = AuthorizedTo::new(user) {
             Outcome::Success(result)
         } else {
-            Outcome::Error((Status::Forbidden, None))
+            Outcome::Forward(Status::Forbidden)
         }
     }
 }

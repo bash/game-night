@@ -65,7 +65,10 @@ fn figment() -> Figment {
 
 #[cfg(debug_assertions)]
 fn file_server() -> impl Into<Vec<Route>> {
-    rocket::fs::FileServer::from("public")
+    // The goal here is that the file server is alwaays checked first,
+    // so that Forwards from User or AuthorizedTo guards
+    // are not overruled by the file server's Forward(404).
+    rocket::fs::FileServer::from("public").rank(-100)
 }
 
 #[cfg(not(debug_assertions))]
