@@ -169,6 +169,7 @@ lazy_static! {
                 aria_label: "User"
             }
         },
+        #[cfg(debug_assertions)]
         Chapter {
             uri: uri!("/news"),
             match_uris: vec![],
