@@ -27,12 +27,8 @@ pub(crate) fn routes() -> Vec<Route> {
 }
 
 #[get("/", rank = 0)]
-async fn play_page(
-    event: NextEvent,
-    page: PageBuilder<'_>,
-    _user: User,
-) -> Result<Template, Debug<Error>> {
-    Ok(page.render("play", context! { event: event.0 }))
+async fn play_page(event: NextEvent, page: PageBuilder<'_>, _user: User) -> Template {
+    page.render("play", context! { event: event.0 })
 }
 
 struct NextEvent(Event);

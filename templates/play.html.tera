@@ -6,58 +6,50 @@
 {% block title %}Play{% endblock title %}
 
 {% block content %}
-    {% if event %}
+    <p>
+        {{event.created_by.name}} is organizing a <em>game night</em>
+        on <strong>{{event.starts_at | time(format='{date}')}}</strong> at
+        <strong>{{event.starts_at | time(format='{time}')}}</strong>
+        and you're invited 🥳
+    </p>
+
+    <fieldset>
+        <a class="link-button" href="/play/event.ics" download="game-night-{{event.id}}">Save to Calendar</a>
+    </fieldset>
+
+    <section>
+        <h2>What?</h2>
+        {{event.description | markdown | safe}}
+    </section>
+
+    <section>
+        <h2>When?</h2>
         <p>
-            {{event.created_by.name}} is organizing a <em>game night</em>
-            on <strong>{{event.starts_at | time(format='{date}')}}</strong> at
-            <strong>{{event.starts_at | time(format='{time}')}}</strong>
-            and you're invited 🥳
+            On <strong>{{event.starts_at | time(format='{date}')}}</strong>
+            from ~<strong>{{event.starts_at | time(format='{time}')}}</strong>
+            until ~<strong>{{event.ends_at | time(format='{time}')}}</strong>.
         </p>
+    </section>
 
-        <fieldset>
-            <a class="link-button" href="/play/event.ics" download="game-night-{{event.id}}">Save to Calendar</a>
-        </fieldset>
+    <section>
+        <h2>Where?</h2>
+        {{ location_macros::postal_address(location=event.location) }}
+    </section>
 
-        <section>
-            <h2>What?</h2>
-            {{event.description | markdown | safe}}
-        </section>
-
-        <section>
-            <h2>When?</h2>
-            <p>
-                On <strong>{{event.starts_at | time(format='{date}')}}</strong>
-                from ~<strong>{{event.starts_at | time(format='{time}')}}</strong>
-                until ~<strong>{{event.ends_at | time(format='{time}')}}</strong>.
-            </p>
-        </section>
-
-        <section>
-            <h2>Where?</h2>
-            {{ location_macros::postal_address(location=event.location) }}
-        </section>
-
-        <section>
-            <h2>Who?</h2>
-            <ul class="users-list">
-                {% for participant in event.participants %}
-                    <li>
-                        {{user_macros::avatar(user=participant.user)}}
-                        <span>
-                            {{participant.user.name}}
-                            {% if participant.user.id == user.id %}
-                                <small><strong>← this is you!</strong></small>
-                            {% endif %}
-                        </span>
-                    </li>
-                {% endfor %}
-            </ul>
-        </section>
-    {% else %}
-        <p>
-            <em>Yayy, you're all set! However, there is currently no event planned.<br>
-            I will send you an email to <strong>{{user.email_address}}</strong>
-            once it's time to vote for a date.</em>
-        </p>
-    {% endif %}
+    <section>
+        <h2>Who?</h2>
+        <ul class="users-list">
+            {% for participant in event.participants %}
+                <li>
+                    {{user_macros::avatar(user=participant.user)}}
+                    <span>
+                        {{participant.user.name}}
+                        {% if participant.user.id == user.id %}
+                            <small><strong>← this is you!</strong></small>
+                        {% endif %}
+                    </span>
+                </li>
+            {% endfor %}
+        </ul>
+    </section>
 {% endblock content %}
