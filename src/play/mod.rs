@@ -35,7 +35,10 @@ fn play_redirect(_user: User) -> Redirect {
 
 #[get("/", rank = 0)]
 fn play_page(event: NextEvent, page: PageBuilder<'_>, _user: User) -> Template {
-    page.render("play", context! { event: event.0 })
+    page.render(
+        "play",
+        context! { event: event.0, ics_uri: uri!(event_ics()) },
+    )
 }
 
 struct NextEvent(Event);
@@ -54,7 +57,7 @@ impl<'r> FromRequest<'r> for NextEvent {
     }
 }
 
-#[get("/play/event.ics")]
+#[get("/event.ics")]
 async fn event_ics(
     mut repository: Box<dyn Repository>,
     url_prefix: UrlPrefix<'_>,

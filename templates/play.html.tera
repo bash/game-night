@@ -14,7 +14,7 @@
     </p>
 
     <fieldset>
-        <a class="link-button" href="/play/event.ics" download="game-night-{{event.id}}">Save to Calendar</a>
+        <a class="link-button" href="{{ics_uri}}" download="game-night-{{event.id}}">Save to Calendar</a>
     </fieldset>
 
     <section>
