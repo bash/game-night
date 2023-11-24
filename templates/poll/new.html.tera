@@ -32,7 +32,7 @@
 
     <fieldset>
         <label for="description">Here's space for me to write down some extra information for the event using markdown:</label>
-        <textarea name="description" id="description"></textarea>
+        <textarea name="description" id="description" data-auto-resize></textarea>
     </fieldset>
 
     <fieldset class="-actions">
@@ -41,4 +41,5 @@
 </form>
 
 <script type="module" src="/js/calendar.js"></script>
+<script type="module" src="/js/auto-resize.js"></script>
 {% endblock content %}
