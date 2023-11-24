@@ -32,7 +32,7 @@
 
     <fieldset>
         <label for="description">Here's space for me to write down some extra information for the event using markdown:</label>
-        <textarea name="description" id="description" data-auto-resize></textarea>
+        <textarea name="description" id="description" data-auto-resize>{{description}}</textarea>
     </fieldset>
 
     <fieldset class="-actions">

@@ -22,8 +22,9 @@ use time::{Date, Duration, Month, OffsetDateTime, PrimitiveDateTime, Time};
 use time_tz::{timezones, PrimitiveDateTimeExt};
 
 #[get("/poll/new")]
-pub(super) fn new_poll_page(
+pub(super) async fn new_poll_page(
     page: PageBuilder<'_>,
+    mut repository: Box<dyn Repository>,
     _user: AuthorizedTo<ManagePoll>,
 ) -> Result<Template, Debug<Error>> {
     let calendar = get_calendar(
@@ -31,9 +32,10 @@ pub(super) fn new_poll_page(
         14,
         &mut CalendarDayPrefill::empty,
     );
+    let description = repository.get_newest_event().await?.map(|e| e.description);
     Ok(page.render(
         "poll/new",
-        context! { calendar, strategies: strategies(), calendar_uri: uri!(calendar()) },
+        context! { calendar, strategies: strategies(), calendar_uri: uri!(calendar()), description },
     ))
 }
 

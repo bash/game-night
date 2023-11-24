@@ -66,6 +66,8 @@ pub(crate) trait Repository: Send {
 
     async fn get_next_event(&mut self) -> Result<Option<Event>>;
 
+    async fn get_newest_event(&mut self) -> Result<Option<Event>>;
+
     async fn prune(&mut self) -> Result<()>;
 }
 
@@ -458,6 +460,19 @@ impl Repository for SqliteRepository {
         )
         .fetch_optional(&mut *transaction)
         .await?;
+        match event {
+            None => Ok(None),
+            Some(event) => Ok(Some(materialize_event(&mut *transaction, event).await?)),
+        }
+    }
+
+    async fn get_newest_event(&mut self) -> Result<Option<Event>> {
+        let mut transaction = self.0.begin().await?;
+
+        let event: Option<Event<i64, UserId, i64>> =
+            sqlx::query_as("SELECT * FROM events ORDER BY starts_at DESC LIMIT 1")
+                .fetch_optional(&mut *transaction)
+                .await?;
         match event {
             None => Ok(None),
             Some(event) => Ok(Some(materialize_event(&mut *transaction, event).await?)),
