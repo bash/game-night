@@ -10,10 +10,7 @@ use rocket::request::{FromRequest, Outcome};
 use rocket::{async_trait, Request};
 use rocket_db_pools::Connection;
 use sqlx::pool::PoolConnection;
-use sqlx::{Connection as _, Executor, Sqlite};
-use std::ops::Deref;
-
-type SqliteConnection = PoolConnection<Sqlite>;
+use sqlx::{Connection as _, Executor, Sqlite, SqliteConnection};
 
 #[async_trait]
 pub(crate) trait Repository: Send {
@@ -70,10 +67,10 @@ pub(crate) trait Repository: Send {
     async fn prune(&mut self) -> Result<()>;
 }
 
-pub(crate) struct SqliteRepository(pub(crate) SqliteConnection);
+pub(crate) struct SqliteRepository(pub(crate) PoolConnection<Sqlite>);
 
 impl SqliteRepository {
-    fn executor(&mut self) -> &mut <SqliteConnection as Deref>::Target {
+    fn executor(&mut self) -> &mut SqliteConnection {
         &mut self.0
     }
 }
@@ -251,7 +248,7 @@ impl Repository for SqliteRepository {
                AND type = 'one_time'",
         )
         .bind(email_address)
-        .fetch_one(self.0.as_mut())
+        .fetch_one(self.executor())
         .await?;
         Ok(token_count >= 1)
     }
@@ -275,7 +272,7 @@ impl Repository for SqliteRepository {
     }
 
     async fn add_poll(&mut self, poll: &Poll<(), UserId, i64>) -> Result<i64> {
-        let mut transaction: sqlx::Transaction<'_, Sqlite> = self.0.begin().await?;
+        let mut transaction = self.0.begin().await?;
 
         let poll_id = sqlx::query(
             "INSERT INTO polls (min_participants, max_participants, strategy, description, location_id, created_by, open_until, closed)
@@ -331,18 +328,19 @@ impl Repository for SqliteRepository {
     }
 
     async fn get_current_poll(&mut self) -> Result<Option<Poll>> {
-        let poll: Option<Poll<i64, UserId, i64>> =
-            sqlx::query_as("SELECT * FROM polls ORDER BY open_until DESC LIMIT 1")
-                .fetch_optional(self.executor())
-                .await?;
+        let mut transaction = self.0.begin().await?;
+
+        let poll = sqlx::query_as("SELECT * FROM polls ORDER BY open_until DESC LIMIT 1")
+            .fetch_optional(&mut *transaction)
+            .await?;
         match poll {
-            Some(poll) => Ok(Some(self.materialize_poll(poll).await?)),
+            Some(poll) => Ok(Some(materialize_poll(&mut *transaction, poll).await?)),
             None => Ok(None),
         }
     }
 
     async fn add_answers(&mut self, answers: Vec<(i64, Answer<(), UserId>)>) -> Result<()> {
-        let mut transaction: sqlx::Transaction<'_, Sqlite> = self.0.begin().await?;
+        let mut transaction = self.0.begin().await?;
 
         for (option_id, answer) in answers {
             let closed: bool = sqlx::query_scalar(
@@ -390,7 +388,8 @@ impl Repository for SqliteRepository {
     }
 
     async fn add_event(&mut self, event: Event<(), UserId, i64>) -> Result<Event> {
-        let mut transaction: sqlx::Transaction<'_, Sqlite> = self.0.begin().await?;
+        let mut transaction = self.0.begin().await?;
+
         let event_id = sqlx::query(
             "INSERT INTO events (starts_at, ends_at, description, location_id, created_by)
              VALUES (?1, ?2, ?3, ?4, ?5)",
@@ -412,119 +411,131 @@ impl Repository for SqliteRepository {
                 .await?;
         }
 
+        let event = materialize_event(&mut *transaction, event.with_id(event_id)).await?;
+
         transaction.commit().await?;
 
-        Ok(self.materialize_event(event.with_id(event_id)).await?)
+        Ok(event)
     }
 
     async fn get_next_event(&mut self) -> Result<Option<Event>> {
+        let mut transaction = self.0.begin().await?;
+
         let event: Option<Event<i64, UserId, i64>> = sqlx::query_as(
             "SELECT * FROM events
              WHERE unixepoch(ends_at) - unixepoch('now') >= 0
              ORDER BY starts_at ASC
              LIMIT 1",
         )
-        .fetch_optional(self.executor())
+        .fetch_optional(&mut *transaction)
         .await?;
         match event {
             None => Ok(None),
-            Some(event) => Ok(Some(self.materialize_event(event).await?)),
+            Some(event) => Ok(Some(materialize_event(&mut *transaction, event).await?)),
         }
     }
 
     async fn prune(&mut self) -> Result<()> {
+        let mut transaction = self.0.begin().await?;
+
         sqlx::query("DELETE FROM login_tokens WHERE unixepoch(valid_until) - unixepoch('now') < 0")
-            .execute(self.executor())
+            .execute(&mut *transaction)
             .await?;
         sqlx::query("DELETE FROM email_verification_codes WHERE unixepoch(valid_until) - unixepoch('now') < 0")
-            .execute(self.executor())
+            .execute(&mut *transaction)
             .await?;
         Ok(())
     }
 }
 
-impl SqliteRepository {
-    async fn materialize_poll(&mut self, poll: Poll<i64, UserId, i64>) -> Result<Poll> {
-        // Yes, yes using a JOIN to fetch the poll and the user at once would be better,
-        // but it's very inconvenient as I can't use the auto-derived FromRow impl :/
-        let user: User = sqlx::query_as("SELECT * FROM users WHERE id = ?1")
-            .bind(poll.created_by)
-            .fetch_one(self.executor())
+async fn materialize_poll(
+    connection: &mut SqliteConnection,
+    poll: Poll<i64, UserId, i64>,
+) -> Result<Poll> {
+    // Yes, yes using a JOIN to fetch the poll and the user at once would be better,
+    // but it's very inconvenient as I can't use the auto-derived FromRow impl :/
+    let user: User = sqlx::query_as("SELECT * FROM users WHERE id = ?1")
+        .bind(poll.created_by)
+        .fetch_one(&mut *connection)
+        .await?;
+
+    let location: Location = sqlx::query_as("SELECT * FROM locations WHERE id = ?1")
+        .bind(poll.location)
+        .fetch_one(&mut *connection)
+        .await?;
+
+    let mut options: Vec<PollOption> =
+        sqlx::query_as("SELECT * FROM poll_options WHERE poll_id = ?1")
+            .bind(poll.id)
+            .fetch_all(&mut *connection)
             .await?;
 
-        let location: Location = sqlx::query_as("SELECT * FROM locations WHERE id = ?1")
-            .bind(poll.location)
-            .fetch_one(self.executor())
-            .await?;
-
-        let mut options: Vec<PollOption> =
-            sqlx::query_as("SELECT * FROM poll_options WHERE poll_id = ?1")
-                .bind(poll.id)
-                .fetch_all(self.executor())
-                .await?;
-
-        for option in &mut options {
-            for answer in sqlx::query_as("SELECT * FROM poll_answers WHERE poll_option_id = ?1")
-                .bind(option.id)
-                .fetch_all(self.executor())
-                .await?
-            {
-                option.answers.push(self.materialize_answer(answer).await?);
-            }
+    for option in &mut options {
+        for answer in sqlx::query_as("SELECT * FROM poll_answers WHERE poll_option_id = ?1")
+            .bind(option.id)
+            .fetch_all(&mut *connection)
+            .await?
+        {
+            option
+                .answers
+                .push(materialize_answer(&mut *connection, answer).await?);
         }
-
-        Ok(poll.materialize(user, location, options))
     }
 
-    async fn materialize_answer(&mut self, answer: Answer<i64, UserId>) -> Result<Answer> {
-        let user: User = sqlx::query_as("SELECT * FROM users WHERE id = ?1")
-            .bind(answer.user)
-            .fetch_one(self.executor())
-            .await?;
-        Ok(answer.materialize(user))
-    }
+    Ok(poll.materialize(user, location, options))
+}
 
-    async fn materialize_event<Participants: Default>(
-        &mut self,
-        event: Event<i64, UserId, i64, Participants>,
-    ) -> Result<Event> {
-        let created_by = sqlx::query_as("SELECT * FROM users WHERE id = ?1")
-            .bind(event.created_by)
-            .fetch_one(self.executor())
-            .await?;
-        let location = sqlx::query_as("SELECT * FROM locations WHERE id = ?1")
-            .bind(event.location)
-            .fetch_one(self.executor())
-            .await?;
-        let participants = sqlx::query_as("SELECT * FROM participants WHERE event_id = ?1")
-            .bind(event.id)
-            .fetch_all(self.executor())
-            .await?;
-        let participants = self.materialize_participants(participants).await?;
-        Ok(event.materialize(location, created_by, participants))
-    }
+async fn materialize_answer(
+    connection: &mut SqliteConnection,
+    answer: Answer<i64, UserId>,
+) -> Result<Answer> {
+    let user: User = sqlx::query_as("SELECT * FROM users WHERE id = ?1")
+        .bind(answer.user)
+        .fetch_one(connection)
+        .await?;
+    Ok(answer.materialize(user))
+}
 
-    async fn materialize_participants(
-        &mut self,
-        participants: Vec<Participant<i64, UserId>>,
-    ) -> Result<Vec<Participant>> {
-        let mut materialized = Vec::new();
-        for participant in participants {
-            materialized.push(self.materialize_participant(participant).await?);
-        }
-        Ok(materialized)
-    }
+async fn materialize_event<Participants: Default>(
+    connection: &mut SqliteConnection,
+    event: Event<i64, UserId, i64, Participants>,
+) -> Result<Event> {
+    let created_by = sqlx::query_as("SELECT * FROM users WHERE id = ?1")
+        .bind(event.created_by)
+        .fetch_one(&mut *connection)
+        .await?;
+    let location = sqlx::query_as("SELECT * FROM locations WHERE id = ?1")
+        .bind(event.location)
+        .fetch_one(&mut *connection)
+        .await?;
+    let participants = sqlx::query_as("SELECT * FROM participants WHERE event_id = ?1")
+        .bind(event.id)
+        .fetch_all(&mut *connection)
+        .await?;
+    let participants = materialize_participants(connection, participants).await?;
+    Ok(event.materialize(location, created_by, participants))
+}
 
-    async fn materialize_participant(
-        &mut self,
-        participant: Participant<i64, UserId>,
-    ) -> Result<Participant> {
-        let user = sqlx::query_as("SELECT * FROM users WHERE id = ?1")
-            .bind(participant.user)
-            .fetch_one(self.executor())
-            .await?;
-        Ok(participant.materialize(user))
+async fn materialize_participants(
+    connection: &mut SqliteConnection,
+    participants: Vec<Participant<i64, UserId>>,
+) -> Result<Vec<Participant>> {
+    let mut materialized = Vec::new();
+    for participant in participants {
+        materialized.push(materialize_participant(&mut *connection, participant).await?);
     }
+    Ok(materialized)
+}
+
+async fn materialize_participant(
+    connection: &mut SqliteConnection,
+    participant: Participant<i64, UserId>,
+) -> Result<Participant> {
+    let user = sqlx::query_as("SELECT * FROM users WHERE id = ?1")
+        .bind(participant.user)
+        .fetch_one(&mut *connection)
+        .await?;
+    Ok(participant.materialize(user))
 }
 
 async fn delete_token<'c, E>(executor: E, token: &str) -> Result<bool>
