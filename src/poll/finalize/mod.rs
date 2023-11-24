@@ -1,4 +1,4 @@
-use super::{Answer, Attendance, DateSelectionStrategy, Poll, PollOption, PollState};
+use super::{Answer, Attendance, DateSelectionStrategy, Poll, PollOption};
 use crate::database::Repository;
 use crate::email::EmailSender;
 use crate::event::Event;
@@ -9,7 +9,6 @@ use itertools::{Either, Itertools};
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 use std::cmp::min;
-use time::OffsetDateTime;
 
 mod scheduling;
 pub(crate) use scheduling::*;
@@ -17,10 +16,8 @@ mod emails;
 
 async fn finalize(ctx: &mut FinalizeContext) -> Result<()> {
     // not using a transaction here because we're the only ones setting polls to closed.
-    if let Some(poll) = ctx.repository.get_current_poll().await? {
-        if poll.state(OffsetDateTime::now_utc()) == PollState::PendingClosure {
-            try_finalize_poll(ctx, poll).await?;
-        }
+    for poll in ctx.repository.get_polls_pending_for_finalization().await? {
+        try_finalize_poll(ctx, poll).await?;
     }
 
     Ok(())
@@ -130,6 +127,7 @@ mod tests {
     use super::*;
     use crate::poll::AnswerValue;
     use crate::users::UserId;
+    use time::OffsetDateTime;
 
     mod choose_participants {
         use super::*;

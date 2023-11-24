@@ -54,7 +54,9 @@ pub(crate) trait Repository: Send {
 
     async fn add_answers(&mut self, answers: Vec<(i64, Answer<(), UserId>)>) -> Result<()>;
 
-    async fn get_current_poll(&mut self) -> Result<Option<Poll>>;
+    async fn get_open_poll(&mut self) -> Result<Option<Poll>>;
+
+    async fn get_polls_pending_for_finalization(&mut self) -> Result<Vec<Poll>>;
 
     async fn close_poll(&mut self, id: i64) -> Result<()>;
 
@@ -327,16 +329,43 @@ impl Repository for SqliteRepository {
         Ok(())
     }
 
-    async fn get_current_poll(&mut self) -> Result<Option<Poll>> {
+    async fn get_open_poll(&mut self) -> Result<Option<Poll>> {
         let mut transaction = self.0.begin().await?;
 
-        let poll = sqlx::query_as("SELECT * FROM polls ORDER BY open_until DESC LIMIT 1")
-            .fetch_optional(&mut *transaction)
-            .await?;
+        let poll = sqlx::query_as(
+            "SELECT * FROM polls
+             WHERE unixepoch(open_until) - unixepoch('now') >= 0
+               AND closed = ?1
+             LIMIT 1",
+        )
+        .bind(false)
+        .fetch_optional(&mut *transaction)
+        .await?;
         match poll {
             Some(poll) => Ok(Some(materialize_poll(&mut *transaction, poll).await?)),
             None => Ok(None),
         }
+    }
+
+    async fn get_polls_pending_for_finalization(&mut self) -> Result<Vec<Poll>> {
+        let mut transaction = self.0.begin().await?;
+
+        let polls = sqlx::query_as(
+            "SELECT * FROM polls
+             WHERE unixepoch(open_until) - unixepoch('now') < 0
+               AND closed = ?1
+             ORDER BY open_until DESC",
+        )
+        .bind(false)
+        .fetch_all(&mut *transaction)
+        .await?;
+
+        let mut materialized_polls = Vec::new();
+        for poll in polls {
+            materialized_polls.push(materialize_poll(&mut *transaction, poll).await?);
+        }
+
+        Ok(materialized_polls)
     }
 
     async fn add_answers(&mut self, answers: Vec<(i64, Answer<(), UserId>)>) -> Result<()> {

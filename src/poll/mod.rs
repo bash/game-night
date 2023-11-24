@@ -38,15 +38,14 @@ async fn poll_page(
     page: PageBuilder<'_>,
     user: User,
 ) -> Result<Template, Debug<Error>> {
-    let now = OffsetDateTime::now_utc();
-    match repository.get_current_poll().await? {
-        Some(poll) if poll.is_open(now) => Ok(open_poll_page(
+    match repository.get_open_poll().await? {
+        Some(poll) => Ok(open_poll_page(
             page,
             poll,
             user,
             repository.get_users().await?,
         )),
-        _ => Ok(no_open_poll_page(page, user)),
+        None => Ok(no_open_poll_page(page, user)),
     }
 }
 
@@ -93,22 +92,6 @@ impl<Id, UserRef, LocationRef> Poll<Id, UserRef, LocationRef> {
             location,
             options,
         }
-    }
-}
-
-impl<Id> Poll<Id> {
-    pub(crate) fn state(&self, now: OffsetDateTime) -> PollState {
-        if self.closed {
-            PollState::Closed
-        } else if now > self.open_until {
-            PollState::PendingClosure
-        } else {
-            PollState::Open
-        }
-    }
-
-    pub(crate) fn is_open(&self, now: OffsetDateTime) -> bool {
-        self.state(now).is_open()
     }
 }
 
@@ -319,20 +302,6 @@ pub(crate) struct Location<Id = i64> {
     pub(crate) floor: i8,
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "snake_case")]
-pub(crate) enum PollState {
-    Open,
-    PendingClosure,
-    Closed,
-}
-
-impl PollState {
-    pub(crate) fn is_open(self) -> bool {
-        matches!(self, PollState::Open)
-    }
-}
-
 pub(crate) struct Open<T>(T);
 
 impl<T> ops::Deref for Open<T> {
@@ -351,11 +320,9 @@ impl<'r> FromRequest<'r> for Open<Poll> {
         let mut repository: Box<dyn Repository> = try_outcome!(FromRequest::from_request(request)
             .await
             .map_error(|(s, e)| (s, Some(e))));
-        match repository.get_current_poll().await {
-            Ok(Some(poll)) if poll.is_open(OffsetDateTime::now_utc()) => {
-                Outcome::Success(Open(poll))
-            }
-            Ok(_) => Outcome::Error((Status::BadRequest, None)),
+        match repository.get_open_poll().await {
+            Ok(Some(poll)) => Outcome::Success(Open(poll)),
+            Ok(None) => Outcome::Error((Status::BadRequest, None)),
             Err(error) => Outcome::Error((Status::InternalServerError, Some(error))),
         }
     }
