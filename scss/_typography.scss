@@ -61,6 +61,26 @@ small {
     font-size: .8em;
 }
 
+time {
+    display: inline-block;
+    font-family: var(--seven-segment);
+    font-weight: bold;
+    font-size: .8rem;
+    border-radius: 6px;
+    padding: 4px;
+    margin: 4px;
+
+    @media not (prefers-color-scheme: dark) {
+        color: var(--background-color);
+        background-color: var(--text-color);
+    }
+
+    @media (prefers-color-scheme: dark) {
+        background-color: color-mix(in hsl, var(--accent-color), #000 10%);
+        color: color-mix(in hsl, var(--accent-color), #000 90%);
+    }
+}
+
 %fleuron {
     width: 1.34em;
     height: 1.5em;

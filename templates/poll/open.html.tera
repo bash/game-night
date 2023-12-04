@@ -80,9 +80,7 @@
                         </label>
 
                         <div class="time-range">
-                            <input type="time" readonly value="{{option.starts_at | time(format='[hour]:[minute]')}}" tabindex="-1">
-                            &ndash;
-                            <input type="time" readonly value="{{option.ends_at | time(format='[hour]:[minute]')}}" tabindex="-1">
+                            <time>{{option.starts_at | time(format='[hour]:[minute]')}}</time>&ndash;<time>{{option.ends_at | time(format='[hour]:[minute]')}}</time>
                         </div>
 
                         {% if option.vetoed %}
