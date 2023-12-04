@@ -76,7 +76,7 @@ time {
     }
 
     @media (prefers-color-scheme: dark) {
-        background-color: color-mix(in hsl, var(--accent-color), #000 10%);
+        background-color: color-mix(in srgb, var(--accent-color), #000 10%);
         color: color-mix(in hsl, var(--accent-color), #000 90%);
     }
 }
