@@ -33,7 +33,8 @@ pub(super) async fn login_with_code<'r>(
         )))
     } else {
         Ok(Error(
-            page.render("login_code", context! { invalid_code: true }),
+            page.uri(redirect)
+                .render("login_code", context! { invalid_code: true }),
         ))
     }
 }
