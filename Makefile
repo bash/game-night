@@ -33,7 +33,7 @@ certs:
 	@mkdir -p private
 	(cd private && mkcert localhost 127.0.0.1 ::1)
 run:
-	ROCKET_TLS={certs="private/localhost+2.pem",key="private/localhost+2-key.pem"} cargo run --features tls
+	ROCKET_TLS={certs="private/localhost+2.pem",key="private/localhost+2-key.pem"} cargo run --features development
 
 $(MAIN_CSS): $(SCSS_FILES)
 	sass scss/main.scss $@ $(SASS_FLAGS)

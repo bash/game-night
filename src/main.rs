@@ -63,7 +63,7 @@ fn figment() -> Figment {
     Config::figment().merge(("secret_key", &keys.rocket_secret_key))
 }
 
-#[cfg(debug_assertions)]
+#[cfg(feature = "serve-static-files")]
 fn file_server() -> impl Into<Vec<Route>> {
     // The goal here is that the file server is alwaays checked first,
     // so that Forwards from User or AuthorizedTo guards
@@ -71,7 +71,7 @@ fn file_server() -> impl Into<Vec<Route>> {
     rocket::fs::FileServer::from("public").rank(-100)
 }
 
-#[cfg(not(debug_assertions))]
+#[cfg(not(feature = "serve-static-files"))]
 fn file_server() -> impl Into<Vec<Route>> {
     routes![]
 }

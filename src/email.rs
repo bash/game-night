@@ -92,7 +92,7 @@ impl EmailSender for EmailSenderImpl {
         message_path.push(format!("{}.eml", message_id));
         rename(temporary_path, &message_path).await?;
 
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "open-email")]
         opener::open(&message_path)?;
 
         Ok(())

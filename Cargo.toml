@@ -21,7 +21,7 @@ constcat = "0.4.0"
 url = "2.4"
 uuid = { version = "1.4.1", features = ["v4"] }
 itertools = "0.12.0"
-opener = "0.6.1"
+opener = { version = "0.6.1", optional = true }
 time = { version = "0.3.28", features = ["formatting", "serde", "local-offset", "macros"] }
 time-tz = "2.0.0"
 pulldown-cmark = "0.9.3"
@@ -34,3 +34,6 @@ systemd = "0.10.0"
 
 [features]
 tls = ["rocket/tls"]
+open-email = ["opener"]
+serve-static-files = []
+development = ["open-email", "tls", "serve-static-files"]
