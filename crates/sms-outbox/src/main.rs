@@ -1,9 +1,8 @@
 use anyhow::Result;
 use log::error;
-use serde::{Deserialize, Serialize};
+use sms_outbox::TextMessage;
 use std::future::pending;
 use twilio::TwilioClient;
-use zbus::zvariant::Type;
 use zbus::{dbus_interface, ConnectionBuilder};
 
 mod twilio;
@@ -17,13 +16,6 @@ impl TextMessageOutbox {
             error!("failed to send message {message:?}: {e}")
         }
     }
-}
-
-#[derive(Debug, Deserialize, Serialize, Type)]
-struct TextMessage {
-    from: String,
-    to: String,
-    body: String,
 }
 
 #[tokio::main]

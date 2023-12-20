@@ -1,6 +1,6 @@
-use crate::TextMessage;
 use anyhow::{anyhow, Context, Result};
 use serde::{Deserialize, Serialize};
+use sms_outbox::TextMessage;
 use std::env;
 
 struct TwilioCredentials {
