@@ -1,6 +1,7 @@
 use anyhow::Result;
 use log::error;
 use serde::{Deserialize, Serialize};
+use std::future::pending;
 use twilio::TwilioClient;
 use zbus::zvariant::Type;
 use zbus::{dbus_interface, ConnectionBuilder};
@@ -25,7 +26,7 @@ struct Message {
     body: String,
 }
 
-#[async_std::main]
+#[tokio::main]
 async fn main() -> Result<()> {
     pretty_env_logger::init();
 
@@ -39,7 +40,7 @@ async fn main() -> Result<()> {
         .await?;
 
     // handling D-Bus messages is done in the background
-    std::future::pending::<()>().await;
+    pending::<()>().await;
 
     Ok(())
 }

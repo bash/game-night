@@ -1,9 +1,7 @@
 use crate::Message;
-use anyhow::{anyhow, bail, Context, Result};
-use http_auth_basic::Credentials;
+use anyhow::{anyhow, Context, Result};
 use serde::{Deserialize, Serialize};
 use std::env;
-use surf::Body;
 
 struct TwilioCredentials {
     account_sid: String,
@@ -11,13 +9,13 @@ struct TwilioCredentials {
 }
 
 pub(crate) struct TwilioClient {
-    client: surf::Client,
+    client: reqwest::Client,
     credentials: TwilioCredentials,
 }
 
 impl TwilioClient {
     pub(crate) fn from_env() -> Result<Self> {
-        let client = surf::Client::new();
+        let client = reqwest::Client::new();
         let credentials = TwilioCredentials::from_env()?;
         Ok(TwilioClient {
             client,
@@ -30,27 +28,27 @@ impl TwilioClient {
             "https://api.twilio.com/2010-04-01/Accounts/{}/Messages.json",
             self.credentials.account_sid
         );
-        let mut res = self
+        let response = self
             .client
             .post(url)
-            .header(
-                "Authorization",
-                Credentials::from(&self.credentials).as_http_header(),
+            .basic_auth(
+                &self.credentials.account_sid,
+                Some(&self.credentials.auth_token),
             )
-            .body(Body::from_form(&TwilioMessage::from(message)).map_err(to_anyhow)?)
+            .form(&TwilioMessage::from(message))
             .send()
-            .await
-            .map_err(to_anyhow)?;
-        if !res.status().is_success() {
-            let error: TwilioError = res.body_json().await.map_err(to_anyhow)?;
-            bail!("{} (error {})", error.message, error.code)
-        }
-        Ok(())
+            .await?;
+        ensure_success(response).await
     }
 }
 
-fn to_anyhow(error: surf::Error) -> anyhow::Error {
-    anyhow!(error)
+async fn ensure_success(response: reqwest::Response) -> Result<()> {
+    if !response.status().is_success() {
+        let error: TwilioError = response.json().await?;
+        Err(anyhow!("{} (error {})", error.message, error.code))
+    } else {
+        Ok(())
+    }
 }
 
 impl TwilioCredentials {
@@ -77,12 +75,6 @@ struct TwilioMessage<'a> {
 impl<'a> From<&'a Message> for TwilioMessage<'a> {
     fn from(Message { from, to, body }: &'a Message) -> Self {
         Self { from, to, body }
-    }
-}
-
-impl<'a> From<&'a TwilioCredentials> for Credentials {
-    fn from(value: &'a TwilioCredentials) -> Self {
-        Credentials::new(&value.account_sid, &value.auth_token)
     }
 }
 
