@@ -37,3 +37,8 @@ tls = ["rocket/tls"]
 open-email = ["opener"]
 serve-static-files = []
 development = ["open-email", "tls", "serve-static-files"]
+
+[workspace]
+members = [
+    "crates/sms-outbox",
+]

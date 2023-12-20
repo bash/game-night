@@ -35,6 +35,10 @@ certs:
 run:
 	ROCKET_TLS={certs="private/localhost+2.pem",key="private/localhost+2-key.pem"} cargo run --features development
 
+run-sms-outbox:
+	op run --env-file crates/sms-outbox/twilio.env \
+		-- cargo run -p sms-outbox --color=always
+
 $(MAIN_CSS): $(SCSS_FILES)
 	sass scss/main.scss $@ $(SASS_FLAGS)
 
