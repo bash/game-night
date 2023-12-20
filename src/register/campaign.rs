@@ -53,8 +53,8 @@ fn campaign_from_figment<'a>(figment: &'a Figment, name: &'a str) -> Result<Opti
         Err(figment::Error {
             kind: figment::error::Kind::MissingField(..),
             ..
-        }) => return Ok(None),
-        Err(e) => return Err(e.into()),
+        }) => Ok(None),
+        Err(e) => Err(e.into()),
     }
 }
 
