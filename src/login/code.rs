@@ -10,9 +10,9 @@ use rocket::{get, post, FromForm, Responder};
 use rocket_dyn_templates::{context, Template};
 
 #[get("/login/code?<redirect>")]
-pub(super) async fn login_with_code_page<'r>(
+pub(super) async fn login_with_code_page(
     redirect: Option<RedirectUri>,
-    page: PageBuilder<'r>,
+    page: PageBuilder<'_>,
 ) -> Template {
     page.uri(redirect).render("login_code", context! {})
 }

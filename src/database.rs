@@ -344,7 +344,7 @@ impl Repository for SqliteRepository {
         .fetch_optional(&mut *transaction)
         .await?;
         match poll {
-            Some(poll) => Ok(Some(materialize_poll(&mut *transaction, poll).await?)),
+            Some(poll) => Ok(Some(materialize_poll(&mut transaction, poll).await?)),
             None => Ok(None),
         }
     }
@@ -364,7 +364,7 @@ impl Repository for SqliteRepository {
 
         let mut materialized_polls = Vec::new();
         for poll in polls {
-            materialized_polls.push(materialize_poll(&mut *transaction, poll).await?);
+            materialized_polls.push(materialize_poll(&mut transaction, poll).await?);
         }
 
         Ok(materialized_polls)
@@ -442,7 +442,7 @@ impl Repository for SqliteRepository {
                 .await?;
         }
 
-        let event = materialize_event(&mut *transaction, event.with_id(event_id)).await?;
+        let event = materialize_event(&mut transaction, event.with_id(event_id)).await?;
 
         transaction.commit().await?;
 
@@ -462,7 +462,7 @@ impl Repository for SqliteRepository {
         .await?;
         match event {
             None => Ok(None),
-            Some(event) => Ok(Some(materialize_event(&mut *transaction, event).await?)),
+            Some(event) => Ok(Some(materialize_event(&mut transaction, event).await?)),
         }
     }
 
@@ -475,7 +475,7 @@ impl Repository for SqliteRepository {
                 .await?;
         match event {
             None => Ok(None),
-            Some(event) => Ok(Some(materialize_event(&mut *transaction, event).await?)),
+            Some(event) => Ok(Some(materialize_event(&mut transaction, event).await?)),
         }
     }
 

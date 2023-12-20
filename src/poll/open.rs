@@ -44,7 +44,7 @@ fn to_open_poll(poll: Poll, user: &User, users: Vec<User>) -> OpenPoll {
 }
 
 fn users_with_no_yes(poll: &Poll, users: Vec<User>) -> (Vec<User>, Vec<User>) {
-    let (answered, not_answered) = partition_by_answered(&poll, users);
+    let (answered, not_answered) = partition_by_answered(poll, users);
     let no_date_answered_with_yes = answered
         .into_iter()
         .filter(|u| !poll.has_yes_answer(u.id))
