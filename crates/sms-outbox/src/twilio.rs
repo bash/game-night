@@ -1,4 +1,4 @@
-use crate::Message;
+use crate::TextMessage;
 use anyhow::{anyhow, Context, Result};
 use serde::{Deserialize, Serialize};
 use std::env;
@@ -23,7 +23,7 @@ impl TwilioClient {
         })
     }
 
-    pub(crate) async fn send_message(&self, message: &Message) -> Result<()> {
+    pub(crate) async fn send_message(&self, message: &TextMessage) -> Result<()> {
         let url = format!(
             "https://api.twilio.com/2010-04-01/Accounts/{}/Messages.json",
             self.credentials.account_sid
@@ -72,8 +72,8 @@ struct TwilioMessage<'a> {
     body: &'a str,
 }
 
-impl<'a> From<&'a Message> for TwilioMessage<'a> {
-    fn from(Message { from, to, body }: &'a Message) -> Self {
+impl<'a> From<&'a TextMessage> for TwilioMessage<'a> {
+    fn from(TextMessage { from, to, body }: &'a TextMessage) -> Self {
         Self { from, to, body }
     }
 }

@@ -8,11 +8,11 @@ use zbus::{dbus_interface, ConnectionBuilder};
 
 mod twilio;
 
-struct SmsOutbox(TwilioClient);
+struct TextMessageOutbox(TwilioClient);
 
-#[dbus_interface(name = "garden.tau.game_night.SmsOutbox1")]
-impl SmsOutbox {
-    async fn queue_message(&self, message: Message) {
+#[dbus_interface(name = "garden.tau.game_night.TextMessageOutbox")]
+impl TextMessageOutbox {
+    async fn queue_message(&self, message: TextMessage) {
         if let Err(e) = self.0.send_message(&message).await {
             error!("failed to send message {message:?}: {e}")
         }
@@ -20,7 +20,7 @@ impl SmsOutbox {
 }
 
 #[derive(Debug, Deserialize, Serialize, Type)]
-struct Message {
+struct TextMessage {
     from: String,
     to: String,
     body: String,
@@ -31,10 +31,10 @@ async fn main() -> Result<()> {
     pretty_env_logger::init();
 
     let _connection = ConnectionBuilder::session()?
-        .name("garden.tau.game_night.SmsOutbox")?
+        .name("garden.tau.game_night.TextMessageOutbox")?
         .serve_at(
-            "/garden/tau/game_night/SmsOutbox",
-            SmsOutbox(TwilioClient::from_env()?),
+            "/garden/tau/game_night/TextMessageOutbox",
+            TextMessageOutbox(TwilioClient::from_env()?),
         )?
         .build()
         .await?;
