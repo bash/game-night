@@ -1,11 +1,10 @@
-use anyhow::{Context as _, Error, Result};
-use dirs::data_local_dir;
+use anyhow::{Error, Result};
 use std::fs::{create_dir_all, File, OpenOptions};
 use std::io::{self, ErrorKind, Read, Write};
 use std::path::{Path, PathBuf};
 
-pub(crate) fn read_or_generate<F: GeneratedFile>(f: &F) -> Result<F::Value> {
-    let file_path = get_file_path(f)?;
+pub(crate) fn read_or_generate<F: GeneratedFile>(path: &Path, f: &F) -> Result<F::Value> {
+    let file_path = get_file_path(path, f)?;
     create_dir_all(file_path.parent().unwrap())?;
     match write(f, &file_path) {
         Err(e) if is_already_exists_error(&e) => Ok(read(f, &file_path)?),
@@ -25,9 +24,9 @@ pub(crate) trait GeneratedFile {
     fn read(&self, read: &mut dyn Read) -> Result<Self::Value>;
 }
 
-fn get_file_path<F: GeneratedFile>(f: &F) -> Result<PathBuf> {
-    let mut file_path = data_local_dir().context("data directory not available")?;
-    file_path.extend(&["taus-game-night", f.file_name()]);
+fn get_file_path<F: GeneratedFile>(path: &Path, f: &F) -> Result<PathBuf> {
+    let mut file_path = path.to_owned();
+    file_path.push(f.file_name());
     Ok(file_path)
 }
 

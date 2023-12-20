@@ -8,8 +8,8 @@ use rocket::http::uri::Absolute;
 use rocket::http::Status;
 use rocket::request::{FromRequest, Outcome};
 use rocket::{
-    async_trait, catch, catchers, error, get, launch, routes, uri, Build, Config, Phase, Request,
-    Rocket, Route,
+    async_trait, catch, catchers, error, get, routes, uri, Build, Config, Phase, Request, Rocket,
+    Route,
 };
 use rocket_db_pools::{sqlx::SqlitePool, Database, Pool};
 use rocket_dyn_templates::{context, Template};
@@ -32,9 +32,9 @@ mod systemd;
 mod template;
 mod users;
 
-#[launch]
-fn rocket() -> _ {
-    let rocket = rocket::custom(figment());
+#[rocket::main]
+async fn main() -> Result<()> {
+    let rocket = rocket::custom(figment()?);
 
     #[cfg(target_os = "linux")]
     let rocket = rocket.attach(systemd::SystemdNotify);
@@ -57,11 +57,17 @@ fn rocket() -> _ {
         .attach(invite_admin_user())
         .attach(login::auto_login_fairing())
         .attach(poll_finalizer())
+        .launch()
+        .await?;
+
+    Ok(())
 }
 
-fn figment() -> Figment {
-    let secret_key = login::RocketSecretKey::read_or_generate().unwrap();
-    Config::figment().merge((rocket::Config::SECRET_KEY, &secret_key.0))
+fn figment() -> Result<Figment> {
+    let figment = Config::figment();
+    let secret_keys_path: String = figment.extract_inner("secret_keys_path")?;
+    let secret_key = login::RocketSecretKey::read_or_generate(secret_keys_path).unwrap();
+    Ok(figment.merge((rocket::Config::SECRET_KEY, &secret_key.0)))
 }
 
 #[cfg(feature = "serve-static-files")]

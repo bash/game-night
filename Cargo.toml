@@ -6,7 +6,6 @@ publish = false
 
 [dependencies]
 anyhow = "1.0.74"
-dirs = "5.0.1"
 email_address = "0.2.4"
 hex = { version = "0.4.3", features = ["serde"] }
 lettre = { version = "0.11.0", default-features = false, features = ["builder", "file-transport", "serde"] }

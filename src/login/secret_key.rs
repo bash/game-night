@@ -1,13 +1,14 @@
 use anyhow::Result;
 use rand::{thread_rng, RngCore};
 use std::io;
+use std::path::Path;
 
 #[derive(Debug)]
 pub(crate) struct RocketSecretKey(pub(crate) Vec<u8>);
 
 impl RocketSecretKey {
-    pub(crate) fn read_or_generate() -> Result<Self> {
-        crate::fs::read_or_generate(&RocketSecretKeyFile)
+    pub(crate) fn read_or_generate(path: impl AsRef<Path>) -> Result<Self> {
+        crate::fs::read_or_generate(path.as_ref(), &RocketSecretKeyFile)
     }
 
     fn generate() -> Self {
