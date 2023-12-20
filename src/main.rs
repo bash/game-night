@@ -21,6 +21,7 @@ mod auth;
 mod database;
 mod email;
 mod event;
+mod fs;
 mod invitation;
 mod login;
 mod play;
@@ -59,8 +60,8 @@ fn rocket() -> _ {
 }
 
 fn figment() -> Figment {
-    let keys = login::GameNightKeys::read_or_generate().unwrap();
-    Config::figment().merge(("secret_key", &keys.rocket_secret_key))
+    let secret_key = login::RocketSecretKey::read_or_generate().unwrap();
+    Config::figment().merge((rocket::Config::SECRET_KEY, &secret_key.0))
 }
 
 #[cfg(feature = "serve-static-files")]

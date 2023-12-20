@@ -860,6 +860,7 @@ dependencies = [
  "lazy_static",
  "lettre",
  "opener",
+ "pem-rfc7468",
  "pulldown-cmark",
  "rand",
  "rocket",
