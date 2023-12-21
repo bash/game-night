@@ -17,9 +17,7 @@ json = { package = "serde_json", version = "1.0.105" }
 sqlx = { version = "0.7", features = ["time"] }
 constcat = "0.4.0"
 url = "2.4"
-uuid = { version = "1.4.1", features = ["v4"] }
 itertools = "0.12.0"
-opener = { version = "0.6.1", optional = true }
 time = { version = "0.3.28", features = ["formatting", "serde", "local-offset", "macros"] }
 time-tz = "2.0.0"
 pulldown-cmark = "0.9.3"
@@ -30,9 +28,9 @@ pem = { package = "pem-rfc7468", version = "0.7.0", features = ["std"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 systemd = "0.10.0"
+outbox = { git = "https://github.com/bash/outbox.git", branch = "dbus", version = "0.1.0" }
 
 [features]
 tls = ["rocket/tls"]
-open-email = ["opener"]
 serve-static-files = []
-development = ["open-email", "tls", "serve-static-files"]
+development = ["tls", "serve-static-files"]
