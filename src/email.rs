@@ -7,15 +7,10 @@ use rand::{distributions, thread_rng, Rng as _};
 use rocket::async_trait;
 use rocket::figment::value::magic::RelativePathBuf;
 use rocket::figment::Figment;
-use rocket::tokio::fs::{create_dir_all, read_to_string, rename, OpenOptions};
-use rocket::tokio::io::AsyncWriteExt;
+use rocket::tokio::fs::read_to_string;
 use rocket_dyn_templates::tera::{Context, Tera};
 use serde::{Deserialize, Serialize};
-use std::path::{Path, PathBuf};
-use uuid::Uuid;
-
-const DEFAULT_EMAIL_TEMPLATE_DIR: &str = "emails";
-const DEFAULT_OUTBOX_DIR: &str = "outbox";
+use std::path::Path;
 
 #[async_trait]
 pub(crate) trait EmailSender: Send + Sync + DynClone {
@@ -50,7 +45,8 @@ where
 #[derive(Clone)]
 pub(crate) struct EmailSenderImpl {
     sender: Mailbox,
-    outbox_dir: PathBuf,
+    #[cfg(target_os = "linux")]
+    connection: outbox::zbus::Connection,
     css: String,
     tera: Tera,
 }
@@ -71,29 +67,10 @@ impl EmailSender for EmailSenderImpl {
             .multipart(multipart)
             .context("failed to create email message")?;
 
-        let message_id = Uuid::new_v4();
-
-        create_dir_all(&self.outbox_dir).await?;
-
-        // We don't want the outbox processor to attempt to send
-        // files while we're writing them.
-        // We use the leading _ to communicate that to the `outbox` program.
-        let mut temporary_path = self.outbox_dir.clone();
-        temporary_path.push(format!("_{}.eml", message_id));
-        let mut file = OpenOptions::default()
-            .create_new(true)
-            .write(true)
-            .open(&temporary_path)
-            .await?;
-        file.write_all(&message.formatted()).await?;
-
-        // Renames are atomic, so the file is available `outbox` all at once.
-        let mut message_path = self.outbox_dir.clone();
-        message_path.push(format!("{}.eml", message_id));
-        rename(temporary_path, &message_path).await?;
-
-        #[cfg(feature = "open-email")]
-        opener::open(&message_path)?;
+        #[cfg(target_os = "linux")]
+        outbox::queue(&self.connection, &message.formatted()).await?;
+        #[cfg(not(target_os = "linux"))]
+        println!("{}", String::from_utf8(message.formatted())?);
 
         Ok(())
     }
@@ -104,21 +81,17 @@ impl EmailSenderImpl {
         let config: EmailSenderConfig = figment
             .extract_inner("email")
             .context("failed to read email sender configuration")?;
-        let template_dir = config
-            .template_dir
-            .as_ref()
-            .map(|t| t.relative())
-            .unwrap_or_else(|| DEFAULT_EMAIL_TEMPLATE_DIR.into());
-        let outbox_dir = config
-            .outbox_dir
-            .map(|d| d.relative())
-            .unwrap_or_else(|| DEFAULT_OUTBOX_DIR.into());
+        let template_dir = config.template_dir.relative();
+        #[cfg(target_os = "linux")]
+        let outbox_bus = config.outbox_bus.unwrap_or(OutboxBus::System);
+        let connection = outbox_bus.to_connection().await?;
         let mut css_file_path = template_dir.clone();
         css_file_path.push("email.css");
 
         Ok(Self {
             sender: config.sender,
-            outbox_dir,
+            #[cfg(target_os = "linux")]
+            connection,
             tera: create_tera(&template_dir)?,
             css: read_to_string(css_file_path).await?,
         })
@@ -142,6 +115,23 @@ impl EmailSenderImpl {
                 .render(&html_template_name, &template_context)
                 .context("failed to render tera template")?,
         ))
+    }
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "snake_case")]
+enum OutboxBus {
+    System,
+    Session,
+}
+
+impl OutboxBus {
+    #[cfg(target_os = "linux")]
+    async fn to_connection(self) -> Result<outbox::zbus::Connection> {
+        match self {
+            OutboxBus::Session => Ok(outbox::zbus::Connection::session().await?),
+            OutboxBus::System => Ok(outbox::zbus::Connection::system().await?),
+        }
     }
 }
 
@@ -195,8 +185,8 @@ fn get_random_heart() -> &'static str {
 #[derive(Debug, Deserialize)]
 struct EmailSenderConfig {
     sender: Mailbox,
-    outbox_dir: Option<RelativePathBuf>,
-    template_dir: Option<RelativePathBuf>,
+    template_dir: RelativePathBuf,
+    outbox_bus: Option<OutboxBus>,
 }
 
 #[derive(Debug, Copy, Clone)]

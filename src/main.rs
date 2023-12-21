@@ -151,7 +151,7 @@ fn initialize_email_sender() -> impl Fairing {
             match EmailSenderImpl::from_figment(rocket.figment()).await {
                 Ok(sender) => Ok(rocket.manage(Box::new(sender) as Box<dyn EmailSender>)),
                 Err(error) => {
-                    error!("failed to initialize email sender: {}", error);
+                    error!("failed to initialize email sender:\n{:?}", error);
                     Err(rocket)
                 }
             }
