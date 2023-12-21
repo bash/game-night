@@ -84,6 +84,7 @@ impl EmailSenderImpl {
         let template_dir = config.template_dir.relative();
         #[cfg(target_os = "linux")]
         let outbox_bus = config.outbox_bus.unwrap_or(OutboxBus::System);
+        #[cfg(target_os = "linux")]
         let connection = outbox_bus.to_connection().await?;
         let mut css_file_path = template_dir.clone();
         css_file_path.push("email.css");
@@ -118,6 +119,7 @@ impl EmailSenderImpl {
     }
 }
 
+#[cfg(target_os = "linux")]
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "snake_case")]
 enum OutboxBus {
@@ -125,8 +127,8 @@ enum OutboxBus {
     Session,
 }
 
+#[cfg(target_os = "linux")]
 impl OutboxBus {
-    #[cfg(target_os = "linux")]
     async fn to_connection(self) -> Result<outbox::zbus::Connection> {
         match self {
             OutboxBus::Session => Ok(outbox::zbus::Connection::session().await?),
@@ -186,6 +188,7 @@ fn get_random_heart() -> &'static str {
 struct EmailSenderConfig {
     sender: Mailbox,
     template_dir: RelativePathBuf,
+    #[cfg(target_os = "linux")]
     outbox_bus: Option<OutboxBus>,
 }
 
