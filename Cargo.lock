@@ -1918,7 +1918,7 @@ dependencies = [
 [[package]]
 name = "outbox"
 version = "0.1.0"
-source = "git+https://github.com/bash/outbox.git?branch=dbus#8d9348c5e4f90e5d9346b67b801aec79eb8d4525"
+source = "git+https://github.com/bash/outbox.git?branch=dbus#8b4e514f499cd20d87addc9cb8e74b411fc93b06"
 dependencies = [
  "anyhow",
  "os_pipe",
