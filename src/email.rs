@@ -45,7 +45,7 @@ where
 #[derive(Clone)]
 pub(crate) struct EmailSenderImpl {
     sender: Mailbox,
-    #[cfg(target_os = "linux")]
+    #[cfg(unix)]
     connection: outbox::zbus::Connection,
     css: String,
     tera: Tera,
@@ -67,7 +67,7 @@ impl EmailSender for EmailSenderImpl {
             .multipart(multipart)
             .context("failed to create email message")?;
 
-        #[cfg(target_os = "linux")]
+        #[cfg(unix)]
         outbox::queue(&self.connection, &message.formatted()).await?;
         #[cfg(not(target_os = "linux"))]
         println!("{}", String::from_utf8(message.formatted())?);
@@ -82,16 +82,16 @@ impl EmailSenderImpl {
             .extract_inner("email")
             .context("failed to read email sender configuration")?;
         let template_dir = config.template_dir.relative();
-        #[cfg(target_os = "linux")]
+        #[cfg(unix)]
         let outbox_bus = config.outbox_bus.unwrap_or(OutboxBus::System);
-        #[cfg(target_os = "linux")]
+        #[cfg(unix)]
         let connection = outbox_bus.to_connection().await?;
         let mut css_file_path = template_dir.clone();
         css_file_path.push("email.css");
 
         Ok(Self {
             sender: config.sender,
-            #[cfg(target_os = "linux")]
+            #[cfg(unix)]
             connection,
             tera: create_tera(&template_dir)?,
             css: read_to_string(css_file_path).await?,
@@ -119,7 +119,7 @@ impl EmailSenderImpl {
     }
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(unix)]
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "snake_case")]
 enum OutboxBus {
@@ -127,7 +127,7 @@ enum OutboxBus {
     Session,
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(unix)]
 impl OutboxBus {
     async fn to_connection(self) -> Result<outbox::zbus::Connection> {
         match self {
@@ -188,7 +188,7 @@ fn get_random_heart() -> &'static str {
 struct EmailSenderConfig {
     sender: Mailbox,
     template_dir: RelativePathBuf,
-    #[cfg(target_os = "linux")]
+    #[cfg(unix)]
     outbox_bus: Option<OutboxBus>,
 }
 
