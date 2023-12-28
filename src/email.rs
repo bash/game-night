@@ -3,6 +3,8 @@ use dyn_clone::DynClone;
 use lettre::message::header::{Header, HeaderName, HeaderValue};
 use lettre::message::{Mailbox, MultiPart, SinglePart};
 use lettre::Message;
+#[cfg(unix)]
+use outbox::Outbox;
 use rand::{distributions, thread_rng, Rng as _};
 use rocket::async_trait;
 use rocket::figment::value::magic::RelativePathBuf;
@@ -46,7 +48,7 @@ where
 pub(crate) struct EmailSenderImpl {
     sender: Mailbox,
     #[cfg(unix)]
-    connection: outbox::zbus::Connection,
+    outbox: Outbox,
     css: String,
     tera: Tera,
 }
@@ -68,8 +70,8 @@ impl EmailSender for EmailSenderImpl {
             .context("failed to create email message")?;
 
         #[cfg(unix)]
-        outbox::queue(&self.connection, &message.formatted()).await?;
-        #[cfg(not(target_os = "linux"))]
+        self.outbox.queue(message.formatted()).await?;
+        #[cfg(not(unix))]
         println!("{}", String::from_utf8(message.formatted())?);
 
         Ok(())
@@ -85,16 +87,21 @@ impl EmailSenderImpl {
         #[cfg(unix)]
         let outbox_bus = config.outbox_bus.unwrap_or(OutboxBus::System);
         #[cfg(unix)]
-        let connection = outbox_bus.to_connection().await?;
+        let outbox = outbox_bus
+            .to_outbox()
+            .await
+            .context("failed to initialize outbox")?;
         let mut css_file_path = template_dir.clone();
         css_file_path.push("email.css");
 
         Ok(Self {
             sender: config.sender,
             #[cfg(unix)]
-            connection,
+            outbox,
             tera: create_tera(&template_dir)?,
-            css: read_to_string(css_file_path).await?,
+            css: read_to_string(css_file_path)
+                .await
+                .context("email.css is missing")?,
         })
     }
 
@@ -120,7 +127,7 @@ impl EmailSenderImpl {
 }
 
 #[cfg(unix)]
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Copy, Clone, Deserialize)]
 #[serde(rename_all = "snake_case")]
 enum OutboxBus {
     System,
@@ -129,10 +136,10 @@ enum OutboxBus {
 
 #[cfg(unix)]
 impl OutboxBus {
-    async fn to_connection(self) -> Result<outbox::zbus::Connection> {
+    async fn to_outbox(self) -> Result<Outbox> {
         match self {
-            OutboxBus::Session => Ok(outbox::zbus::Connection::session().await?),
-            OutboxBus::System => Ok(outbox::zbus::Connection::system().await?),
+            OutboxBus::Session => Ok(Outbox::session().await?),
+            OutboxBus::System => Ok(Outbox::system().await?),
         }
     }
 }

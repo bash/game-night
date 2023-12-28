@@ -1902,24 +1902,15 @@ dependencies = [
 ]
 
 [[package]]
-name = "os_pipe"
-version = "1.1.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0ae859aa07428ca9a929b936690f8b12dc5f11dd8c6992a18ca93919f28bc177"
-dependencies = [
- "libc",
- "windows-sys 0.48.0",
-]
-
-[[package]]
 name = "outbox"
 version = "0.1.0"
-source = "git+https://github.com/bash/outbox.git?branch=dbus#8b4e514f499cd20d87addc9cb8e74b411fc93b06"
+source = "git+https://github.com/bash/outbox.git?branch=dbus#5665accd5ae0c396208d36ba23113a5be3f8b212"
 dependencies = [
  "anyhow",
- "os_pipe",
+ "async-trait",
  "serde",
  "tokio",
+ "tokio-pipe",
  "zbus",
 ]
 
@@ -3281,6 +3272,16 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.42",
+]
+
+[[package]]
+name = "tokio-pipe"
+version = "0.2.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f213a84bffbd61b8fa0ba8a044b4bbe35d471d0b518867181e82bd5c15542784"
+dependencies = [
+ "libc",
+ "tokio",
 ]
 
 [[package]]
