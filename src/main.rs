@@ -19,6 +19,7 @@ use template::PageBuilder;
 
 mod auth;
 mod database;
+mod decorations;
 mod email;
 mod event;
 mod fs;

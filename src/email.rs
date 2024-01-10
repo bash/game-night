@@ -1,3 +1,4 @@
+use crate::decorations::random_heart;
 use anyhow::{anyhow, Context as _, Result};
 use dyn_clone::DynClone;
 use lettre::message::header::{Header, HeaderName, HeaderValue};
@@ -110,7 +111,7 @@ impl EmailSenderImpl {
         let mut template_context = email.template_context()?;
         template_context.insert("greeting", get_random_greeting());
         template_context.insert("skin_tone", get_random_skin_tone_modifier());
-        template_context.insert("heart", get_random_heart());
+        template_context.insert("heart", random_heart());
         template_context.insert("css", &self.css);
         let html_template_name = format!("{}.html.tera", &template_name);
         let text_template_name = format!("{}.txt.tera", &template_name);
@@ -184,11 +185,6 @@ fn get_random_skin_tone_modifier() -> &'static str {
         "",
     ];
     thread_rng().sample(distributions::Slice::new(SKIN_TONE_MODIFIERS).unwrap())
-}
-
-fn get_random_heart() -> &'static str {
-    const HEARTS: &[&str] = &["❤️", "💖", "💙", "🩵", "💚", "💛", "💜", "🩷", "🧡"];
-    thread_rng().sample(distributions::Slice::new(HEARTS).unwrap())
 }
 
 #[derive(Debug, Deserialize)]
