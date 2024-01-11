@@ -1904,7 +1904,7 @@ dependencies = [
 [[package]]
 name = "outbox"
 version = "0.1.0"
-source = "git+https://github.com/bash/outbox.git?branch=dbus#5665accd5ae0c396208d36ba23113a5be3f8b212"
+source = "git+https://github.com/bash/outbox.git#71cb53e5ec1fcda096894a86ad477b3b7f26b8c7"
 dependencies = [
  "anyhow",
  "async-trait",

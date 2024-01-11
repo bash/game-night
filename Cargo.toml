@@ -30,7 +30,7 @@ pem = { package = "pem-rfc7468", version = "0.7.0", features = ["std"] }
 systemd = "0.10.0"
 
 [target.'cfg(unix)'.dependencies]
-outbox = { git = "https://github.com/bash/outbox.git", branch = "dbus", version = "0.1.0" }
+outbox = { git = "https://github.com/bash/outbox.git", version = "0.1.0" }
 
 [features]
 tls = ["rocket/tls"]
