@@ -1,3 +1,4 @@
+use super::delete::rocket_uri_macro_delete_profile_page;
 use crate::database::Repository;
 use crate::template::PageBuilder;
 use crate::users::rocket_uri_macro_list_users;
@@ -15,6 +16,7 @@ pub(crate) fn profile(page: PageBuilder, user: User) -> Template {
         context! {
             can_update_name: user.can_update_name(),
             list_users_uri: user.can_manage_users().then(|| uri!(list_users())),
+            delete_profile_uri: uri!(delete_profile_page()),
         },
     )
 }

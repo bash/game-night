@@ -1,0 +1,26 @@
+{% extends 'base' %}
+
+{% block title %}Goodbye {{name}} 👋{{random_skin_tone_modifier()}}{% endblock title %}
+
+{% block content %}
+    <form method="post">
+        <p>
+            Your profile has been successfully deleted.
+        </p>
+        <p>
+            Here's an invitation, just in case you change your mind:<br>
+        </p>
+        <fieldset class="-two-column">
+            {% for word in passphrase %}
+                <input type="text" value="{{word}}" readonly>
+            {% endfor %}
+            <small>
+                <button type="button" class="-icon" data-copy-to-clipboard="{{passphrase | join(sep=' ')}}" data-icon="/icons/clipboard-copy.svg">
+                    <svg><use href="/icons/clipboard-copy.svg#icon" /></svg>
+                    <span>Copy Words to Clipboard</span>
+                </button>
+            </small>
+        </fieldset>
+    </form>
+    <script type="module" src="/js/copy-to-clipboard.js"></script>
+{% endblock content %}

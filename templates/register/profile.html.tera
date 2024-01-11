@@ -15,11 +15,17 @@
         my email address is
         <input type="email" class="-inline" value="{{user.email_address}}" disabled>.
     </p>
+
     <fieldset class="-actions">
         <button type="submit">Save my details</button>
         {% if list_users_uri %}
             <a href="{{list_users_uri}}" class="link-button">Show me the list of users, please</a>
         {% endif %}
     </fieldset>
+
+    <p>
+        <strong>P.S.</strong> You can always <a href="{{delete_profile_uri}}">delete your profile</a>
+        if you no longer wish to participate in <em>Tau's Game Night</em>.
+    </p>
 </form>
 {% endblock %}
