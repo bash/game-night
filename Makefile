@@ -5,6 +5,7 @@ EMAIL_CSS := emails/email.css
 SHELL := $(shell which bash)
 SASS_FLAGS := --no-source-map
 PUBLISH_DIR := publish
+SASS := npx sass@1.69.7
 
 ifeq ($(env ENABLE_SOURCE_MAPS), true)
 	SASS_FLAGS := --embed-source-map --embed-sources
@@ -51,13 +52,13 @@ run_server:
 	cargo run --features development
 
 $(MAIN_CSS): $(SCSS_FILES)
-	sass scss/main.scss $@ $(SASS_FLAGS)
+	$(SASS) scss/main.scss $@ $(SASS_FLAGS)
 
 $(PRINT_CSS): $(SCSS_FILES)
-	sass scss/print.scss $@ $(SASS_FLAGS)
+	$(SASS) scss/print.scss $@ $(SASS_FLAGS)
 
 $(EMAIL_CSS): emails/email.scss
-	sass --no-source-map --style compressed $< $@
+	$(SASS) --no-source-map --style compressed $< $@
 
 publish: all
 	@set -e
