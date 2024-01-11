@@ -35,8 +35,6 @@ certs:
 
 run:
 	@export CARGO_TERM_COLOR=always
-	@export CARGO_TERM_PROGRESS_WHEN=always
-	@export CARGO_TERM_PROGRESS_WIDTH=100
 	# @export ROCKET_CLI_COLORS=always
 	@if [[ -d ../outbox ]]; then
 	parallel --lb --halt now,done=1 --tagstring [{}] ::: '$(MAKE) run_server' '$(MAKE) run_outbox'
