@@ -16,7 +16,7 @@ CREATE TABLE invitations
     , created_by INTEGER NULL
     , passphrase TEXT NOT NULL UNIQUE
     , comment TEXT NOT NULL DEFAULT ''
-    , used_by INTEGER NULL REFERENCES users(id)
+    , used_by INTEGER NULL REFERENCES users(id) ON DELETE CASCADE
     , valid_until TEXT NULL
     , created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
     );
@@ -64,7 +64,7 @@ CREATE TABLE poll_options
 CREATE TABLE poll_answers
     ( id INTEGER PRIMARY KEY
     , poll_option_id INTEGER NOT NULL REFERENCES poll_options(id) ON DELETE CASCADE
-    , user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT
+    , user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE
     , value TEXT NOT NULL
     , created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
     , UNIQUE (poll_option_id, user_id) ON CONFLICT REPLACE
@@ -84,7 +84,7 @@ CREATE TABLE events
 CREATE TABLE participants
     ( id INTEGER PRIMARY KEY
     , event_id INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE
-    , user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT
+    , user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE
     );
 
 CREATE TABLE locations

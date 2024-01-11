@@ -1,0 +1,25 @@
+{% extends 'base' %}
+
+{% block title %}Goodbye?{% endblock title %}
+
+{% block content %}
+    <form method="post">
+        <p>
+            Thank you <strong>{{user.name}}</strong> for being a part of <em>Tau's Game Night</em> {{ random_heart() }}
+        </p>
+        <p>
+            While it's sad to see you go, I will treasure all the awesome memories that we made along the way~
+        </p>
+        <p>
+            Here is what happens when you delete your profile:
+        </p>
+        <ul>
+            <li>Your profile is irrecoverably deleted.</li>
+            <li>You receive an invitation code—in case you change your mind.</li>
+            <li>You will no longer receive emails about <em>Tau's Game Night</em>.</li>
+        </ul>
+        <fieldset class="-actions">
+            <button type="submit" class="_red">Delete my profile</button>
+        </fieldset>
+    </form>
+{% endblock content %}

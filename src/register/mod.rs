@@ -21,6 +21,7 @@ use Either::*;
 use StepResult::*;
 
 mod campaign;
+mod delete;
 mod email_verification_code;
 mod profile;
 mod verification;
@@ -54,6 +55,9 @@ pub(crate) fn routes() -> Vec<Route> {
         register_form,
         profile::profile,
         profile::update_profile,
+        delete::delete_profile_page,
+        delete::delete_profile,
+        delete::profile_deleted_page,
     ]
 }
 

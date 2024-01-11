@@ -32,8 +32,23 @@ recreate-db:
 certs:
 	@mkdir -p private
 	(cd private && mkcert localhost 127.0.0.1 ::1)
+
 run:
-	ROCKET_TLS={certs="private/localhost+2.pem",key="private/localhost+2-key.pem"} cargo run --features development
+	@export CARGO_TERM_COLOR=always
+	# @export ROCKET_CLI_COLORS=always
+	@if [[ -d ../outbox ]]; then
+	parallel --lb --halt now,done=1 --tagstring [{}] ::: '$(MAKE) run_server' '$(MAKE) run_outbox'
+	@else
+	echo "$$(tput bold)$$(tput setaf 3)Warning: outboxd not started, you need to start it yourself if you want to send emails$$(tput sgr0)"
+	$(MAKE) run_server
+	@fi
+
+run_outbox:
+	@$(MAKE) -C ../outbox run
+
+run_server:
+	@export ROCKET_TLS='{certs="private/localhost+2.pem",key="private/localhost+2-key.pem"}'
+	cargo run --features development
 
 $(MAIN_CSS): $(SCSS_FILES)
 	sass scss/main.scss $@ $(SASS_FLAGS)

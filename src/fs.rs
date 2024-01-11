@@ -7,7 +7,7 @@ pub(crate) fn read_or_generate<F: GeneratedFile>(path: &Path, f: &F) -> Result<F
     let file_path = get_file_path(path, f)?;
     create_dir_all(file_path.parent().unwrap())?;
     match write(f, &file_path) {
-        Err(e) if is_already_exists_error(&e) => Ok(read(f, &file_path)?),
+        Err(e) if is_already_exists_error(&e) => read(f, &file_path),
         result => result,
     }
 }
@@ -31,7 +31,7 @@ fn get_file_path<F: GeneratedFile>(path: &Path, f: &F) -> Result<PathBuf> {
 }
 
 fn read<F: GeneratedFile>(f: &F, file_path: &Path) -> Result<F::Value> {
-    Ok(f.read(&mut File::open(file_path)?)?)
+    f.read(&mut File::open(file_path)?)
 }
 
 fn write<F: GeneratedFile>(f: &F, file_path: &Path) -> Result<F::Value> {

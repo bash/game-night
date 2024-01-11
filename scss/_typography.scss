@@ -61,6 +61,10 @@ small {
     font-size: .8em;
 }
 
+ul {
+    list-style-position: inside;
+}
+
 time {
     display: inline-block;
     font-family: var(--seven-segment);

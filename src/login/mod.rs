@@ -9,7 +9,6 @@ use lettre::message::Mailbox;
 use rand::distributions::{Alphanumeric, Uniform};
 use rand::Rng;
 use rocket::form::Form;
-use rocket::http::CookieJar;
 use rocket::response::{self, Debug, Redirect, Responder};
 use rocket::{
     catch, catchers, get, post, routes, uri, Catcher, FromForm, Request, Response, Route, State,
@@ -130,8 +129,7 @@ struct LoginData<'r> {
 }
 
 #[post("/logout", data = "<form>")]
-async fn logout<'r>(cookies: &'r CookieJar<'r>, form: Form<LogoutData>) -> Logout {
-    cookies.set_login_state(LoginState::Anonymous);
+async fn logout<'r>(form: Form<LogoutData>) -> Logout {
     Logout(form.into_inner().redirect)
 }
 
@@ -140,10 +138,12 @@ struct LogoutData {
     redirect: RedirectUri,
 }
 
-struct Logout(RedirectUri);
+pub(crate) struct Logout(pub(crate) RedirectUri);
 
 impl<'r> Responder<'r, 'static> for Logout {
     fn respond_to(self, request: &'r Request<'_>) -> response::Result<'static> {
+        request.cookies().set_login_state(LoginState::Anonymous);
+
         Response::build_from(Redirect::to(self.0).respond_to(request)?)
             .raw_header("Clear-Site-Data", "\"*\"")
             .ok()
