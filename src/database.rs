@@ -36,6 +36,8 @@ pub(crate) trait Repository: Send {
 
     async fn update_user(&mut self, id: UserId, patch: UserPatch) -> Result<()>;
 
+    async fn delete_user(&mut self, id: UserId) -> Result<()>;
+
     async fn add_verification_code(&mut self, code: &EmailVerificationCode) -> Result<()>;
 
     async fn has_verification_code(&mut self, email_address: &str) -> Result<bool>;
@@ -83,13 +85,14 @@ impl SqliteRepository {
 impl Repository for SqliteRepository {
     async fn add_invitation(&mut self, invitation: Invitation<()>) -> Result<Invitation> {
         let result = sqlx::query(
-            "INSERT INTO invitations (role, created_by, valid_until, passphrase)
-             VALUES (?1, ?2, ?3, ?4)",
+            "INSERT INTO invitations (role, created_by, valid_until, passphrase, comment)
+             VALUES (?1, ?2, ?3, ?4, ?5)",
         )
         .bind(invitation.role)
         .bind(invitation.created_by)
         .bind(invitation.valid_until)
         .bind(&invitation.passphrase)
+        .bind(&invitation.comment)
         .execute(self.executor())
         .await?;
         Ok(invitation.with_id(InvitationId(result.last_insert_rowid())))
@@ -187,6 +190,14 @@ impl Repository for SqliteRepository {
                 .execute(self.executor())
                 .await?;
         }
+        Ok(())
+    }
+
+    async fn delete_user(&mut self, id: UserId) -> Result<()> {
+        sqlx::query("DELETE FROM users WHERE id = ?1")
+            .bind(id)
+            .execute(self.executor())
+            .await?;
         Ok(())
     }
 

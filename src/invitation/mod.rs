@@ -90,21 +90,9 @@ pub(crate) struct Invitation<Id = InvitationId> {
     pub(crate) role: Role,
     pub(crate) created_by: Option<UserId>,
     pub(crate) passphrase: Passphrase,
+    pub(crate) comment: String,
     pub(crate) valid_until: Option<OffsetDateTime>,
     pub(crate) used_by: Option<UserId>,
-}
-
-impl Invitation<()> {
-    pub(crate) fn with_id(self, id: InvitationId) -> Invitation {
-        Invitation {
-            id,
-            role: self.role,
-            created_by: self.created_by,
-            passphrase: self.passphrase,
-            used_by: self.used_by,
-            valid_until: self.valid_until,
-        }
-    }
 }
 
 impl Invitation<()> {
@@ -120,6 +108,19 @@ impl Invitation<()> {
             valid_until,
             used_by: None,
             passphrase: generate_passphrase(),
+            comment: String::default(),
+        }
+    }
+
+    pub(crate) fn with_id(self, id: InvitationId) -> Invitation {
+        Invitation {
+            id,
+            role: self.role,
+            created_by: self.created_by,
+            passphrase: self.passphrase,
+            comment: self.comment,
+            used_by: self.used_by,
+            valid_until: self.valid_until,
         }
     }
 }
