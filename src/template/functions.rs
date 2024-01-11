@@ -1,4 +1,5 @@
 use super::AccentColor;
+use crate::decorations;
 use rocket_dyn_templates::tera::{self, Tera};
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -15,6 +16,7 @@ pub(crate) fn register_custom_functions(tera: &mut Tera) {
     tera.register_function("avatar_symbol", avatar_symbol);
     tera.register_function("ps", ps_prefix);
     tera.register_function("random_heart", random_heart);
+    tera.register_function("random_skin_tone_modifier", random_skin_tone_modifier);
 }
 
 tera_function! {
@@ -95,6 +97,12 @@ fn parse_format(
 
 tera_function! {
     fn random_heart() {
-        Ok(tera::Value::from(crate::decorations::random_heart()))
+        Ok(tera::Value::from(decorations::random_heart()))
+    }
+}
+
+tera_function! {
+    fn random_skin_tone_modifier() {
+        Ok(tera::Value::from(decorations::random_skin_tone_modifier()))
     }
 }

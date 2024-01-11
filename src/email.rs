@@ -1,4 +1,4 @@
-use crate::decorations::random_heart;
+use crate::decorations::{random_heart, random_skin_tone_modifier};
 use anyhow::{anyhow, Context as _, Result};
 use dyn_clone::DynClone;
 use lettre::message::header::{Header, HeaderName, HeaderValue};
@@ -110,7 +110,7 @@ impl EmailSenderImpl {
         let template_name = email.template_name();
         let mut template_context = email.template_context()?;
         template_context.insert("greeting", get_random_greeting());
-        template_context.insert("skin_tone", get_random_skin_tone_modifier());
+        template_context.insert("skin_tone", random_skin_tone_modifier());
         template_context.insert("heart", random_heart());
         template_context.insert("css", &self.css);
         let html_template_name = format!("{}.html.tera", &template_name);
@@ -173,18 +173,6 @@ fn get_random_greeting() -> &'static str {
         "Ahoy",
     ];
     thread_rng().sample(distributions::Slice::new(GREETINGS).unwrap())
-}
-
-fn get_random_skin_tone_modifier() -> &'static str {
-    const SKIN_TONE_MODIFIERS: &[&str] = &[
-        "\u{1F3FB}",
-        "\u{1F3FC}",
-        "\u{1F3FD}",
-        "\u{1F3FE}",
-        "\u{1F3FF}",
-        "",
-    ];
-    thread_rng().sample(distributions::Slice::new(SKIN_TONE_MODIFIERS).unwrap())
 }
 
 #[derive(Debug, Deserialize)]
