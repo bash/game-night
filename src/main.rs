@@ -34,7 +34,7 @@ mod template;
 mod users;
 
 #[rocket::main]
-async fn main() -> Result<()> {
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let rocket = rocket::custom(figment()?);
 
     #[cfg(target_os = "linux")]

@@ -9,7 +9,7 @@ anyhow = "1.0.74"
 email_address = "0.2.4"
 lettre = { version = "0.11.0", default-features = false, features = ["builder", "file-transport", "serde"] }
 rand = "0.8.5"
-rocket = { version = "0.5.0", features = ["secrets", "json"] }
+rocket = { version = "0.6.0-dev", features = ["secrets", "json"] }
 rocket_db_pools = { version = "0.1.0", features = ["sqlx_sqlite"] }
 rocket_dyn_templates = { version = "0.1.0", features = ["tera"] }
 serde = { version = "1.0", features = ["derive"] }
@@ -36,3 +36,11 @@ outbox = { git = "https://github.com/bash/outbox.git", version = "0.1.0" }
 tls = ["rocket/tls"]
 serve-static-files = []
 development = ["tls", "serve-static-files"]
+
+[patch.crates-io]
+rocket = { git = "https://github.com/rwf2/Rocket/", branch = "master" }
+rocket_codegen = { git = "https://github.com/rwf2/Rocket/", branch = "master" }
+rocket_http = { git = "https://github.com/rwf2/Rocket/", branch = "master" }
+rocket_db_pools = { git = "https://github.com/rwf2/Rocket/", branch = "master" }
+rocket_db_pools_codegen = { git = "https://github.com/rwf2/Rocket/", branch = "master" }
+rocket_dyn_templates = { git = "https://github.com/rwf2/Rocket/", branch = "master" }

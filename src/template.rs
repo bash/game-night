@@ -113,7 +113,7 @@ fn active_chapter(chapters: &[Chapter], uri: &Origin<'_>) -> Chapter {
     chapters
         .iter()
         .filter(|c| path_matches(uri, &c.uri) || c.match_uris.iter().any(|u| path_matches(uri, u)))
-        .sorted_by_key(|c| cmp::Reverse(c.uri.path().segments().len()))
+        .sorted_by_key(|c| cmp::Reverse(c.uri.path().segments().num()))
         .next()
         .cloned()
         .expect("Root chapter should always match")
