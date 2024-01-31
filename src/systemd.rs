@@ -1,7 +1,6 @@
-use std::iter;
-
 use rocket::fairing::{Fairing, Info, Kind};
 use rocket::{async_trait, warn, Orbit, Rocket};
+use std::iter;
 use systemd::daemon::notify;
 
 pub(crate) struct SystemdNotify;

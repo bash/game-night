@@ -14,6 +14,7 @@ use rocket::{
 use rocket_db_pools::{sqlx::SqlitePool, Database, Pool};
 use rocket_dyn_templates::{context, Template};
 use serde::Deserialize;
+use socket_activation::bindable_from_env;
 use template::configure_template_engines;
 use template::PageBuilder;
 
@@ -28,6 +29,7 @@ mod login;
 mod play;
 mod poll;
 mod register;
+mod socket_activation;
 #[cfg(target_os = "linux")]
 mod systemd;
 mod template;
@@ -40,7 +42,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     #[cfg(target_os = "linux")]
     let rocket = rocket.attach(systemd::SystemdNotify);
 
-    rocket
+    let rocket = rocket
         .mount("/", routes![get_index_page])
         .mount("/", invitation::routes())
         .mount("/", register::routes())
@@ -57,9 +59,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .attach(initialize_email_sender())
         .attach(invite_admin_user())
         .attach(login::auto_login_fairing())
-        .attach(poll_finalizer())
-        .launch()
-        .await?;
+        .attach(poll_finalizer());
+
+    if let Some(b) = bindable_from_env()? {
+        rocket.launch_on(b).await?;
+    } else {
+        rocket.launch().await?;
+    }
 
     Ok(())
 }
