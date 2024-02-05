@@ -1,4 +1,4 @@
-FROM registry.fedoraproject.org/fedora:38
+FROM registry.fedoraproject.org/fedora:39
 
 RUN dnf install -y make automake gcc gcc-c++
 RUN dnf install -y systemd-devel
