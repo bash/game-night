@@ -16,7 +16,6 @@ use rocket::{async_trait, uri, Request};
 use rocket_dyn_templates::{Engines, Template};
 use serde::Serialize;
 use std::borrow::Cow;
-use std::cmp;
 
 #[macro_use]
 mod macros;
@@ -113,7 +112,7 @@ fn active_chapter(chapters: &[Chapter], uri: &Origin<'_>) -> Chapter {
     chapters
         .iter()
         .filter(|c| path_matches(uri, &c.uri) || c.match_uris.iter().any(|u| path_matches(uri, u)))
-        .sorted_by_key(|c| cmp::Reverse(c.uri.path().segments().num()))
+        .sorted_by_key(|c| c.weight)
         .next()
         .cloned()
         .expect("Root chapter should always match")
@@ -127,6 +126,7 @@ lazy_static! {
     static ref CHAPTERS: Vec<Chapter> = vec![
         Chapter {
             uri: Origin::ROOT,
+            weight: 100,
             match_uris: vec![uri!(register_page(passphrase = Option::<Passphrase>::None))],
             title: "Register",
             visible_if: Option::is_none,
@@ -138,6 +138,7 @@ lazy_static! {
         },
         Chapter {
             uri: uri!(play_redirect()),
+            weight: 0,
             match_uris: vec![],
             title: "Play",
             visible_if: Option::is_none,
@@ -149,6 +150,7 @@ lazy_static! {
         },
         Chapter {
             uri: uri!(play_page()),
+            weight: 100,
             match_uris: vec![],
             title: "Play",
             visible_if: Option::is_some,
@@ -160,6 +162,7 @@ lazy_static! {
         },
         Chapter {
             uri: uri!(profile()),
+            weight: 0,
             match_uris: vec![uri!(list_users())],
             title: "User Profile",
             accent_color: AccentColor::Teal,
@@ -172,6 +175,7 @@ lazy_static! {
         #[cfg(debug_assertions)]
         Chapter {
             uri: uri!("/news"),
+            weight: 0,
             match_uris: vec![],
             title: "News",
             visible_if: |_| true,
@@ -183,6 +187,7 @@ lazy_static! {
         },
         Chapter {
             uri: uri!(invite_page()),
+            weight: 0,
             match_uris: vec![],
             title: "Invite",
             visible_if: |u| u.as_ref().map(|u| u.can_invite()).unwrap_or_default(),
@@ -199,6 +204,7 @@ lazy_static! {
 pub(crate) struct Chapter {
     uri: Origin<'static>,
     match_uris: Vec<Origin<'static>>,
+    weight: usize,
     title: &'static str,
     #[serde(skip)]
     visible_if: fn(&Option<User>) -> bool,
