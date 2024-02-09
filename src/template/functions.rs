@@ -1,5 +1,6 @@
 use super::AccentColor;
-use crate::decorations;
+use crate::decorations::{Hearts, SkinToneModifiers};
+use rand::{thread_rng, Rng};
 use rocket_dyn_templates::tera::{self, Tera};
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -97,12 +98,12 @@ fn parse_format(
 
 tera_function! {
     fn random_heart() {
-        Ok(tera::Value::from(decorations::random_heart()))
+        Ok(tera::Value::from(thread_rng().sample(Hearts)))
     }
 }
 
 tera_function! {
     fn random_skin_tone_modifier() {
-        Ok(tera::Value::from(decorations::random_skin_tone_modifier()))
+        Ok(tera::Value::from(thread_rng().sample(SkinToneModifiers)))
     }
 }

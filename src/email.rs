@@ -1,4 +1,4 @@
-use crate::decorations::{random_heart, random_skin_tone_modifier};
+use crate::decorations::{Greetings, Hearts, SkinToneModifiers};
 use anyhow::{anyhow, Context as _, Result};
 use dyn_clone::DynClone;
 use lettre::message::header::{Header, HeaderName, HeaderValue};
@@ -6,7 +6,7 @@ use lettre::message::{Mailbox, MultiPart, SinglePart};
 use lettre::Message;
 #[cfg(unix)]
 use outbox::Outbox;
-use rand::{distributions, thread_rng, Rng as _};
+use rand::{thread_rng, Rng as _};
 use rocket::async_trait;
 use rocket::figment::value::magic::RelativePathBuf;
 use rocket::figment::Figment;
@@ -109,9 +109,10 @@ impl EmailSenderImpl {
     fn render_email_body(&self, email: &dyn EmailMessage) -> Result<MultiPart> {
         let template_name = email.template_name();
         let mut template_context = email.template_context()?;
-        template_context.insert("greeting", get_random_greeting());
-        template_context.insert("skin_tone", random_skin_tone_modifier());
-        template_context.insert("heart", random_heart());
+        let mut rng = thread_rng();
+        template_context.insert("greeting", rng.sample(Greetings));
+        template_context.insert("skin_tone", rng.sample(SkinToneModifiers));
+        template_context.insert("heart", rng.sample(Hearts));
         template_context.insert("css", &self.css);
         let html_template_name = format!("{}.html.tera", &template_name);
         let text_template_name = format!("{}.txt.tera", &template_name);
@@ -155,24 +156,6 @@ fn create_tera(template_dir: &Path) -> Result<Tera> {
         .context("failed to build tera's inheritance chain")?;
     crate::template::register_custom_functions(&mut tera);
     Ok(tera)
-}
-
-fn get_random_greeting() -> &'static str {
-    const GREETINGS: &[&str] = &[
-        "Hi",
-        "Ciao",
-        "Salü",
-        "Hola",
-        "Hellooo",
-        "Hey there",
-        "Greetings galore",
-        "Aloha",
-        "Howdy",
-        "Hiyaa",
-        "Yoohoo~",
-        "Ahoy",
-    ];
-    thread_rng().sample(distributions::Slice::new(GREETINGS).unwrap())
 }
 
 #[derive(Debug, Deserialize)]
