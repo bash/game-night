@@ -1,13 +1,14 @@
 use super::delete::rocket_uri_macro_delete_profile_page;
 use crate::database::Repository;
 use crate::template::PageBuilder;
-use crate::users::rocket_uri_macro_list_users;
+use crate::users::{rocket_uri_macro_list_users, EmailSubscription};
 use crate::users::{User, UserPatch};
 use anyhow::{Error, Result};
 use rocket::form::Form;
 use rocket::response::{Debug, Redirect};
 use rocket::{get, post, uri, FromForm};
 use rocket_dyn_templates::{context, Template};
+use time::Date;
 
 #[get("/profile")]
 pub(crate) fn profile(page: PageBuilder, user: User) -> Template {
@@ -35,12 +36,22 @@ pub(super) async fn update_profile(
 #[derive(Debug, FromForm)]
 pub(crate) struct UpdateUserForm {
     #[form(validate = len(1..))]
-    pub(crate) name: Option<String>,
+    name: Option<String>,
+    subscribe: bool,
+    until: Option<Date>,
 }
 
 impl UpdateUserForm {
     fn to_user_patch(self, user: &User) -> UserPatch {
         let name = self.name.filter(|_| user.can_update_name());
-        UserPatch { name }
+        let email_subscription = match (self.subscribe, self.until) {
+            (true, _) => EmailSubscription::Subscribed,
+            (false, Some(until)) => EmailSubscription::TemporarilyUnsubscribed { until },
+            (false, None) => EmailSubscription::PermanentlyUnsubscribed,
+        };
+        UserPatch {
+            name,
+            email_subscription: Some(email_subscription),
+        }
     }
 }

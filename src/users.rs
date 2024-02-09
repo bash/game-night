@@ -46,6 +46,7 @@ pub(crate) struct User<Id = UserId> {
 #[derive(Debug)]
 pub(crate) struct UserPatch {
     pub(crate) name: Option<String>,
+    pub(crate) email_subscription: Option<EmailSubscription>,
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, sqlx::Type, Serialize)]
@@ -60,15 +61,20 @@ pub(crate) enum Role {
 pub(crate) enum EmailSubscription {
     #[default]
     Subscribed,
-    TemporarilyUnsubscribed(Date),
+    TemporarilyUnsubscribed {
+        #[serde(with = "iso8601_date")]
+        until: Date,
+    },
     PermanentlyUnsubscribed,
 }
+
+time::serde::format_description!(iso8601_date, Date, "[year]-[month]-[day]");
 
 impl EmailSubscription {
     pub(crate) fn is_subscribed(&self, today: Date) -> bool {
         match self {
             EmailSubscription::Subscribed => true,
-            EmailSubscription::TemporarilyUnsubscribed(until_inclusive) => today > *until_inclusive,
+            EmailSubscription::TemporarilyUnsubscribed { until } => today > *until,
             EmailSubscription::PermanentlyUnsubscribed => false,
         }
     }

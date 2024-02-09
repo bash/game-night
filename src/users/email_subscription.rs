@@ -31,7 +31,7 @@ where
         match self {
             Subscribed => "subscribed".encode_by_ref(buf),
             PermanentlyUnsubscribed => "unsubscribed".encode_by_ref(buf),
-            TemporarilyUnsubscribed(ref date) => date.encode_by_ref(buf),
+            TemporarilyUnsubscribed { until: date } => date.encode_by_ref(buf),
         }
     }
 }
@@ -46,7 +46,9 @@ where
         match <&str as Decode<'r, DB>>::decode(value)? {
             "subscribed" => Ok(Subscribed),
             "unsubscribed" => Ok(PermanentlyUnsubscribed),
-            other => Ok(TemporarilyUnsubscribed(Date::parse(other, FORMAT)?)),
+            other => Ok(TemporarilyUnsubscribed {
+                until: Date::parse(other, FORMAT)?,
+            }),
         }
     }
 }
