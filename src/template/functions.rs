@@ -33,7 +33,7 @@ tera_function! {
 
 tera_function! {
     fn accent_color(index: usize) {
-        let accent_colors = AccentColor::as_slice();
+        let accent_colors = AccentColor::values();
         Ok(tera::Value::String(accent_colors[index % accent_colors.len()].css_value().to_string()))
     }
 }

@@ -230,7 +230,7 @@ pub(crate) enum AccentColor {
 }
 
 impl AccentColor {
-    pub(crate) fn as_slice() -> &'static [AccentColor] {
+    pub(crate) fn values() -> &'static [AccentColor] {
         use AccentColor::*;
         &[Purple, Blue, Teal, Green, Red]
     }
