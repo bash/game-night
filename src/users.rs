@@ -4,7 +4,7 @@ use crate::template::PageBuilder;
 use anyhow::{Error, Result};
 use lettre::message::Mailbox;
 use rocket::response::Debug;
-use rocket::{get, routes, FromForm, Route};
+use rocket::{get, routes, Route};
 use rocket_db_pools::sqlx;
 use rocket_dyn_templates::{context, Template};
 use serde::Serialize;
@@ -43,9 +43,8 @@ pub(crate) struct User<Id = UserId> {
     pub(crate) can_answer_strongly: bool,
 }
 
-#[derive(Debug, FromForm)]
+#[derive(Debug)]
 pub(crate) struct UserPatch {
-    #[form(validate = len(1..))]
     pub(crate) name: Option<String>,
 }
 

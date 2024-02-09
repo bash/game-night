@@ -6,7 +6,7 @@ use crate::users::{User, UserPatch};
 use anyhow::{Error, Result};
 use rocket::form::Form;
 use rocket::response::{Debug, Redirect};
-use rocket::{get, post, uri};
+use rocket::{get, post, uri, FromForm};
 use rocket_dyn_templates::{context, Template};
 
 #[get("/profile")]
@@ -24,18 +24,23 @@ pub(crate) fn profile(page: PageBuilder, user: User) -> Template {
 #[post("/profile", data = "<form>")]
 pub(super) async fn update_profile(
     mut repository: Box<dyn Repository>,
-    form: Form<UserPatch>,
+    form: Form<UpdateUserForm>,
     user: User,
 ) -> Result<Redirect, Debug<Error>> {
-    let patch = filter_patch(&user, form.into_inner());
+    let patch = form.into_inner().to_user_patch(&user);
     repository.update_user(user.id, patch).await?;
     Ok(Redirect::to(uri!(profile)))
 }
 
-fn filter_patch(user: &User, mut patch: UserPatch) -> UserPatch {
-    if !user.can_update_name() {
-        patch.name = None;
-    }
+#[derive(Debug, FromForm)]
+pub(crate) struct UpdateUserForm {
+    #[form(validate = len(1..))]
+    pub(crate) name: Option<String>,
+}
 
-    patch
+impl UpdateUserForm {
+    fn to_user_patch(self, user: &User) -> UserPatch {
+        let name = self.name.filter(|_| user.can_update_name());
+        UserPatch { name }
+    }
 }
