@@ -8,6 +8,9 @@ use rocket::{get, routes, FromForm, Route};
 use rocket_db_pools::sqlx;
 use rocket_dyn_templates::{context, Template};
 use serde::Serialize;
+use time::Date;
+
+mod email_subscription;
 
 pub(crate) fn routes() -> Vec<Route> {
     routes![list_users]
@@ -33,6 +36,7 @@ pub(crate) struct User<Id = UserId> {
     pub(crate) name: String,
     pub(crate) role: Role,
     pub(crate) email_address: String,
+    pub(crate) email_subscription: EmailSubscription,
     pub(crate) invited_by: Option<UserId>,
     pub(crate) campaign: Option<String>,
     pub(crate) can_update_name: bool,
@@ -50,6 +54,25 @@ pub(crate) struct UserPatch {
 pub(crate) enum Role {
     Admin,
     Guest,
+}
+
+#[derive(Default, Debug, Copy, Clone, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case", tag = "type")]
+pub(crate) enum EmailSubscription {
+    #[default]
+    Subscribed,
+    TemporarilyUnsubscribed(Date),
+    PermanentlyUnsubscribed,
+}
+
+impl EmailSubscription {
+    pub(crate) fn is_subscribed(&self, today: Date) -> bool {
+        match self {
+            EmailSubscription::Subscribed => true,
+            EmailSubscription::TemporarilyUnsubscribed(until_inclusive) => today > *until_inclusive,
+            EmailSubscription::PermanentlyUnsubscribed => false,
+        }
+    }
 }
 
 impl<Id> User<Id> {

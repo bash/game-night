@@ -128,12 +128,13 @@ impl Repository for SqliteRepository {
         let mut transaction = self.0.begin().await?;
 
         let user_id = sqlx::query(
-            "INSERT INTO users (name, role, email_address, invited_by, campaign)
-             VALUES (?1, ?2, ?3, ?4, ?5)",
+            "INSERT INTO users (name, role, email_address, email_subscription, invited_by, campaign)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
         )
         .bind(user.name)
         .bind(user.role)
         .bind(user.email_address)
+        .bind(user.email_subscription)
         .bind(user.invited_by)
         .bind(user.campaign)
         .execute(&mut *transaction)

@@ -4,7 +4,7 @@ use crate::register::rocket_uri_macro_register_page;
 use crate::template::PageBuilder;
 use crate::uri;
 use crate::uri::UriBuilder;
-use crate::users::{Role, User, UserId};
+use crate::users::{EmailSubscription, Role, User, UserId};
 use anyhow::{Error, Result};
 use rand::prelude::*;
 use rocket::form::Form;
@@ -136,6 +136,7 @@ impl<Id> Invitation<Id> {
             id: (),
             name,
             email_address,
+            email_subscription: EmailSubscription::default(),
             role: self.role,
             invited_by: self.created_by,
             campaign,
