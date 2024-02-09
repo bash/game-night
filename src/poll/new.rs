@@ -272,7 +272,7 @@ async fn send_poll_emails(
     uri_builder: UriBuilder<'_>,
     poll: &Poll<(), UserId, i64>,
 ) -> Result<()> {
-    for user in repository.get_users().await? {
+    for user in get_subscribed_users(repository.as_mut()).await? {
         let poll_url = uri!(auto_login(&user, poll.open_until); uri_builder, poll_page()).await?;
         let email = PollEmail {
             name: user.name.clone(),
@@ -283,4 +283,15 @@ async fn send_poll_emails(
     }
 
     Ok(())
+}
+
+async fn get_subscribed_users(
+    repository: &mut dyn Repository,
+) -> Result<impl Iterator<Item = User>> {
+    let today = OffsetDateTime::now_utc().date();
+    Ok(repository
+        .get_users()
+        .await?
+        .into_iter()
+        .filter(move |u| u.email_subscription.is_subscribed(today)))
 }
