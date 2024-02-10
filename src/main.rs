@@ -5,14 +5,14 @@ use poll::poll_finalizer;
 use rocket::fairing::{self, Fairing};
 use rocket::figment::Figment;
 use rocket::request::FromRequest;
-use rocket::{
-    catch, catchers, error, get, routes, uri, Build, Config, Phase, Request, Rocket, Route,
-};
+use rocket::{catch, catchers, error, get, routes, Build, Config, Phase, Request, Rocket, Route};
 use rocket_db_pools::{sqlx::SqlitePool, Database, Pool};
 use rocket_dyn_templates::{context, Template};
 use socket_activation::bindable_from_env;
 use template::configure_template_engines;
 use template::PageBuilder;
+
+mod uri;
 
 mod auth;
 mod database;
@@ -29,7 +29,6 @@ mod socket_activation;
 #[cfg(target_os = "linux")]
 mod systemd;
 mod template;
-mod uri;
 mod users;
 
 #[rocket::main]

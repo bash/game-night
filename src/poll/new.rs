@@ -4,15 +4,15 @@ use super::{DateSelectionStrategy, Poll, PollOption};
 use crate::auth::{AuthorizedTo, ManagePoll};
 use crate::database::Repository;
 use crate::email::EmailSender;
-use crate::login::{with_autologin_token, LoginToken};
 use crate::template::PageBuilder;
-use crate::uri::UrlPrefix;
+use crate::uri;
+use crate::uri::UriBuilder;
 use crate::users::{User, UserId};
 use anyhow::{Context as _, Error, Result};
 use itertools::Itertools as _;
 use rocket::form::Form;
 use rocket::response::{Debug, Redirect};
-use rocket::{get, post, uri, FromForm, State};
+use rocket::{get, post, FromForm, State};
 use rocket_dyn_templates::{context, Template};
 use serde::Serialize;
 use std::iter;
@@ -171,12 +171,12 @@ pub(super) async fn new_poll(
     email_sender: &State<Box<dyn EmailSender>>,
     form: Form<NewPollData<'_>>,
     user: AuthorizedTo<ManagePoll>,
-    url_prefix: UrlPrefix<'_>,
+    uri_builder: UriBuilder<'_>,
 ) -> Result<Redirect, Debug<Error>> {
     let location = repository.get_location().await?;
     let poll = to_poll(form.into_inner(), location, &user)?;
     repository.add_poll(&poll).await?;
-    send_poll_emails(repository, email_sender.as_ref(), url_prefix, &poll).await?;
+    send_poll_emails(repository, email_sender.as_ref(), uri_builder, &poll).await?;
     Ok(Redirect::to(uri!(poll_page())))
 }
 
@@ -269,13 +269,13 @@ where
 async fn send_poll_emails(
     mut repository: Box<dyn Repository>,
     email_sender: &dyn EmailSender,
-    url_prefix: UrlPrefix<'_>,
+    uri_builder: UriBuilder<'_>,
     poll: &Poll<(), UserId, i64>,
 ) -> Result<()> {
     for user in repository.get_users().await? {
-        let token = LoginToken::generate_reusable(user.id, poll.open_until);
-        repository.add_login_token(&token).await?;
-        let poll_url = with_autologin_token(uri!(url_prefix.0.clone(), poll_page()), &token);
+        let poll_url = uri!(auto_login(&user, poll.open_until); uri_builder, poll_page())
+            .await?
+            .to_string();
         let email = PollEmail {
             name: user.name.clone(),
             poll_closes_at: poll.open_until,

@@ -3,6 +3,7 @@ use crate::database::Repository;
 use crate::email::{EmailMessage, EmailSender};
 use crate::register::rocket_uri_macro_getting_invited_page;
 use crate::template::PageBuilder;
+use crate::uri;
 use crate::users::{User, UserId};
 use anyhow::{Error, Result};
 use lettre::message::Mailbox;
@@ -11,7 +12,7 @@ use rand::Rng;
 use rocket::form::Form;
 use rocket::response::{self, Debug, Redirect, Responder};
 use rocket::{
-    catch, catchers, get, post, routes, uri, Catcher, FromForm, Request, Response, Route, State,
+    catch, catchers, get, post, routes, Catcher, FromForm, Request, Response, Route, State,
 };
 use rocket_dyn_templates::{context, Template};
 
@@ -36,7 +37,7 @@ pub(crate) fn routes() -> Vec<Route> {
         logout,
         auto_login::auto_login_redirect,
         sudo::enter,
-        sudo::exit
+        sudo::exit,
     ]
 }
 

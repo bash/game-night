@@ -11,9 +11,10 @@ use rocket::{async_trait, Request};
 use rocket_db_pools::Connection;
 use sqlx::pool::PoolConnection;
 use sqlx::{Connection as _, Executor, Sqlite, SqliteConnection};
+use std::fmt;
 
 #[async_trait]
-pub(crate) trait Repository: Send {
+pub(crate) trait Repository: fmt::Debug + Send {
     async fn add_invitation(&mut self, invitation: Invitation<()>) -> Result<Invitation>;
 
     async fn get_invitation_by_passphrase(
@@ -73,6 +74,7 @@ pub(crate) trait Repository: Send {
     async fn prune(&mut self) -> Result<()>;
 }
 
+#[derive(Debug)]
 pub(crate) struct SqliteRepository(pub(crate) PoolConnection<Sqlite>);
 
 impl SqliteRepository {
