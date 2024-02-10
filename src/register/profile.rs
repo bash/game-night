@@ -28,7 +28,7 @@ pub(super) async fn update_profile(
     form: Form<UpdateUserForm>,
     user: User,
 ) -> Result<Redirect, Debug<Error>> {
-    let patch = form.into_inner().to_user_patch(&user);
+    let patch = form.into_inner().into_user_patch(&user);
     repository.update_user(user.id, patch).await?;
     Ok(Redirect::to(uri!(profile)))
 }
@@ -42,7 +42,7 @@ pub(crate) struct UpdateUserForm {
 }
 
 impl UpdateUserForm {
-    fn to_user_patch(self, user: &User) -> UserPatch {
+    fn into_user_patch(self, user: &User) -> UserPatch {
         let name = self.name.filter(|_| user.can_update_name());
         let email_subscription = match (self.subscribe, self.until) {
             (true, _) => EmailSubscription::Subscribed,
