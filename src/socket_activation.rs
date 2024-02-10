@@ -17,6 +17,7 @@ impl Bindable for SocketActivation {
     type Error = io::Error;
 
     async fn bind(self) -> io::Result<Self::Listener> {
+        self.0.set_nonblocking(true)?;
         TcpListener::from_std(self.0)
     }
 }
