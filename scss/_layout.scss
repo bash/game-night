@@ -45,7 +45,7 @@ footer {
         opacity: .4;
         transition: opacity 125ms;
 
-        &:hover {
+        &:hover, &:focus-within {
             opacity: 1;
         }
     }
