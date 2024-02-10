@@ -1,4 +1,5 @@
 use super::{finalize, FinalizeContext};
+use crate::uri::HasUrlPrefix as _;
 use crate::RocketExt;
 use anyhow::Result;
 use rocket::fairing::{self, Fairing};
