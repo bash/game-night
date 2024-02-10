@@ -9,6 +9,7 @@ pub(super) struct PollEmail<'a> {
     #[serde(with = "time::serde::iso8601")]
     pub(super) poll_closes_at: OffsetDateTime,
     pub(super) poll_url: Absolute<'a>,
+    pub(super) manage_subscription_url: Absolute<'a>,
 }
 
 impl EmailMessage for PollEmail<'_> {

@@ -23,6 +23,7 @@
 <hr>
 
 <p>
-    <strong>P.S.</strong> You can ignore this email if you want to skip the next game night.
+    <strong>P.S.</strong> You can ignore this email if you want to skip the next game night.<br>
+    <strong>P.P.S.</strong> You can <a href="{{manage_subscription_url}}">manage</a> your subscription if you no longer want to receive these emails.
 </p>
 {% endblock content %}

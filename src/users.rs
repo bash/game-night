@@ -4,10 +4,13 @@ use crate::template::PageBuilder;
 use anyhow::{Error, Result};
 use lettre::message::Mailbox;
 use rocket::response::Debug;
-use rocket::{get, routes, FromForm, Route};
+use rocket::{get, routes, Route};
 use rocket_db_pools::sqlx;
 use rocket_dyn_templates::{context, Template};
 use serde::Serialize;
+use time::Date;
+
+mod email_subscription;
 
 pub(crate) fn routes() -> Vec<Route> {
     routes![list_users]
@@ -33,16 +36,17 @@ pub(crate) struct User<Id = UserId> {
     pub(crate) name: String,
     pub(crate) role: Role,
     pub(crate) email_address: String,
+    pub(crate) email_subscription: EmailSubscription,
     pub(crate) invited_by: Option<UserId>,
     pub(crate) campaign: Option<String>,
     pub(crate) can_update_name: bool,
     pub(crate) can_answer_strongly: bool,
 }
 
-#[derive(Debug, FromForm)]
+#[derive(Debug)]
 pub(crate) struct UserPatch {
-    #[form(validate = len(1..))]
     pub(crate) name: Option<String>,
+    pub(crate) email_subscription: Option<EmailSubscription>,
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, sqlx::Type, Serialize)]
@@ -50,6 +54,30 @@ pub(crate) struct UserPatch {
 pub(crate) enum Role {
     Admin,
     Guest,
+}
+
+#[derive(Default, Debug, Copy, Clone, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case", tag = "type")]
+pub(crate) enum EmailSubscription {
+    #[default]
+    Subscribed,
+    TemporarilyUnsubscribed {
+        #[serde(with = "iso8601_date")]
+        until: Date,
+    },
+    PermanentlyUnsubscribed,
+}
+
+time::serde::format_description!(iso8601_date, Date, "[year]-[month]-[day]");
+
+impl EmailSubscription {
+    pub(crate) fn is_subscribed(&self, today: Date) -> bool {
+        match self {
+            EmailSubscription::Subscribed => true,
+            EmailSubscription::TemporarilyUnsubscribed { until } => today > *until,
+            EmailSubscription::PermanentlyUnsubscribed => false,
+        }
+    }
 }
 
 impl<Id> User<Id> {

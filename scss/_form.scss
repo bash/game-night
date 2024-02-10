@@ -6,6 +6,7 @@
 input[type=text],
 input[type=email],
 input[type=number],
+input[type=date],
 textarea,
 select {
     @extend %textlike-input;

@@ -3,6 +3,7 @@ CREATE TABLE users
     , name TEXT NOT NULL
     , 'role' INTEGER NOT NULL
     , email_address TEXT NOT NULL UNIQUE
+    , email_subscription TEXT NOT NULL
     , invited_by INTEGER NULL REFERENCES users(id) ON DELETE RESTRICT
     , campaign TEXT NULL
     , can_update_name INTEGER NOT NULL DEFAULT 1
