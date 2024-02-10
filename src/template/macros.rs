@@ -5,7 +5,7 @@ macro_rules! tera_function {
             $(
                 let $arg_name: Option<$arg_type> = __tera_args
                     .get(stringify!($arg_name))
-                    .map(|v| json::from_value(v.clone()).map_err(|_|
+                    .map(|v| ::rocket_dyn_templates::tera::from_value(v.clone()).map_err(|_|
                         tera::Error::msg(format!(
                             "Function `{name}` received {arg_name}={arg_value}, expected a {arg_type}",
                             name = stringify!($name),
@@ -35,7 +35,7 @@ macro_rules! tera_function {
 macro_rules! tera_filter {
     (fn $name:ident($value:ident : $value_ty:ty $(, $arg_name:ident : $arg_type:ty $(= $default:expr)?)*) $block:block) => {
         fn $name(__tera_value: &tera::Value, __tera_args: &HashMap<String, tera::Value>) -> tera::Result<tera::Value> {
-            let $value: $value_ty = json::from_value(__tera_value.clone()).map_err(|_|
+            let $value: $value_ty = ::rocket_dyn_templates::tera::from_value(__tera_value.clone()).map_err(|_|
                 tera::Error::msg(format!(
                     "Filter `{name}` received value {__tera_value}, expected a {ty}",
                     name = stringify!($name),
@@ -45,7 +45,7 @@ macro_rules! tera_filter {
             $(
                 let $arg_name: Option<$arg_type> = __tera_args
                     .get(stringify!($arg_name))
-                    .map(|v| json::from_value(v.clone()).map_err(|_|
+                    .map(|v| ::rocket_dyn_templates::tera::from_value(v.clone()).map_err(|_|
                         tera::Error::msg(format!(
                             "Filter `{name}` received {arg_name}={arg_value}, expected a {arg_type}",
                             name = stringify!($name),
