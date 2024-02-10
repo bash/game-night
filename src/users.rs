@@ -3,8 +3,9 @@ use crate::database::Repository;
 use crate::template::PageBuilder;
 use anyhow::{Error, Result};
 use lettre::message::Mailbox;
+use rocket::form;
 use rocket::response::Debug;
-use rocket::{get, routes, Route};
+use rocket::{async_trait, get, routes, Route};
 use rocket_db_pools::sqlx;
 use rocket_dyn_templates::{context, Template};
 use serde::{Deserialize, Serialize};
@@ -30,6 +31,17 @@ async fn list_users(
 #[serde(transparent)]
 pub(crate) struct UserId(pub(crate) i64);
 
+#[async_trait]
+impl<'v> form::FromFormField<'v> for UserId {
+    fn from_value(field: form::ValueField<'v>) -> form::Result<'v, Self> {
+        i64::from_value(field).map(UserId)
+    }
+
+    async fn from_data(field: form::DataField<'v, '_>) -> form::Result<'v, Self> {
+        i64::from_data(field).await.map(UserId)
+    }
+}
+
 #[derive(Debug, Clone, sqlx::FromRow, Serialize)]
 pub(crate) struct User<Id = UserId> {
     pub(crate) id: Id,
@@ -49,10 +61,11 @@ pub(crate) struct UserPatch {
     pub(crate) email_subscription: Option<EmailSubscription>,
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, sqlx::Type, Serialize)]
+#[derive(Debug, Default, Copy, Clone, Eq, PartialEq, sqlx::Type, Serialize)]
 #[sqlx(rename_all = "lowercase")]
 pub(crate) enum Role {
     Admin,
+    #[default]
     Guest,
 }
 

@@ -27,11 +27,11 @@ pub(crate) async fn delete_profile(
 
 fn goodbye_invitation(user: &User) -> Invitation<()> {
     let valid_until = OffsetDateTime::now_utc() + Duration::days(365);
-    let invitation = Invitation::generate(user.role, None, Some(valid_until));
-    Invitation {
-        comment: format!("Goodbye invitation for '{}'", user.name),
-        ..invitation
-    }
+    Invitation::builder()
+        .role(user.role)
+        .valid_until(valid_until)
+        .comment(format!("Goodbye invitation for '{}'", user.name))
+        .build()
 }
 
 #[get("/profile/deleted?<name>&<passphrase>")]

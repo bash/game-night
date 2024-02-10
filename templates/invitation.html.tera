@@ -25,10 +25,12 @@
     </fieldset>
 
     <fieldset class="-actions">
-        <button type="submit">Generate another invitation</button>
+        <button type="submit">Create another invitation</button>
     </fieldset>
 
-    <input type="hidden" name="lifetime" value="{{lifetime}}" />
+    {% for name, value in form %}
+        <input type="hidden" name="{{name}}" value="{{value}}" />
+    {% endfor %}
 </form>
 
 <script type="module" src="/js/copy-to-clipboard.js"></script>

@@ -1,3 +1,5 @@
+use std::num::NonZeroU32;
+
 use crate::auth::{AuthorizedTo, Invite};
 use crate::database::Repository;
 use crate::register::rocket_uri_macro_register_page;
@@ -26,35 +28,51 @@ pub(crate) fn routes() -> Vec<Route> {
 }
 
 #[get("/invite")]
-fn invite_page(page: PageBuilder<'_>, _user: AuthorizedTo<Invite>) -> Template {
-    page.render("invite", context! {})
+async fn invite_page(
+    _user: AuthorizedTo<Invite>,
+    mut repository: Box<dyn Repository>,
+    page: PageBuilder<'_>,
+) -> Result<Template, Debug<Error>> {
+    Ok(page.render(
+        "invite",
+        context! {
+            users: repository.get_users().await?
+        },
+    ))
 }
 
 #[post("/invite", data = "<form>")]
 async fn generate_invitation(
+    _user: AuthorizedTo<Invite>,
     page: PageBuilder<'_>,
     mut repository: Box<dyn Repository>,
     form: Form<GenerateInvitationData>,
-    user: AuthorizedTo<Invite>,
     uri_builder: UriBuilder<'_>,
 ) -> Result<Template, Debug<Error>> {
-    let lifetime: Duration = form.lifetime.into();
+    let lifetime = Duration::days(i64::from(u32::from(form.lifetime_in_days)));
     let valid_until = OffsetDateTime::now_utc() + lifetime;
-    let invitation = Invitation::generate(Role::Guest, Some(user.id), Some(valid_until));
+    let invitation = Invitation::builder()
+        .role(Role::Guest)
+        .created_by(form.inviter)
+        .valid_until(valid_until)
+        .comment(&form.comment)
+        .build();
     let invitation = repository.add_invitation(invitation).await?;
     Ok(page.render(
         "invitation",
         context! {
             passphrase: invitation.passphrase.clone(),
-            lifetime: form.lifetime,
+            form: form.into_inner(),
             register_uri: uri!(uri_builder, register_page(passphrase = Some(invitation.passphrase))),
         },
     ))
 }
 
-#[derive(Debug, FromForm)]
+#[derive(Debug, FromForm, Serialize)]
 struct GenerateInvitationData {
-    lifetime: InvitationLifetime,
+    lifetime_in_days: NonZeroU32,
+    inviter: UserId,
+    comment: String,
 }
 
 #[derive(Debug, Clone, Copy, FromFormField, Serialize)]
@@ -89,21 +107,51 @@ pub(crate) struct Invitation<Id = InvitationId> {
     pub(crate) used_by: Option<UserId>,
 }
 
-impl Invitation<()> {
-    pub(crate) fn generate(
-        role: Role,
-        created_by: Option<UserId>,
-        valid_until: Option<OffsetDateTime>,
-    ) -> Self {
+#[derive(Debug, Default)]
+pub(crate) struct InvitationBuilder {
+    role: Role,
+    created_by: Option<UserId>,
+    valid_until: Option<OffsetDateTime>,
+    comment: String,
+}
+
+impl InvitationBuilder {
+    pub(crate) fn role(mut self, role: Role) -> Self {
+        self.role = role;
+        self
+    }
+
+    pub(crate) fn created_by(mut self, user_id: impl Into<Option<UserId>>) -> Self {
+        self.created_by = user_id.into();
+        self
+    }
+
+    pub(crate) fn valid_until(mut self, valid_until: impl Into<Option<OffsetDateTime>>) -> Self {
+        self.valid_until = valid_until.into();
+        self
+    }
+
+    pub(crate) fn comment(mut self, comment: impl ToString) -> Self {
+        self.comment = comment.to_string();
+        self
+    }
+
+    pub(crate) fn build(self) -> Invitation<()> {
         Invitation {
             id: (),
-            role,
-            created_by,
-            valid_until,
+            role: self.role,
+            created_by: self.created_by,
+            valid_until: self.valid_until,
             used_by: None,
             passphrase: generate_passphrase(),
-            comment: String::default(),
+            comment: self.comment,
         }
+    }
+}
+
+impl Invitation<()> {
+    pub(crate) fn builder() -> InvitationBuilder {
+        InvitationBuilder::default()
     }
 
     pub(crate) fn with_id(self, id: InvitationId) -> Invitation {
@@ -155,7 +203,12 @@ async fn get_or_create_invitation(repository: &mut dyn Repository) -> Result<Inv
         Some(invitation) => invitation,
         None => {
             repository
-                .add_invitation(Invitation::generate(Role::Admin, None, None))
+                .add_invitation(
+                    InvitationBuilder::default()
+                        .role(Role::Admin)
+                        .comment("auto-generated admin invite")
+                        .build(),
+                )
                 .await?
         }
     })

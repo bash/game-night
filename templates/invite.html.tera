@@ -1,19 +1,31 @@
 {% extends 'base' %}
 
-{% block title %}Invite{% endblock title %}
+{% block title %}Inviting Others{% endblock title %}
 
 {% block content %}
 <form method="post">
-    <fieldset>
-        <label for="lifetime">Invitation Lifetime:</label>
-        <select name="lifetime" id="lifetime">
-            <option value="short" selected>Short (1 month)</option>
-            <option value="long">Long (1 year)</option>
+    <p>
+        Let's create an invitation on behalf of
+
+        <select name="inviter" class="-inline">
+            {% for u in users %}
+                <option value="{{u.id}}" {% if u.id == user.id %}selected{% endif %}>{{u.name}}</option>
+            {% endfor %}
         </select>
-    </fieldset>
+        , valid for
+
+        <select name="lifetime_in_days" class="-inline">
+            <option value="30" selected>1 month</option>
+            <option value="90">3 months</option>
+            <option value="365">1 year</option>
+        </select>.
+
+        Here's space for a comment: <br>
+        <input type="text" name="comment" class="-inline" style="width: 100%" placeholder="type something here">
+    </p>
 
     <fieldset class="-actions">
-        <button type="submit">Generate Invitation</button>
+        <button type="submit">Create Invitation</button>
     </fieldset>
 </form>
 {% endblock content %}
