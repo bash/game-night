@@ -1,4 +1,3 @@
-use super::Invitation;
 use anyhow::Result;
 use rocket::form::FromFormField;
 use rocket::http::impl_from_uri_param_identity;
@@ -77,40 +76,5 @@ where
 impl sqlx::Type<Sqlite> for Passphrase {
     fn type_info() -> <Sqlite as Database>::TypeInfo {
         <String as sqlx::Type<Sqlite>>::type_info()
-    }
-}
-
-#[derive(Debug)]
-pub(crate) struct Passphrases(pub(crate) Vec<Passphrase>);
-
-impl Passphrases {
-    pub(crate) fn from_invitations<'a>(iter: impl Iterator<Item = &'a Invitation>) -> Self {
-        Self(iter.map(|i| i.passphrase.clone()).collect())
-    }
-}
-
-impl<'v> FromFormField<'v> for Passphrases {
-    fn from_value(field: rocket::form::ValueField<'v>) -> rocket::form::Result<'v, Self> {
-        Ok(Passphrases(
-            field
-                .value
-                .split(',')
-                .map(Passphrase::from_form_field)
-                .collect(),
-        ))
-    }
-}
-
-impl_from_uri_param_identity!([Query] Passphrases);
-
-impl UriDisplay<Query> for Passphrases {
-    fn fmt(&self, f: &mut rocket::http::uri::fmt::Formatter<'_, Query>) -> fmt::Result {
-        let value = self
-            .0
-            .iter()
-            .map(Passphrase::to_form_field)
-            .collect::<Vec<_>>()
-            .join(",");
-        f.write_value(value)
     }
 }

@@ -18,22 +18,16 @@ use time::{Duration, OffsetDateTime};
 
 mod wordlist;
 pub(crate) use self::wordlist::*;
-mod batch;
 mod passphrase;
 pub(crate) use self::passphrase::*;
 
 pub(crate) fn routes() -> Vec<Route> {
-    routes![
-        invite_page,
-        generate_invitation,
-        batch::invite,
-        batch::cards
-    ]
+    routes![invite_page, generate_invitation]
 }
 
 #[get("/invite")]
 fn invite_page(page: PageBuilder<'_>, _user: AuthorizedTo<Invite>) -> Template {
-    page.render("invite", context! { batch_invite_uri: uri!(batch::invite) })
+    page.render("invite", context! {})
 }
 
 #[post("/invite", data = "<form>")]

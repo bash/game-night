@@ -14,7 +14,6 @@
 
     <fieldset class="-actions">
         <button type="submit">Generate Invitation</button>
-        <button type="submit" formaction="{{batch_invite_uri}}">Generate Invitation Cards</button>
     </fieldset>
 </form>
 {% endblock content %}
