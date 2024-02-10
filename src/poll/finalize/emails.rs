@@ -7,6 +7,7 @@ use crate::users::User;
 use anyhow::Result;
 use lettre::message::header::ContentType;
 use lettre::message::{Attachment, SinglePart};
+use rocket::http::uri::Absolute;
 use serde::Serialize;
 use time::format_description::FormatItem;
 use time::macros::format_description;
@@ -23,7 +24,7 @@ pub(super) async fn send_notification_emails(
 }
 
 async fn send_invited_email(ctx: &mut FinalizeContext, event: &Event, user: &User) -> Result<()> {
-    let event_url = event_url(ctx, user, event).await?;
+    let event_url = uri!(auto_login(user, event.ends_at); ctx.uri_builder, play_page()).await?;
     let ics_file = crate::play::to_calendar(Some(event), &ctx.uri_builder)?.to_string();
     let email: InvitedEmail<'_> = InvitedEmail {
         event,
@@ -39,7 +40,7 @@ async fn send_invited_email(ctx: &mut FinalizeContext, event: &Event, user: &Use
 struct InvitedEmail<'a> {
     event: &'a Event,
     name: &'a str,
-    event_url: String,
+    event_url: Absolute<'a>,
     ics_file: String,
 }
 
@@ -62,10 +63,4 @@ impl<'a> EmailMessage for InvitedEmail<'a> {
             .body(self.ics_file.clone(), ContentType::parse("text/calendar")?);
         Ok(vec![ics_attachment])
     }
-}
-
-async fn event_url(ctx: &mut FinalizeContext, user: &User, event: &Event) -> Result<String> {
-    uri!(auto_login(user, event.ends_at); ctx.uri_builder, play_page())
-        .await
-        .map(|u| u.to_string())
 }

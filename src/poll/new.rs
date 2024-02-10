@@ -273,9 +273,7 @@ async fn send_poll_emails(
     poll: &Poll<(), UserId, i64>,
 ) -> Result<()> {
     for user in repository.get_users().await? {
-        let poll_url = uri!(auto_login(&user, poll.open_until); uri_builder, poll_page())
-            .await?
-            .to_string();
+        let poll_url = uri!(auto_login(&user, poll.open_until); uri_builder, poll_page()).await?;
         let email = PollEmail {
             name: user.name.clone(),
             poll_closes_at: poll.open_until,
