@@ -44,14 +44,18 @@ pub(crate) struct UpdateUserForm {
 impl UpdateUserForm {
     fn into_user_patch(self, user: &User) -> UserPatch {
         let name = self.name.filter(|_| user.can_update_name());
-        let email_subscription = match (self.subscribe, self.until) {
-            (true, _) => EmailSubscription::Subscribed,
-            (false, Some(until)) => EmailSubscription::TemporarilyUnsubscribed { until },
-            (false, None) => EmailSubscription::PermanentlyUnsubscribed,
-        };
+        let email_subscription = Some(to_email_subscription(self.subscribe, self.until));
         UserPatch {
             name,
-            email_subscription: Some(email_subscription),
+            email_subscription,
         }
+    }
+}
+
+fn to_email_subscription(subscribe: bool, until: Option<Date>) -> EmailSubscription {
+    match (subscribe, until) {
+        (true, _) => EmailSubscription::Subscribed,
+        (false, Some(until)) => EmailSubscription::TemporarilyUnsubscribed { until },
+        (false, None) => EmailSubscription::PermanentlyUnsubscribed,
     }
 }
