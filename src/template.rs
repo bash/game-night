@@ -8,7 +8,6 @@ use crate::users::rocket_uri_macro_list_users;
 use crate::users::User;
 use anyhow::Error;
 use itertools::Itertools;
-use lazy_static::lazy_static;
 use rocket::http::uri::Origin;
 use rocket::outcome::try_outcome;
 use rocket::request::{FromRequest, Outcome};
@@ -16,6 +15,7 @@ use rocket::{async_trait, uri, Request};
 use rocket_dyn_templates::{Engines, Template};
 use serde::Serialize;
 use std::borrow::Cow;
+use std::sync::OnceLock;
 
 #[macro_use]
 mod macros;
@@ -101,7 +101,7 @@ impl<'r> FromRequest<'r> for PageBuilder<'r> {
 }
 
 fn visible_chapters(user: &Option<User>) -> Vec<Chapter> {
-    CHAPTERS
+    chapters()
         .iter()
         .filter(|b| (b.visible_if)(user))
         .cloned()
@@ -122,82 +122,85 @@ fn path_matches(uri: &Origin<'_>, expected_prefix: &Origin<'_>) -> bool {
     uri.path().starts_with(expected_prefix.path().as_str())
 }
 
-lazy_static! {
-    static ref CHAPTERS: Vec<Chapter> = vec![
-        Chapter {
-            uri: Origin::ROOT,
-            weight: 100,
-            match_uris: vec![uri!(register_page(passphrase = Option::<Passphrase>::None))],
-            title: "Register",
-            visible_if: Option::is_none,
-            accent_color: AccentColor::Purple,
-            icon: SvgIcon {
-                name: "clipboard-signature",
-                aria_label: "Clipboard Signature"
-            }
-        },
-        Chapter {
-            uri: uri!(play_redirect()),
-            weight: 0,
-            match_uris: vec![],
-            title: "Play",
-            visible_if: Option::is_none,
-            accent_color: AccentColor::Blue,
-            icon: SvgIcon {
-                name: "dices",
-                aria_label: "Dices"
-            }
-        },
-        Chapter {
-            uri: uri!(play_page()),
-            weight: 100,
-            match_uris: vec![],
-            title: "Play",
-            visible_if: Option::is_some,
-            accent_color: AccentColor::Blue,
-            icon: SvgIcon {
-                name: "dices",
-                aria_label: "Dices"
-            }
-        },
-        Chapter {
-            uri: uri!(profile()),
-            weight: 0,
-            match_uris: vec![uri!(list_users())],
-            title: "User Profile",
-            accent_color: AccentColor::Teal,
-            visible_if: |_| true,
-            icon: SvgIcon {
-                name: "user",
-                aria_label: "User"
-            }
-        },
-        #[cfg(debug_assertions)]
-        Chapter {
-            uri: uri!("/news"),
-            weight: 0,
-            match_uris: vec![],
-            title: "News",
-            visible_if: |_| true,
-            accent_color: AccentColor::Green,
-            icon: SvgIcon {
-                name: "megaphone",
-                aria_label: "Megaphone"
-            }
-        },
-        Chapter {
-            uri: uri!(invite_page()),
-            weight: 0,
-            match_uris: vec![],
-            title: "Invite",
-            visible_if: |u| u.as_ref().map(|u| u.can_invite()).unwrap_or_default(),
-            accent_color: AccentColor::Red,
-            icon: SvgIcon {
-                name: "mail-open",
-                aria_label: "Mail"
-            }
-        },
-    ];
+fn chapters() -> &'static [Chapter] {
+    static CHAPTERS: OnceLock<Vec<Chapter>> = OnceLock::new();
+    &CHAPTERS.get_or_init(|| {
+        vec![
+            Chapter {
+                uri: Origin::ROOT,
+                weight: 100,
+                match_uris: vec![uri!(register_page(passphrase = Option::<Passphrase>::None))],
+                title: "Register",
+                visible_if: Option::is_none,
+                accent_color: AccentColor::Purple,
+                icon: SvgIcon {
+                    name: "clipboard-signature",
+                    aria_label: "Clipboard Signature",
+                },
+            },
+            Chapter {
+                uri: uri!(play_redirect()),
+                weight: 0,
+                match_uris: vec![],
+                title: "Play",
+                visible_if: Option::is_none,
+                accent_color: AccentColor::Blue,
+                icon: SvgIcon {
+                    name: "dices",
+                    aria_label: "Dices",
+                },
+            },
+            Chapter {
+                uri: uri!(play_page()),
+                weight: 100,
+                match_uris: vec![],
+                title: "Play",
+                visible_if: Option::is_some,
+                accent_color: AccentColor::Blue,
+                icon: SvgIcon {
+                    name: "dices",
+                    aria_label: "Dices",
+                },
+            },
+            Chapter {
+                uri: uri!(profile()),
+                weight: 0,
+                match_uris: vec![uri!(list_users())],
+                title: "User Profile",
+                accent_color: AccentColor::Teal,
+                visible_if: |_| true,
+                icon: SvgIcon {
+                    name: "user",
+                    aria_label: "User",
+                },
+            },
+            #[cfg(debug_assertions)]
+            Chapter {
+                uri: uri!("/news"),
+                weight: 0,
+                match_uris: vec![],
+                title: "News",
+                visible_if: |_| true,
+                accent_color: AccentColor::Green,
+                icon: SvgIcon {
+                    name: "megaphone",
+                    aria_label: "Megaphone",
+                },
+            },
+            Chapter {
+                uri: uri!(invite_page()),
+                weight: 0,
+                match_uris: vec![],
+                title: "Invite",
+                visible_if: |u| u.as_ref().map(|u| u.can_invite()).unwrap_or_default(),
+                accent_color: AccentColor::Red,
+                icon: SvgIcon {
+                    name: "mail-open",
+                    aria_label: "Mail",
+                },
+            },
+        ]
+    })
 }
 
 #[derive(Debug, Clone, Serialize)]

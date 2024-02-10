@@ -22,7 +22,6 @@ time-tz = "2.0.0"
 pulldown-cmark = "0.10.0"
 dyn-clone = "1.0.14"
 ics = "0.5.8"
-lazy_static = "1.4.0"
 pem = { package = "pem-rfc7468", version = "0.7.0", features = ["std"] }
 listenfd = "1.0.1"
 

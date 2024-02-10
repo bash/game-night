@@ -1098,7 +1098,6 @@ dependencies = [
  "email_address",
  "ics",
  "itertools",
- "lazy_static",
  "lettre",
  "listenfd",
  "outbox",
