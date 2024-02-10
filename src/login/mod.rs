@@ -92,7 +92,8 @@ impl Login {
         let context = context! {
             has_redirect: redirect.is_some(),
             form,
-            error_message: "I don't know what to do with this email address, are you sure that you spelled it correctly? 🤔"
+            error_message: "I don't know what to do with this email address, are you sure that you spelled it correctly? 🤔",
+            getting_invited_uri: uri!(getting_invited_page()),
         };
         Self::Failure(builder.render("login", context))
     }
