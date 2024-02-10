@@ -32,9 +32,10 @@
     &.-inline {
         --vertical-padding: 0px; // The unit is important here so that the max() function understands that this is a length value
         --horizontal-padding: 0px;
+        --vertical-margin: 4px;
         background-color: transparent;
         border-width: 2px;
-        margin: 4px 0;
+        margin: var(--vertical-margin) 0;
     }
 
     background-color: color-mix(in srgb, var(--accent-color), #fff 90%);
