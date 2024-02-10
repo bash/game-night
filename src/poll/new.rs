@@ -4,6 +4,7 @@ use super::{DateSelectionStrategy, Poll, PollOption};
 use crate::auth::{AuthorizedTo, ManagePoll};
 use crate::database::Repository;
 use crate::email::EmailSender;
+use crate::register::rocket_uri_macro_profile;
 use crate::template::PageBuilder;
 use crate::uri;
 use crate::uri::UriBuilder;
@@ -274,10 +275,12 @@ async fn send_poll_emails(
 ) -> Result<()> {
     for user in get_subscribed_users(repository.as_mut()).await? {
         let poll_url = uri!(auto_login(&user, poll.open_until); uri_builder, poll_page()).await?;
+        let sub_url = uri!(auto_login(&user, poll.open_until); uri_builder, profile()).await?;
         let email = PollEmail {
             name: user.name.clone(),
             poll_closes_at: poll.open_until,
             poll_url,
+            manage_subscription_url: sub_url,
         };
         email_sender.send(user.mailbox()?, &email).await?;
     }

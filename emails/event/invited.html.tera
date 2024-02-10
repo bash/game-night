@@ -20,4 +20,8 @@
     <span class="arrow" role="presentation">→</span>
     Show me all the deets!
 </a>
+
+<hr>
+
+<strong>P.S.</strong> You are receiving this email because you participated in the poll for this event.
 {% endblock content %}
