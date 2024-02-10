@@ -61,10 +61,11 @@ publish: all
 	@mkdir -p $(PUBLISH_DIR)
 	podman build -t game-night-build .
 	podman volume create --ignore game-night-cargo-registry
-	podman run --rm -v game-night-cargo-registry:/root/.cargo/registry -v ./:/build:z --workdir /build game-night-build cargo build --release
+	podman run --rm -v game-night-cargo-registry:/root/.cargo/registry -v ./:/build:z --workdir /build game-night-build cargo build --release --color=always
 	cp target/release/game-night $(PUBLISH_DIR)/
 	cp -R {public,templates,emails} $(PUBLISH_DIR)/
 	find $(PUBLISH_DIR) -name '.DS_Store' -exec rm {} +
 
 deploy: publish
 	rsync --archive --verbose --human-readable --delete $(PUBLISH_DIR)/ root@fedora-01.infra.tau.garden:/opt/game-night/bin/
+	ssh root@fedora-01.infra.tau.garden -C 'systemctl stop game-night'
