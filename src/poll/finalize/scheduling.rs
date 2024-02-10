@@ -1,4 +1,5 @@
 use super::{finalize, FinalizeContext};
+use crate::uri::HasUriBuilder as _;
 use crate::RocketExt;
 use anyhow::Result;
 use rocket::fairing::{self, Fairing};
@@ -28,7 +29,7 @@ impl FinalizeContext {
         Ok(Self {
             repository: rocket.repository().await?,
             email_sender: rocket.email_sender()?,
-            url_prefix: rocket.url_prefix()?.to_static(),
+            uri_builder: rocket.uri_builder().await?.into_static(),
         })
     }
 }

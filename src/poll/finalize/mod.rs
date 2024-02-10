@@ -2,8 +2,8 @@ use super::{Answer, Attendance, DateSelectionStrategy, Poll, PollOption};
 use crate::database::Repository;
 use crate::email::EmailSender;
 use crate::event::Event;
+use crate::uri::UriBuilder;
 use crate::users::{User, UserId};
-use crate::UrlPrefix;
 use anyhow::Result;
 use itertools::{Either, Itertools};
 use rand::seq::SliceRandom;
@@ -26,7 +26,7 @@ async fn finalize(ctx: &mut FinalizeContext) -> Result<()> {
 struct FinalizeContext {
     repository: Box<dyn Repository>,
     email_sender: Box<dyn EmailSender>,
-    url_prefix: UrlPrefix<'static>,
+    uri_builder: UriBuilder<'static>,
 }
 
 async fn try_finalize_poll(ctx: &mut FinalizeContext, poll: Poll) -> Result<()> {

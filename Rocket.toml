@@ -1,5 +1,5 @@
 [default]
-url_prefix = "http://localhost:8000"
+url_prefix = "https://localhost:8000"
 secret_keys_path = "private"
 
 [default.campaign.example]

@@ -2,15 +2,16 @@ use crate::auth::{AuthorizedTo, Invite};
 use crate::database::Repository;
 use crate::register::rocket_uri_macro_register_page;
 use crate::template::PageBuilder;
+use crate::uri;
+use crate::uri::UriBuilder;
 use crate::users::{Role, User, UserId};
-use crate::UrlPrefix;
 use anyhow::{Error, Result};
 use rand::prelude::*;
 use rocket::form::Form;
 use rocket::log::PaintExt as _;
 use rocket::response::Debug;
 use rocket::yansi::Paint as _;
-use rocket::{get, launch_meta, launch_meta_, post, routes, uri, FromForm, FromFormField, Route};
+use rocket::{get, launch_meta, launch_meta_, post, routes, FromForm, FromFormField, Route};
 use rocket_dyn_templates::{context, Template};
 use serde::Serialize;
 use time::{Duration, OffsetDateTime};
@@ -41,19 +42,18 @@ async fn generate_invitation(
     mut repository: Box<dyn Repository>,
     form: Form<GenerateInvitationData>,
     user: AuthorizedTo<Invite>,
-    url_prefix: UrlPrefix<'_>,
+    uri_builder: UriBuilder<'_>,
 ) -> Result<Template, Debug<Error>> {
     let lifetime: Duration = form.lifetime.into();
     let valid_until = OffsetDateTime::now_utc() + lifetime;
     let invitation = Invitation::generate(Role::Guest, Some(user.id), Some(valid_until));
     let invitation = repository.add_invitation(invitation).await?;
-
     Ok(page.render(
         "invitation",
         context! {
             passphrase: invitation.passphrase.clone(),
             lifetime: form.lifetime,
-            register_uri: uri!(url_prefix.0, register_page(passphrase = Some(invitation.passphrase))),
+            register_uri: uri!(uri_builder, register_page(passphrase = Some(invitation.passphrase))),
         },
     ))
 }

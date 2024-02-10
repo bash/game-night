@@ -2,8 +2,9 @@ use crate::database::Repository;
 use crate::event::Event;
 use crate::poll::Location;
 use crate::template::PageBuilder;
+use crate::uri;
+use crate::uri::UriBuilder;
 use crate::users::User;
-use crate::UrlPrefix;
 use anyhow::{Error, Result};
 use ics::components::Property;
 use ics::parameters::TzIDParam;
@@ -11,11 +12,10 @@ use ics::properties::{
     Description, DtEnd, DtStart, Location as LocationProp, Status, Summary, URL,
 };
 use ics::{escape_text, ICalendar};
-use rocket::http::uri::Absolute;
 use rocket::outcome::try_outcome;
 use rocket::request::{FromRequest, Outcome};
 use rocket::response::{Debug, Redirect};
-use rocket::{async_trait, get, routes, uri, Request, Responder, Route};
+use rocket::{async_trait, get, routes, Request, Responder, Route};
 use rocket_dyn_templates::{context, Template};
 use time::format_description::FormatItem;
 use time::macros::format_description;
@@ -60,32 +60,32 @@ impl<'r> FromRequest<'r> for NextEvent {
 #[get("/event.ics")]
 async fn event_ics(
     mut repository: Box<dyn Repository>,
-    url_prefix: UrlPrefix<'_>,
+    uri_builder: UriBuilder<'_>,
     _user: User,
 ) -> Result<Ics, Debug<Error>> {
     let event = repository.get_next_event().await?;
-    let calendar = to_calendar(event.as_ref(), &url_prefix.0)?;
+    let calendar = to_calendar(event.as_ref(), &uri_builder)?;
     Ok(Ics(calendar.to_string()))
 }
 
 pub(crate) fn to_calendar<'a>(
     event: Option<&'a Event>,
-    url_prefix: &'a Absolute<'a>,
+    uri_builder: &'a UriBuilder<'a>,
 ) -> Result<ICalendar<'a>> {
     let mut calendar = ICalendar::new("2.0", "game-night");
 
     if let Some(event) = event {
-        calendar.add_event(to_ical_event(event, url_prefix)?);
+        calendar.add_event(to_ical_event(event, uri_builder)?);
     }
 
     Ok(calendar)
 }
 
-fn to_ical_event<'a>(event: &'a Event, url_prefix: &'a Absolute<'a>) -> Result<ics::Event<'a>> {
+fn to_ical_event<'a>(event: &'a Event, uri_builder: &'a UriBuilder<'a>) -> Result<ics::Event<'a>> {
     let mut ical_event = ics::Event::new(event_uid(event), format_as_floating(event.starts_at)?);
     ical_event.push(Summary::new(escape_text("Tau's Game Night")));
     ical_event.push(Description::new(escape_text(&event.description)));
-    ical_event.push(URL::new(uri!(url_prefix.clone(), play_page()).to_string()));
+    ical_event.push(URL::new(uri!(uri_builder, play_page()).to_string()));
     ical_event.push(Status::confirmed());
     ical_event.push(LocationProp::new(escape_text(format_location(
         &event.location,

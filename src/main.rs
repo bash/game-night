@@ -1,22 +1,18 @@
-use anyhow::{Context as _, Error, Result};
+use anyhow::{Context as _, Result};
 use database::Repository;
 use email::{EmailSender, EmailSenderImpl};
 use poll::poll_finalizer;
 use rocket::fairing::{self, Fairing};
 use rocket::figment::Figment;
-use rocket::http::uri::Absolute;
-use rocket::http::Status;
-use rocket::request::{FromRequest, Outcome};
-use rocket::{
-    async_trait, catch, catchers, error, get, routes, uri, Build, Config, Phase, Request, Rocket,
-    Route,
-};
+use rocket::request::FromRequest;
+use rocket::{catch, catchers, error, get, routes, Build, Config, Phase, Request, Rocket, Route};
 use rocket_db_pools::{sqlx::SqlitePool, Database, Pool};
 use rocket_dyn_templates::{context, Template};
-use serde::Deserialize;
 use socket_activation::bindable_from_env;
 use template::configure_template_engines;
 use template::PageBuilder;
+
+mod uri;
 
 mod auth;
 mod database;
@@ -110,28 +106,6 @@ async fn not_found(request: &Request<'_>) -> Template {
 #[database("sqlite")]
 pub(crate) struct GameNightDatabase(SqlitePool);
 
-#[derive(Debug, Deserialize)]
-#[serde(transparent)]
-pub(crate) struct UrlPrefix<'a>(pub(crate) Absolute<'a>);
-
-impl<'a> UrlPrefix<'a> {
-    fn to_static(&self) -> UrlPrefix<'static> {
-        UrlPrefix(Absolute::parse_owned(self.0.to_string()).unwrap())
-    }
-}
-
-#[async_trait]
-impl<'r> FromRequest<'r> for UrlPrefix<'r> {
-    type Error = Error;
-
-    async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
-        match request.rocket().url_prefix() {
-            Ok(value) => Outcome::Success(value),
-            Err(e) => Outcome::Error((Status::InternalServerError, e)),
-        }
-    }
-}
-
 fn invite_admin_user() -> impl Fairing {
     fairing::AdHoc::try_on_ignite("Invite Admin User", |rocket| {
         Box::pin(async {
@@ -166,16 +140,12 @@ fn initialize_email_sender() -> impl Fairing {
     })
 }
 
-#[async_trait]
-trait RocketExt {
+pub(crate) trait RocketExt {
     async fn repository(&self) -> Result<Box<dyn Repository>>;
-
-    fn url_prefix(&self) -> Result<UrlPrefix<'_>>;
 
     fn email_sender(&self) -> Result<Box<dyn EmailSender>>;
 }
 
-#[async_trait]
 impl<P: Phase> RocketExt for Rocket<P> {
     async fn repository(&self) -> Result<Box<dyn Repository>> {
         let database = GameNightDatabase::fetch(self)
@@ -184,13 +154,6 @@ impl<P: Phase> RocketExt for Rocket<P> {
             .await
             .context("failed to retrieve database")?;
         Ok(database::create_repository(database))
-    }
-
-    fn url_prefix(&self) -> Result<UrlPrefix<'_>> {
-        self.figment()
-            .extract_inner("url_prefix")
-            .map(UrlPrefix)
-            .map_err(Into::into)
     }
 
     fn email_sender(&self) -> Result<Box<dyn EmailSender>> {
