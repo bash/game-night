@@ -6,7 +6,7 @@ publish = false
 
 [dependencies]
 anyhow = "1.0.74"
-email_address = "0.2.4"
+email_address = { version = "0.2.4", default-features = false }
 lettre = { version = "0.11.0", default-features = false, features = ["builder", "file-transport", "serde"] }
 rand = "0.8.5"
 rocket = { version = "0.6.0-dev", features = ["secrets", "json"] }
