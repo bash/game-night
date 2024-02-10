@@ -27,7 +27,8 @@
                 <td>{{user.role}}</td>
                 <td>
                     {% if user.invited_by %}
-                        <a href="#user-{{user.invited_by}}">#</a>
+                        {% set invited_by = users | filter(attribute='id', value=user.invited_by) | first %}
+                        <a href="#user-{{user.invited_by}}">{{invited_by.name}}</a>
                     {% else %}
                         ∅
                     {% endif %}
