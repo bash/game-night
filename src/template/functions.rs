@@ -1,5 +1,6 @@
 use super::AccentColor;
 use crate::decorations::{Hearts, SkinToneModifiers};
+use crate::users::EmailSubscription;
 use rand::{thread_rng, Rng};
 use rocket_dyn_templates::tera::{self, Tera};
 use serde::Deserialize;
@@ -18,6 +19,7 @@ pub(crate) fn register_custom_functions(tera: &mut Tera) {
     tera.register_function("ps", ps_prefix);
     tera.register_function("random_heart", random_heart);
     tera.register_function("random_skin_tone_modifier", random_skin_tone_modifier);
+    tera.register_function("is_subscribed", is_subscribed);
 }
 
 tera_function! {
@@ -105,5 +107,11 @@ tera_function! {
 tera_function! {
     fn random_skin_tone_modifier() {
         Ok(tera::Value::from(thread_rng().sample(SkinToneModifiers)))
+    }
+}
+
+tera_function! {
+    fn is_subscribed(sub: EmailSubscription) {
+        Ok(tera::Value::from(sub.is_subscribed(OffsetDateTime::now_utc().date())))
     }
 }

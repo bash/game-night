@@ -6,9 +6,17 @@
 
 {% block content %}
 <p>
-    Yayy, you're all set! However, there is currently no event planned.<br>
-    I will send you an email to <strong>{{user.email_address}}</strong>
-    once it's time to vote for a date.
+    Yayy, you're all set! However, there is currently no event planned.
+</p>
+
+<p>
+    {% if is_subscribed(sub=user.email_subscription) %}
+        I will send you an email to <strong>{{user.email_address}}</strong>
+        once it's time to vote for a date.
+    {% else %}
+        Check this website from time to time to see if a poll is open
+        or <a href="{{profile_uri}}">subscribe</a> to receive an email when a poll is opened.
+    {% endif %}
 </p>
 
 {% if new_poll_uri %}

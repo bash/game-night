@@ -1,5 +1,6 @@
 use self::open::open_poll_page;
 use crate::database::Repository;
+use crate::register::rocket_uri_macro_profile;
 use crate::template::PageBuilder;
 use crate::users::{User, UserId};
 use anyhow::Error;
@@ -51,7 +52,8 @@ async fn poll_page(
 
 fn no_open_poll_page(page: PageBuilder<'_>, user: User) -> Template {
     let new_poll_uri = user.can_manage_poll().then(|| uri!(new::new_poll_page()));
-    page.render("poll", context! { new_poll_uri })
+    let profile_uri = uri!(profile());
+    page.render("poll", context! { new_poll_uri, profile_uri })
 }
 
 #[derive(Debug, sqlx::FromRow, Serialize)]

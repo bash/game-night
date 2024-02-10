@@ -7,7 +7,7 @@ use rocket::response::Debug;
 use rocket::{get, routes, Route};
 use rocket_db_pools::sqlx;
 use rocket_dyn_templates::{context, Template};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use time::Date;
 
 mod email_subscription;
@@ -56,7 +56,7 @@ pub(crate) enum Role {
     Guest,
 }
 
-#[derive(Default, Debug, Copy, Clone, Eq, PartialEq, Serialize)]
+#[derive(Default, Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case", tag = "type")]
 pub(crate) enum EmailSubscription {
     #[default]
