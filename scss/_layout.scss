@@ -11,8 +11,6 @@ body {
     grid-template-columns: 1fr minmax(0, var(--content-max-width)) 1fr;
     grid-template-rows: max-content max-content 1fr max-content;
     min-height: 100svh;
-    // align-content: start;
-    // justify-content: center;
 }
 
 main {
