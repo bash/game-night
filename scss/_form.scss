@@ -33,8 +33,9 @@ input[type=number] {
 // the min-width is needed because we set min-width: 0 for all inputs earlier.
 // And yes, input[type=date] can't have a placeholder on iOS Safari :/
 input[type=date] {
-    min-width: 100px;
     min-height: calc(1lh - 2 * var(--vertical-margin, 0px));
+
+    &:not([size]) { min-width: 100px; }
 }
 
 textarea {
