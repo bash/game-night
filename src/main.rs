@@ -6,8 +6,7 @@ use rocket::fairing::{self, Fairing};
 use rocket::figment::Figment;
 use rocket::request::FromRequest;
 use rocket::{
-    async_trait, catch, catchers, error, get, routes, uri, Build, Config, Phase, Request, Rocket,
-    Route,
+    catch, catchers, error, get, routes, uri, Build, Config, Phase, Request, Rocket, Route,
 };
 use rocket_db_pools::{sqlx::SqlitePool, Database, Pool};
 use rocket_dyn_templates::{context, Template};
@@ -142,14 +141,12 @@ fn initialize_email_sender() -> impl Fairing {
     })
 }
 
-#[async_trait]
-trait RocketExt {
+pub(crate) trait RocketExt {
     async fn repository(&self) -> Result<Box<dyn Repository>>;
 
     fn email_sender(&self) -> Result<Box<dyn EmailSender>>;
 }
 
-#[async_trait]
 impl<P: Phase> RocketExt for Rocket<P> {
     async fn repository(&self) -> Result<Box<dyn Repository>> {
         let database = GameNightDatabase::fetch(self)
