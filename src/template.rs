@@ -17,8 +17,6 @@ use serde::Serialize;
 use std::borrow::Cow;
 use std::sync::OnceLock;
 
-#[macro_use]
-mod macros;
 mod functions;
 pub(crate) use functions::*;
 

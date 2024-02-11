@@ -4,8 +4,8 @@ use crate::users::EmailSubscription;
 use rand::{thread_rng, Rng};
 use rocket_dyn_templates::tera::{self, Tera};
 use serde::Deserialize;
-use std::collections::HashMap;
 use std::iter;
+use tera_macros::{tera_filter, tera_function};
 use time::format_description::FormatItem;
 use time::macros::format_description;
 use time::{format_description, OffsetDateTime};
@@ -23,35 +23,33 @@ pub(crate) fn register_custom_functions(tera: &mut Tera) {
 }
 
 tera_function! {
-    fn ps_prefix(level: usize = 0) {
-        Ok(tera::Value::String(
-            iter::repeat("P.")
-                .take(level + 1)
-                .chain(iter::once("S."))
-                .collect(),
-        ))
+    fn ps_prefix(level: usize = 0) -> String {
+        iter::repeat("P.")
+            .take(level + 1)
+            .chain(iter::once("S."))
+            .collect()
     }
 }
 
 tera_function! {
-    fn accent_color(index: usize) {
+    fn accent_color(index: usize) -> String {
         let accent_colors = AccentColor::values();
-        Ok(tera::Value::String(accent_colors[index % accent_colors.len()].css_value().to_string()))
+        accent_colors[index % accent_colors.len()].css_value().to_string()
     }
 }
 
 tera_function! {
-    fn avatar_symbol(index: usize) {
+    fn avatar_symbol(index: usize) -> String {
         const SYMBOLS: &[&str] = &[
             "☉", "☿", "♀", "🜨", "☾", "♂", "♃", "♄", "⛢", "♆", "⯓",
             "α", "β", "γ", "δ", "ε", "ζ", "η", "θ", "ι", "κ", "λ", "μ",
             "ν", "ξ", "ο", "π", "ρ", "σ", "τ", "υ", "φ", "χ", "ψ", "ω"];
-        Ok(tera::Value::String(SYMBOLS[index % SYMBOLS.len()].to_string()))
+        SYMBOLS[index % SYMBOLS.len()].to_string()
     }
 }
 
 tera_filter! {
-    fn markdown(input: String) {
+    fn markdown(input: String) -> String {
         use pulldown_cmark::{html, Options, Parser};
 
         const OPTIONS: Options = Options::empty()
@@ -63,7 +61,7 @@ tera_filter! {
         let mut html_output = String::new();
         html::push_html(&mut html_output, parser);
 
-        Ok(html_output.into())
+        html_output
     }
 }
 
@@ -72,16 +70,10 @@ tera_filter! {
 struct OffsetDateTimeIsoFormat(#[serde(with = "time::serde::iso8601")] OffsetDateTime);
 
 tera_filter! {
-    fn time_format(input: OffsetDateTimeIsoFormat, format: String) {
+    fn time_format(input: OffsetDateTimeIsoFormat, format: String) -> Result<String, tera::Error> {
         let input = input.0.to_timezone(timezones::db::CET);
-        let format = match parse_format(&format) {
-            Ok(f) => f,
-            Err(e) => return Err(tera::Error::msg(format!("Invalid format description: {e}"))),
-        };
-        match input.format(&format) {
-            Ok(f) => Ok(tera::Value::String(f)),
-            Err(e) => Err(tera::Error::msg(format!("Error formatting date {input}: {e}"))),
-        }
+        let format = parse_format(&format).map_err(|e| tera::Error::msg(format!("Invalid format description: {e}")))?;
+        input.format(&format).map_err(|e| tera::Error::msg(format!("Error formatting date {input}: {e}")))
     }
 }
 
@@ -99,19 +91,19 @@ fn parse_format(
 }
 
 tera_function! {
-    fn random_heart() {
-        Ok(tera::Value::from(thread_rng().sample(Hearts)))
+    fn random_heart() -> &'static str {
+        thread_rng().sample(Hearts)
     }
 }
 
 tera_function! {
-    fn random_skin_tone_modifier() {
-        Ok(tera::Value::from(thread_rng().sample(SkinToneModifiers)))
+    fn random_skin_tone_modifier() -> &'static str {
+        thread_rng().sample(SkinToneModifiers)
     }
 }
 
 tera_function! {
-    fn is_subscribed(sub: EmailSubscription) {
-        Ok(tera::Value::from(sub.is_subscribed(OffsetDateTime::now_utc().date())))
+    fn is_subscribed(sub: EmailSubscription) -> bool {
+        sub.is_subscribed(OffsetDateTime::now_utc().date())
     }
 }

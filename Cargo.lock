@@ -1110,6 +1110,7 @@ dependencies = [
  "serde",
  "sqlx",
  "systemd",
+ "tera-macros",
  "time",
  "time-tz",
  "url",
@@ -3221,6 +3222,13 @@ dependencies = [
  "serde_json",
  "slug",
  "unic-segment",
+]
+
+[[package]]
+name = "tera-macros"
+version = "0.1.0"
+dependencies = [
+ "tera",
 ]
 
 [[package]]

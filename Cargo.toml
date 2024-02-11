@@ -24,6 +24,7 @@ dyn-clone = "1.0.14"
 ics = "0.5.8"
 pem = { package = "pem-rfc7468", version = "0.7.0", features = ["std"] }
 listenfd = "1.0.1"
+tera-macros = { path = "crates/tera-macros" }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 systemd = "0.10.0"
@@ -43,3 +44,6 @@ rocket_http = { git = "https://github.com/rwf2/Rocket/", branch = "master" }
 rocket_db_pools = { git = "https://github.com/rwf2/Rocket/", branch = "master" }
 rocket_db_pools_codegen = { git = "https://github.com/rwf2/Rocket/", branch = "master" }
 rocket_dyn_templates = { git = "https://github.com/rwf2/Rocket/", branch = "master" }
+
+[workspace]
+members = ["crates/tera-macros"]
