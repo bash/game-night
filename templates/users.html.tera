@@ -5,40 +5,31 @@
 {% block title %}Users{% endblock title %}
 
 {% block content %}
-<table>
-    <thead>
-        <tr>
-            <th></th>
-            <th>Name</th>
-            <th>Role</th>
-            <th>Invited By</th>
-            <th>Campaign</th>
-            <th></th>
-            <th style="border: none"></th>
-        </tr>
-    </thead>
-    <tbody align="center">
-        {% for user in users %}
-            <tr id="user-{{user.id}}">
-                <td>
-                    {{user_macros::avatar(user=user)}}
-                </td>
-                <td style="word-break: break-word;"><a href="mailto:{{user.email_address}}">{{user.name}}</a></td>
-                <td>{{user.role}}</td>
-                <td>
-                    {% if user.invited_by %}
-                        {% set invited_by = users | filter(attribute='id', value=user.invited_by) | first %}
-                        <a href="#user-{{user.invited_by}}">{{invited_by.name}}</a>
-                    {% else %}
-                        ∅
-                    {% endif %}
-                </td>
-                <td>{{user.campaign | default(value="∅")}}</td>
-                <td><form action="/sudo/enter" method="post"><input type="hidden" name="user" value="{{user.id}}"><button type="submit">Sudo</button></form></td>
-                <td style="border: none; background-color: transparent" align="left"><a href="#user-{{user.id}}">#</a></td>
-            </tr>
-        {% endfor %}
-    </tbody>
-</table>
-
+<ul class="users-list">
+    {% for user in users %}
+    <li class="user" id="user-{{user.id}}">
+        <div class="user-card">
+            <span class="avatar">{{user_macros::avatar(user=user)}}</span>
+            <span class="name">{{user.name}}</span>
+            <small class="role" title="Role">{{user.role}}</small>
+            {% if user.invited_by or user.campaign %}
+            <small class="invitation">
+                {% if user.invited_by %}
+                    {% set invited_by = users | filter(attribute='id', value=user.invited_by) | first %}
+                    invited by <a href="#user-{{user.invited_by}}">{{invited_by.name}}</a>
+                {% endif %}
+                {% if user.campaign %}
+                    via {{user.campaign}}
+                {% endif %}
+            </small>
+            {% endif %}
+            <small class="anchor"><a href="#user-{{user.id}}">#</a></small>
+            <small class="actions">
+                <a href="mailto:{{user.email_address}}" class="link-button">email</a>
+                <form action="/sudo/enter" method="post"><input type="hidden" name="user" value="{{user.id}}"><button type="submit">impersonate</button></form>
+            </small>
+        </div>
+    </li>
+    {% endfor %}
+</ul>
 {% endblock content %}

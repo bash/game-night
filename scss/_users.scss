@@ -1,0 +1,36 @@
+.users-list {
+    > .user { padding: .5rem; }
+    > .user:target { background-color: var(--highlight-bg); }
+}
+
+.user-card {
+    display: grid;
+    grid-template-columns: repeat(3, auto) 1fr;
+    align-items: baseline;
+    grid-column-gap: .5em;
+    grid-row-gap: .4rem;
+
+    &:has(.invitation) {
+        grid-template-areas: 'avatar name role anchor' '. invitation invitation invitation' '. actions actions actions';
+    }
+
+    &:not(:has(.invitation)) {
+        grid-template-areas: 'avatar name role anchor' '. actions actions actions';
+    }
+
+    > .avatar { grid-area: avatar; align-self: center; }
+    > .name { grid-area: name }
+    > .role { grid-area: role }
+    > .invitation { grid-area: invitation }
+    > .anchor { grid-area: anchor }
+    > .actions { grid-area: actions }
+
+    > .actions {
+        margin-top: .2rem;
+        display: grid;
+        grid-template-columns: auto auto;
+        justify-content: start;
+        grid-column-gap: .5em;
+        align-items: center;
+    }
+}
