@@ -17,11 +17,18 @@ main {
     grid-area: content;
     margin-trim: all;
     padding: calc(var(--content-padding) + 10svmin) var(--content-padding);
+    position: relative; // needed so that header can be sticky
 }
 
 nav {
     grid-area: nav;
     padding: 0 var(--content-padding);
+}
+
+header {
+    position: sticky;
+    top: 0;
+    background-image: linear-gradient(to bottom, var(--background-color), color-mix(in srgb, var(--background-color), transparent 70%));
 }
 
 footer {
