@@ -5,20 +5,20 @@
 
 .user-card {
     display: grid;
-    grid-template-columns: repeat(3, auto) 1fr;
+    grid-template-columns: repeat(2, auto) 1fr;
     align-items: baseline;
     grid-column-gap: .5em;
     grid-row-gap: .4rem;
 
     &:has(.invitation) {
-        grid-template-areas: 'avatar name role anchor' '. invitation invitation invitation' '. actions actions actions';
+        grid-template-areas: 'avatar role anchor' 'invitation invitation invitation' 'actions actions actions';
     }
 
     &:not(:has(.invitation)) {
-        grid-template-areas: 'avatar name role anchor' '. actions actions actions';
+        grid-template-areas: 'avatar role anchor' 'actions actions actions';
     }
 
-    > .avatar { grid-area: avatar; align-self: center; }
+    > .avatar { grid-area: avatar; }
     > .name { grid-area: name }
     > .role { grid-area: role }
     > .invitation { grid-area: invitation }

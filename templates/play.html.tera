@@ -41,13 +41,10 @@
         <ul class="users-list">
             {% for participant in event.participants %}
                 <li>
-                    {{user_macros::avatar(user=participant.user)}}
-                    <span>
-                        {{participant.user.name}}
-                        {% if participant.user.id == user.id %}
-                            <small><strong>← this is you!</strong></small>
-                        {% endif %}
-                    </span>
+                    {{user_macros::name(user=participant.user)}}
+                    {% if participant.user.id == user.id %}
+                        <small><strong>← this is you!</strong></small>
+                    {% endif %}
                 </li>
             {% endfor %}
         </ul>

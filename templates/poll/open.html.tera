@@ -91,7 +91,7 @@
                             <div class="answers-list">
                                 {% for user in option.yes_answers %}
                                     <span class="answer">
-                                        {{user_macros::avatar(user=user)}} <span>{{user.name}}</span>
+                                        {{user_macros::name(user=user)}}
                                     </span>
                                 {% endfor %}
                             </div>
@@ -107,7 +107,7 @@
                     <div class="answers-list">
                         {% for user in no_date_answered_with_yes %}
                             <span class="answer">
-                                {{user_macros::avatar(user=user)}} <span>{{user.name}}</span>
+                                {{user_macros::name(user=user)}}
                             </span>
                         {% endfor %}
                     </div>
@@ -121,7 +121,7 @@
                     <div class="answers-list">
                         {% for user in not_answered %}
                             <span class="answer">
-                                {{user_macros::avatar(user=user)}} <span>{{user.name}}</span>
+                                {{user_macros::name(user=user)}}
                             </span>
                         {% endfor %}
                     </div>

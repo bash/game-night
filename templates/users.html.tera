@@ -9,8 +9,7 @@
     {% for user in users %}
     <li class="user" id="user-{{user.id}}">
         <div class="user-card">
-            <span class="avatar">{{user_macros::avatar(user=user)}}</span>
-            <span class="name">{{user.name}}</span>
+            <span class="avatar">{{user_macros::name(user=user)}}</span>
             <small class="role" title="Role">{{user.role}}</small>
             {% if user.invited_by or user.campaign %}
             <small class="invitation">

@@ -1,10 +1,13 @@
 use super::AccentColor;
 use crate::decorations::{Hearts, SkinToneModifiers};
 use crate::users::EmailSubscription;
-use rand::{thread_rng, Rng};
+use rand::rngs::SmallRng;
+use rand::seq::SliceRandom;
+use rand::{thread_rng, Rng, SeedableRng};
 use rocket_dyn_templates::tera::{self, Tera};
 use serde::Deserialize;
 use std::iter;
+use std::sync::OnceLock;
 use tera_macros::{tera_filter, tera_function};
 use time::format_description::FormatItem;
 use time::macros::format_description;
@@ -39,19 +42,26 @@ tera_function! {
 }
 
 tera_function! {
-    fn avatar_symbol(index: usize) -> String {
-        const SYMBOLS: &[&str] = &[
-            "☿", "♀", "🜨", "☾", "♂", "♃", "♄", "♅", "♆", "⯓",
-            "♂I", "♂II",
-            "⚳", "⚴", "⚵", "⚶",
-            "♃I", "♃II", "♃III", "♃IV",
-            "♄I", "♄II", "♄III", "♄IV", "♄V", "♄VI", "♄VII", "♄VIII",
-            "♅I", "♅II", "♅III", "♅IV", "♅V",
-            "♆I", "♆II", /* No symbols for neptunian moons 3-7 */ "♆VIII",
-            "🝿",
-            "⯓I", "⯓V", "⯓II", "⯓IV", "⯓III",
-            "🝻", "🝾", "🝼", "🝽", "⯰", "⯰I", "⯲"];
-        SYMBOLS[index % SYMBOLS.len()].to_string()
+    fn avatar_symbol(seed: usize) -> String {
+        static SHUFFLED_SYMBOLS: OnceLock<Vec<&'static str>> = OnceLock::new();
+        let symbols = SHUFFLED_SYMBOLS.get_or_init(|| {
+            const SEED: u64 = 77;
+            let mut symbols = vec![
+                "☿", "♀", "🜨", "☾", "♂", "♃", "♄", "♅", "♆", "⯓",
+                "♂I", "♂II",
+                "⚳", "⚴", "⚵", "⚶",
+                "♃I", "♃II", "♃III", "♃IV",
+                "♄I", "♄II", "♄III", "♄IV", "♄V", "♄VI", "♄VII", "♄VIII",
+                "♅I", "♅II", "♅III", "♅IV", "♅V",
+                "♆I", "♆II", /* No symbols for neptunian moons 3-7 */ "♆VIII",
+                "🝿",
+                "⯓I", "⯓V", "⯓II", "⯓IV", "⯓III",
+                "🝻", "🝾", "🝼", "🝽", "⯰", "⯰I", "⯲"];
+            symbols.shuffle(&mut SmallRng::seed_from_u64(SEED));
+            symbols
+        });
+
+        symbols[seed % symbols.len()].to_string()
     }
 }
 

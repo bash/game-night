@@ -143,13 +143,23 @@ a {
     }
 }
 
-.user-avatar {
-    width: 1.4em;
-    height: 1.4em;
+.user-name {
+    > .name,
+    > .symbol {
+        display: inline-block;
+        vertical-align: middle;
+    }
 
-    @supports (width: #{"round(up, 1em, 1px)"}) {
-        width: #{"round(up, 1.4em, 1px)"};
-        height: #{"round(up, 1.4em, 1px)"};
+    > .symbol {
+        font-family: var(--symbols);
+        font-size: 1.4em;
+    }
+
+    > .name {
+        font-weight: bold;
+        text-decoration-line: underline;
+        text-decoration-thickness: 2px;
+        text-underline-offset: .3em;
     }
 }
 

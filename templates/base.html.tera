@@ -1,3 +1,4 @@
+{% import 'user-macros' as user_macros %}
 <!doctype html>
 <html lang="en" class="_{{active_chapter.accent_color}}">
 <head>
@@ -50,7 +51,7 @@
     {% if user %}
         <footer>
             <form action="{{logout_uri}}" method="post" class="logout-form">
-                <span>Signed in as <strong>{{user.name}}</strong></span>
+                <span>Signed in as&nbsp;&nbsp;{{user_macros::name(user=user)}}</span>
                 <button type="submit">Log out</button>
                 <input type="hidden" name="redirect" value="{{page.uri}}">
             </form>
