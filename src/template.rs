@@ -123,7 +123,7 @@ fn path_matches(uri: &Origin<'_>, expected_prefix: &Origin<'_>) -> bool {
 
 fn chapters() -> &'static [Chapter] {
     static CHAPTERS: OnceLock<Vec<Chapter>> = OnceLock::new();
-    &CHAPTERS.get_or_init(|| {
+    CHAPTERS.get_or_init(|| {
         vec![
             Chapter {
                 uri: Origin::ROOT,
