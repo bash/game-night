@@ -50,7 +50,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .register("/", auth::catchers())
         .register("/", catchers![not_found])
         .mount("/", file_server())
-        .attach(Template::custom(configure_template_engines))
+        .attach(Template::try_custom(configure_template_engines))
         .attach(GameNightDatabase::init())
         .attach(initialize_email_sender())
         .attach(invite_admin_user())

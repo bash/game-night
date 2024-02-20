@@ -65,6 +65,7 @@ publish: all
 	podman run --rm -v game-night-cargo-registry:/root/.cargo/registry -v ./:/build:z --workdir /build game-night-build cargo build --release --color=always
 	cp target/release/game-night $(PUBLISH_DIR)/
 	cp -R {public,templates,emails} $(PUBLISH_DIR)/
+	python3 hash-files.py
 	find $(PUBLISH_DIR) -name '.DS_Store' -exec rm {} +
 
 deploy: publish

@@ -14,7 +14,7 @@
     <link rel="icon" sizes="512x512" href="/favicon-512x512.png" type="image/png">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
     <link rel="mask-icon" href="/mask-icon.svg" color="#ec68aa">
-    <link rel="stylesheet" type="text/css" href="/main.css">
+    <link rel="stylesheet" type="text/css" href="{{asset(path='/main.css')}}">
     <title>Tau's Game Night</title>
 </head>
 <body>
@@ -32,7 +32,7 @@
         {% for chapter in chapters %}
             <a href="{{chapter.uri}}" class="_{{chapter.accent_color}}{% if chapter.uri == active_chapter.uri %} -active{% endif%}" title="{{chapter.title}}">
                 <svg role="img" aria-label="{{chapter.icon.aria_label}}">
-                    <use href="/icons/{{chapter.icon.name}}.svg#icon" aria-hidden="true" />
+                    <use href="{{asset(path='/icons/' ~ chapter.icon.name ~ '.svg')}}#icon" aria-hidden="true" />
                 </svg>
             </a>
         {% endfor %}
@@ -61,5 +61,13 @@
             <span>a website by <a href="https://tau.garden">Tau</a>.</span>
         </footer>
     {% endif %}
+
+    {% set map = import_map() %}
+    {% if map is defined %}
+        <script type="importmap">{{map | safe}}</script>
+    {% endif %}
+
+    {% block scripts %}
+    {% endblock scripts %}
 </body>
 </html>

@@ -6,7 +6,7 @@ use crate::play::{rocket_uri_macro_play_page, rocket_uri_macro_play_redirect};
 use crate::register::{rocket_uri_macro_profile, rocket_uri_macro_register_page};
 use crate::users::rocket_uri_macro_list_users;
 use crate::users::User;
-use anyhow::Error;
+use anyhow::{Error, Result};
 use itertools::Itertools;
 use rocket::http::uri::Origin;
 use rocket::outcome::try_outcome;
@@ -19,6 +19,7 @@ use std::sync::OnceLock;
 
 mod functions;
 pub(crate) use functions::*;
+mod assets;
 
 pub(crate) struct PageBuilder<'r> {
     user: Option<User>,
@@ -248,6 +249,10 @@ impl AccentColor {
     }
 }
 
-pub(crate) fn configure_template_engines(engines: &mut Engines) {
+pub(crate) fn configure_template_engines(
+    engines: &mut Engines,
+) -> Result<(), Box<dyn std::error::Error>> {
     functions::register_custom_functions(&mut engines.tera);
+    assets::register_asset_map_functions(&mut engines.tera)?;
+    Ok(())
 }

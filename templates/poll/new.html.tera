@@ -39,7 +39,9 @@
         <button type="submit">Create Poll</button>
     </fieldset>
 </form>
-
-<script type="module" src="/js/calendar.js"></script>
-<script type="module" src="/js/auto-resize.js"></script>
 {% endblock content %}
+
+{% block scripts %}
+<script type="module" src="{{asset(path='/js/calendar.js')}}"></script>
+<script type="module" src="{{asset(path='/js/auto-resize.js')}}"></script>
+{% endblock scripts %}
