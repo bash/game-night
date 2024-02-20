@@ -13,10 +13,11 @@ endif
 .ONESHELL:
 .PHONY: all clean recreate-db certs run publish deploy
 
-all: $(MAIN_CSS) $(PRINT_CSS) $(EMAIL_CSS)
+all: $(MAIN_CSS) $(EMAIL_CSS)
 
 clean:
-	rm -f $(MAIN_CSS) $(PRINT_CSS)
+	rm -rf $(PUBLISH_DIR)
+	rm -f $(MAIN_CSS)
 	rm -rf outbox/
 
 watch:
