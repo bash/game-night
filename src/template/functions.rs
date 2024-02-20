@@ -41,9 +41,16 @@ tera_function! {
 tera_function! {
     fn avatar_symbol(index: usize) -> String {
         const SYMBOLS: &[&str] = &[
-            "☉", "☿", "♀", "🜨", "☾", "♂", "♃", "♄", "⛢", "♆", "⯓",
-            "α", "β", "γ", "δ", "ε", "ζ", "η", "θ", "ι", "κ", "λ", "μ",
-            "ν", "ξ", "ο", "π", "ρ", "σ", "τ", "υ", "φ", "χ", "ψ", "ω"];
+            "☿", "♀", "🜨", "☾", "♂", "♃", "♄", "♅", "♆", "⯓",
+            "♂I", "♂II",
+            "⚳", "⚴", "⚵", "⚶",
+            "♃I", "♃II", "♃III", "♃IV",
+            "♄I", "♄II", "♄III", "♄IV", "♄V", "♄VI", "♄VII", "♄VIII",
+            "♅I", "♅II", "♅III", "♅IV", "♅V",
+            "♆I", "♆II", /* No symbols for neptunian moons 3-7 */ "♆VIII",
+            "🝿",
+            "♇I", "♇V", "♇II", "♇IV", "♇III",
+            "🝻", "🝾", "🝼", "🝽", "⯰", "⯰I", "⯲"];
         SYMBOLS[index % SYMBOLS.len()].to_string()
     }
 }
