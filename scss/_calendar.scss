@@ -66,7 +66,7 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: .8em;
+    column-gap: .8em;
 
     @media (hover: hover) and (not (prefers-contrast: more)) {
         opacity: .4;
