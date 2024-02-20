@@ -49,7 +49,7 @@ tera_function! {
             "♅I", "♅II", "♅III", "♅IV", "♅V",
             "♆I", "♆II", /* No symbols for neptunian moons 3-7 */ "♆VIII",
             "🝿",
-            "♇I", "♇V", "♇II", "♇IV", "♇III",
+            "⯓I", "⯓V", "⯓II", "⯓IV", "⯓III",
             "🝻", "🝾", "🝼", "🝽", "⯰", "⯰I", "⯲"];
         SYMBOLS[index % SYMBOLS.len()].to_string()
     }
