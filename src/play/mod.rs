@@ -59,25 +59,20 @@ impl<'r> FromRequest<'r> for NextEvent {
 
 #[get("/event.ics")]
 async fn event_ics(
-    mut repository: Box<dyn Repository>,
+    event: NextEvent,
     uri_builder: UriBuilder<'_>,
     _user: User,
 ) -> Result<Ics, Debug<Error>> {
-    let event = repository.get_next_event().await?;
-    let calendar = to_calendar(event.as_ref(), &uri_builder)?;
+    let calendar = to_calendar(&event.0, &uri_builder)?;
     Ok(Ics(calendar.to_string()))
 }
 
 pub(crate) fn to_calendar<'a>(
-    event: Option<&'a Event>,
+    event: &'a Event,
     uri_builder: &'a UriBuilder<'a>,
 ) -> Result<ICalendar<'a>> {
     let mut calendar = ICalendar::new("2.0", "game-night");
-
-    if let Some(event) = event {
-        calendar.add_event(to_ical_event(event, uri_builder)?);
-    }
-
+    calendar.add_event(to_ical_event(event, uri_builder)?);
     Ok(calendar)
 }
 

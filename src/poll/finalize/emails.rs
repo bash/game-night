@@ -25,7 +25,7 @@ pub(super) async fn send_notification_emails(
 
 async fn send_invited_email(ctx: &mut FinalizeContext, event: &Event, user: &User) -> Result<()> {
     let event_url = uri!(auto_login(user, event.ends_at); ctx.uri_builder, play_page()).await?;
-    let ics_file = crate::play::to_calendar(Some(event), &ctx.uri_builder)?.to_string();
+    let ics_file = crate::play::to_calendar(event, &ctx.uri_builder)?.to_string();
     let email: InvitedEmail<'_> = InvitedEmail {
         event,
         event_url,
