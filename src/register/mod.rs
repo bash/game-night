@@ -8,6 +8,7 @@ use anyhow::{Error, Result};
 use campaign::{Campaign, ProvidedCampaign};
 use email_address::EmailAddress;
 use lettre::message::Mailbox;
+use rand::thread_rng;
 use rocket::form::Form;
 use rocket::http::uri::Origin;
 use rocket::http::{Cookie, CookieJar, SameSite};
@@ -239,12 +240,13 @@ async fn send_verification_email(
     email_sender: &dyn EmailSender,
     user_details: &UserDetails,
 ) -> Result<()> {
-    let verification_code = EmailVerificationCode::generate(user_details.email_address.to_string());
-    repository.add_verification_code(&verification_code).await?;
+    let email_address = user_details.email_address.to_string();
+    let code = EmailVerificationCode::generate(email_address, &mut thread_rng());
+    repository.add_verification_code(&code).await?;
 
     let email = VerificationEmail {
         name: user_details.name.to_owned(),
-        code: verification_code.code,
+        code: code.code,
     };
     email_sender.send(user_details.clone().into(), &email).await
 }

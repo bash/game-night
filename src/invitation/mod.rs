@@ -56,7 +56,7 @@ async fn generate_invitation(
         .created_by(form.inviter)
         .valid_until(valid_until)
         .comment(&form.comment)
-        .build();
+        .build(&mut thread_rng());
     let invitation = repository.add_invitation(invitation).await?;
     Ok(page.render(
         "invitation",
@@ -136,14 +136,14 @@ impl InvitationBuilder {
         self
     }
 
-    pub(crate) fn build(self) -> Invitation<()> {
+    pub(crate) fn build<R: Rng>(self, rng: &mut R) -> Invitation<()> {
         Invitation {
             id: (),
             role: self.role,
             created_by: self.created_by,
             valid_until: self.valid_until,
             used_by: None,
-            passphrase: generate_passphrase(),
+            passphrase: rng.gen(),
             comment: self.comment,
         }
     }
@@ -202,22 +202,11 @@ async fn get_or_create_invitation(repository: &mut dyn Repository) -> Result<Inv
     Ok(match repository.get_admin_invitation().await? {
         Some(invitation) => invitation,
         None => {
-            repository
-                .add_invitation(
-                    InvitationBuilder::default()
-                        .role(Role::Admin)
-                        .comment("auto-generated admin invite")
-                        .build(),
-                )
-                .await?
+            let invitation = InvitationBuilder::default()
+                .role(Role::Admin)
+                .comment("auto-generated admin invite")
+                .build(&mut thread_rng());
+            repository.add_invitation(invitation).await?
         }
     })
-}
-
-fn generate_passphrase() -> Passphrase {
-    let words: Vec<_> = TAUS_WORDLIST
-        .choose_multiple(&mut thread_rng(), 4)
-        .map(|s| (*s).to_owned())
-        .collect();
-    Passphrase(words)
 }

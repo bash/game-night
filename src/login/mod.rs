@@ -7,8 +7,8 @@ use crate::uri;
 use crate::users::{User, UserId};
 use anyhow::{Error, Result};
 use lettre::message::Mailbox;
-use rand::distributions::{Alphanumeric, Uniform};
-use rand::Rng;
+use rand::distributions::{Alphanumeric, Distribution, Uniform};
+use rand::{thread_rng, Rng};
 use rocket::form::Form;
 use rocket::response::{self, Debug, Redirect, Responder};
 use rocket::{
@@ -114,7 +114,7 @@ async fn generate_login_email(
     repository: &mut dyn Repository,
     user: User,
 ) -> Result<(Mailbox, LoginEmail)> {
-    let token = LoginToken::generate_one_time(user.id);
+    let token = LoginToken::generate_one_time(user.id, &mut thread_rng());
     repository.add_login_token(&token).await?;
 
     let email = LoginEmail {
@@ -167,21 +167,25 @@ pub(crate) struct LoginToken {
 }
 
 impl LoginToken {
-    pub(crate) fn generate_one_time(user_id: UserId) -> Self {
+    pub(crate) fn generate_one_time<R: Rng>(user_id: UserId, rng: &mut R) -> Self {
         let one_time_token_expiration = Duration::minutes(10);
         let valid_until = OffsetDateTime::now_utc() + one_time_token_expiration;
         Self {
             type_: LoginTokenType::OneTime,
-            token: generate_one_time_code(),
+            token: rng.sample(OneTimeToken),
             user_id,
             valid_until,
         }
     }
 
-    pub(crate) fn generate_reusable(user_id: UserId, valid_until: OffsetDateTime) -> Self {
+    pub(crate) fn generate_reusable<R: Rng>(
+        user_id: UserId,
+        valid_until: OffsetDateTime,
+        rng: &mut R,
+    ) -> Self {
         Self {
             type_: LoginTokenType::Reusable,
-            token: generate_reusable_token(),
+            token: rng.sample(ReusableToken),
             user_id,
             valid_until,
         }
@@ -197,20 +201,26 @@ pub(crate) enum LoginTokenType {
     Reusable,
 }
 
-fn generate_reusable_token() -> String {
-    rand::thread_rng()
-        .sample_iter(&Alphanumeric)
-        .take(20)
-        .map(|d| d.to_string())
-        .collect()
+struct ReusableToken;
+
+impl Distribution<String> for ReusableToken {
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> String {
+        rng.sample_iter(&Alphanumeric)
+            .take(20)
+            .map(|d| d.to_string())
+            .collect()
+    }
 }
 
-fn generate_one_time_code() -> String {
-    rand::thread_rng()
-        .sample_iter(&Uniform::from(1..=9))
-        .take(6)
-        .map(|d| d.to_string())
-        .collect()
+struct OneTimeToken;
+
+impl Distribution<String> for OneTimeToken {
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> String {
+        rng.sample_iter(&Uniform::from(1..=9))
+            .take(6)
+            .map(|d| d.to_string())
+            .collect()
+    }
 }
 
 #[derive(Debug, Clone, Serialize)]

@@ -1,30 +1,33 @@
 use anyhow::Result;
-use rand::{thread_rng, RngCore};
+use rand::distributions::{Distribution, Standard};
+use rand::Rng;
 use std::io;
 use std::path::Path;
 
 #[derive(Debug)]
 pub(crate) struct RocketSecretKey(pub(crate) Vec<u8>);
 
-impl RocketSecretKey {
-    pub(crate) fn read_or_generate(path: impl AsRef<Path>) -> Result<Self> {
-        crate::fs::read_or_generate(path.as_ref(), &RocketSecretKeyFile)
-    }
-
-    fn generate() -> Self {
+impl Distribution<RocketSecretKey> for Standard {
+    fn sample<R: rand::prelude::Rng + ?Sized>(&self, rng: &mut R) -> RocketSecretKey {
         let mut bytes = vec![0; 512];
-        thread_rng().fill_bytes(&mut bytes);
-        Self(bytes)
+        rng.fill_bytes(&mut bytes);
+        RocketSecretKey(bytes)
     }
 }
 
-struct RocketSecretKeyFile;
+impl RocketSecretKey {
+    pub(crate) fn read_or_generate<R: Rng>(path: impl AsRef<Path>, rng: &mut R) -> Result<Self> {
+        crate::fs::read_or_generate(path.as_ref(), RocketSecretKeyFile(rng))
+    }
+}
 
-impl crate::fs::GeneratedFile for RocketSecretKeyFile {
+struct RocketSecretKeyFile<'a, R>(&'a mut R);
+
+impl<'a, R: Rng> crate::fs::GeneratedFile for RocketSecretKeyFile<'a, R> {
     type Value = RocketSecretKey;
 
-    fn generate(&self) -> Self::Value {
-        RocketSecretKey::generate()
+    fn generate(&mut self) -> Self::Value {
+        self.0.gen()
     }
 
     fn file_name(&self) -> &'static str {

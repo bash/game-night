@@ -3,11 +3,11 @@ use std::fs::{create_dir_all, File, OpenOptions};
 use std::io::{self, ErrorKind, Read, Write};
 use std::path::{Path, PathBuf};
 
-pub(crate) fn read_or_generate<F: GeneratedFile>(path: &Path, f: &F) -> Result<F::Value> {
-    let file_path = get_file_path(path, f)?;
+pub(crate) fn read_or_generate<F: GeneratedFile>(path: &Path, mut f: F) -> Result<F::Value> {
+    let file_path = get_file_path(path, &f)?;
     create_dir_all(file_path.parent().unwrap())?;
-    match write(f, &file_path) {
-        Err(e) if is_already_exists_error(&e) => read(f, &file_path),
+    match write(&mut f, &file_path) {
+        Err(e) if is_already_exists_error(&e) => read(&f, &file_path),
         result => result,
     }
 }
@@ -15,7 +15,7 @@ pub(crate) fn read_or_generate<F: GeneratedFile>(path: &Path, f: &F) -> Result<F
 pub(crate) trait GeneratedFile {
     type Value;
 
-    fn generate(&self) -> Self::Value;
+    fn generate(&mut self) -> Self::Value;
 
     fn file_name(&self) -> &'static str;
 
@@ -34,7 +34,7 @@ fn read<F: GeneratedFile>(f: &F, file_path: &Path) -> Result<F::Value> {
     f.read(&mut File::open(file_path)?)
 }
 
-fn write<F: GeneratedFile>(f: &F, file_path: &Path) -> Result<F::Value> {
+fn write<F: GeneratedFile>(f: &mut F, file_path: &Path) -> Result<F::Value> {
     let mut file = OpenOptions::new()
         .write(true)
         .create_new(true)

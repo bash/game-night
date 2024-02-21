@@ -1,4 +1,8 @@
+use super::TAUS_WORDLIST;
 use anyhow::Result;
+use rand::distributions::{Distribution, Standard};
+use rand::seq::SliceRandom as _;
+use rand::Rng;
 use rocket::form::FromFormField;
 use rocket::http::impl_from_uri_param_identity;
 use rocket::http::uri::fmt::{Query, UriDisplay};
@@ -12,6 +16,16 @@ use std::fmt;
 #[derive(Debug, Default, Clone, Serialize)]
 #[serde(transparent)]
 pub(crate) struct Passphrase(pub(crate) Vec<String>);
+
+impl Distribution<Passphrase> for Standard {
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Passphrase {
+        let words: Vec<_> = TAUS_WORDLIST
+            .choose_multiple(rng, 4)
+            .map(|s| s.to_string())
+            .collect();
+        Passphrase(words)
+    }
+}
 
 impl fmt::Display for Passphrase {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

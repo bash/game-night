@@ -1,7 +1,9 @@
 use anyhow::{Context as _, Result};
 use database::Repository;
 use email::{EmailSender, EmailSenderImpl};
+use login::RocketSecretKey;
 use poll::poll_finalizer;
+use rand::thread_rng;
 use rocket::fairing::{self, Fairing};
 use rocket::figment::Figment;
 use rocket::request::FromRequest;
@@ -69,8 +71,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 fn figment() -> Result<Figment> {
     let figment = Config::figment();
     let secret_keys_path: String = figment.extract_inner("secret_keys_path")?;
-    let secret_key = login::RocketSecretKey::read_or_generate(secret_keys_path).unwrap();
-    Ok(figment.merge((rocket::Config::SECRET_KEY, &secret_key.0)))
+    let key = RocketSecretKey::read_or_generate(secret_keys_path, &mut thread_rng()).unwrap();
+    Ok(figment.merge((rocket::Config::SECRET_KEY, &key.0)))
 }
 
 #[cfg(feature = "serve-static-files")]

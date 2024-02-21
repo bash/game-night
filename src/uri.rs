@@ -32,7 +32,7 @@ macro_rules! uri {
         async {
             let builder: &$crate::uri::UriBuilder = &($builder);
             let user: &$crate::users::User = $user;
-            let token = $crate::login::LoginToken::generate_reusable(user.id, $valid_until);
+            let token = $crate::login::LoginToken::generate_reusable(user.id, $valid_until, &mut ::rand::thread_rng());
             match builder.repository.lock().await.add_login_token(&token).await {
                 Ok(_) => Ok(::rocket::http::uri::Absolute::parse_owned($crate::login::with_autologin_token($crate::uri!($builder, $($t)*), &token)).unwrap()),
                 Err(e) => Err(e),
