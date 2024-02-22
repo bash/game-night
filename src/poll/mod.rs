@@ -1,4 +1,3 @@
-use self::open::open_poll_page;
 use crate::auth::{AuthorizedTo, ManagePoll};
 use crate::database::Repository;
 use crate::register::rocket_uri_macro_profile;
@@ -21,11 +20,12 @@ use email::PollEmail;
 mod guards;
 use guards::*;
 mod new;
-mod open;
+pub(crate) mod open;
 
 pub(crate) fn routes() -> Vec<Route> {
     routes![
-        poll_page,
+        open::open_poll_page,
+        no_open_poll_page,
         close_poll_page,
         close_poll,
         new::new_poll_page,
@@ -35,21 +35,11 @@ pub(crate) fn routes() -> Vec<Route> {
     ]
 }
 
-#[get("/", rank = 10)]
-async fn poll_page(
-    mut repository: Box<dyn Repository>,
-    page: PageBuilder<'_>,
-    user: User,
-) -> Result<Template, Debug<Error>> {
-    match repository.get_open_poll().await? {
-        Some(poll) => Ok(open_poll_page(
-            page,
-            poll,
-            user,
-            repository.get_users().await?,
-        )),
-        None => Ok(no_open_poll_page(page, user)),
-    }
+#[get("/", rank = 12)]
+fn no_open_poll_page(user: User, page: PageBuilder<'_>) -> Template {
+    let new_poll_uri = user.can_manage_poll().then(|| uri!(new::new_poll_page()));
+    let profile_uri = uri!(profile());
+    page.render("poll", context! { new_poll_uri, profile_uri })
 }
 
 #[get("/poll/close")]
@@ -73,13 +63,7 @@ async fn close_poll(
     repository
         .update_poll_open_until(poll.id, OffsetDateTime::now_utc())
         .await?;
-    Ok(Redirect::to(uri!(poll_page())))
-}
-
-fn no_open_poll_page(page: PageBuilder<'_>, user: User) -> Template {
-    let new_poll_uri = user.can_manage_poll().then(|| uri!(new::new_poll_page()));
-    let profile_uri = uri!(profile());
-    page.render("poll", context! { new_poll_uri, profile_uri })
+    Ok(Redirect::to(uri!(no_open_poll_page())))
 }
 
 #[derive(Debug, sqlx::FromRow, Serialize)]

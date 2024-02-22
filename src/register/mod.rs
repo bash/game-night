@@ -163,7 +163,9 @@ async fn register(
     );
 
     cookies.set_login_state(LoginState::Authenticated(user_id));
-    Ok(Right(Redirect::to(uri!(crate::poll::poll_page()))))
+    Ok(Right(Redirect::to(uri!(
+        crate::poll::open::open_poll_page()
+    ))))
 }
 
 fn invalid_campaign(cookies: &CookieJar<'_>, page: PageBuilder<'_>) -> Template {

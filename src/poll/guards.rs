@@ -12,6 +12,12 @@ use std::ops;
 #[serde(transparent)]
 pub(crate) struct Open<T>(T);
 
+impl<T> Open<T> {
+    pub(crate) fn into_inner(self) -> T {
+        self.0
+    }
+}
+
 impl<T> ops::Deref for Open<T> {
     type Target = T;
 
@@ -30,7 +36,7 @@ impl<'r> FromRequest<'r> for Open<Poll> {
             .map_error(|(s, e)| (s, Some(e))));
         match repository.get_open_poll().await {
             Ok(Some(poll)) => Outcome::Success(Open(poll)),
-            Ok(None) => Outcome::Error((Status::BadRequest, None)),
+            Ok(None) => Outcome::Forward(Status::NotFound),
             Err(error) => Outcome::Error((Status::InternalServerError, Some(error))),
         }
     }

@@ -1,5 +1,6 @@
+use super::open::rocket_uri_macro_open_poll_page;
 use super::PollEmail;
-use super::{rocket_uri_macro_poll_page, Answer, AnswerValue, Attendance, Location};
+use super::{Answer, AnswerValue, Attendance, Location};
 use super::{DateSelectionStrategy, Poll, PollOption};
 use crate::auth::{AuthorizedTo, ManagePoll};
 use crate::database::Repository;
@@ -178,7 +179,7 @@ pub(super) async fn new_poll(
     let poll = to_poll(form.into_inner(), location, &user)?;
     repository.add_poll(&poll).await?;
     send_poll_emails(repository, email_sender.as_ref(), uri_builder, &poll).await?;
-    Ok(Redirect::to(uri!(poll_page())))
+    Ok(Redirect::to(uri!(open_poll_page())))
 }
 
 fn to_poll(poll: NewPollData, location: Location, user: &User) -> Result<Poll<(), UserId, i64>> {
@@ -274,7 +275,8 @@ async fn send_poll_emails(
     poll: &Poll<(), UserId, i64>,
 ) -> Result<()> {
     for user in get_subscribed_users(repository.as_mut()).await? {
-        let poll_url = uri!(auto_login(&user, poll.open_until); uri_builder, poll_page()).await?;
+        let poll_url =
+            uri!(auto_login(&user, poll.open_until); uri_builder, open_poll_page()).await?;
         let sub_url = uri!(auto_login(&user, poll.open_until); uri_builder, profile()).await?;
         let email = PollEmail {
             name: user.name.clone(),
