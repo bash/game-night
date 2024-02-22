@@ -45,11 +45,16 @@
     --background-color: #fff8f1;
     --highlight-bg: rgba(0, 0, 0, 10%);
 
+    --inverted-color: var(--background-color);
+    --inverted-background-color: var(--text-color);
+
     @media (prefers-color-scheme: dark) {
         --text-color: #fff;
         --secondary-text-color: #535353;
         --background-color: #121212;
         --highlight-bg: rgba(255, 255, 255, 6%);
+        --inverted-color: color-mix(in hsl, var(--accent-color), #000 90%);
+        --inverted-background-color: color-mix(in srgb, var(--accent-color), #000 10%);
     }
 
     @media (prefers-contrast: more) {
