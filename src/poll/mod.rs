@@ -5,7 +5,7 @@ use crate::template::PageBuilder;
 use crate::users::{User, UserId};
 use anyhow::Error;
 use rocket::response::{Debug, Redirect};
-use rocket::{get, post, routes, uri, FromFormField, Route};
+use rocket::{get, post, routes, uri, FromFormField, Route, State};
 use rocket_dyn_templates::{context, Template};
 use serde::Serialize;
 use sqlx::sqlite::{SqliteTypeInfo, SqliteValueRef};
@@ -68,6 +68,7 @@ fn close_poll_page(
 async fn close_poll(
     _user: AuthorizedTo<ManagePoll>,
     poll: Open<Poll>,
+    nudge: &State<NudgeFinalizer>,
     mut repository: Box<dyn Repository>,
 ) -> Result<Redirect, Debug<Error>> {
     // open_until is inclusive, so we have to pick a date that is already in the past
@@ -79,6 +80,7 @@ async fn close_poll(
     repository
         .update_poll_open_until(poll.id, open_until)
         .await?;
+    nudge.nudge();
     Ok(Redirect::to(uri!(no_open_poll_page())))
 }
 
