@@ -11,9 +11,12 @@ ifeq ($(env ENABLE_SOURCE_MAPS), true)
 endif
 
 .ONESHELL:
-.PHONY: all clean recreate-db certs run publish deploy
+.PHONY: all clean recreate-db certs run publish deploy check
 
 all: $(MAIN_CSS) $(EMAIL_CSS)
+
+check:
+	cargo check --features development
 
 clean:
 	rm -rf $(PUBLISH_DIR)
