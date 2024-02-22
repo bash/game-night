@@ -74,6 +74,8 @@ pub(crate) trait Repository: fmt::Debug + Send {
 
     async fn get_newest_event(&mut self) -> Result<Option<Event>>;
 
+    async fn add_participant(&mut self, event: i64, user: UserId) -> Result<()>;
+
     async fn prune(&mut self) -> Result<()>;
 }
 
@@ -512,6 +514,15 @@ impl Repository for SqliteRepository {
             None => Ok(None),
             Some(event) => Ok(Some(materialize_event(&mut transaction, event).await?)),
         }
+    }
+
+    async fn add_participant(&mut self, event: i64, user: UserId) -> Result<()> {
+        sqlx::query("INSERT INTO participants (event_id, user_id) VALUES (?1, ?2)")
+            .bind(event)
+            .bind(user)
+            .execute(self.executor())
+            .await?;
+        Ok(())
     }
 
     async fn prune(&mut self) -> Result<()> {

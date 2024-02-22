@@ -86,6 +86,7 @@ CREATE TABLE participants
     ( id INTEGER PRIMARY KEY
     , event_id INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE
     , user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE
+    , UNIQUE (event_id, user_id) ON CONFLICT REPLACE
     );
 
 CREATE TABLE locations

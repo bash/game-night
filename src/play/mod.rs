@@ -15,7 +15,7 @@ use ics::{escape_text, ICalendar};
 use rocket::outcome::try_outcome;
 use rocket::request::{FromRequest, Outcome};
 use rocket::response::{Debug, Redirect};
-use rocket::{async_trait, get, routes, Request, Responder, Route};
+use rocket::{async_trait, get, post, routes, Request, Responder, Route};
 use rocket_dyn_templates::{context, Template};
 use time::format_description::FormatItem;
 use time::macros::format_description;
@@ -23,7 +23,7 @@ use time::OffsetDateTime;
 use time_tz::{timezones, OffsetDateTimeExt};
 
 pub(crate) fn routes() -> Vec<Route> {
-    routes![play_page, play_redirect, event_ics]
+    routes![play_page, play_redirect, join, event_ics]
 }
 
 // This is a bit of an ugly workaround to
@@ -34,11 +34,26 @@ fn play_redirect(_user: User) -> Redirect {
 }
 
 #[get("/", rank = 0)]
-fn play_page(event: NextEvent, page: PageBuilder<'_>, _user: User) -> Template {
+fn play_page(event: NextEvent, page: PageBuilder<'_>, user: User) -> Template {
+    let join_uri = (!is_participating(&event.0, &user)).then(|| uri!(join()));
     page.render(
         "play",
-        context! { event: event.0, ics_uri: uri!(event_ics()) },
+        context! { event: event.0, ics_uri: uri!(event_ics()), join_uri },
     )
+}
+
+fn is_participating(event: &Event, user: &User) -> bool {
+    event.participants.iter().any(|p| p.user.id == user.id)
+}
+
+#[post("/play/join")]
+async fn join(
+    event: NextEvent,
+    user: User,
+    mut repository: Box<dyn Repository>,
+) -> Result<Redirect, Debug<Error>> {
+    repository.add_participant(event.0.id, user.id).await?;
+    Ok(Redirect::to(uri!(play_page())))
 }
 
 struct NextEvent(Event);

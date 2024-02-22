@@ -42,3 +42,22 @@
     z-index: 1;
     box-shadow: 0 2px 6px rgba(0, 0, 0, .2);
 }
+
+.preview-box {
+    $content-padding: 2rem;
+    background-color: var(--highlight-bg);
+    border-radius: 8px;
+    overflow: hidden;
+
+    > h2 {
+        background-color: var(--inverted-background-color);
+        color: var(--inverted-color);
+        padding: 1rem $content-padding;
+        margin: 0;
+    }
+
+    > .content {
+        padding: $content-padding;
+        font-size: .8em;
+    }
+}

@@ -5,7 +5,7 @@
 
 {% block title %}Play{% endblock title %}
 
-{% block content %}
+{% macro event_details(event, user) %}
     <p>
         {{event.created_by.name}} is organizing a <em>game night</em>
         on <strong>{{event.starts_at | time(format='{date}')}}</strong> at
@@ -26,8 +26,8 @@
         <h2>When?</h2>
         <p>
             On <strong>{{event.starts_at | time(format='{date}')}}</strong>
-            from ~<strong>{{event.starts_at | time(format='{time}')}}</strong>
-            until ~<strong>{{event.ends_at | time(format='{time}')}}</strong>.
+            from <time>{{event.starts_at | time(format='{time}')}}</time>
+            to <time>{{event.ends_at | time(format='{time}')}}</time>.
         </p>
     </section>
 
@@ -49,4 +49,29 @@
             {% endfor %}
         </ul>
     </section>
+{% endmacro %}
+
+{% block content %}
+    {% if join_uri %}
+        <p>
+            Hey there <strong>{{user.name}}</strong>, it looks like you missed the poll.
+            No problem! You can still join us :)
+        </p>
+
+        <form>
+            <fieldset>
+                <button type="submit" formmethod="post" formaction="{{join_uri}}">Join</button>
+            </fieldset>
+        </form>
+
+        <div class="preview-box">
+            <h2>Preview</h2>
+
+            <div class="content">
+                {{ self::event_details(event=event, user=user) }}
+            </div>
+        </div>
+    {% else %}
+        {{ self::event_details(event=event, user=user) }}
+    {% endif %}
 {% endblock content %}
