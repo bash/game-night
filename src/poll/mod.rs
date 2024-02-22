@@ -25,6 +25,7 @@ pub(crate) mod open;
 pub(crate) fn routes() -> Vec<Route> {
     routes![
         open::open_poll_page,
+        polls_pending_finalization_page,
         no_open_poll_page,
         close_poll_page,
         close_poll,
@@ -33,6 +34,15 @@ pub(crate) fn routes() -> Vec<Route> {
         new::calendar,
         open::update_answers,
     ]
+}
+
+#[get("/", rank = 11)]
+fn polls_pending_finalization_page(
+    _polls: PendingFinalization<Vec<Poll>>,
+    _user: User,
+    page: PageBuilder<'_>,
+) -> Template {
+    page.render("poll/pending-finalization", context! {})
 }
 
 #[get("/", rank = 12)]
@@ -60,8 +70,14 @@ async fn close_poll(
     poll: Open<Poll>,
     mut repository: Box<dyn Repository>,
 ) -> Result<Redirect, Debug<Error>> {
+    // open_until is inclusive, so we have to pick a date that is already in the past
+    // so that we are displayed the correct page on redirect.
+    // Also, we don't need subsecond precision.
+    let open_until = OffsetDateTime::now_utc()
+        .replace_second(0)
+        .map_err(Error::from)?;
     repository
-        .update_poll_open_until(poll.id, OffsetDateTime::now_utc())
+        .update_poll_open_until(poll.id, open_until)
         .await?;
     Ok(Redirect::to(uri!(no_open_poll_page())))
 }
