@@ -12,6 +12,7 @@ use rocket_db_pools::Connection;
 use sqlx::pool::PoolConnection;
 use sqlx::{Connection as _, Executor, Sqlite, SqliteConnection};
 use std::fmt;
+use time::OffsetDateTime;
 
 #[async_trait]
 pub(crate) trait Repository: fmt::Debug + Send {
@@ -54,6 +55,8 @@ pub(crate) trait Repository: fmt::Debug + Send {
     async fn add_poll(&mut self, poll: &Poll<(), UserId, i64>) -> Result<i64>;
 
     async fn update_poll_description(&mut self, id: i64, description: &str) -> Result<()>;
+
+    async fn update_poll_open_until(&mut self, id: i64, close_at: OffsetDateTime) -> Result<()>;
 
     async fn add_answers(&mut self, answers: Vec<(i64, Answer<(), UserId>)>) -> Result<()>;
 
@@ -348,6 +351,15 @@ impl Repository for SqliteRepository {
     async fn update_poll_description(&mut self, id: i64, description: &str) -> Result<()> {
         sqlx::query("UPDATE polls SET description = ?1 WHERE id = ?2")
             .bind(description)
+            .bind(id)
+            .execute(self.executor())
+            .await?;
+        Ok(())
+    }
+
+    async fn update_poll_open_until(&mut self, id: i64, open_until: OffsetDateTime) -> Result<()> {
+        sqlx::query("UPDATE polls SET open_until = ?1 WHERE id = ?2")
+            .bind(open_until)
             .bind(id)
             .execute(self.executor())
             .await?;

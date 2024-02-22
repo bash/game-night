@@ -1,0 +1,20 @@
+{% extends 'base' %}
+
+{% block title %}Close Poll?{% endblock title %}
+
+{% block content %}
+    <form method="post">
+        <p>
+            After the poll is closed, the date will be chosen
+            <strong>{{date_selection_strategy}}</strong>,
+            picking a date that at least <strong>{{poll.min_participants}}</strong> people have selected.
+            At most <strong>{{poll.max_participants}}</strong> people will be invited to the game night.
+        </p>
+        <p>
+            An email will be sent to all participants of the selected date.
+        </p>
+        <fieldset>
+            <button type="submit">Close Poll</button>
+        </fieldset>
+    </form>
+{% endblock content %}

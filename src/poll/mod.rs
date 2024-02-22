@@ -1,4 +1,5 @@
 use self::open::open_poll_page;
+use crate::auth::{AuthorizedTo, ManagePoll};
 use crate::database::Repository;
 use crate::register::rocket_uri_macro_profile;
 use crate::template::PageBuilder;
@@ -7,8 +8,8 @@ use anyhow::Error;
 use rocket::http::Status;
 use rocket::outcome::try_outcome;
 use rocket::request::{FromRequest, Outcome};
-use rocket::response::Debug;
-use rocket::{async_trait, get, routes, uri, FromFormField, Request, Route};
+use rocket::response::{Debug, Redirect};
+use rocket::{async_trait, get, post, routes, uri, FromFormField, Request, Route};
 use rocket_dyn_templates::{context, Template};
 use serde::Serialize;
 use sqlx::sqlite::{SqliteTypeInfo, SqliteValueRef};
@@ -26,6 +27,8 @@ mod open;
 pub(crate) fn routes() -> Vec<Route> {
     routes![
         poll_page,
+        close_poll_page,
+        close_poll,
         new::new_poll_page,
         new::new_poll,
         new::calendar,
@@ -48,6 +51,30 @@ async fn poll_page(
         )),
         None => Ok(no_open_poll_page(page, user)),
     }
+}
+
+#[get("/poll/close")]
+fn close_poll_page(
+    _user: AuthorizedTo<ManagePoll>,
+    poll: Open<Poll>,
+    page: PageBuilder<'_>,
+) -> Template {
+    page.render(
+        "poll/close",
+        context! { date_selection_strategy: poll.strategy.to_string(), poll },
+    )
+}
+
+#[post("/poll/close")]
+async fn close_poll(
+    _user: AuthorizedTo<ManagePoll>,
+    poll: Open<Poll>,
+    mut repository: Box<dyn Repository>,
+) -> Result<Redirect, Debug<Error>> {
+    repository
+        .update_poll_open_until(poll.id, OffsetDateTime::now_utc())
+        .await?;
+    Ok(Redirect::to(uri!(poll_page())))
 }
 
 fn no_open_poll_page(page: PageBuilder<'_>, user: User) -> Template {
@@ -304,6 +331,8 @@ pub(crate) struct Location<Id = i64> {
     pub(crate) floor: i8,
 }
 
+#[derive(Debug, Serialize)]
+#[serde(transparent)]
 pub(crate) struct Open<T>(T);
 
 impl<T> ops::Deref for Open<T> {

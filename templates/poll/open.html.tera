@@ -19,13 +19,6 @@
     {{ location_macros::postal_address(location=poll.location) }}
 </section>
 
-<p>
-    After the poll closes the date will be chosen
-    <strong>{{date_selection_strategy}}</strong>,
-    picking a date that at least <strong>{{poll.min_participants}}</strong> people have selected.
-    At most <strong>{{poll.max_participants}}</strong> people will be invited to the game night.
-</p>
-
 {% if poll.description %}
     <hr>
 
@@ -138,6 +131,9 @@
     {% endif %}
     <fieldset>
         <button type="submit">Save Answers</button>
+        {% if close_poll_uri %}
+            <a href="{{close_poll_uri}}" class="link-button">Close Poll&hellip;</a>
+        {% endif %}
     </fieldset>
     <p>
         <strong>P.S.</strong> You can select any number of dates.

@@ -40,6 +40,9 @@ fn to_open_poll(poll: Poll, user: &User, users: Vec<User>) -> OpenPoll {
         not_answered,
         no_date_answered_with_yes,
         update_answers_uri: uri!(update_answers()),
+        close_poll_uri: user
+            .can_manage_poll()
+            .then(|| uri!(super::close_poll_page())),
     }
 }
 
@@ -119,6 +122,7 @@ struct OpenPoll {
     no_date_answered_with_yes: Vec<User>,
     not_answered: Vec<User>,
     update_answers_uri: Origin<'static>,
+    close_poll_uri: Option<Origin<'static>>,
 }
 
 #[derive(Debug, Serialize)]
