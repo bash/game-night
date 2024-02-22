@@ -5,22 +5,21 @@ use crate::register::rocket_uri_macro_profile;
 use crate::template::PageBuilder;
 use crate::users::{User, UserId};
 use anyhow::Error;
-use rocket::http::Status;
-use rocket::outcome::try_outcome;
-use rocket::request::{FromRequest, Outcome};
 use rocket::response::{Debug, Redirect};
-use rocket::{async_trait, get, post, routes, uri, FromFormField, Request, Route};
+use rocket::{get, post, routes, uri, FromFormField, Route};
 use rocket_dyn_templates::{context, Template};
 use serde::Serialize;
 use sqlx::sqlite::{SqliteTypeInfo, SqliteValueRef};
 use sqlx::{Database, Decode, Encode, Sqlite, Type};
-use std::{fmt, ops};
+use std::fmt;
 use time::OffsetDateTime;
 
 mod finalize;
 pub(crate) use finalize::*;
 mod email;
 use email::PollEmail;
+mod guards;
+use guards::*;
 mod new;
 mod open;
 
@@ -329,34 +328,6 @@ pub(crate) struct Location<Id = i64> {
     pub(crate) city: String,
     #[sqlx(try_from = "i64")]
     pub(crate) floor: i8,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(transparent)]
-pub(crate) struct Open<T>(T);
-
-impl<T> ops::Deref for Open<T> {
-    type Target = T;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-#[async_trait]
-impl<'r> FromRequest<'r> for Open<Poll> {
-    type Error = Option<Error>;
-
-    async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
-        let mut repository: Box<dyn Repository> = try_outcome!(FromRequest::from_request(request)
-            .await
-            .map_error(|(s, e)| (s, Some(e))));
-        match repository.get_open_poll().await {
-            Ok(Some(poll)) => Outcome::Success(Open(poll)),
-            Ok(None) => Outcome::Error((Status::BadRequest, None)),
-            Err(error) => Outcome::Error((Status::InternalServerError, Some(error))),
-        }
-    }
 }
 
 #[cfg(test)]
