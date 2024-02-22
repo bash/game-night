@@ -1,0 +1,18 @@
+{% extends 'base' %}
+
+{% block title %}Poll Closed{% endblock title %}
+
+{% block content %}
+<p>
+    The poll has just closed!
+</p>
+
+<p>
+    {% if is_subscribed(sub=user.email_subscription) %}
+        You will receive an email at <strong>{{user.email_address}}</strong> within the next 10 minutes
+        if one of your compatible dates was picked.
+    {% else %}
+        Refresh this page from time to time to see when the event is happening.
+    {% endif %}
+</p>
+{% endblock content %}

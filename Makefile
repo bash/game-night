@@ -11,9 +11,12 @@ ifeq ($(env ENABLE_SOURCE_MAPS), true)
 endif
 
 .ONESHELL:
-.PHONY: all clean recreate-db certs run publish deploy
+.PHONY: all clean recreate-db certs run publish deploy check
 
 all: $(MAIN_CSS) $(EMAIL_CSS)
+
+check:
+	cargo check --features development
 
 clean:
 	rm -rf $(PUBLISH_DIR)
@@ -37,7 +40,7 @@ certs:
 run:
 	@export CARGO_TERM_COLOR=always
 	@if [[ -d ../outbox ]]; then
-	parallel --lb --halt now,done=1 --tagstring [{}] ::: '$(MAKE) run_server' '$(MAKE) run_outbox'
+	parallel --lb --halt now,done=1 --tagstring [{}] ::: '$(MAKE) run_server' '$(MAKE) run_outbox' '$(MAKE) watch'
 	@else
 	echo "$$(tput bold)$$(tput setaf 3)Warning: outboxd not started, you need to start it yourself if you want to send emails$$(tput sgr0)"
 	$(MAKE) run_server

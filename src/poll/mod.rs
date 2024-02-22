@@ -1,31 +1,34 @@
-use self::open::open_poll_page;
+use crate::auth::{AuthorizedTo, ManagePoll};
 use crate::database::Repository;
 use crate::register::rocket_uri_macro_profile;
 use crate::template::PageBuilder;
 use crate::users::{User, UserId};
 use anyhow::Error;
-use rocket::http::Status;
-use rocket::outcome::try_outcome;
-use rocket::request::{FromRequest, Outcome};
-use rocket::response::Debug;
-use rocket::{async_trait, get, routes, uri, FromFormField, Request, Route};
+use rocket::response::{Debug, Redirect};
+use rocket::{get, post, routes, uri, FromFormField, Route, State};
 use rocket_dyn_templates::{context, Template};
 use serde::Serialize;
 use sqlx::sqlite::{SqliteTypeInfo, SqliteValueRef};
 use sqlx::{Database, Decode, Encode, Sqlite, Type};
-use std::{fmt, ops};
+use std::fmt;
 use time::OffsetDateTime;
 
 mod finalize;
 pub(crate) use finalize::*;
 mod email;
 use email::PollEmail;
+mod guards;
+use guards::*;
 mod new;
-mod open;
+pub(crate) mod open;
 
 pub(crate) fn routes() -> Vec<Route> {
     routes![
-        poll_page,
+        open::open_poll_page,
+        polls_pending_finalization_page,
+        no_open_poll_page,
+        close_poll_page,
+        close_poll,
         new::new_poll_page,
         new::new_poll,
         new::calendar,
@@ -33,27 +36,52 @@ pub(crate) fn routes() -> Vec<Route> {
     ]
 }
 
-#[get("/", rank = 10)]
-async fn poll_page(
-    mut repository: Box<dyn Repository>,
+#[get("/", rank = 11)]
+fn polls_pending_finalization_page(
+    _polls: PendingFinalization<Vec<Poll>>,
+    _user: User,
     page: PageBuilder<'_>,
-    user: User,
-) -> Result<Template, Debug<Error>> {
-    match repository.get_open_poll().await? {
-        Some(poll) => Ok(open_poll_page(
-            page,
-            poll,
-            user,
-            repository.get_users().await?,
-        )),
-        None => Ok(no_open_poll_page(page, user)),
-    }
+) -> Template {
+    page.render("poll/pending-finalization", context! {})
 }
 
-fn no_open_poll_page(page: PageBuilder<'_>, user: User) -> Template {
+#[get("/", rank = 12)]
+fn no_open_poll_page(user: User, page: PageBuilder<'_>) -> Template {
     let new_poll_uri = user.can_manage_poll().then(|| uri!(new::new_poll_page()));
     let profile_uri = uri!(profile());
     page.render("poll", context! { new_poll_uri, profile_uri })
+}
+
+#[get("/poll/close")]
+fn close_poll_page(
+    _user: AuthorizedTo<ManagePoll>,
+    poll: Open<Poll>,
+    page: PageBuilder<'_>,
+) -> Template {
+    page.render(
+        "poll/close",
+        context! { date_selection_strategy: poll.strategy.to_string(), poll },
+    )
+}
+
+#[post("/poll/close")]
+async fn close_poll(
+    _user: AuthorizedTo<ManagePoll>,
+    poll: Open<Poll>,
+    nudge: &State<NudgeFinalizer>,
+    mut repository: Box<dyn Repository>,
+) -> Result<Redirect, Debug<Error>> {
+    // open_until is inclusive, so we have to pick a date that is already in the past
+    // so that we are displayed the correct page on redirect.
+    // Also, we don't need subsecond precision.
+    let open_until = OffsetDateTime::now_utc()
+        .replace_second(0)
+        .map_err(Error::from)?;
+    repository
+        .update_poll_open_until(poll.id, open_until)
+        .await?;
+    nudge.nudge();
+    Ok(Redirect::to(uri!(no_open_poll_page())))
 }
 
 #[derive(Debug, sqlx::FromRow, Serialize)]
@@ -302,32 +330,6 @@ pub(crate) struct Location<Id = i64> {
     pub(crate) city: String,
     #[sqlx(try_from = "i64")]
     pub(crate) floor: i8,
-}
-
-pub(crate) struct Open<T>(T);
-
-impl<T> ops::Deref for Open<T> {
-    type Target = T;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-#[async_trait]
-impl<'r> FromRequest<'r> for Open<Poll> {
-    type Error = Option<Error>;
-
-    async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
-        let mut repository: Box<dyn Repository> = try_outcome!(FromRequest::from_request(request)
-            .await
-            .map_error(|(s, e)| (s, Some(e))));
-        match repository.get_open_poll().await {
-            Ok(Some(poll)) => Outcome::Success(Open(poll)),
-            Ok(None) => Outcome::Error((Status::BadRequest, None)),
-            Err(error) => Outcome::Error((Status::InternalServerError, Some(error))),
-        }
-    }
 }
 
 #[cfg(test)]
