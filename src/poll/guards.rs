@@ -28,16 +28,15 @@ impl<T> ops::Deref for Open<T> {
 
 #[async_trait]
 impl<'r> FromRequest<'r> for Open<Poll> {
-    type Error = Option<Error>;
+    type Error = Error;
 
     async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
-        let mut repository: Box<dyn Repository> = try_outcome!(FromRequest::from_request(request)
-            .await
-            .map_error(|(s, e)| (s, Some(e))));
+        let mut repository: Box<dyn Repository> =
+            try_outcome!(FromRequest::from_request(request).await);
         match repository.get_open_poll().await {
             Ok(Some(poll)) => Outcome::Success(Open(poll)),
             Ok(None) => Outcome::Forward(Status::NotFound),
-            Err(error) => Outcome::Error((Status::InternalServerError, Some(error))),
+            Err(error) => Outcome::Error((Status::InternalServerError, error)),
         }
     }
 }
