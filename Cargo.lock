@@ -2419,7 +2419,7 @@ dependencies = [
 [[package]]
 name = "rocket"
 version = "0.6.0-dev"
-source = "git+https://github.com/rwf2/Rocket/?branch=master#f75fb6368957e392e6ff76cbbb60fb2f59d53b28"
+source = "git+https://github.com/rwf2/Rocket/?branch=master#32c819949995155635aa86be2807d0fe81411d2f"
 dependencies = [
  "async-stream",
  "async-trait",
@@ -2464,7 +2464,7 @@ dependencies = [
 [[package]]
 name = "rocket_codegen"
 version = "0.6.0-dev"
-source = "git+https://github.com/rwf2/Rocket/?branch=master#f75fb6368957e392e6ff76cbbb60fb2f59d53b28"
+source = "git+https://github.com/rwf2/Rocket/?branch=master#32c819949995155635aa86be2807d0fe81411d2f"
 dependencies = [
  "devise",
  "glob",
@@ -2480,7 +2480,7 @@ dependencies = [
 [[package]]
 name = "rocket_db_pools"
 version = "0.1.0"
-source = "git+https://github.com/rwf2/Rocket/?branch=master#f75fb6368957e392e6ff76cbbb60fb2f59d53b28"
+source = "git+https://github.com/rwf2/Rocket/?branch=master#32c819949995155635aa86be2807d0fe81411d2f"
 dependencies = [
  "rocket",
  "rocket_db_pools_codegen",
@@ -2491,7 +2491,7 @@ dependencies = [
 [[package]]
 name = "rocket_db_pools_codegen"
 version = "0.1.0"
-source = "git+https://github.com/rwf2/Rocket/?branch=master#f75fb6368957e392e6ff76cbbb60fb2f59d53b28"
+source = "git+https://github.com/rwf2/Rocket/?branch=master#32c819949995155635aa86be2807d0fe81411d2f"
 dependencies = [
  "devise",
  "quote",
@@ -2500,7 +2500,7 @@ dependencies = [
 [[package]]
 name = "rocket_dyn_templates"
 version = "0.1.0"
-source = "git+https://github.com/rwf2/Rocket/?branch=master#f75fb6368957e392e6ff76cbbb60fb2f59d53b28"
+source = "git+https://github.com/rwf2/Rocket/?branch=master#32c819949995155635aa86be2807d0fe81411d2f"
 dependencies = [
  "normpath",
  "notify",
@@ -2512,7 +2512,7 @@ dependencies = [
 [[package]]
 name = "rocket_http"
 version = "0.6.0-dev"
-source = "git+https://github.com/rwf2/Rocket/?branch=master#f75fb6368957e392e6ff76cbbb60fb2f59d53b28"
+source = "git+https://github.com/rwf2/Rocket/?branch=master#32c819949995155635aa86be2807d0fe81411d2f"
 dependencies = [
  "cookie",
  "either",
