@@ -61,7 +61,7 @@ impl<'r> FromRequest<'r> for PendingFinalization<Vec<Poll>> {
         let mut repository: Box<dyn Repository> =
             try_outcome!(FromRequest::from_request(request).await);
         match repository.get_polls_pending_for_finalization().await {
-            Ok(polls) if polls.len() >= 1 => Outcome::Success(PendingFinalization(polls)),
+            Ok(polls) if !polls.is_empty() => Outcome::Success(PendingFinalization(polls)),
             Ok(_) => Outcome::Forward(Status::NotFound),
             Err(error) => Outcome::Error((Status::InternalServerError, error)),
         }
