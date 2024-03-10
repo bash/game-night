@@ -11,9 +11,6 @@ You can choose from the following dates:
 
 But don't take too long—the poll is only open until {{poll.open_until | time(format = "{date}")}} at {{poll.open_until | time(format='{time}')}} :)
 
-The poll closes on {{poll.open_until | time(format = "{date}")}} at {{poll.open_until | time(format='{time}')}} after which
-the definitive date will be announced.
-
 → Onwards to the poll! {{poll_uri}}
 → I want to skip the next game night… {{skip_poll_uri}}
 
