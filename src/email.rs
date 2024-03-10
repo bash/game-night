@@ -18,6 +18,19 @@ use std::path::Path;
 #[async_trait]
 pub(crate) trait EmailSender: Send + Sync + DynClone {
     async fn send(&self, recipient: Mailbox, email: &dyn EmailMessage) -> Result<()>;
+
+    fn preview(&self, email: &dyn EmailMessage) -> Result<EmailBody>;
+}
+
+pub(crate) struct EmailBody {
+    pub(crate) plain: String,
+    pub(crate) html: String,
+}
+
+impl From<EmailBody> for MultiPart {
+    fn from(value: EmailBody) -> Self {
+        MultiPart::alternative_plain_html(value.plain, value.html)
+    }
 }
 
 dyn_clone::clone_trait_object!(EmailSender);
@@ -60,7 +73,9 @@ impl EmailSender for EmailSenderImpl {
         let multipart = email
             .attachments()?
             .into_iter()
-            .fold(self.render_email_body(email)?, |m, s| m.singlepart(s));
+            .fold(MultiPart::from(self.render_email_body(email)?), |m, s| {
+                m.singlepart(s)
+            });
         let message = Message::builder()
             .from(self.sender.clone())
             .to(recipient)
@@ -76,6 +91,10 @@ impl EmailSender for EmailSenderImpl {
         println!("{}", String::from_utf8(message.formatted())?);
 
         Ok(())
+    }
+
+    fn preview(&self, email: &dyn EmailMessage) -> Result<EmailBody> {
+        self.render_email_body(email)
     }
 }
 
@@ -106,7 +125,7 @@ impl EmailSenderImpl {
         })
     }
 
-    fn render_email_body(&self, email: &dyn EmailMessage) -> Result<MultiPart> {
+    fn render_email_body(&self, email: &dyn EmailMessage) -> Result<EmailBody> {
         let template_name = email.template_name();
         let mut template_context = email.template_context()?;
         let mut rng = thread_rng();
@@ -117,14 +136,16 @@ impl EmailSenderImpl {
         let html_template_name = format!("{}.html.tera", &template_name);
         let text_template_name = format!("{}.txt.tera", &template_name);
 
-        Ok(MultiPart::alternative_plain_html(
-            self.tera
+        Ok(EmailBody {
+            plain: self
+                .tera
                 .render(&text_template_name, &template_context)
                 .context("failed to render tera template")?,
-            self.tera
+            html: self
+                .tera
                 .render(&html_template_name, &template_context)
                 .context("failed to render tera template")?,
-        ))
+        })
     }
 }
 
