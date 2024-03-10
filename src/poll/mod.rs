@@ -21,10 +21,12 @@ mod guards;
 use guards::*;
 mod new;
 pub(crate) mod open;
+mod skip;
 
 pub(crate) fn routes() -> Vec<Route> {
     routes![
         open::open_poll_page,
+        skip::skip_poll,
         polls_pending_finalization_page,
         no_open_poll_page,
         close_poll_page,

@@ -19,14 +19,14 @@
     But don't take too long—the poll is only open until <strong>{{poll.open_until | time(format = "{date}")}}</strong> at <strong>{{poll.open_until | time(format='{time}')}}</strong> :)
 </p>
 
-<a href="{{poll_url}}">
+<a href="{{poll_uri}}">
     <span class="arrow" role="presentation">→</span>
     Onwards to the poll!
 </a>
 
 <br>
 
-<a href="{{poll_url}}">
+<a href="{{skip_poll_uri}}">
     <span class="arrow" role="presentation">→</span>
     I want to skip the next game night&hellip;
 </a>

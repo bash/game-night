@@ -6,6 +6,14 @@
 {% block title %}Poll{% endblock title %}
 
 {% block content %}
+{% if has_answers %}
+<p class="success-message">
+    Thank you for participating in the poll 😊 You can change your answer
+    as often as you'd like until the deadline on <strong>{{poll.open_until | time(format="{date}")}}</strong>
+    at <strong>{{poll.open_until | time(format='{time}')}}</strong>.
+</p>
+{% endif %}
+
 <p>
     Hurray, Tau is inviting you to another <em>Game Night</em> 🎉 <br>
     Fill out the poll until
@@ -13,11 +21,6 @@
         at <strong>{{poll.open_until | time(format='{time}')}}</strong>
         to help pick the date.
 </p>
-
-<section>
-    <p>The <em>Game Night</em> will take place at</p>
-    {{ location_macros::postal_address(location=poll.location) }}
-</section>
 
 {% if poll.description %}
     <hr>
@@ -52,11 +55,11 @@
                         {% endif %}
 
                         <div style="display: flex; align-items: center; gap: .2em;">
-                            <input type="checkbox" name="options[{{option.id}}][yes]" id="option-{{option.id}}" {{yes_checked}}>
+                            <input type="checkbox" name="options[{{option.id}}][yes]" id="option-{{option.id}}" {{yes_checked}} autocomplete="off">
 
                             {% if can_answer_strongly %}
                                 <span class="toggle-button">
-                                    <input type="checkbox" name="options[{{option.id}}][strong]" id="option-{{option.id}}-strong" {{strong_checked}}>
+                                    <input type="checkbox" name="options[{{option.id}}][strong]" id="option-{{option.id}}-strong" {{strong_checked}} autocomplete="off">
                                     <label for="option-{{option.id}}-strong" tabindex="0">
                                         <span class="veto">Veto</span>
                                         <span class="required">Required</span>
@@ -122,25 +125,38 @@
             </ul>
         {% endif %}
     </div>
-    {% if has_answers %}
-        <p class="success-message">
-            Thank you for participating in the poll 😊 You can change your answer
-            as often as you'd like until the deadline on <strong>{{poll.open_until | time(format="{date}")}}</strong>
-            at <strong>{{poll.open_until | time(format='{time}')}}</strong>.
-        </p>
-    {% endif %}
     <fieldset>
-        <button type="submit">Save Answers</button>
+        <button type="submit" {% if not has_answers %}data-one-selected-label="Save Answers"{% endif %}>
+            {% if has_answers %}
+                Save Answers
+            {% else %}
+                None of the Above
+            {% endif %}
+        </button>
         {% if close_poll_uri %}
             <a href="{{close_poll_uri}}" class="link-button">Close Poll&hellip;</a>
         {% endif %}
     </fieldset>
-    <p>
-        <strong>P.S.</strong> You can select any number of dates.
-    </p>
 </form>
+
 {% endblock content %}
 
 {% block scripts %}
 <script type="module" src="{{asset(path='/js/toggle-button.js')}}"></script>
+<script type="module">
+    const button = document.querySelector('[data-one-selected-label]')
+    const defaultLabel = button.innerText
+    let set = false
+
+    for (const checkbox of document.querySelectorAll('input[type=checkbox]')) {
+        checkbox.addEventListener('input', onInput)
+    }
+
+    function onInput() {
+        if (!set) {
+            set = true
+            button.innerText = button.dataset.oneSelectedLabel;
+        }
+    }
+</script>
 {% endblock scripts %}

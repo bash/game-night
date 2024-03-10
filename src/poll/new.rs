@@ -276,13 +276,16 @@ async fn send_poll_emails(
     poll: &Poll<(), UserId, i64>,
 ) -> Result<()> {
     for user in get_subscribed_users(repository.as_mut()).await? {
-        let poll_url =
+        let poll_uri =
             uri!(auto_login(&user, poll.open_until); uri_builder, open_poll_page()).await?;
+        let skip_poll_uri =
+            uri!(auto_login(&user, poll.open_until); uri_builder, super::skip::skip_poll).await?;
         let sub_url = uri!(auto_login(&user, poll.open_until); uri_builder, profile()).await?;
         let email = PollEmail {
             name: user.name.clone(),
             poll: poll.clone(),
-            poll_url,
+            poll_uri,
+            skip_poll_uri,
             manage_subscription_url: sub_url,
         };
         email_sender.send(user.mailbox()?, &email).await?;

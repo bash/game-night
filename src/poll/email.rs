@@ -20,7 +20,8 @@ pub(super) fn poll_email_preview(
     let email = PollEmail {
         name: user.name,
         poll: poll.into_inner(),
-        poll_url: uri!(uri_builder, super::open::open_poll_page),
+        poll_uri: uri!(uri_builder, super::open::open_poll_page),
+        skip_poll_uri: uri!(uri_builder, super::skip::skip_poll),
         manage_subscription_url: uri!(uri_builder, crate::register::profile),
     };
     let body = email_sender.preview(&email)?;
@@ -31,7 +32,8 @@ pub(super) fn poll_email_preview(
 pub(super) struct PollEmail<'a, Id, UserRef, LocationRef> {
     pub(super) name: String,
     pub(super) poll: Poll<Id, UserRef, LocationRef>,
-    pub(super) poll_url: Absolute<'a>,
+    pub(super) poll_uri: Absolute<'a>,
+    pub(super) skip_poll_uri: Absolute<'a>,
     pub(super) manage_subscription_url: Absolute<'a>,
 }
 
