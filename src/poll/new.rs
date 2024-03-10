@@ -231,6 +231,7 @@ fn to_cet(date: Date, time: Time) -> Result<OffsetDateTime> {
 
 fn now_utc_without_subminutes() -> Result<OffsetDateTime> {
     Ok(OffsetDateTime::now_utc()
+        .replace_minute(0)?
         .replace_second(0)?
         .replace_nanosecond(0)?)
 }
