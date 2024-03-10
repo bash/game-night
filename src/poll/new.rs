@@ -281,7 +281,7 @@ async fn send_poll_emails(
         let sub_url = uri!(auto_login(&user, poll.open_until); uri_builder, profile()).await?;
         let email = PollEmail {
             name: user.name.clone(),
-            poll_closes_at: poll.open_until,
+            poll: poll.clone(),
             poll_url,
             manage_subscription_url: sub_url,
         };

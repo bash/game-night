@@ -49,3 +49,24 @@ impl Distribution<&'static str> for Greetings {
         rng.sample(distributions::Slice::new(GREETINGS).unwrap())
     }
 }
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Closings;
+
+impl Distribution<&'static str> for Closings {
+    fn sample<R: rand::prelude::Rng + ?Sized>(&self, rng: &mut R) -> &'static str {
+        const GREETINGS: &[&str] = &[
+            "See youu~",
+            "Later, Alligator",
+            "In a while, Crocodile 🐊",
+            "You're the best ✨",
+            "XOXO",
+            "Toodle-oo, Kangaroo 🦘",
+            "Blow a kiss, Jellyfish 🪼",
+            "Give a hug, Ladybug 🐞",
+            "Wave goodbye, Butterfly 🦋",
+            "Take care, Polar Bear 🐻‍❄️",
+        ];
+        rng.sample(distributions::Slice::new(GREETINGS).unwrap())
+    }
+}

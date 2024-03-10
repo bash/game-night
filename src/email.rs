@@ -1,4 +1,4 @@
-use crate::decorations::{Greetings, Hearts, SkinToneModifiers};
+use crate::decorations::{Closings, Greetings, Hearts, SkinToneModifiers};
 use anyhow::{anyhow, Context as _, Result};
 use dyn_clone::DynClone;
 use lettre::message::header::{Header, HeaderName, HeaderValue};
@@ -130,6 +130,7 @@ impl EmailSenderImpl {
         let mut template_context = email.template_context()?;
         let mut rng = thread_rng();
         template_context.insert("greeting", rng.sample(Greetings));
+        template_context.insert("closing", rng.sample(Closings));
         template_context.insert("skin_tone", rng.sample(SkinToneModifiers));
         template_context.insert("heart", rng.sample(Hearts));
         template_context.insert("css", &self.css);

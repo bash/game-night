@@ -1,29 +1,46 @@
 {% extends 'base.html.tera' %}
 {% block content %}
 <h1>
-    Are You Ready for<br>
-    a Game Night? 🧙{{skin_tone}}
+    Another Game Night is Just Around the Corner 🧙{{skin_tone}}
 </h1>
 
 <p>
-    Participate in the poll to help<br>
-    select the next date for <em>Tau's Game Night</em>.
+    &hellip; and I need <em>you</em> to help pick a date.<br>
+    You can choose from the following dates:
 </p>
 
+<ul>
+    {% for option in poll.options | sort(attribute='starts_at') %}
+        <li>{{option.starts_at | time(format = "{date}")}} at <time>{{option.starts_at | time(format='{time}')}}</time></li>
+    {% endfor %}
+</ul>
+
 <p>
-    The poll closes on <strong>{{poll_closes_at | time(format = "{date}")}}</strong> at <strong>{{poll_closes_at | time(format='{time}')}}</strong> after which
-    the definitive date will be announced.
+    But don't take too long—the poll is only open until <strong>{{poll.open_until | time(format = "{date}")}}</strong> at <strong>{{poll.open_until | time(format='{time}')}}</strong> :)
 </p>
 
 <a href="{{poll_url}}">
     <span class="arrow" role="presentation">→</span>
-    Participate in poll
+    Onwards to the poll!
 </a>
+
+<br>
+
+<a href="{{poll_url}}">
+    <span class="arrow" role="presentation">→</span>
+    I want to skip the next game night&hellip;
+</a>
+
+<p>
+    <em>{{closing}}</em>
+</p>
 
 <hr>
 
 <p>
-    <strong>P.S.</strong> You can ignore this email if you want to skip the next game night.<br>
-    <strong>P.P.S.</strong> You can <a href="{{manage_subscription_url}}">manage</a> your subscription if you no longer want to receive these emails.
+    <small>
+        No longer want to receive these emails?
+        You can <a href="{{manage_subscription_url}}">change</a> your subscription settings.
+    </small>
 </p>
 {% endblock content %}

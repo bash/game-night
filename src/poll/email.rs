@@ -1,3 +1,4 @@
+use super::{Open, Poll};
 use crate::email::{EmailMessage, EmailSender};
 use crate::uri;
 use crate::uri::UriBuilder;
@@ -8,9 +9,6 @@ use rocket::response::content::RawHtml;
 use rocket::response::Debug;
 use rocket::{get, State};
 use serde::Serialize;
-use time::OffsetDateTime;
-
-use super::{Open, Poll};
 
 #[get("/poll/email-preview")]
 pub(super) fn poll_email_preview(
@@ -21,7 +19,7 @@ pub(super) fn poll_email_preview(
 ) -> Result<RawHtml<String>, Debug<Error>> {
     let email = PollEmail {
         name: user.name,
-        poll_closes_at: poll.open_until,
+        poll: poll.into_inner(),
         poll_url: uri!(uri_builder, super::open::open_poll_page),
         manage_subscription_url: uri!(uri_builder, crate::register::profile),
     };
@@ -30,15 +28,19 @@ pub(super) fn poll_email_preview(
 }
 
 #[derive(Debug, Clone, Serialize)]
-pub(super) struct PollEmail<'a> {
+pub(super) struct PollEmail<'a, Id, UserRef, LocationRef> {
     pub(super) name: String,
-    #[serde(with = "time::serde::iso8601")]
-    pub(super) poll_closes_at: OffsetDateTime,
+    pub(super) poll: Poll<Id, UserRef, LocationRef>,
     pub(super) poll_url: Absolute<'a>,
     pub(super) manage_subscription_url: Absolute<'a>,
 }
 
-impl EmailMessage for PollEmail<'_> {
+impl<Id, UserRef, LocationRef> EmailMessage for PollEmail<'_, Id, UserRef, LocationRef>
+where
+    Id: Serialize + Send + Sync,
+    UserRef: Serialize + Send + Sync,
+    LocationRef: Serialize + Send + Sync,
+{
     fn subject(&self) -> String {
         "Are You Ready for a Game Night?".to_owned()
     }

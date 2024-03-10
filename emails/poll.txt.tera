@@ -6,7 +6,7 @@ Game Night 🧙{{skin_tone}}
 Participate in the poll to help
 select the next date for Tau's Game Night.
 
-The poll closes on {{poll_closes_at | time(format = "{date}")}} at {{poll_closes_at | time(format='{time}')}} after which
+The poll closes on {{poll.open_until | time(format = "{date}")}} at {{poll.open_until | time(format='{time}')}} after which
 the definitive date will be announced.
 
 → Participate in poll: {{poll_url}}

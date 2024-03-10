@@ -85,7 +85,7 @@ async fn close_poll(
     Ok(Redirect::to(uri!(no_open_poll_page())))
 }
 
-#[derive(Debug, sqlx::FromRow, Serialize)]
+#[derive(Debug, Clone, sqlx::FromRow, Serialize)]
 pub(crate) struct Poll<Id = i64, UserRef = User, LocationRef = Location> {
     pub(crate) id: Id,
     #[sqlx(try_from = "i64")]
@@ -321,7 +321,7 @@ impl fmt::Display for DateSelectionStrategy {
     }
 }
 
-#[derive(Debug, sqlx::FromRow, Serialize)]
+#[derive(Debug, Clone, sqlx::FromRow, Serialize)]
 pub(crate) struct Location<Id = i64> {
     pub(crate) id: Id,
     pub(crate) nameplate: String,
