@@ -25,7 +25,7 @@ clean:
 
 watch:
 	@while true; do
-		find scss -name '*.scss' | entr -d $(MAKE)
+		find . -name '*.scss' | entr -d $(MAKE)
 		@test $$? -ne 2 && break
 	@done
 
