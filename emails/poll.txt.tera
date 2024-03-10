@@ -1,16 +1,23 @@
 {{greeting}} {{name}},
 
-Get Ready For a
-Game Night 🧙{{skin_tone}}
+Another Game Night is Just Around the Corner 🧙{{skin_tone}}
 
-Participate in the poll to help
-select the next date for Tau's Game Night.
+… and I need *you* to help pick a date.
+You can choose from the following dates:
+
+{% for option in poll.options | sort(attribute='starts_at') %}
+    • {{option.starts_at | time(format = "{date}")}} at {{option.starts_at | time(format='{time}')}}
+{% endfor %}
+
+But don't take too long—the poll is only open until {{poll.open_until | time(format = "{date}")}} at {{poll.open_until | time(format='{time}')}} :)
 
 The poll closes on {{poll.open_until | time(format = "{date}")}} at {{poll.open_until | time(format='{time}')}} after which
 the definitive date will be announced.
 
-→ Participate in poll: {{poll_uri}}
+→ Onwards to the poll! {{poll_uri}}
+→ I want to skip the next game night… {{skip_poll_uri}}
 
 ------
 
-P.S. You can ignore this email if you want to skip the next game night.
+No longer want to receive these emails?
+You can change your subscription settings here: {{manage_subscription_url}}
