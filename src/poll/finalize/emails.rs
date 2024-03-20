@@ -1,39 +1,71 @@
-use super::FinalizeContext;
-use crate::email::EmailMessage;
+use crate::email::{EmailMessage, EmailSender};
 use crate::event::Event;
 use crate::play::rocket_uri_macro_play_page;
-use crate::uri;
+use crate::uri::{HasUriBuilder as _, UriBuilder};
 use crate::users::User;
-use anyhow::Result;
+use crate::{uri, RocketExt as _};
+use anyhow::{Error, Result};
 use lettre::message::header::ContentType;
 use lettre::message::{Attachment, SinglePart};
 use rocket::http::uri::Absolute;
+use rocket::http::Status;
+use rocket::request::{FromRequest, Outcome};
+use rocket::{async_trait, Orbit, Request, Rocket};
 use serde::Serialize;
 use time::format_description::FormatItem;
 use time::macros::format_description;
 
 pub(super) async fn send_notification_emails(
-    ctx: &mut FinalizeContext,
+    sender: &EventEmailSender,
     event: &Event,
     invited: &[User],
 ) -> Result<()> {
     for user in invited {
-        send_invited_email(ctx, event, user).await?;
+        sender.send(event, user).await?;
     }
     Ok(())
 }
 
-async fn send_invited_email(ctx: &mut FinalizeContext, event: &Event, user: &User) -> Result<()> {
-    let event_url = uri!(auto_login(user, event.ends_at); ctx.uri_builder, play_page()).await?;
-    let ics_file = crate::play::to_calendar(event, &ctx.uri_builder)?.to_string();
-    let email: InvitedEmail<'_> = InvitedEmail {
-        event,
-        event_url,
-        name: &user.name,
-        ics_file,
-    };
-    ctx.email_sender.send(user.mailbox()?, &email).await?;
-    Ok(())
+pub(crate) struct EventEmailSender {
+    email_sender: Box<dyn EmailSender>,
+    uri_builder: UriBuilder<'static>,
+}
+
+impl EventEmailSender {
+    pub(crate) async fn from_rocket(rocket: &Rocket<Orbit>) -> Result<Self> {
+        Ok(Self {
+            email_sender: rocket.email_sender()?,
+            uri_builder: rocket.uri_builder().await?.into_static(),
+        })
+    }
+}
+
+#[async_trait]
+impl<'r> FromRequest<'r> for EventEmailSender {
+    type Error = Error;
+
+    async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
+        match EventEmailSender::from_rocket(request.rocket()).await {
+            Ok(sender) => Outcome::Success(sender),
+            Err(e) => Outcome::Error((Status::InternalServerError, e)),
+        }
+    }
+}
+
+impl EventEmailSender {
+    pub(crate) async fn send(&self, event: &Event, user: &User) -> Result<()> {
+        let event_url =
+            uri!(auto_login(user, event.ends_at); self.uri_builder, play_page()).await?;
+        let ics_file = crate::play::to_calendar(event, &self.uri_builder)?.to_string();
+        let email: InvitedEmail<'_> = InvitedEmail {
+            event,
+            event_url,
+            name: &user.name,
+            ics_file,
+        };
+        self.email_sender.send(user.mailbox()?, &email).await?;
+        Ok(())
+    }
 }
 
 #[derive(Debug, Serialize)]

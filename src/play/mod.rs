@@ -1,6 +1,6 @@
 use crate::database::Repository;
 use crate::event::Event;
-use crate::poll::Location;
+use crate::poll::{EventEmailSender, Location};
 use crate::template::PageBuilder;
 use crate::uri;
 use crate::uri::UriBuilder;
@@ -51,8 +51,10 @@ async fn join(
     event: NextEvent,
     user: User,
     mut repository: Box<dyn Repository>,
+    sender: EventEmailSender,
 ) -> Result<Redirect, Debug<Error>> {
     repository.add_participant(event.0.id, user.id).await?;
+    sender.send(&event.0, &user).await?;
     Ok(Redirect::to(uri!(play_page())))
 }
 

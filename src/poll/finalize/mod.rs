@@ -1,8 +1,6 @@
 use super::{Answer, Attendance, DateSelectionStrategy, Poll, PollOption};
 use crate::database::Repository;
-use crate::email::EmailSender;
 use crate::event::Event;
-use crate::uri::UriBuilder;
 use crate::users::{User, UserId};
 use anyhow::Result;
 use itertools::{Either, Itertools};
@@ -13,6 +11,7 @@ use std::cmp::min;
 mod scheduling;
 pub(crate) use scheduling::*;
 mod emails;
+pub(crate) use emails::*;
 
 async fn finalize(ctx: &mut FinalizeContext) -> Result<()> {
     // not using a transaction here because we're the only ones setting polls to closed.
@@ -25,8 +24,7 @@ async fn finalize(ctx: &mut FinalizeContext) -> Result<()> {
 
 struct FinalizeContext {
     repository: Box<dyn Repository>,
-    email_sender: Box<dyn EmailSender>,
-    uri_builder: UriBuilder<'static>,
+    sender: EventEmailSender,
 }
 
 async fn try_finalize_poll(ctx: &mut FinalizeContext, poll: Poll) -> Result<()> {
@@ -36,7 +34,7 @@ async fn try_finalize_poll(ctx: &mut FinalizeContext, poll: Poll) -> Result<()> 
 
     if let FinalizeResult::Success(event, invited, _) = result {
         let event = ctx.repository.add_event(event).await?;
-        emails::send_notification_emails(ctx, &event, &invited).await?;
+        emails::send_notification_emails(&ctx.sender, &event, &invited).await?;
     }
 
     Ok(())

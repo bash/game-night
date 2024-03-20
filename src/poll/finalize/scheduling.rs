@@ -1,5 +1,4 @@
-use super::{finalize, FinalizeContext};
-use crate::uri::HasUriBuilder as _;
+use super::{finalize, EventEmailSender, FinalizeContext};
 use crate::RocketExt;
 use anyhow::{Context, Result};
 use rocket::fairing::{self, Fairing};
@@ -66,8 +65,7 @@ impl FinalizeContext {
     async fn from_rocket(rocket: &Rocket<Orbit>) -> Result<Self> {
         Ok(Self {
             repository: rocket.repository().await?,
-            email_sender: rocket.email_sender()?,
-            uri_builder: rocket.uri_builder().await?.into_static(),
+            sender: EventEmailSender::from_rocket(rocket).await?,
         })
     }
 }
