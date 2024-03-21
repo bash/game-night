@@ -10,7 +10,6 @@ use email_address::EmailAddress;
 use lettre::message::Mailbox;
 use rand::thread_rng;
 use rocket::form::Form;
-use rocket::http::uri::Origin;
 use rocket::http::{Cookie, CookieJar, SameSite};
 use rocket::response::{Debug, Redirect};
 use rocket::{get, post, routes, uri, Either, FromForm, Route, State};
@@ -64,7 +63,7 @@ pub(crate) fn routes() -> Vec<Route> {
 
 #[get("/getting-invited", rank = 10)]
 async fn getting_invited_redirect(_user: User) -> Redirect {
-    Redirect::to(Origin::ROOT)
+    Redirect::to("/")
 }
 
 #[get("/getting-invited", rank = 20)]

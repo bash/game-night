@@ -1,5 +1,5 @@
 use listenfd::ListenFd;
-use rocket::listener::Bindable;
+use rocket::listener::{Bindable, Endpoint};
 use rocket::tokio::net::TcpListener;
 use std::io;
 
@@ -19,5 +19,9 @@ impl Bindable for SocketActivation {
     async fn bind(self) -> io::Result<Self::Listener> {
         self.0.set_nonblocking(true)?;
         TcpListener::from_std(self.0)
+    }
+
+    fn bind_endpoint(&self) -> io::Result<Endpoint> {
+        Ok(Endpoint::new(self.0.local_addr()?))
     }
 }

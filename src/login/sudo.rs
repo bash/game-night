@@ -3,7 +3,6 @@ use crate::auth::{AuthorizedTo, CookieJarExt, LoginState, ManageUsers};
 use crate::users::{User, UserId};
 use anyhow::Error;
 use rocket::form::Form;
-use rocket::http::uri::Origin;
 use rocket::http::CookieJar;
 use rocket::response::{Debug, Redirect};
 use rocket::{post, FromForm};
@@ -16,7 +15,7 @@ pub(super) fn enter(
     _guard: AuthorizedTo<ManageUsers>,
 ) -> Result<Redirect, Debug<Error>> {
     cookies.set_login_state(cookies.login_state()?.impersonate(UserId(form.user)));
-    Ok(Redirect::to(Origin::ROOT))
+    Ok(Redirect::to("/"))
 }
 
 #[post("/sudo/exit", data = "<form>")]

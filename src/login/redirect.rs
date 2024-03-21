@@ -2,7 +2,7 @@ use rocket::form::{FromFormField, ValueField};
 use rocket::http::impl_from_uri_param_identity;
 use rocket::http::uri::fmt::{FromUriParam, Query, UriDisplay};
 use rocket::http::uri::{Origin, Reference};
-use rocket::{async_trait, form};
+use rocket::{async_trait, form, uri};
 use std::fmt;
 
 pub(crate) trait RedirectUriExt {
@@ -11,7 +11,7 @@ pub(crate) trait RedirectUriExt {
 
 impl RedirectUriExt for Option<RedirectUri> {
     fn or_root(self) -> RedirectUri {
-        self.unwrap_or(RedirectUri(Origin::ROOT))
+        self.unwrap_or(RedirectUri(uri!("/")))
     }
 }
 

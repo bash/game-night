@@ -126,7 +126,7 @@ fn chapters() -> &'static [Chapter] {
     CHAPTERS.get_or_init(|| {
         vec![
             Chapter {
-                uri: Origin::ROOT,
+                uri: uri!("/"),
                 weight: 100,
                 match_uris: vec![uri!(register_page(passphrase = Option::<Passphrase>::None))],
                 title: "Register",
