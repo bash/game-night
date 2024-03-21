@@ -4,7 +4,9 @@ EMAIL_CSS := emails/email.css
 SHELL := $(shell which bash)
 SASS_FLAGS := --no-source-map
 PUBLISH_DIR := publish
-SASS := npx sass@1.69.7
+SASS := npx sass
+LIGHTNING := npx lightningcss --browserslist
+NPM_SENTINEL := node_modules/.sentinel
 
 ifeq ($(env ENABLE_SOURCE_MAPS), true)
 	SASS_FLAGS := --embed-source-map --embed-sources
@@ -15,6 +17,10 @@ endif
 
 all: $(MAIN_CSS) $(EMAIL_CSS)
 
+$(NPM_SENTINEL): package.json package-lock.json
+	npm install
+	touch $(NPM_SENTINEL)
+
 check:
 	cargo check --features development
 
@@ -22,6 +28,7 @@ clean:
 	rm -rf $(PUBLISH_DIR)
 	rm -f $(MAIN_CSS)
 	rm -rf outbox/
+	rm -rf node_modules/
 
 watch:
 	@while true; do
@@ -53,10 +60,11 @@ run_server:
 	@export ROCKET_TLS='{certs="private/localhost+2.pem",key="private/localhost+2-key.pem"}'
 	cargo run --features development
 
-$(MAIN_CSS): $(SCSS_FILES)
+$(MAIN_CSS): $(SCSS_FILES) $(NPM_SENTINEL) browserslist
 	$(SASS) scss/main.scss $@ $(SASS_FLAGS)
+	$(LIGHTNING) $(MAIN_CSS) -o $(MAIN_CSS)
 
-$(EMAIL_CSS): emails/email.scss
+$(EMAIL_CSS): emails/email.scss $(NPM_SENTINEL)
 	$(SASS) --no-source-map --style compressed $< $@
 
 publish: all

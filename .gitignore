@@ -5,3 +5,4 @@
 /publish
 /outbox
 /emails/*.css
+/node_modules/
