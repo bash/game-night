@@ -7,12 +7,13 @@ PUBLISH_DIR := publish
 SASS := npx sass
 LIGHTNING := npx lightningcss --browserslist
 NPM_SENTINEL := node_modules/.sentinel
+CARGO_FLAGS := --features development
 
 ifeq ($(env ENABLE_SOURCE_MAPS), true)
 	SASS_FLAGS := --embed-source-map --embed-sources
 endif
 
-.PHONY: all clean recreate-db certs run publish deploy check
+.PHONY: all clean recreate-db certs run publish deploy check clippy
 
 all: $(MAIN_CSS) $(EMAIL_CSS)
 
@@ -21,7 +22,10 @@ $(NPM_SENTINEL): package.json package-lock.json
 	@touch $(NPM_SENTINEL)
 
 check:
-	cargo check --features development
+	cargo check $(CARGO_FLAGS)
+
+clippy:
+	cargo clippy $(CARGO_FLAGS)
 
 clean:
 	rm -rf $(PUBLISH_DIR)
@@ -47,7 +51,7 @@ run_outbox:
 	@$(MAKE) -C ../outbox run
 
 run_server:
-	cargo run --features development
+	cargo run $(CARGO_FLAGS)
 
 $(MAIN_CSS): $(SCSS_FILES) $(NPM_SENTINEL) browserslist
 	$(SASS) scss/main.scss $@ $(SASS_FLAGS)
