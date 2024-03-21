@@ -12,14 +12,13 @@ ifeq ($(env ENABLE_SOURCE_MAPS), true)
 	SASS_FLAGS := --embed-source-map --embed-sources
 endif
 
-.ONESHELL:
 .PHONY: all clean recreate-db certs run publish deploy check
 
 all: $(MAIN_CSS) $(EMAIL_CSS)
 
 $(NPM_SENTINEL): package.json package-lock.json
 	npm install
-	touch $(NPM_SENTINEL)
+	@touch $(NPM_SENTINEL)
 
 check:
 	cargo check --features development
@@ -31,10 +30,7 @@ clean:
 	rm -rf node_modules/
 
 watch:
-	@while true; do
-		find . -name '*.scss' | entr -d $(MAKE)
-		@test $$? -ne 2 && break
-	@done
+	MAKE=$(MAKE) ./make-scripts/watch.sh
 
 recreate-db:
 	rm -f database.sqlite
@@ -45,19 +41,12 @@ certs:
 	(cd private && mkcert localhost 127.0.0.1 ::1)
 
 run:
-	@export CARGO_TERM_COLOR=always
-	@if [[ -d ../outbox ]]; then
-	parallel --lb --halt now,done=1 --tagstring [{}] ::: '$(MAKE) run_server' '$(MAKE) run_outbox' '$(MAKE) watch'
-	@else
-	echo "$$(tput bold)$$(tput setaf 3)Warning: outboxd not started, you need to start it yourself if you want to send emails$$(tput sgr0)"
-	$(MAKE) run_server
-	@fi
+	MAKE=$(MAKE) ./make-scripts/run.sh
 
 run_outbox:
 	@$(MAKE) -C ../outbox run
 
 run_server:
-	@export ROCKET_TLS='{certs="private/localhost+2.pem",key="private/localhost+2-key.pem"}'
 	cargo run --features development
 
 $(MAIN_CSS): $(SCSS_FILES) $(NPM_SENTINEL) browserslist
@@ -68,7 +57,6 @@ $(EMAIL_CSS): emails/email.scss $(NPM_SENTINEL)
 	$(SASS) --no-source-map --style compressed $< $@
 
 publish: all
-	@set -e
 	@rm -rf $(PUBLISH_DIR)
 	@mkdir -p $(PUBLISH_DIR)
 	podman build -t game-night-build .

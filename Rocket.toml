@@ -13,3 +13,7 @@ url = "database.sqlite"
 sender = "Tau's Game Night <game-night@tau.garden>"
 outbox_bus = "session"
 template_dir = "emails"
+
+[default.tls]
+certs = "private/localhost+2.pem"
+key = "private/localhost+2-key.pem"
