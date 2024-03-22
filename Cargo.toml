@@ -38,12 +38,12 @@ serve-static-files = []
 development = ["tls", "serve-static-files"]
 
 [patch.crates-io]
-rocket = { git = "https://github.com/bash/Rocket/", branch = "content-length" }
-rocket_codegen = { git = "https://github.com/bash/Rocket/", branch = "content-length" }
-rocket_http = { git = "https://github.com/bash/Rocket/", branch = "content-length" }
-rocket_db_pools = { git = "https://github.com/bash/Rocket/", branch = "content-length" }
-rocket_db_pools_codegen = { git = "https://github.com/bash/Rocket/", branch = "content-length" }
-rocket_dyn_templates = { git = "https://github.com/bash/Rocket/", branch = "content-length" }
+rocket = { git = "https://github.com/rwf2/Rocket/" }
+rocket_codegen = { git = "https://github.com/rwf2/Rocket/" }
+rocket_http = { git = "https://github.com/rwf2/Rocket/" }
+rocket_db_pools = { git = "https://github.com/rwf2/Rocket/" }
+rocket_db_pools_codegen = { git = "https://github.com/rwf2/Rocket/" }
+rocket_dyn_templates = { git = "https://github.com/rwf2/Rocket/" }
 
 [workspace]
 members = ["crates/tera-macros"]
