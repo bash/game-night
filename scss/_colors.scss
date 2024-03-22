@@ -1,13 +1,13 @@
 @mixin derived-accent-colors {
-    --accent-color-softened: color-mix(in srgb, var(--accent-color), #fff 10%);
-    --accent-color-highlight-fg: color-mix(in srgb, var(--accent-color), #000 80%);
-    --accent-color-highlight-bg: color-mix(in srgb, var(--accent-color), #fff 70%);
-    --outline-color: color-mix(in srgb, var(--accent-color) 60%, #000);
+    --accent-color-softened: color-mix(in oklab, var(--accent-color), #fff 10%);
+    --accent-color-highlight-fg: color-mix(in oklab, var(--accent-color), #000 80%);
+    --accent-color-highlight-bg: color-mix(in oklab, var(--accent-color), #fff 70%);
+    --outline-color: color-mix(in oklab, var(--accent-color) 60%, #000);
 
     @media (prefers-color-scheme: dark) {
         --accent-color-softened: var(--accent-color);
-        --accent-color-highlight-fg: color-mix(in srgb, var(--accent-color), #fff 80%);
-        --accent-color-highlight-bg: color-mix(in srgb, var(--accent-color), #000 30%);
+        --accent-color-highlight-fg: color-mix(in oklab, var(--accent-color), #fff 80%);
+        --accent-color-highlight-bg: color-mix(in oklab, var(--accent-color), #000 30%);
     }
 
     @media (prefers-contrast: more) {
@@ -54,7 +54,7 @@
         --background-color: #121212;
         --highlight-bg: rgba(255, 255, 255, 6%);
         --inverted-color: color-mix(in hsl, var(--accent-color), #000 90%);
-        --inverted-background-color: color-mix(in srgb, var(--accent-color), #000 10%);
+        --inverted-background-color: color-mix(in oklab, var(--accent-color), #000 10%);
     }
 
     @media (prefers-contrast: more) {

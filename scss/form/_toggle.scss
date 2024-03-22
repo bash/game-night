@@ -11,14 +11,14 @@
         font-weight: bold;
         font-size: .75rem;
         padding: .2em .4em;
-        border: .1em solid color-mix(in srgb, var(--toggle-button-accent), var(--background-color) 70%);
+        border: .1em solid color-mix(in oklab, var(--toggle-button-accent), var(--background-color) 70%);
         border-radius: 6px;
         user-select: none;
     }
 
     input:checked + label {
-        background-color: color-mix(in srgb, var(--toggle-button-accent), var(--background-color) 10%);
-        border-color: color-mix(in srgb, var(--toggle-button-accent), var(--background-color) 10%);
+        background-color: color-mix(in oklab, var(--toggle-button-accent), var(--background-color) 10%);
+        border-color: color-mix(in oklab, var(--toggle-button-accent), var(--background-color) 10%);
         color: #fff;
     }
 }

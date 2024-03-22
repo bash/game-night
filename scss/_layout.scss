@@ -28,7 +28,7 @@ nav {
 header {
     position: sticky;
     top: 0;
-    background-image: linear-gradient(to bottom, var(--background-color), color-mix(in srgb, var(--background-color), transparent 70%));
+    background-image: linear-gradient(to bottom, var(--background-color), color-mix(in oklab, var(--background-color), transparent 70%));
     z-index: 1000;
 }
 

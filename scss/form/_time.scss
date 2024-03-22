@@ -4,7 +4,7 @@ input[type=time] {
     background-color: #fff;
     border: 2px solid #cfcfcf;
     border-radius: 6px;
-    color: color-mix(in srgb, var(--accent-color), #000 20%);
+    color: color-mix(in oklab, var(--accent-color), #000 20%);
     line-height: 1.2;
     font-size: 1rem;
     padding: 6px 2px;

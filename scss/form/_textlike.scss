@@ -38,9 +38,9 @@
         margin: var(--vertical-margin) 0;
     }
 
-    background-color: color-mix(in srgb, var(--accent-color), #fff 90%);
+    background-color: color-mix(in oklab, var(--accent-color), #fff 90%);
 
     @media (prefers-color-scheme: dark) {
-        background-color: color-mix(in srgb, var(--accent-color), #000 85%);
+        background-color: color-mix(in oklab, var(--accent-color), #000 85%);
     }
 }
