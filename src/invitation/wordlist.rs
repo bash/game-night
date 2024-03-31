@@ -1,7 +1,7 @@
 use constcat::concat_slices;
 
 pub(crate) static TAUS_WORDLIST: &[&str] = concat_slices!(
-    [""; &str]: &EFF_LONG_WORDLIST,
+    [&str]: &EFF_LONG_WORDLIST,
     &[
         "tau",
         "ananas",
