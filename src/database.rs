@@ -46,15 +46,11 @@ pub(crate) trait Repository: fmt::Debug + Send {
 
     async fn use_verification_code(&mut self, code: &str, email_address: &str) -> Result<bool>;
 
-    async fn has_one_time_login_token(&mut self, email_address: &str) -> Result<bool>;
-
     async fn add_login_token(&mut self, token: &LoginToken) -> Result<()>;
 
     async fn use_login_token(&mut self, token: &str) -> Result<Option<UserId>>;
 
     async fn add_poll(&mut self, poll: &Poll<(), UserId, i64>) -> Result<i64>;
-
-    async fn update_poll_description(&mut self, id: i64, description: &str) -> Result<()>;
 
     async fn update_poll_open_until(&mut self, id: i64, close_at: OffsetDateTime) -> Result<()>;
 
@@ -271,20 +267,6 @@ impl Repository for SqliteRepository {
         Ok(())
     }
 
-    async fn has_one_time_login_token(&mut self, email_address: &str) -> Result<bool> {
-        let token_count: i64 = sqlx::query_scalar(
-            "SELECT count(1) FROM login_tokens
-             JOIN users ON users.id = login_tokens.user_id
-             WHERE users.email_address = ?1
-               AND unixepoch(valid_until) - unixepoch('now') >= 0
-               AND type = 'one_time'",
-        )
-        .bind(email_address)
-        .fetch_one(self.executor())
-        .await?;
-        Ok(token_count >= 1)
-    }
-
     async fn use_login_token(&mut self, token_value: &str) -> Result<Option<UserId>> {
         let mut transaction = self.0.begin().await?;
 
@@ -348,15 +330,6 @@ impl Repository for SqliteRepository {
         transaction.commit().await?;
 
         Ok(poll_id)
-    }
-
-    async fn update_poll_description(&mut self, id: i64, description: &str) -> Result<()> {
-        sqlx::query("UPDATE polls SET description = ?1 WHERE id = ?2")
-            .bind(description)
-            .bind(id)
-            .execute(self.executor())
-            .await?;
-        Ok(())
     }
 
     async fn update_poll_open_until(&mut self, id: i64, open_until: OffsetDateTime) -> Result<()> {

@@ -48,7 +48,7 @@ fn finalize_poll_dry_run(poll: Poll) -> FinalizeResult {
         let event = Event::new(&poll, &chosen_option, &invited);
         FinalizeResult::Success(event, invited, not_invited)
     } else {
-        FinalizeResult::Failure(poll)
+        FinalizeResult::Failure
     }
 }
 
@@ -57,7 +57,7 @@ enum FinalizeResult {
     /// Date selected, some people might not be invited though.
     Success(Event<(), UserId, i64>, Vec<User>, Vec<User>),
     /// No date found because there weren't enough people.
-    Failure(Poll),
+    Failure,
 }
 
 fn get_candidates(poll: &Poll) -> Vec<PollOption> {

@@ -161,6 +161,6 @@ impl<P: Phase> RocketExt for Rocket<P> {
     fn email_sender(&self) -> Result<Box<dyn EmailSender>> {
         self.state::<Box<dyn EmailSender>>()
             .context("email sender not configured")
-            .map(Clone::clone)
+            .cloned()
     }
 }
