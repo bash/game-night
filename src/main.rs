@@ -10,7 +10,7 @@ use rocket::request::FromRequest;
 use rocket::{catch, catchers, error, get, routes, Build, Config, Phase, Request, Rocket, Route};
 use rocket_db_pools::{sqlx::SqlitePool, Database, Pool};
 use rocket_dyn_templates::{context, Template};
-use socket_activation::bindable_from_env;
+use socket_activation::listener_from_env;
 use template::configure_template_engines;
 use template::PageBuilder;
 
@@ -59,7 +59,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .attach(login::auto_login_fairing())
         .attach(poll_finalizer());
 
-    if let Some(b) = bindable_from_env()? {
+    if let Some(b) = listener_from_env()? {
         rocket.launch_on(b).await?;
     } else {
         rocket.launch().await?;
