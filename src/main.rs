@@ -3,6 +3,7 @@ use database::Repository;
 use email::{EmailSender, EmailSenderImpl};
 use login::RocketSecretKey;
 use poll::poll_finalizer;
+use pruning::database_pruning;
 use rand::thread_rng;
 use rocket::fairing::{self, Fairing};
 use rocket::figment::Figment;
@@ -26,6 +27,7 @@ mod invitation;
 mod login;
 mod play;
 mod poll;
+mod pruning;
 mod register;
 mod socket_activation;
 #[cfg(target_os = "linux")]
@@ -57,7 +59,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .attach(initialize_email_sender())
         .attach(invite_admin_user())
         .attach(login::auto_login_fairing())
-        .attach(poll_finalizer());
+        .attach(poll_finalizer())
+        .attach(database_pruning());
 
     if let Some(b) = listener_from_env()? {
         rocket.launch_on(b).await?;

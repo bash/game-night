@@ -72,7 +72,7 @@ pub(crate) trait Repository: fmt::Debug + Send {
 
     async fn add_participant(&mut self, event: i64, user: UserId) -> Result<()>;
 
-    async fn prune(&mut self) -> Result<()>;
+    async fn prune(&mut self) -> Result<u64>;
 }
 
 #[derive(Debug)]
@@ -498,16 +498,21 @@ impl Repository for SqliteRepository {
         Ok(())
     }
 
-    async fn prune(&mut self) -> Result<()> {
+    async fn prune(&mut self) -> Result<u64> {
         let mut transaction = self.0.begin().await?;
 
-        sqlx::query("DELETE FROM login_tokens WHERE unixepoch(valid_until) - unixepoch('now') < 0")
+        let tokens_result = sqlx::query(
+            "DELETE FROM login_tokens WHERE unixepoch(valid_until) - unixepoch('now') < 0",
+        )
+        .execute(&mut *transaction)
+        .await?;
+        let codes_result = sqlx::query("DELETE FROM email_verification_codes WHERE unixepoch(valid_until) - unixepoch('now') < 0")
             .execute(&mut *transaction)
             .await?;
-        sqlx::query("DELETE FROM email_verification_codes WHERE unixepoch(valid_until) - unixepoch('now') < 0")
-            .execute(&mut *transaction)
-            .await?;
-        Ok(())
+
+        transaction.commit().await?;
+
+        Ok(tokens_result.rows_affected() + codes_result.rows_affected())
     }
 }
 
