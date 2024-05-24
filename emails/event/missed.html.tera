@@ -1,0 +1,28 @@
+{% extends 'base.html.tera' %}
+
+{% block content %}
+<h1>
+    <em>Tau's Game Night</em> is happening on {{event.starts_at | time(format = "{date}")}} 🥳
+</h1>
+
+<p>
+    The next instance of <em>Tau's Game Night</em>
+    is happening on <strong>{{event.starts_at | time(format = "{date}")}}</strong>
+    at <strong>{{event.starts_at | time(format = "{time}")}}</strong>
+    and you are warmly invited {{heart}}
+</p>
+
+<p>
+    Unfortunately this is a date that—according to the poll—you're not available on.
+    You are still warmly invited should this change 😊
+</p>
+
+<a href="{{event_url}}">
+    <span class="arrow" role="presentation">→</span>
+    Add me to the list and show me the detes!
+</a>
+
+<hr>
+
+<strong>P.S.</strong> You are receiving this email because you participated in the poll for this event.
+{% endblock content %}

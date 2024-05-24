@@ -19,9 +19,13 @@ pub(super) async fn send_notification_emails(
     sender: &EventEmailSender,
     event: &Event,
     invited: &[User],
+    missed: &[User],
 ) -> Result<()> {
     for user in invited {
         sender.send(event, user).await?;
+    }
+    for user in missed {
+        sender.send_missed(event, user).await?;
     }
     Ok(())
 }
@@ -57,11 +61,23 @@ impl EventEmailSender {
         let event_url =
             uri!(auto_login(user, event.ends_at); self.uri_builder, play_page()).await?;
         let ics_file = crate::play::to_calendar(event, &self.uri_builder)?.to_string();
-        let email: InvitedEmail<'_> = InvitedEmail {
+        let email = InvitedEmail {
             event,
             event_url,
             name: &user.name,
             ics_file,
+        };
+        self.email_sender.send(user.mailbox()?, &email).await?;
+        Ok(())
+    }
+
+    pub(crate) async fn send_missed(&self, event: &Event, user: &User) -> Result<()> {
+        let event_url =
+            uri!(auto_login(user, event.ends_at); self.uri_builder, play_page()).await?;
+        let email = MissedEmail {
+            event,
+            event_url,
+            name: &user.name,
         };
         self.email_sender.send(user.mailbox()?, &email).await?;
         Ok(())
@@ -94,5 +110,27 @@ impl<'a> EmailMessage for InvitedEmail<'a> {
         let ics_attachment = Attachment::new("game-night.ics".to_string())
             .body(self.ics_file.clone(), ContentType::parse("text/calendar")?);
         Ok(vec![ics_attachment])
+    }
+}
+
+#[derive(Debug, Serialize)]
+struct MissedEmail<'a> {
+    event: &'a Event,
+    name: &'a str,
+    event_url: Absolute<'a>,
+}
+
+impl<'a> EmailMessage for MissedEmail<'a> {
+    fn subject(&self) -> String {
+        const FORMAT: &[FormatItem<'_>] =
+            format_description!("[day padding:none]. [month repr:long]");
+        format!(
+            "Tau's Game Night is happening on {date}!",
+            date = self.event.starts_at.format(FORMAT).unwrap()
+        )
+    }
+
+    fn template_name(&self) -> String {
+        "event/missed".to_string()
     }
 }

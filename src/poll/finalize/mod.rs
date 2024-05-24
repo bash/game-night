@@ -32,9 +32,15 @@ async fn try_finalize_poll(ctx: &mut FinalizeContext, poll: Poll) -> Result<()> 
 
     let result = finalize_poll_dry_run(poll);
 
-    if let FinalizeResult::Success(event, invited, _) = result {
+    if let FinalizeResult::Success {
+        event,
+        invited,
+        missed,
+        ..
+    } = result
+    {
         let event = ctx.repository.add_event(event).await?;
-        emails::send_notification_emails(&ctx.sender, &event, &invited).await?;
+        emails::send_notification_emails(&ctx.sender, &event, &invited, &missed).await?;
     }
 
     Ok(())
@@ -43,10 +49,15 @@ async fn try_finalize_poll(ctx: &mut FinalizeContext, poll: Poll) -> Result<()> 
 fn finalize_poll_dry_run(poll: Poll) -> FinalizeResult {
     let candidates = get_candidates(&poll);
     if let Some(chosen_option) = choose_option(candidates, &poll) {
-        let (invited, not_invited) =
+        let (invited, overflow) =
             choose_participants(&chosen_option.answers, poll.max_participants);
         let event = Event::new(&poll, &chosen_option, &invited);
-        FinalizeResult::Success(event, invited, not_invited)
+        FinalizeResult::Success {
+            missed: get_missed_users(&poll, &invited),
+            event,
+            invited,
+            overflow,
+        }
     } else {
         FinalizeResult::Failure
     }
@@ -55,7 +66,12 @@ fn finalize_poll_dry_run(poll: Poll) -> FinalizeResult {
 #[derive(Debug)]
 enum FinalizeResult {
     /// Date selected, some people might not be invited though.
-    Success(Event<(), UserId, i64>, Vec<User>, Vec<User>),
+    Success {
+        event: Event<(), UserId, i64>,
+        invited: Vec<User>,
+        overflow: Vec<User>,
+        missed: Vec<User>,
+    },
     /// No date found because there weren't enough people.
     Failure,
 }
@@ -65,6 +81,17 @@ fn get_candidates(poll: &Poll) -> Vec<PollOption> {
         .iter()
         .filter(|o| !o.has_veto())
         .filter(|o| o.count_yes_answers() >= poll.min_participants)
+        .cloned()
+        .collect()
+}
+
+fn get_missed_users(poll: &Poll, invited: &[User]) -> Vec<User> {
+    poll.options
+        .iter()
+        .flat_map(|o| o.answers.iter())
+        .map(|a| &a.user)
+        .unique_by(|u| u.id)
+        .filter(|u| !invited.iter().any(|i| i.id == u.id))
         .cloned()
         .collect()
 }

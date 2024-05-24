@@ -1,13 +1,14 @@
 {{greeting}} {{name}},
 
-You're Invited to Tau's Game Night 🥳
+Tau's Game Night is happening on {{event.starts_at | time(format = "{date}")}} 🥳
 
 The next instance of Tau's Game Night is happening on
 {{event.starts_at | time(format = "{date}")}} at {{event.starts_at | time(format = "{time}")}} and you are warmly invited {{heart}}
 
-Be sure to add this date to your calendar ASAP :)
+Unfortunately this is a date that—according to the poll—you're not available on.
+You are still warmly invited should this change 😊
 
-→ Show me all the deets! {{event_url}}
+→ Add me to the list and show me the detes! {{event_url}}
 
 ------
 
