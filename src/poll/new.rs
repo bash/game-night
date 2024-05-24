@@ -78,7 +78,7 @@ fn get_calendar(
 ) -> Vec<CalendarMonth> {
     iter::successors(Some(start.date()), |d| d.next_day())
         .take(days)
-        .group_by(|d| d.month())
+        .chunk_by(|d| d.month())
         .into_iter()
         .map(|(month, days)| to_calendar_month(month, days, prefill))
         .collect()

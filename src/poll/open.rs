@@ -73,7 +73,7 @@ fn to_open_poll_options<'a>(
 ) -> Vec<OpenPollOptionsGroup> {
     options
         .filter(|o: &&PollOption| !o.has_veto() || user.can_answer_strongly())
-        .group_by(|o| o.starts_at.month())
+        .chunk_by(|o| o.starts_at.month())
         .into_iter()
         .map(|(month, options)| to_open_poll_options_group(month, options, user))
         .collect()
