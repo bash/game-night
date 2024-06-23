@@ -8,7 +8,7 @@ use rocket::response::{Debug, Redirect};
 use rocket::{get, post};
 use rocket_dyn_templates::{context, Template};
 
-#[get("/poll/skip")]
+#[get("/poll/skip", rank = 10)]
 pub(super) fn skip_poll_page(user: User, page: PageBuilder, poll: Open<Poll>) -> Template {
     page.render(
         "poll/skip",
@@ -18,6 +18,11 @@ pub(super) fn skip_poll_page(user: User, page: PageBuilder, poll: Open<Poll>) ->
             poll,
         },
     )
+}
+
+#[get("/poll/skip", rank = 20)]
+pub(super) fn skip_poll_fallback(user: User) -> Redirect {
+    Redirect::to("/")
 }
 
 #[post("/poll/skip")]
