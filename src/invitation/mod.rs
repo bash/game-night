@@ -10,10 +10,9 @@ use crate::users::{EmailSubscription, Role, User, UserId};
 use anyhow::{Error, Result};
 use rand::prelude::*;
 use rocket::form::Form;
-use rocket::log::PaintExt as _;
 use rocket::response::Debug;
 use rocket::yansi::Paint as _;
-use rocket::{get, launch_meta, launch_meta_, post, routes, FromForm, FromFormField, Route};
+use rocket::{get, post, routes, FromForm, FromFormField, Route};
 use rocket_dyn_templates::{context, Template};
 use serde::Serialize;
 use time::{Duration, OffsetDateTime};
@@ -190,9 +189,9 @@ impl<Id> Invitation<Id> {
 
 pub(crate) async fn invite_admin_user(repository: &mut dyn Repository) -> Result<()> {
     if !repository.has_users().await? {
-        launch_meta!("{}{}:", "👑 ".emoji(), "Admin".magenta());
         let invitation = get_or_create_invitation(repository).await?;
-        launch_meta_!("invitation: {}", &invitation.passphrase);
+        eprintln!("👑 {}", "admin".magenta().bold());
+        eprintln!("   >> {}: {}", "invitation".blue(), &invitation.passphrase);
     }
 
     Ok(())

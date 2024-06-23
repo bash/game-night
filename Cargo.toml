@@ -25,6 +25,7 @@ ics = "0.5.8"
 pem = { package = "pem-rfc7468", version = "0.7.0", features = ["std"] }
 listenfd = "1.0.1"
 tera-macros = { path = "crates/tera-macros" }
+either = "1.12.0"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 systemd = "0.10.0"
