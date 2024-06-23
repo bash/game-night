@@ -16,7 +16,7 @@ use std::collections::HashMap;
 use time::{Month, OffsetDateTime};
 
 #[get("/", rank = 10)]
-pub(super) async fn open_poll_page(
+pub(crate) async fn open_poll_page(
     user: User,
     poll: Open<Poll>,
     page: PageBuilder<'_>,

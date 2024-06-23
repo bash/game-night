@@ -6,13 +6,8 @@
 {% block title %}Poll{% endblock title %}
 
 {% block content %}
-{% if has_answers %}
-<p class="success-message">
-    Thank you for participating in the poll 😊 You can change your answer
-    as often as you'd like until the deadline on <strong>{{poll.open_until | time(format="{date}")}}</strong>
-    at <strong>{{poll.open_until | time(format='{time}')}}</strong>.
-</p>
-{% endif %}
+
+{% include "poll/participated-message" %}
 
 <p>
     Hurray, Tau is inviting you to another <em>Game Night</em> 🎉 <br>
@@ -97,7 +92,7 @@
             </ul>
         {% endfor %}
         {% if no_date_answered_with_yes %}
-            <h2>None of the Above</h2>
+            <h2>Skipped</h2>
             <ul>
                 <li>
                     <div class="answers-list">

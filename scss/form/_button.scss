@@ -1,6 +1,7 @@
 button {
     @extend a;
     cursor: pointer;
+    text-align: start;
 }
 
 %button {

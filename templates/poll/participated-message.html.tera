@@ -1,0 +1,7 @@
+{% if has_answers %}
+    <p class="success-message">
+        Thank you for participating in the poll! You can change your answer
+        as often as you'd like until the deadline on <strong>{{poll.open_until | time(format="{date}")}}</strong>
+        at <strong>{{poll.open_until | time(format='{time}')}}</strong>.
+    </p>
+{% endif %}
