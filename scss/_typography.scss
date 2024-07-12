@@ -28,7 +28,9 @@
 }
 
 body {
-    font-size: 1.25rem;
+    // Users with font size >= 18px get their preferred font size
+    // while users with 16px (default) get a minimum of 18px.
+    font-size: max(1rem, 18px);
 }
 
 h1, h2, h3 {
