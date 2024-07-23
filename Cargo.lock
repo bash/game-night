@@ -2388,7 +2388,7 @@ dependencies = [
 [[package]]
 name = "rocket"
 version = "0.6.0-dev"
-source = "git+https://github.com/rwf2/Rocket/#6857b82ec4e9d3e978ca403bdc596d720c3bf3eb"
+source = "git+https://github.com/rwf2/Rocket/#4eb6cdf8fbf3507677f4763359951ce069d5c1e9"
 dependencies = [
  "async-stream",
  "async-trait",
@@ -2436,7 +2436,7 @@ dependencies = [
 [[package]]
 name = "rocket_codegen"
 version = "0.6.0-dev"
-source = "git+https://github.com/rwf2/Rocket/#6857b82ec4e9d3e978ca403bdc596d720c3bf3eb"
+source = "git+https://github.com/rwf2/Rocket/#4eb6cdf8fbf3507677f4763359951ce069d5c1e9"
 dependencies = [
  "devise",
  "glob",
@@ -2452,7 +2452,7 @@ dependencies = [
 [[package]]
 name = "rocket_db_pools"
 version = "0.1.0"
-source = "git+https://github.com/rwf2/Rocket/#6857b82ec4e9d3e978ca403bdc596d720c3bf3eb"
+source = "git+https://github.com/rwf2/Rocket/#4eb6cdf8fbf3507677f4763359951ce069d5c1e9"
 dependencies = [
  "log",
  "rocket",
@@ -2464,7 +2464,7 @@ dependencies = [
 [[package]]
 name = "rocket_db_pools_codegen"
 version = "0.1.0"
-source = "git+https://github.com/rwf2/Rocket/#6857b82ec4e9d3e978ca403bdc596d720c3bf3eb"
+source = "git+https://github.com/rwf2/Rocket/#4eb6cdf8fbf3507677f4763359951ce069d5c1e9"
 dependencies = [
  "devise",
  "quote",
@@ -2473,7 +2473,7 @@ dependencies = [
 [[package]]
 name = "rocket_dyn_templates"
 version = "0.1.0"
-source = "git+https://github.com/rwf2/Rocket/#6857b82ec4e9d3e978ca403bdc596d720c3bf3eb"
+source = "git+https://github.com/rwf2/Rocket/#4eb6cdf8fbf3507677f4763359951ce069d5c1e9"
 dependencies = [
  "normpath",
  "notify",
@@ -2485,7 +2485,7 @@ dependencies = [
 [[package]]
 name = "rocket_http"
 version = "0.6.0-dev"
-source = "git+https://github.com/rwf2/Rocket/#6857b82ec4e9d3e978ca403bdc596d720c3bf3eb"
+source = "git+https://github.com/rwf2/Rocket/#4eb6cdf8fbf3507677f4763359951ce069d5c1e9"
 dependencies = [
  "cookie",
  "either",

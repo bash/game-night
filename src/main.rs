@@ -83,7 +83,7 @@ fn file_server() -> impl Into<Vec<Route>> {
     // The goal here is that the file server is always checked first,
     // so that Forwards from User or AuthorizedTo guards
     // are not overruled by the file server's Forward(404).
-    rocket::fs::FileServer::from("public").rank(-100)
+    rocket::fs::FileServer::new("public").rank(-100)
 }
 
 #[cfg(not(feature = "serve-static-files"))]

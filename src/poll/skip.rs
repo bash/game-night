@@ -21,7 +21,7 @@ pub(super) fn skip_poll_page(user: User, page: PageBuilder, poll: Open<Poll>) ->
 }
 
 #[get("/poll/skip", rank = 20)]
-pub(super) fn skip_poll_fallback(user: User) -> Redirect {
+pub(super) fn skip_poll_fallback(_user: User) -> Redirect {
     Redirect::to("/")
 }
 
