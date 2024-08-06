@@ -15,7 +15,11 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
     <link rel="mask-icon" href="/mask-icon.svg" color="#ec68aa">
     <link rel="stylesheet" type="text/css" href="{{asset(path='/main.css')}}">
-    <title>Tau's Game Night</title>
+    <title>
+        {% block page_title %}
+            Tau's Game Night
+        {% endblock %}
+    </title>
 </head>
 <body>
     <a href="#main" tabindex="0" class="skip-link">Skip to content</a>

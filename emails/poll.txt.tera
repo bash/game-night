@@ -1,6 +1,6 @@
 {{greeting}} {{name}},
 
-Another Game Night is Just Around the Corner 🧙{{skin_tone}}
+{% if poll.title %}Tau's Game Night «{{poll.title}}»{% else %}Another Game Night{% endif %} is Just Around the Corner 🧙{{skin_tone}}
 
 … and I need *you* to help pick a date.
 You can choose from the following dates:

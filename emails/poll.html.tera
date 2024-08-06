@@ -1,7 +1,9 @@
 {% extends 'base.html.tera' %}
 {% block content %}
+
 <h1>
-    Another Game Night is Just Around the Corner 🧙{{skin_tone}}
+    {% if poll.title %}Tau's Game Night «{{poll.title}}»{% else %}Another Game Night{% endif %}
+    is Just Around the Corner 🧙{{skin_tone}}
 </h1>
 
 <p>

@@ -1,5 +1,6 @@
 {% import 'play/location-macros' as location_macros %}
 {% import 'user-macros' as user_macros %}
+{% import 'macros' as macros %}
 
 {% extends 'base' %}
 
@@ -10,7 +11,10 @@
 {% include "poll/participated-message" %}
 
 <p>
-    Hurray, Tau is inviting you to another <em>Game Night</em> 🎉 <br>
+    Hurray, you're invited to
+    {{macros::long_title(poll_or_event=poll, untitled_prefix='another instance of')}}
+    🎉 <br>
+
     Fill out the poll until
         <strong>{{poll.open_until | time(format="{date}")}}</strong>
         at <strong>{{poll.open_until | time(format='{time}')}}</strong>
@@ -18,8 +22,6 @@
 </p>
 
 {% if poll.description %}
-    <hr>
-
     <section>
         {{poll.description | markdown | safe}}
     </section>
@@ -29,7 +31,7 @@
 
 <form action="{{update_answers_uri}}" method="post">
     <p>
-        I would like to attend <em>Tau's Game Night</em> on one of the following dates:
+        I would like to attend {{macros::long_title(poll_or_event=poll)}} on one of the following dates:
     </p>
     <div class="calendar-list">
         {% for group in option_groups %}

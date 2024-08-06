@@ -22,6 +22,7 @@ mod database;
 mod decorations;
 mod email;
 mod event;
+mod fmt;
 mod fs;
 mod invitation;
 mod login;

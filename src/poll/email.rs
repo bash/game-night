@@ -1,5 +1,6 @@
 use super::{Open, Poll};
 use crate::email::{EmailMessage, EmailSender};
+use crate::fmt::LongEventTitle;
 use crate::uri;
 use crate::uri::UriBuilder;
 use crate::users::User;
@@ -44,7 +45,10 @@ where
     LocationRef: Serialize + Send + Sync,
 {
     fn subject(&self) -> String {
-        "Are You Ready for a Game Night?".to_owned()
+        format!(
+            "Pick a Date for {title}",
+            title = LongEventTitle(&self.poll.title)
+        )
     }
 
     fn template_name(&self) -> String {

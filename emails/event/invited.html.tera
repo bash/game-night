@@ -2,7 +2,7 @@
 
 {% block content %}
 <h1>
-    You're Invited to <em>Tau's Game Night</em> 🥳
+    You're Invited to <em>Tau's Game Night{% if event.title %} «{{event.title}}»{% endif %}</em> 🥳
 </h1>
 
 <p>
