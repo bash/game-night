@@ -189,6 +189,7 @@ fn to_poll(poll: NewPollData, location: Location, user: &User) -> Result<Poll<()
         min_participants: poll.min_participants,
         max_participants: poll.max_participants,
         strategy: poll.strategy,
+        title: String::default(), // TODO
         description: poll.description.to_owned(),
         open_until: now + Duration::hours(poll.duration_in_hours),
         closed: false,

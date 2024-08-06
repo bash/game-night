@@ -289,12 +289,13 @@ impl Repository for SqliteRepository {
         let mut transaction = self.0.begin().await?;
 
         let poll_id = sqlx::query(
-            "INSERT INTO polls (min_participants, max_participants, strategy, description, location_id, created_by, open_until, closed)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+            "INSERT INTO polls (min_participants, max_participants, strategy, title, description, location_id, created_by, open_until, closed)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
         )
         .bind(i64::try_from(poll.min_participants)?)
         .bind(i64::try_from(poll.max_participants)?)
         .bind(poll.strategy)
+        .bind(&poll.title)
         .bind(&poll.description)
         .bind(poll.location)
         .bind(poll.created_by)
@@ -432,11 +433,12 @@ impl Repository for SqliteRepository {
         let mut transaction = self.0.begin().await?;
 
         let event_id = sqlx::query(
-            "INSERT INTO events (starts_at, ends_at, description, location_id, created_by)
-             VALUES (?1, ?2, ?3, ?4, ?5)",
+            "INSERT INTO events (starts_at, ends_at, title, description, location_id, created_by)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
         )
         .bind(event.starts_at)
         .bind(event.ends_at)
+        .bind(&event.title)
         .bind(&event.description)
         .bind(event.location)
         .bind(event.created_by)
