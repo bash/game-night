@@ -1,6 +1,6 @@
 {{greeting}} {{name}},
 
-You're Invited to Tau's Game Night 🥳
+You're Invited to Tau's Game Night{% if event.title %} «{{event.title}}»{% endif %} 🥳
 
 The next instance of Tau's Game Night is happening on
 {{event.starts_at | time(format = "{date}")}} at {{event.starts_at | time(format = "{time}")}} and you are warmly invited {{heart}}

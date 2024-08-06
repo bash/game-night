@@ -17,6 +17,7 @@ pub(crate) struct Event<
     pub(crate) starts_at: OffsetDateTime,
     #[serde(with = "time::serde::iso8601")]
     pub(crate) ends_at: OffsetDateTime,
+    pub(crate) title: String,
     pub(crate) description: String,
     #[sqlx(rename = "location_id")]
     pub(crate) location: LocationRef,
@@ -31,6 +32,7 @@ impl Event<(), UserId, i64> {
             id: (),
             starts_at: chosen_option.starts_at,
             ends_at: chosen_option.ends_at,
+            title: poll.title.clone(),
             description: poll.description.clone(),
             location: poll.location.id,
             created_by: poll.created_by.id,
@@ -51,6 +53,7 @@ impl<UserRef, LocationRef, Participants: Default> Event<(), UserRef, LocationRef
             id,
             starts_at: self.starts_at,
             ends_at: self.ends_at,
+            title: self.title,
             description: self.description,
             location: self.location,
             created_by: self.created_by,
@@ -70,6 +73,7 @@ impl<Participants: Default> Event<i64, UserId, i64, Participants> {
             id: self.id,
             starts_at: self.starts_at,
             ends_at: self.ends_at,
+            title: self.title,
             description: self.description,
             location,
             created_by,

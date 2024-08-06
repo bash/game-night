@@ -44,6 +44,7 @@ CREATE TABLE polls
     , min_participants INTEGER NOT NULL
     , max_participants INTEGER NOT NULL
     , strategy TEXT NOT NULL
+    , title TEXT NOT NULL
     , description TEXT NOT NULL
     , location_id INTEGER NOT NULL REFERENCES locations(id) ON DELETE RESTRICT
     , created_by INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT
@@ -75,6 +76,7 @@ CREATE TABLE events
     ( id INTEGER PRIMARY KEY
     , starts_at TEXT NOT NULL
     , ends_at TEXT NOT NULL
+    , title TEXT NOT NULL
     , description TEXT NOT NULL
     , location_id INTEGER NOT NULL REFERENCES locations(id) ON DELETE RESTRICT
     , created_by INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT

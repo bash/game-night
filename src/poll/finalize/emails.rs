@@ -1,5 +1,6 @@
 use crate::email::{EmailMessage, EmailSender};
 use crate::event::Event;
+use crate::fmt::LongEventTitle;
 use crate::play::rocket_uri_macro_play_page;
 use crate::uri::{HasUriBuilder as _, UriBuilder};
 use crate::users::User;
@@ -97,8 +98,9 @@ impl<'a> EmailMessage for InvitedEmail<'a> {
         const FORMAT: &[FormatItem<'_>] =
             format_description!("[day padding:none]. [month repr:long]");
         format!(
-            "You're invited to Tau's Game Night on {date}!",
-            date = self.event.starts_at.format(FORMAT).unwrap()
+            "You're invited to {title} on {date}!",
+            date = self.event.starts_at.format(FORMAT).unwrap(),
+            title = LongEventTitle(&self.event.title),
         )
     }
 
@@ -125,8 +127,9 @@ impl<'a> EmailMessage for MissedEmail<'a> {
         const FORMAT: &[FormatItem<'_>] =
             format_description!("[day padding:none]. [month repr:long]");
         format!(
-            "Tau's Game Night is happening on {date}!",
-            date = self.event.starts_at.format(FORMAT).unwrap()
+            "{title} is happening on {date}!",
+            date = self.event.starts_at.format(FORMAT).unwrap(),
+            title = LongEventTitle(&self.event.title),
         )
     }
 

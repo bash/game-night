@@ -1,5 +1,6 @@
 use crate::database::Repository;
 use crate::event::Event;
+use crate::fmt::LongEventTitle;
 use crate::poll::{EventEmailSender, Location};
 use crate::template::PageBuilder;
 use crate::uri;
@@ -95,7 +96,10 @@ pub(crate) fn to_calendar<'a>(
 
 fn to_ical_event<'a>(event: &'a Event, uri_builder: &'a UriBuilder<'a>) -> Result<ics::Event<'a>> {
     let mut ical_event = ics::Event::new(event_uid(event), format_as_floating(event.starts_at)?);
-    ical_event.push(Summary::new(escape_text("Tau's Game Night")));
+    ical_event.push(Summary::new(escape_text(format!(
+        "{}",
+        LongEventTitle(&event.title)
+    ))));
     ical_event.push(Description::new(escape_text(&event.description)));
     ical_event.push(URL::new(uri!(uri_builder, play_page()).to_string()));
     ical_event.push(Status::confirmed());

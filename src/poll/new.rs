@@ -189,6 +189,7 @@ fn to_poll(poll: NewPollData, location: Location, user: &User) -> Result<Poll<()
         min_participants: poll.min_participants,
         max_participants: poll.max_participants,
         strategy: poll.strategy,
+        title: poll.title.to_owned(),
         description: poll.description.to_owned(),
         open_until: now + Duration::hours(poll.duration_in_hours),
         closed: false,
@@ -244,6 +245,7 @@ pub(super) struct NewPollData<'r> {
     strategy: DateSelectionStrategy,
     #[field(name = "duration", validate = gte(1))]
     duration_in_hours: i64,
+    title: &'r str,
     description: &'r str,
     options: Vec<NewPollOption>,
 }

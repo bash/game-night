@@ -1,11 +1,24 @@
 {% import 'play/location-macros' as location_macros %}
 {% import 'user-macros' as user_macros %}
+{% import 'macros' as macros %}
 
 {% extends 'base' %}
+
+{% block page_title %}
+    {% if event.title %}
+        Tau's Game Night «{{event.title}}»
+    {% else %}
+        Tau's Game Night
+    {% endif %}
+{% endblock %}
 
 {% block title %}Play{% endblock title %}
 
 {% macro event_details(event, user) %}
+    {% if event.title %}
+        <h2>{{macros::long_title(poll_or_event=event)}}</h2>
+    {% endif %}
+
     <p>
         {{event.created_by.name}} is organizing a <em>game night</em>
         on <strong>{{event.starts_at | time(format='{date}')}}</strong> at

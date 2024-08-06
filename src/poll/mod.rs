@@ -98,6 +98,7 @@ pub(crate) struct Poll<Id = i64, UserRef = User, LocationRef = Location> {
     #[sqlx(try_from = "i64")]
     pub(crate) max_participants: usize,
     pub(crate) strategy: DateSelectionStrategy,
+    pub(crate) title: String,
     pub(crate) description: String,
     #[serde(with = "time::serde::iso8601")]
     pub(crate) open_until: OffsetDateTime,
@@ -121,6 +122,7 @@ impl<Id, UserRef, LocationRef> Poll<Id, UserRef, LocationRef> {
             min_participants: self.min_participants,
             max_participants: self.max_participants,
             strategy: self.strategy,
+            title: self.title,
             description: self.description,
             open_until: self.open_until,
             closed: self.closed,
