@@ -2,7 +2,7 @@
   "name": "game-night",
   "private": true,
   "devDependencies": {
-    "lightningcss-cli": "^1.24.1",
-    "sass": "^1.72.0"
+    "lightningcss-cli": "^1.25",
+    "sass": "^1.77"
   }
 }

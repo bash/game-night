@@ -6,6 +6,12 @@
     --horizontal-padding: 20px;
     padding: var(--vertical-padding) var(--horizontal-padding);
 
+    background-color: color-mix(in oklab, var(--accent-color), #fff 90%);
+
+    @media (prefers-color-scheme: dark) {
+        background-color: color-mix(in oklab, var(--accent-color), #000 85%);
+    }
+
     @media (prefers-contrast: more) {
         border-radius: 6px;
         border: 2px dashed currentColor;
@@ -36,11 +42,5 @@
         background-color: transparent;
         border-width: 2px;
         margin: var(--vertical-margin) 0;
-    }
-
-    background-color: color-mix(in oklab, var(--accent-color), #fff 90%);
-
-    @media (prefers-color-scheme: dark) {
-        background-color: color-mix(in oklab, var(--accent-color), #000 85%);
     }
 }
