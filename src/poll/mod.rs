@@ -148,8 +148,6 @@ pub(crate) struct PollOption<Id = i64, UserRef = User> {
     pub(crate) id: Id,
     #[serde(with = "time::serde::iso8601")]
     pub(crate) starts_at: OffsetDateTime,
-    #[serde(with = "time::serde::iso8601")]
-    pub(crate) ends_at: OffsetDateTime,
     #[sqlx(skip)]
     pub(crate) answers: Vec<Answer<Id, UserRef>>,
 }
@@ -352,7 +350,6 @@ mod tests {
             let option: PollOption<_, ()> = PollOption {
                 id: (),
                 starts_at: OffsetDateTime::now_utc(),
-                ends_at: OffsetDateTime::now_utc(),
                 answers: vec![],
             };
             assert_eq!(0, option.count_yes_answers());
@@ -363,7 +360,6 @@ mod tests {
             let option: PollOption<_, ()> = PollOption {
                 id: (),
                 starts_at: OffsetDateTime::now_utc(),
-                ends_at: OffsetDateTime::now_utc(),
                 answers: vec![
                     answer(AnswerValue::yes(Attendance::Optional)),
                     answer(AnswerValue::yes(Attendance::Required)),
@@ -377,7 +373,6 @@ mod tests {
             let option: PollOption<_, ()> = PollOption {
                 id: (),
                 starts_at: OffsetDateTime::now_utc(),
-                ends_at: OffsetDateTime::now_utc(),
                 answers: vec![
                     answer(AnswerValue::no(false)),
                     answer(AnswerValue::yes(Attendance::Optional)),

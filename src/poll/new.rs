@@ -149,8 +149,6 @@ struct CalendarDayPrefill {
     enabled: bool,
     #[serde(with = "iso8601_time::option")]
     start_time: Option<Time>,
-    #[serde(with = "iso8601_time::option")]
-    end_time: Option<Time>,
 }
 
 impl CalendarDayPrefill {
@@ -159,7 +157,6 @@ impl CalendarDayPrefill {
             date,
             enabled: false,
             start_time: None,
-            end_time: None,
         }
     }
 }
@@ -213,7 +210,6 @@ fn to_poll_option(option: &NewPollOption, user: &User) -> Result<PollOption<(), 
     Ok(PollOption {
         id: (),
         starts_at: to_cet(option.date, option.start_time)?,
-        ends_at: to_cet(option.date, option.end_time)?,
         // The user creating the poll is automatically added with a required attendance.
         answers: vec![Answer {
             id: (),
@@ -255,8 +251,6 @@ pub(super) struct NewPollOption {
     date: Date,
     #[field(default_with = Some(Time::MIDNIGHT))]
     start_time: Time,
-    #[field(default_with = Some(Time::MIDNIGHT))]
-    end_time: Time,
     enabled: bool,
 }
 

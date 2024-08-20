@@ -60,7 +60,8 @@ impl<'r> FromRequest<'r> for EventEmailSender {
 impl EventEmailSender {
     pub(crate) async fn send(&self, event: &Event, user: &User) -> Result<()> {
         let event_url =
-            uri!(auto_login(user, event.ends_at); self.uri_builder, play_page()).await?;
+            uri!(auto_login(user, event.estimated_ends_at()); self.uri_builder, play_page())
+                .await?;
         let ics_file = crate::play::to_calendar(event, &self.uri_builder)?.to_string();
         let email = InvitedEmail {
             event,
@@ -74,7 +75,8 @@ impl EventEmailSender {
 
     pub(crate) async fn send_missed(&self, event: &Event, user: &User) -> Result<()> {
         let event_url =
-            uri!(auto_login(user, event.ends_at); self.uri_builder, play_page()).await?;
+            uri!(auto_login(user, event.estimated_ends_at()); self.uri_builder, play_page())
+                .await?;
         let email = MissedEmail {
             event,
             event_url,

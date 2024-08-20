@@ -11,8 +11,6 @@
                 </label>
                 <div class="time-range">
                     <input type="time" name="options[{{day.date}}][start_time]" id="options-{{day.date}}-start-time" data-bind-disabled-to="days-{{day.date}}" step="{{60 * 15}}" disabled value="{{day.prefill.start_time}}">
-                    &ndash;
-                    <input type="time" name="options[{{day.date}}][end_time]" data-bind-disabled-to="days-{{day.date}}" step="{{60 * 15}}" disabled data-validate-gte="options-{{day.date}}-start-time" value="{{day.prefill.end_time}}">
                 </div>
             </li>
         {% endfor %}

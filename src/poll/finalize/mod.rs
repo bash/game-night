@@ -225,7 +225,6 @@ mod tests {
         PollOption {
             id: (),
             starts_at: OffsetDateTime::now_utc(),
-            ends_at: OffsetDateTime::now_utc(),
             answers: (0..yes_answers)
                 .map(|_| answer(AnswerValue::yes(Attendance::Optional), ()))
                 .collect(),

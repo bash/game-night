@@ -1,4 +1,4 @@
-use crate::event::{Event, Participant};
+use crate::event::{self, Event, Participant};
 use crate::invitation::{Invitation, InvitationId, Passphrase};
 use crate::login::{LoginToken, LoginTokenType};
 use crate::poll::{Answer, Location, Poll, PollOption};
@@ -306,15 +306,13 @@ impl Repository for SqliteRepository {
         .last_insert_rowid();
 
         for option in poll.options.iter() {
-            let option_id = sqlx::query(
-                "INSERT INTO poll_options (poll_id, starts_at, ends_at) VALUES (?1, ?2, ?3)",
-            )
-            .bind(poll_id)
-            .bind(option.starts_at)
-            .bind(option.ends_at)
-            .execute(&mut *transaction)
-            .await?
-            .last_insert_rowid();
+            let option_id =
+                sqlx::query("INSERT INTO poll_options (poll_id, starts_at) VALUES (?1, ?2)")
+                    .bind(poll_id)
+                    .bind(option.starts_at)
+                    .execute(&mut *transaction)
+                    .await?
+                    .last_insert_rowid();
             for answer in option.answers.iter() {
                 sqlx::query(
                     "INSERT INTO poll_answers (poll_option_id, value, user_id)
@@ -433,11 +431,10 @@ impl Repository for SqliteRepository {
         let mut transaction = self.0.begin().await?;
 
         let event_id = sqlx::query(
-            "INSERT INTO events (starts_at, ends_at, title, description, location_id, created_by)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            "INSERT INTO events (starts_at, title, description, location_id, created_by)
+             VALUES (?1, ?2, ?3, ?4, ?5)",
         )
         .bind(event.starts_at)
-        .bind(event.ends_at)
         .bind(&event.title)
         .bind(&event.description)
         .bind(event.location)
@@ -466,10 +463,11 @@ impl Repository for SqliteRepository {
 
         let event: Option<Event<i64, UserId, i64>> = sqlx::query_as(
             "SELECT * FROM events
-             WHERE unixepoch(ends_at) - unixepoch('now') >= 0
+             WHERE (unixepoch(starts_at) + ?1) - unixepoch('now') >= 0
              ORDER BY starts_at ASC
              LIMIT 1",
         )
+        .bind(event::ESTIMATED_DURATION.whole_seconds())
         .fetch_optional(&mut *transaction)
         .await?;
         match event {

@@ -59,8 +59,6 @@ CREATE TABLE poll_options
     ( id INTEGER PRIMARY KEY
     , poll_id INTEGER NOT NULL REFERENCES polls(id) ON DELETE CASCADE
     , starts_at TEXT NOT NULL
-    , ends_at TEXT NOT NULL
-    , CHECK (unixepoch(ends_at) - unixepoch(starts_at) >= 0)
     );
 
 CREATE TABLE poll_answers
@@ -75,13 +73,11 @@ CREATE TABLE poll_answers
 CREATE TABLE events
     ( id INTEGER PRIMARY KEY
     , starts_at TEXT NOT NULL
-    , ends_at TEXT NOT NULL
     , title TEXT NOT NULL
     , description TEXT NOT NULL
     , location_id INTEGER NOT NULL REFERENCES locations(id) ON DELETE RESTRICT
     , created_by INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT
     , created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
-    , CHECK (unixepoch(ends_at) - unixepoch(starts_at) >= 0)
     );
 
 CREATE TABLE participants

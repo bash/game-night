@@ -73,7 +73,7 @@
                         </label>
 
                         <div class="time-range">
-                            <time>{{option.starts_at | time(format='[hour]:[minute]')}}</time>&ndash;<time>{{option.ends_at | time(format='[hour]:[minute]')}}</time>
+                            <time>{{option.starts_at | time(format='[hour]:[minute]')}}</time>
                         </div>
 
                         {% if option.vetoed %}

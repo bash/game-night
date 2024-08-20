@@ -101,7 +101,6 @@ fn to_open_poll_option(option: &PollOption, user: &User) -> OpenPollOption {
     OpenPollOption {
         id: option.id,
         starts_at: option.starts_at,
-        ends_at: option.ends_at,
         yes,
         strong,
         vetoed: option.has_veto(),
@@ -138,8 +137,6 @@ struct OpenPollOption {
     id: i64,
     #[serde(with = "time::serde::iso8601")]
     starts_at: OffsetDateTime,
-    #[serde(with = "time::serde::iso8601")]
-    ends_at: OffsetDateTime,
     yes: bool,
     strong: bool,
     vetoed: bool,

@@ -1,7 +1,7 @@
 use crate::poll::{Location, Poll, PollOption};
 use crate::users::{User, UserId};
 use serde::Serialize;
-use time::OffsetDateTime;
+use time::{Duration, OffsetDateTime};
 
 #[derive(Debug, sqlx::FromRow, Serialize)]
 pub(crate) struct Event<
@@ -15,8 +15,6 @@ pub(crate) struct Event<
     pub(crate) id: Id,
     #[serde(with = "time::serde::iso8601")]
     pub(crate) starts_at: OffsetDateTime,
-    #[serde(with = "time::serde::iso8601")]
-    pub(crate) ends_at: OffsetDateTime,
     pub(crate) title: String,
     pub(crate) description: String,
     #[sqlx(rename = "location_id")]
@@ -31,7 +29,6 @@ impl Event<(), UserId, i64> {
         Self {
             id: (),
             starts_at: chosen_option.starts_at,
-            ends_at: chosen_option.ends_at,
             title: poll.title.clone(),
             description: poll.description.clone(),
             location: poll.location.id,
@@ -52,13 +49,24 @@ impl<UserRef, LocationRef, Participants: Default> Event<(), UserRef, LocationRef
         Event {
             id,
             starts_at: self.starts_at,
-            ends_at: self.ends_at,
             title: self.title,
             description: self.description,
             location: self.location,
             created_by: self.created_by,
             participants: self.participants,
         }
+    }
+}
+
+pub(crate) const ESTIMATED_DURATION: Duration = Duration::hours(4);
+
+impl<Id, UserRef, LocationRef, Participants: Default>
+    Event<Id, UserRef, LocationRef, Participants>
+{
+    pub(crate) fn estimated_ends_at(&self) -> OffsetDateTime {
+        self.starts_at
+            .checked_add(ESTIMATED_DURATION)
+            .expect("no overflow")
     }
 }
 
@@ -72,7 +80,6 @@ impl<Participants: Default> Event<i64, UserId, i64, Participants> {
         Event {
             id: self.id,
             starts_at: self.starts_at,
-            ends_at: self.ends_at,
             title: self.title,
             description: self.description,
             location,

@@ -39,8 +39,7 @@
         <h2>When?</h2>
         <p>
             On <strong>{{event.starts_at | time(format='{date}')}}</strong>
-            from <time>{{event.starts_at | time(format='{time}')}}</time>
-            to <time>{{event.ends_at | time(format='{time}')}}</time>.
+            at <time>{{event.starts_at | time(format='{time}')}}</time>.
         </p>
     </section>
 

@@ -107,7 +107,9 @@ fn to_ical_event<'a>(event: &'a Event, uri_builder: &'a UriBuilder<'a>) -> Resul
         &event.location,
     ))));
     ical_event.push(with_cet(DtStart::new(format_as_floating(event.starts_at)?)));
-    ical_event.push(with_cet(DtEnd::new(format_as_floating(event.ends_at)?)));
+    ical_event.push(with_cet(DtEnd::new(format_as_floating(
+        event.estimated_ends_at(),
+    )?)));
     Ok(ical_event)
 }
 
