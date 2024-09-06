@@ -19,7 +19,7 @@ url = "2.4"
 itertools = "0.13.0"
 time = { version = "0.3.28", features = ["formatting", "serde", "local-offset", "macros"] }
 time-tz = "2.0.0"
-pulldown-cmark = "0.11.0"
+pulldown-cmark = "0.12.1"
 dyn-clone = "1.0.14"
 ics = "0.5.8"
 pem = { package = "pem-rfc7468", version = "0.7.0", features = ["std"] }
