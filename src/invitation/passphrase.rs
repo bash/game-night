@@ -7,8 +7,8 @@ use rocket::form::FromFormField;
 use rocket::http::impl_from_uri_param_identity;
 use rocket::http::uri::fmt::{Query, UriDisplay};
 use serde::Serialize;
-use sqlx::database::{HasArguments, HasValueRef};
 use sqlx::encode::IsNull;
+use sqlx::error::BoxDynError;
 use sqlx::sqlite::SqliteArgumentValue;
 use sqlx::{Database, Decode, Encode, Sqlite};
 use std::fmt;
@@ -66,7 +66,7 @@ where
     &'r str: Decode<'r, DB>,
 {
     fn decode(
-        value: <DB as HasValueRef<'r>>::ValueRef,
+        value: DB::ValueRef<'r>,
     ) -> Result<Passphrase, Box<dyn std::error::Error + 'static + Send + Sync>> {
         Ok(Self(
             <&str as Decode<DB>>::decode(value)?
@@ -81,9 +81,12 @@ impl<'q> Encode<'q, Sqlite> for Passphrase
 where
     &'q str: Encode<'q, Sqlite>,
 {
-    fn encode_by_ref(&self, buf: &mut <Sqlite as HasArguments<'q>>::ArgumentBuffer) -> IsNull {
+    fn encode_by_ref(
+        &self,
+        buf: &mut <Sqlite as Database>::ArgumentBuffer<'q>,
+    ) -> Result<IsNull, BoxDynError> {
         buf.push(SqliteArgumentValue::Text(self.0.join(" ").into()));
-        IsNull::No
+        Ok(IsNull::No)
     }
 }
 

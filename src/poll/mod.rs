@@ -8,6 +8,8 @@ use rocket::response::{Debug, Redirect};
 use rocket::{get, post, routes, uri, FromFormField, Route, State};
 use rocket_dyn_templates::{context, Template};
 use serde::Serialize;
+use sqlx::encode::IsNull;
+use sqlx::error::BoxDynError;
 use sqlx::sqlite::{SqliteTypeInfo, SqliteValueRef};
 use sqlx::{Database, Decode, Encode, Sqlite, Type};
 use std::fmt;
@@ -264,10 +266,7 @@ impl<'q, DB: Database> Encode<'q, DB> for AnswerValue
 where
     &'q str: Encode<'q, DB>,
 {
-    fn encode_by_ref(
-        &self,
-        buf: &mut <DB as sqlx::database::HasArguments<'q>>::ArgumentBuffer,
-    ) -> sqlx::encode::IsNull {
+    fn encode_by_ref(&self, buf: &mut DB::ArgumentBuffer<'q>) -> Result<IsNull, BoxDynError> {
         use AnswerValue::*;
         use Attendance::*;
         match self {

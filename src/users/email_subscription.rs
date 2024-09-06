@@ -1,5 +1,6 @@
 use super::EmailSubscription;
-use sqlx::database::HasValueRef;
+use sqlx::encode::IsNull;
+use sqlx::error::BoxDynError;
 use sqlx::{Database, Decode, Encode, Type};
 use time::format_description::FormatItem;
 use time::macros::format_description;
@@ -23,10 +24,7 @@ where
     &'q str: Encode<'q, DB>,
     Date: Encode<'q, DB>,
 {
-    fn encode_by_ref(
-        &self,
-        buf: &mut <DB as sqlx::database::HasArguments<'q>>::ArgumentBuffer,
-    ) -> sqlx::encode::IsNull {
+    fn encode_by_ref(&self, buf: &mut DB::ArgumentBuffer<'q>) -> Result<IsNull, BoxDynError> {
         use EmailSubscription::*;
         match self {
             Subscribed => "subscribed".encode_by_ref(buf),
@@ -40,7 +38,7 @@ impl<'r, DB: Database> Decode<'r, DB> for EmailSubscription
 where
     &'r str: Decode<'r, DB>,
 {
-    fn decode(value: <DB as HasValueRef<'r>>::ValueRef) -> Result<Self, sqlx::error::BoxDynError> {
+    fn decode(value: DB::ValueRef<'r>) -> Result<Self, sqlx::error::BoxDynError> {
         const FORMAT: &[FormatItem<'static>] = format_description!("[year]-[month]-[day]");
         use EmailSubscription::*;
         match <&str as Decode<'r, DB>>::decode(value)? {
