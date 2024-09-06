@@ -65,7 +65,7 @@ publish: all
 	@mkdir -p $(PUBLISH_DIR)
 	podman build -t game-night-build .
 	podman volume create --ignore game-night-cargo-registry
-	podman run --rm -v game-night-cargo-registry:/root/.cargo/registry -v ./:/build:z --workdir /build game-night-build cargo build --release --color=always
+	podman run -t --rm -v game-night-cargo-registry:/root/.cargo/registry -v ./:/build:z --workdir /build game-night-build cargo build --release
 	cp target/release/game-night $(PUBLISH_DIR)/
 	cp -R {public,templates,emails} $(PUBLISH_DIR)/
 	python3 hash-files.py
