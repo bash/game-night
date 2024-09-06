@@ -1,6 +1,5 @@
 use rocket::fairing::{Fairing, Info, Kind};
 use rocket::{async_trait, warn, Orbit, Rocket};
-use std::iter;
 use systemd::daemon::notify;
 
 pub(crate) struct SystemdNotify;
@@ -19,7 +18,7 @@ impl Fairing for SystemdNotify {
 
         if let Err(e) = notify(
             unset_environment,
-            &mut [("READY", "1"), ("STATUS", "🚀 Rocket has launched")].iter(),
+            [("READY", "1"), ("STATUS", "🚀 Rocket has launched")].iter(),
         ) {
             warn!("Failed to notify systemd: {}", e);
         }
@@ -27,7 +26,10 @@ impl Fairing for SystemdNotify {
 
     async fn on_shutdown(&self, _rocket: &Rocket<Orbit>) {
         let unset_environment = false;
-        if let Err(e) = notify(unset_environment, iter::once(&("STOPPING", "1"))) {
+        if let Err(e) = notify(
+            unset_environment,
+            [("STOPPING", "1"), ("STATUS", "Rocket is shutting down...")].iter(),
+        ) {
             warn!("Failed to notify systemd: {}", e);
         }
     }
