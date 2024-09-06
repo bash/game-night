@@ -2,7 +2,10 @@
 
 set -euo pipefail
 
-cargo install mprocs --quiet
+if ! type mprocs > /dev/null; then
+    echo "Installing mprocs"
+    cargo install mprocs
+fi
 
 if [[ -d ../outbox ]]; then
     mprocs "$MAKE run_server" "$MAKE run_outbox" "$MAKE watch"
