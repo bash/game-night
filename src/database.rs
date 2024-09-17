@@ -40,6 +40,8 @@ pub(crate) trait Repository: fmt::Debug + Send {
 
     async fn delete_user(&mut self, id: UserId) -> Result<()>;
 
+    async fn update_last_active(&mut self, id: UserId, ts: OffsetDateTime) -> Result<()>;
+
     async fn add_verification_code(&mut self, code: &EmailVerificationCode) -> Result<()>;
 
     async fn has_verification_code(&mut self, email_address: &str) -> Result<bool>;
@@ -208,6 +210,15 @@ impl Repository for SqliteRepository {
 
     async fn delete_user(&mut self, id: UserId) -> Result<()> {
         sqlx::query("DELETE FROM users WHERE id = ?1")
+            .bind(id)
+            .execute(self.executor())
+            .await?;
+        Ok(())
+    }
+
+    async fn update_last_active(&mut self, id: UserId, ts: OffsetDateTime) -> Result<()> {
+        sqlx::query("UPDATE users SET last_active_at = max(last_active_at, ?1) WHERE id = ?2")
+            .bind(&ts)
             .bind(id)
             .execute(self.executor())
             .await?;

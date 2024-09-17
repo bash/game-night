@@ -13,6 +13,7 @@ use time::Date;
 
 mod email_subscription;
 mod last_activity;
+pub(crate) use last_activity::LastActivity;
 
 pub(crate) fn routes() -> Vec<Route> {
     routes![list_users]

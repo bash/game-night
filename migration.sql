@@ -2,29 +2,23 @@ PRAGMA foreign_keys = OFF;
 
 BEGIN EXCLUSIVE TRANSACTION;
 
-CREATE TABLE poll_options_
-    ( id INTEGER PRIMARY KEY
-    , poll_id INTEGER NOT NULL REFERENCES polls(id) ON DELETE CASCADE
-    , starts_at TEXT NOT NULL
-    );
-
-CREATE TABLE events_
-    ( id INTEGER PRIMARY KEY
-    , starts_at TEXT NOT NULL
-    , title TEXT NOT NULL
-    , description TEXT NOT NULL
-    , location_id INTEGER NOT NULL REFERENCES locations(id) ON DELETE RESTRICT
-    , created_by INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT
+CREATE TABLE users_
+    ( id INTEGER PRIMARY KEY -- This is an alias for `rowid` so we get auto-increment and last_insert_rowid() support
+    , name TEXT NOT NULL
+    , 'role' INTEGER NOT NULL
+    , email_address TEXT NOT NULL UNIQUE
+    , email_subscription TEXT NOT NULL
+    , invited_by INTEGER NULL REFERENCES users(id) ON DELETE RESTRICT
+    , campaign TEXT NULL
+    , can_update_name INTEGER NOT NULL DEFAULT 1
+    , can_answer_strongly INTEGER NOT NULL DEFAULT 0
     , created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+    , last_active_at NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
     );
 
-INSERT INTO poll_options_ SELECT id, poll_id, starts_at FROM poll_options;
-DROP TABLE poll_options;
-ALTER TABLE poll_options_ RENAME TO poll_options;
-
-INSERT INTO events_ SELECT id, starts_at, title, description, location_id, created_by, created_at FROM events;
-DROP TABLE events;
-ALTER TABLE events_ RENAME TO events;
+INSERT INTO users_ SELECT id, name, role, email_address, email_subscription, invited_by, campaign, can_update_name, can_answer_strongly, created_at, created_at as last_active_at FROM users;
+DROP TABLE users;
+ALTER TABLE users_ RENAME TO users;
 
 PRAGMA foreign_key_check;
 COMMIT;

@@ -9,6 +9,7 @@ CREATE TABLE users
     , can_update_name INTEGER NOT NULL DEFAULT 1
     , can_answer_strongly INTEGER NOT NULL DEFAULT 0
     , created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+    , last_active_at NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
     );
 
 CREATE TABLE invitations

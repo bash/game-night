@@ -61,7 +61,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .attach(invite_admin_user())
         .attach(login::auto_login_fairing())
         .attach(poll_finalizer())
-        .attach(database_pruning());
+        .attach(database_pruning())
+        .attach(users::LastActivity);
 
     if let Some(b) = listener_from_env()? {
         rocket.launch_on(b).await?;
