@@ -9,7 +9,7 @@ use rocket::{async_trait, get, routes, Route};
 use rocket_db_pools::sqlx;
 use rocket_dyn_templates::{context, Template};
 use serde::{Deserialize, Serialize};
-use time::Date;
+use time::{Date, OffsetDateTime};
 
 mod email_subscription;
 mod last_activity;
@@ -55,6 +55,8 @@ pub(crate) struct User<Id = UserId> {
     pub(crate) campaign: Option<String>,
     pub(crate) can_update_name: bool,
     pub(crate) can_answer_strongly: bool,
+    #[serde(with = "time::serde::iso8601")]
+    pub(crate) last_active_at: OffsetDateTime,
 }
 
 #[derive(Debug)]

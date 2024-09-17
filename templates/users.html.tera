@@ -11,17 +11,17 @@
         <div class="user-card">
             <span class="avatar">{{user_macros::name(user=user)}}</span>
             <small class="role" title="Role">{{user.role}}</small>
-            {% if user.invited_by or user.campaign %}
             <small class="invitation">
                 {% if user.invited_by %}
                     {% set invited_by = users | filter(attribute='id', value=user.invited_by) | first %}
                     invited by <a href="#user-{{user.invited_by}}">{{invited_by.name}}</a>
+                {% endif -%}
+                {%- if user.campaign %}
+                    via {{user.campaign -}}
                 {% endif %}
-                {% if user.campaign %}
-                    via {{user.campaign}}
-                {% endif %}
+                {%- if user.invited_by or user.campaign %},{% endif %}
+                active <em><relative-time datetime="{{user.last_active_at}}">{{user.last_active_at | time(format="{date_with_year}")}}</relative-time></em>
             </small>
-            {% endif %}
             <small class="anchor"><a href="#user-{{user.id}}">#</a></small>
             <small class="actions">
                 <a href="mailto:{{user.email_address}}" class="link-button">email</a>
@@ -30,5 +30,9 @@
         </div>
     </li>
     {% endfor %}
+
+    {% block scripts %}
+        <script src="{{asset(path='/js/relative-time-element.js')}}" type="module"></script>
+    {% endblock scripts %}
 </ul>
 {% endblock content %}

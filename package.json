@@ -4,5 +4,8 @@
   "devDependencies": {
     "lightningcss-cli": "^1.25",
     "sass": "^1.77"
+  },
+  "dependencies": {
+    "@github/relative-time-element": "^4.4.3"
   }
 }

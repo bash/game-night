@@ -183,9 +183,11 @@ impl Repository for SqliteRepository {
     }
 
     async fn get_users(&mut self) -> Result<Vec<User>> {
-        Ok(sqlx::query_as("SELECT * FROM users")
-            .fetch_all(self.executor())
-            .await?)
+        Ok(
+            sqlx::query_as("SELECT * FROM users ORDER BY last_active_at DESC")
+                .fetch_all(self.executor())
+                .await?,
+        )
     }
 
     async fn update_user(&mut self, id: UserId, patch: UserPatch) -> Result<()> {

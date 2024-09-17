@@ -22,3 +22,6 @@ ALTER TABLE users_ RENAME TO users;
 
 PRAGMA foreign_key_check;
 COMMIT;
+
+-- Estimate last_active_at based on poll answers.
+UPDATE users SET last_active_at = max(users.last_active_at, coalesce((SELECT max(created_at) FROM poll_answers WHERE user_id = users.id), ''));

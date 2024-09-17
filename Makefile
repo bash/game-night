@@ -1,6 +1,7 @@
 SCSS_FILES := $(shell find scss -name '*.scss')
 MAIN_CSS := public/main.css
 EMAIL_CSS := emails/email.css
+RELATIVE_TIME_ELEMENT := public/js/relative-time-element.js
 SHELL := $(shell which bash)
 SASS_FLAGS := --no-source-map
 PUBLISH_DIR := publish
@@ -15,11 +16,14 @@ endif
 
 .PHONY: all clean recreate-db certs run publish deploy check clippy
 
-all: $(MAIN_CSS) $(EMAIL_CSS)
+all: $(MAIN_CSS) $(EMAIL_CSS) $(RELATIVE_TIME_ELEMENT)
 
 $(NPM_SENTINEL): package.json package-lock.json
 	npm install
 	@touch $(NPM_SENTINEL)
+
+$(RELATIVE_TIME_ELEMENT): $(NPM_SENTINEL) node_modules/@github/relative-time-element/dist/bundle.js
+	cp node_modules/@github/relative-time-element/dist/bundle.js $@
 
 check:
 	cargo check $(CARGO_FLAGS)
