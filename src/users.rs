@@ -12,6 +12,7 @@ use serde::{Deserialize, Serialize};
 use time::Date;
 
 mod email_subscription;
+mod last_activity;
 
 pub(crate) fn routes() -> Vec<Route> {
     routes![list_users]
