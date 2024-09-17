@@ -8,6 +8,7 @@ use rocket::{async_trait, catch, catchers, Catcher, Request};
 use rocket_dyn_templates::{context, Template};
 use std::marker::PhantomData;
 use std::ops::Deref;
+use std::sync::Arc;
 
 pub(crate) fn catchers() -> Vec<Catcher> {
     catchers![forbidden]
@@ -21,7 +22,7 @@ pub(crate) trait UserPredicate {
 
 #[async_trait]
 impl<'r, P: UserPredicate> FromRequest<'r> for AuthorizedTo<P> {
-    type Error = Error;
+    type Error = Arc<Error>;
 
     async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
         let user: User = try_outcome!(request.guard().await);

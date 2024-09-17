@@ -6,18 +6,27 @@ use rocket::outcome::try_outcome;
 use rocket::request::{FromRequest, Outcome};
 use rocket::{async_trait, Request};
 use std::borrow::Cow;
+use std::sync::Arc;
 
 #[async_trait]
 impl<'r> FromRequest<'r> for User {
-    type Error = Error;
+    type Error = Arc<Error>;
 
     async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
-        let mut repository = try_outcome!(request.guard::<Box<dyn Repository>>().await);
-        match fetch_user(request, repository.as_mut()).await {
-            Ok(Some(user)) => Outcome::Success(user),
-            Ok(None) => Outcome::Forward(Status::Unauthorized),
-            Err(e) => Outcome::Error((Status::InternalServerError, e)),
-        }
+        request
+            .local_cache_async(async {
+                let mut repository = try_outcome!(request
+                    .guard::<Box<dyn Repository>>()
+                    .await
+                    .map_error(|(status, e)| (status, Arc::new(e))));
+                match fetch_user(request, repository.as_mut()).await {
+                    Ok(Some(user)) => Outcome::Success(user),
+                    Ok(None) => Outcome::Forward(Status::Unauthorized),
+                    Err(e) => Outcome::Error((Status::InternalServerError, Arc::new(e))),
+                }
+            })
+            .await
+            .clone()
     }
 }
 
