@@ -131,7 +131,7 @@ fn chapters() -> &'static [Chapter] {
                 match_uris: vec![uri!(register_page(passphrase = Option::<Passphrase>::None))],
                 title: "Register",
                 visible_if: Option::is_none,
-                accent_color: AccentColor::Purple,
+                accent_color: AccentColor::Pink,
                 icon: SvgIcon {
                     name: "clipboard-signature",
                     aria_label: "Clipboard Signature",
@@ -143,7 +143,7 @@ fn chapters() -> &'static [Chapter] {
                 match_uris: vec![],
                 title: "Play",
                 visible_if: Option::is_none,
-                accent_color: AccentColor::Blue,
+                accent_color: AccentColor::Purple,
                 icon: SvgIcon {
                     name: "dices",
                     aria_label: "Dices",
@@ -155,7 +155,7 @@ fn chapters() -> &'static [Chapter] {
                 match_uris: vec![],
                 title: "Play",
                 visible_if: Option::is_some,
-                accent_color: AccentColor::Blue,
+                accent_color: AccentColor::Purple,
                 icon: SvgIcon {
                     name: "dices",
                     aria_label: "Dices",
@@ -166,7 +166,7 @@ fn chapters() -> &'static [Chapter] {
                 weight: 0,
                 match_uris: vec![uri!(list_users())],
                 title: "User Profile",
-                accent_color: AccentColor::Teal,
+                accent_color: AccentColor::Blue,
                 visible_if: |_| true,
                 icon: SvgIcon {
                     name: "user",
@@ -192,7 +192,7 @@ fn chapters() -> &'static [Chapter] {
                 match_uris: vec![],
                 title: "Invite",
                 visible_if: |u| u.as_ref().map(|u| u.can_invite()).unwrap_or_default(),
-                accent_color: AccentColor::Red,
+                accent_color: AccentColor::Orange,
                 icon: SvgIcon {
                     name: "mail-open",
                     aria_label: "Mail",
@@ -224,27 +224,27 @@ pub(crate) struct SvgIcon {
 #[serde(rename_all = "snake_case")]
 pub(crate) enum AccentColor {
     #[default]
+    Pink,
     Purple,
     Blue,
-    Teal,
     Green,
-    Red,
+    Orange,
 }
 
 impl AccentColor {
     pub(crate) fn values() -> &'static [AccentColor] {
         use AccentColor::*;
-        &[Purple, Blue, Teal, Green, Red]
+        &[Pink, Purple, Blue, Green, Orange]
     }
 
     pub(crate) fn css_value(self) -> &'static str {
         use AccentColor::*;
         match self {
+            Pink => "var(--pink-color)",
             Purple => "var(--purple-color)",
             Blue => "var(--blue-color)",
-            Teal => "var(--teal-color)",
             Green => "var(--green-color)",
-            Red => "var(--red-color)",
+            Orange => "var(--orange-color)",
         }
     }
 }

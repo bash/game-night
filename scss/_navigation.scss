@@ -35,18 +35,18 @@ nav {
 
 %height-calculation {
     &:not(.-active) {
-        --height: var(--bookmark-collapsed-height) - var(--bookmark-peek-distance);
+        transform: translateY(calc(var(--bookmark-collapsed-height) - var(--bookmark-peek-distance) - var(--bookmark-height)));
 
         &:hover {
-            --height: var(--bookmark-collapsed-height);
+            transform: translateY(calc(var(--bookmark-collapsed-height) - var(--bookmark-height)));
         }
     }
 
     &.-active {
-        --height: var(--bookmark-height) - var(--bookmark-peek-distance);
+        transform: translateY(calc(-1 * var(--bookmark-peek-distance)));
 
         &:hover {
-            --height: var(--bookmark-height);
+            transform: translateY(0);
         }
     }
 }
@@ -60,8 +60,6 @@ nav a {
     background-color: var(--accent-color-softened);
     clip-path: polygon(0 0, 0 100%, 50% 90%, 100% 100%, 100% 0);
     padding: var(--bookmark-padding) 0;
-    transform: translateY(calc(var(--height) - var(--bookmark-height)));
-
     @extend %height-calculation;
 
     @media (prefers-reduced-motion: no-preference) {

@@ -5,9 +5,29 @@ button {
 }
 
 %button {
-    &:not(.-icon)::before {
-        content: '→ ';
-        font-family: var(--sans-serif);
+    font-family: var(--sans-serif);
+    font-size: .7em;
+    color: oklch(from var(--accent-color) calc(l + .6) calc(c - 0.1) h);
+    border-radius: var(--box-rounding);
+    padding: .4em 1em;
+    transform: background-image 125ms;
+    --start: var(--accent-color);
+    --stop: oklch(from var(--accent-color) calc(l - .1) c h);
+    background: linear-gradient(in oklch, var(--start), var(--stop));
+
+    &:focus-visible {
+        outline-offset: 3px;
+        outline: 2px solid var(--accent-color);
+    }
+
+    &:hover {
+        text-decoration: none;
+        --start: oklch(from var(--accent-color) calc(l + .1) c h);
+    }
+
+    &:active {
+        opacity: 1;
+        --stop: oklch(from var(--accent-color) calc(l - .2) c h);
     }
 
     &.-icon {

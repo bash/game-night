@@ -36,7 +36,13 @@ tera_function! {
 
 tera_function! {
     fn accent_color(index: usize) -> String {
-        let accent_colors = AccentColor::values();
+        static SHUFFLED_SYMBOLS: OnceLock<Vec<AccentColor>> = OnceLock::new();
+        let accent_colors = SHUFFLED_SYMBOLS.get_or_init(|| {
+            const SEED: u64 = 0xdeadbeef;
+            let mut accent_colors = AccentColor::values().to_vec();
+            accent_colors.shuffle(&mut SmallRng::seed_from_u64(SEED));
+            accent_colors
+        });
         accent_colors[index % accent_colors.len()].css_value().to_string()
     }
 }

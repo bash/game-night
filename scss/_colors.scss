@@ -1,3 +1,5 @@
+@use 'sass:list';
+
 @mixin derived-accent-colors {
     --accent-color-softened: color-mix(in oklab, var(--accent-color), #fff 10%);
     --accent-color-highlight-fg: color-mix(in oklab, var(--accent-color), #000 80%);
@@ -16,22 +18,23 @@
     }
 }
 
-@mixin accent-color($name, $value) {
+@mixin accent-color($name, $value, $secondary-name) {
     :root {
         --#{$name}-color: #{$value};
     }
 
     ._#{$name} {
         --accent-color: var(--#{$name}-color);
+        --secondary-color: var(--#{$secondary-name}-color);
         @include derived-accent-colors;
     }
 }
 
-@include accent-color("purple", #8839ef);
-@include accent-color("blue", #04a5e5);
-@include accent-color("teal", #179299);
-@include accent-color("green", #40a02b);
-@include accent-color("red", #d20f39);
+@include accent-color("pink", #da2f7a, "purple");
+@include accent-color("purple", #8b42d3, "blue");
+@include accent-color("blue", #0779f9, "green");
+@include accent-color("green", #009d11, "blue");
+@include accent-color("orange", #e13700, "pink");
 
 :root {
     color-scheme: light dark;
@@ -53,8 +56,8 @@
         --secondary-text-color: #535353;
         --background-color: #121212;
         --highlight-bg: rgba(255, 255, 255, 6%);
-        --inverted-color: color-mix(in hsl, var(--accent-color), #000 90%);
-        --inverted-background-color: color-mix(in oklab, var(--accent-color), #000 10%);
+        --inverted-color: oklab(from var(--accent-color) calc(l - 0.4) a b);
+        --inverted-background-color: oklab(from var(--accent-color) calc(l + 0.1) a b);
     }
 
     @media (prefers-contrast: more) {

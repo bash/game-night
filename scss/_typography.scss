@@ -5,6 +5,7 @@
     --seven-segment: 'DSEG7 Modern', monospace;
     --inter-block-gap: 1.5rem;
     --inter-block-gap-with-line-height-compensation: 1.7rem;
+    --box-rounding: 0.4rem;
 }
 
 :root {
@@ -52,7 +53,7 @@ h1 {
     }
 
     @supports (background-clip: text) {
-        background-image: linear-gradient(in oklch, var(--accent-color), oklch(from var(--accent-color) l c calc(h + 45)));
+        background-image: linear-gradient(in oklch, var(--accent-color), var(--secondary-color));
         background-clip: text;
         color: transparent;
     }
@@ -110,11 +111,11 @@ hr {
 }
 
 ._invert {
-    background-image: linear-gradient(in oklch, var(--accent-color), oklch(from var(--accent-color) l c calc(h + 45)));
+    background-image: linear-gradient(in oklch, var(--accent-color), var(--secondary-color));
     color: var(--background-color);
     padding: 0.15em;
     display: inline-block;
-    border-radius: 0.1em;
+    border-radius: var(--box-rounding);
 
     @media (forced-colors: active) {
         background-color: transparent;

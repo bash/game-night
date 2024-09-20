@@ -50,8 +50,8 @@
     overflow: hidden;
 
     > h2 {
-        background-color: var(--inverted-background-color);
-        color: var(--inverted-color);
+        color: #fff;
+        background-image: linear-gradient(in oklch, var(--accent-color), var(--secondary-color));
         padding: 1rem $content-padding;
         margin: 0;
     }

@@ -1,10 +1,11 @@
 %textlike-input {
     font-weight: bold;
     text-align: center;
-    border-bottom: 4px dashed currentColor;
+    border-bottom: 4px dashed color-mix(in oklab, var(--accent-color), var(--text-color) 40%);
     --vertical-padding: 8px;
     --horizontal-padding: 20px;
     padding: var(--vertical-padding) var(--horizontal-padding);
+    border-radius: var(--box-rounding);
 
     background-color: color-mix(in oklab, var(--accent-color), #fff 90%);
 
@@ -13,7 +14,6 @@
     }
 
     @media (prefers-contrast: more) {
-        border-radius: 6px;
         border: 2px dashed currentColor;
     }
 
