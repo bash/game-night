@@ -34,10 +34,12 @@
 
     <nav>
         {% for chapter in chapters %}
-            <a href="{{chapter.uri}}" class="_{{chapter.accent_color}}{% if chapter.uri == active_chapter.uri %} -active{% endif%}" title="{{chapter.title}}">
-                <svg role="img" aria-label="{{chapter.icon.aria_label}}">
-                    <use href="{{asset(path='/icons/' ~ chapter.icon.name ~ '.svg')}}#icon" aria-hidden="true" />
-                </svg>
+            <a href="{{chapter.uri}}" class="_{{chapter.accent_color}}" title="{{chapter.title}}">
+                <span class="bookmark{% if chapter.uri == active_chapter.uri %} -active{% endif%}">
+                    <svg role="img" aria-label="{{chapter.icon.aria_label}}">
+                        <use href="{{asset(path='/icons/' ~ chapter.icon.name ~ '.svg')}}#icon" aria-hidden="true" />
+                    </svg>
+                </span>
             </a>
         {% endfor %}
     </nav>

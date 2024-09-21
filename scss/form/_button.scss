@@ -7,7 +7,7 @@ button {
 %button {
     font-family: var(--sans-serif);
     font-size: .7em;
-    color: oklch(from var(--accent-color) calc(l + .6) calc(c - 0.1) h);
+    color: oklch(from var(--accent-color) calc(l + .8) calc(c - .4) h);
     border-radius: var(--box-rounding);
     padding: .4em 1em;
     transform: background-image 125ms;

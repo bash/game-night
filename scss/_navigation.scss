@@ -53,40 +53,47 @@ nav {
 
 nav a {
     display: grid;
-    align-content: end;
-    justify-content: center;
-    justify-items: center;
-    color: #fff;
-    background-color: var(--accent-color-softened);
-    clip-path: polygon(0 0, 0 100%, 50% 90%, 100% 100%, 100% 0);
-    padding: var(--bookmark-padding) 0;
-    @extend %height-calculation;
+    filter: drop-shadow(0 3px 2px oklab(from color-mix(in oklab, var(--accent-color), var(--text-color) 20%) l a b / 0.6));
 
-    @media (prefers-reduced-motion: no-preference) {
-        transition: opacity 125ms, transform 125ms;
-    }
+    > .bookmark {
+        display: grid;
+        align-content: end;
+        justify-content: center;
+        justify-items: center;
+        color: #fff;
+        background-color: var(--accent-color-softened);
+        clip-path: polygon(0 0, 0 100%, 50% 90%, 100% 100%, 100% 0);
+        padding: var(--bookmark-padding) 0;
+        @extend %height-calculation;
 
-    @media (forced-colors: active) {
-        transform: none;
-        clip-path: none;
+        @media (prefers-reduced-motion: no-preference) {
+            transition: opacity 125ms, transform 125ms;
+        }
 
-        &.-active {
-            border-bottom: 2px solid currentColor;
+        @media (forced-colors: active) {
+            transform: none;
+            clip-path: none;
+
+            &.-active {
+                border-bottom: 2px solid currentColor;
+            }
+        }
+
+        svg {
+            width: 1em;
+            height: 1em;
         }
     }
 
-    svg {
-        width: 1em;
-        height: 1em;
-    }
-
     &:focus-visible {
-        outline: none;
+        > .bookmark {
+            outline: none;
 
-        svg {
-            outline: 2px solid var(--outline-color);
-            outline-offset: 4px;
-            border-radius: 2px;
+            svg {
+                outline: 2px solid var(--outline-color);
+                outline-offset: 4px;
+                border-radius: 2px;
+            }
         }
     }
 }
