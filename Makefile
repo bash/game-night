@@ -14,7 +14,7 @@ ifeq ($(env ENABLE_SOURCE_MAPS), true)
 	SASS_FLAGS := --embed-source-map --embed-sources
 endif
 
-.PHONY: all clean recreate-db certs run publish deploy check clippy
+.PHONY: all clean recreate-db certs run publish deploy redeploy check clippy
 
 all: $(MAIN_CSS) $(EMAIL_CSS) $(RELATIVE_TIME_ELEMENT)
 
@@ -76,6 +76,8 @@ publish: all
 	gzip --keep --recursive $(PUBLISH_DIR)/public --best
 	find $(PUBLISH_DIR) -name '.DS_Store' -exec rm {} +
 
-deploy: publish
+deploy: publish redeploy
+
+redeploy:
 	rsync --archive --verbose --human-readable --delete $(PUBLISH_DIR)/ root@fedora-01.infra.tau.garden:/opt/game-night/bin/
-	ssh root@fedora-01.infra.tau.garden -C 'systemctl stop game-night'
+	ssh root@fedora-01.infra.tau.garden -C 'export SYSTEMD_COLORS=true; systemctl restart game-night && systemctl status game-night'
