@@ -1,4 +1,3 @@
-use crate::decorations::{Closings, Greetings, Hearts, SkinToneModifiers};
 use anyhow::{Context as _, Result};
 use dyn_clone::DynClone;
 use headers::MessageBuilderExt;
@@ -6,33 +5,22 @@ use lettre::message::{Mailbox, MultiPart, SinglePart};
 use lettre::Message;
 #[cfg(unix)]
 use outbox::Outbox;
-use rand::{thread_rng, Rng as _};
+use render::EmailRenderer;
 use rocket::async_trait;
 use rocket::figment::value::magic::RelativePathBuf;
 use rocket::figment::Figment;
-use rocket::tokio::fs::read_to_string;
-use rocket_dyn_templates::tera::{Context, Tera};
+use rocket_dyn_templates::tera::Context;
 use serde::{Deserialize, Serialize};
-use std::path::Path;
 
 mod headers;
+mod render;
+pub(crate) use render::*;
 
 #[async_trait]
 pub(crate) trait EmailSender: Send + Sync + DynClone {
     async fn send(&self, recipient: Mailbox, email: &dyn EmailMessage) -> Result<()>;
 
     fn preview(&self, email: &dyn EmailMessage) -> Result<EmailBody>;
-}
-
-pub(crate) struct EmailBody {
-    pub(crate) plain: String,
-    pub(crate) html: String,
-}
-
-impl From<EmailBody> for MultiPart {
-    fn from(value: EmailBody) -> Self {
-        MultiPart::alternative_plain_html(value.plain, value.html)
-    }
 }
 
 dyn_clone::clone_trait_object!(EmailSender);
@@ -66,19 +54,17 @@ pub(crate) struct EmailSenderImpl {
     reply_to: Option<Mailbox>,
     #[cfg(unix)]
     outbox: Outbox,
-    css: String,
-    tera: Tera,
+    renderer: EmailRenderer,
 }
 
 #[async_trait]
 impl EmailSender for EmailSenderImpl {
     async fn send(&self, recipient: Mailbox, email: &dyn EmailMessage) -> Result<()> {
+        let body = self.renderer.render(email)?;
         let multipart = email
             .attachments()?
             .into_iter()
-            .fold(MultiPart::from(self.render_email_body(email)?), |m, s| {
-                m.singlepart(s)
-            });
+            .fold(MultiPart::from(body), |m, s| m.singlepart(s));
         let mut builder = Message::builder()
             .from(self.sender.clone())
             .to(recipient)
@@ -100,7 +86,7 @@ impl EmailSender for EmailSenderImpl {
     }
 
     fn preview(&self, email: &dyn EmailMessage) -> Result<EmailBody> {
-        self.render_email_body(email)
+        self.renderer.render(email)
     }
 }
 
@@ -117,42 +103,13 @@ impl EmailSenderImpl {
             .to_outbox()
             .await
             .context("failed to initialize outbox")?;
-        let mut css_file_path = template_dir.clone();
-        css_file_path.push("email.css");
 
         Ok(Self {
             sender: config.sender,
             reply_to: config.reply_to,
             #[cfg(unix)]
             outbox,
-            tera: create_tera(&template_dir)?,
-            css: read_to_string(css_file_path)
-                .await
-                .context("email.css is missing")?,
-        })
-    }
-
-    fn render_email_body(&self, email: &dyn EmailMessage) -> Result<EmailBody> {
-        let template_name = email.template_name();
-        let mut template_context = email.template_context()?;
-        let mut rng = thread_rng();
-        template_context.insert("greeting", rng.sample(Greetings));
-        template_context.insert("closing", rng.sample(Closings));
-        template_context.insert("skin_tone", rng.sample(SkinToneModifiers));
-        template_context.insert("heart", rng.sample(Hearts));
-        template_context.insert("css", &self.css);
-        let html_template_name = format!("{}.html.tera", &template_name);
-        let text_template_name = format!("{}.txt.tera", &template_name);
-
-        Ok(EmailBody {
-            plain: self
-                .tera
-                .render(&text_template_name, &template_context)
-                .context("failed to render tera template")?,
-            html: self
-                .tera
-                .render(&html_template_name, &template_context)
-                .context("failed to render tera template")?,
+            renderer: EmailRenderer::from_template_dir(&template_dir).await?,
         })
     }
 }
@@ -173,18 +130,6 @@ impl OutboxBus {
             OutboxBus::System => Ok(Outbox::system().await?),
         }
     }
-}
-
-fn create_tera(template_dir: &Path) -> Result<Tera> {
-    let templates = template_dir.join("**.tera");
-    let templates = templates
-        .to_str()
-        .context("template dir is not valid utf-8")?;
-    let mut tera = Tera::new(templates).context("failed to initialize Tera")?;
-    tera.build_inheritance_chains()
-        .context("failed to build tera's inheritance chain")?;
-    crate::template::register_custom_functions(&mut tera);
-    Ok(tera)
 }
 
 #[derive(Debug, Deserialize)]
