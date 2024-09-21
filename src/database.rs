@@ -72,6 +72,8 @@ pub(crate) trait Repository: fmt::Debug + Send {
 
     async fn get_newest_event(&mut self) -> Result<Option<Event>>;
 
+    async fn get_events(&mut self) -> Result<Vec<Event>>;
+
     async fn add_participant(&mut self, event: i64, user: UserId) -> Result<()>;
 
     async fn prune(&mut self) -> Result<u64>;
@@ -500,6 +502,19 @@ impl Repository for SqliteRepository {
             None => Ok(None),
             Some(event) => Ok(Some(materialize_event(&mut transaction, event).await?)),
         }
+    }
+
+    async fn get_events(&mut self) -> Result<Vec<Event>> {
+        let mut transaction = self.0.begin().await?;
+        let events: Vec<Event<i64, UserId, i64>> =
+            sqlx::query_as("SELECT * FROM events ORDER BY starts_at DESC")
+                .fetch_all(&mut *transaction)
+                .await?;
+        let mut materialized: Vec<_> = Vec::with_capacity(events.len());
+        for event in events {
+            materialized.push(materialize_event(&mut transaction, event).await?);
+        }
+        Ok(materialized)
     }
 
     async fn add_participant(&mut self, event: i64, user: UserId) -> Result<()> {

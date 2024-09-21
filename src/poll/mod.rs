@@ -1,5 +1,6 @@
 use crate::auth::{AuthorizedTo, ManagePoll};
 use crate::database::Repository;
+use crate::play::rocket_uri_macro_archive_page;
 use crate::register::rocket_uri_macro_profile;
 use crate::template::PageBuilder;
 use crate::users::{User, UserId};
@@ -57,7 +58,8 @@ fn polls_pending_finalization_page(
 fn no_open_poll_page(user: User, page: PageBuilder<'_>) -> Template {
     let new_poll_uri = user.can_manage_poll().then(|| uri!(new::new_poll_page()));
     let profile_uri = uri!(profile());
-    page.render("poll", context! { new_poll_uri, profile_uri })
+    let archive_uri = uri!(archive_page());
+    page.render("poll", context! { new_poll_uri, profile_uri, archive_uri })
 }
 
 #[get("/poll/close")]

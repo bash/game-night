@@ -1,0 +1,43 @@
+{% import 'user-macros' as user_macros %}
+
+{% extends 'base' %}
+
+{% block title %}Archive{% endblock title %}
+
+{% block content %}
+    <div class="calendar-list">
+         {% for chunk in events_by_year %}
+            <h2>{{chunk.year}}</h2>
+            <ul>
+                {% for event in chunk.events %}
+                    <li>
+                        <span>{{event.starts_at | time(format='[day]. [month repr:long]')}}</span>
+                        <div class="time-range">
+                            <time>{{event.starts_at | time(format='[hour]:[minute]')}}</time>
+                        </div>
+                        {% if event.title %}
+                            <em>«{{event.title}}»</em>
+                        {% endif %}
+                        {% if event.view_uri %}
+                            <a href="{{event.view_uri}}" class="link-button">view</a>
+                        {% endif %}
+                        <div class="answers-list">
+                            {% for participant in event.visible_participants.participants %}
+                                <span class="answer">
+                                    {{user_macros::name(user=participant.user)}}
+                                </span>
+                            {% endfor %}
+                            {% if event.visible_participants.redacted %}
+                                <span title="some participants have been omitted">&hellip;</span>
+                            {% endif %}
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+         {% endfor %}
+    </div>
+{% endblock content %}
+
+{% block scripts %}
+    <script src="{{asset(path='/js/relative-time-element.js')}}" type="module"></script>
+{% endblock scripts %}

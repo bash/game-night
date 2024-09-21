@@ -86,4 +86,10 @@
     {% else %}
         {{ self::event_details(event=event, user=user) }}
     {% endif %}
+
+    <hr>
+
+    <p>
+        Check out the <a href="{{archive_uri}}">archive</a> to see a list of all past game nights.
+    </p>
 {% endblock content %}

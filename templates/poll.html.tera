@@ -19,10 +19,12 @@
     {% endif %}
 </p>
 
-{% if new_poll_uri %}
+
 <fieldset class="-actions">
-    <a href="{{new_poll_uri}}" class="link-button">Start a new poll</a>
+    {% if new_poll_uri %}
+        <a href="{{new_poll_uri}}" class="link-button">Start a new poll</a>
+    {% endif %}
+    <a href="{{archive_uri}}" class="link-button">Show past game nights</a>
 </fieldset>
-{% endif %}
 
 {% endblock content %}

@@ -89,7 +89,7 @@ impl<Participants: Default> Event<i64, UserId, i64, Participants> {
     }
 }
 
-#[derive(Debug, sqlx::FromRow, Serialize)]
+#[derive(Debug, Clone, sqlx::FromRow, Serialize)]
 pub(crate) struct Participant<Id = i64, UserRef = User> {
     pub(crate) id: Id,
     #[sqlx(rename = "user_id")]

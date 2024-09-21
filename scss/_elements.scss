@@ -48,6 +48,7 @@
     background-color: var(--highlight-bg);
     border-radius: 8px;
     overflow: hidden;
+    margin-bottom: var(--inter-block-gap);
 
     > h2 {
         color: #fff;

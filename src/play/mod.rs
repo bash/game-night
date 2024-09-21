@@ -23,8 +23,11 @@ use time::macros::format_description;
 use time::OffsetDateTime;
 use time_tz::{timezones, OffsetDateTimeExt};
 
+mod archive;
+pub(crate) use archive::*;
+
 pub(crate) fn routes() -> Vec<Route> {
-    routes![play_page, play_redirect, join, event_ics]
+    routes![play_page, play_redirect, join, event_ics, archive_page]
 }
 
 // This is a bit of an ugly workaround to
@@ -37,9 +40,10 @@ fn play_redirect(_user: User) -> Redirect {
 #[get("/", rank = 0)]
 fn play_page(event: NextEvent, page: PageBuilder<'_>, user: User) -> Template {
     let join_uri = (!is_participating(&event.0, &user)).then(|| uri!(join()));
+    let archive_uri = uri!(archive_page());
     page.render(
         "play",
-        context! { event: event.0, ics_uri: uri!(event_ics()), join_uri },
+        context! { event: event.0, ics_uri: uri!(event_ics()), join_uri, archive_uri },
     )
 }
 
@@ -59,7 +63,7 @@ async fn join(
     Ok(Redirect::to(uri!(play_page())))
 }
 
-struct NextEvent(Event);
+pub(crate) struct NextEvent(Event);
 
 #[async_trait]
 impl<'r> FromRequest<'r> for NextEvent {
