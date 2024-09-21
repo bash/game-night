@@ -19,7 +19,6 @@
     {% endif %}
 </p>
 
-
 <fieldset class="-actions">
     {% if new_poll_uri %}
         <a href="{{new_poll_uri}}" class="link-button">Start a new poll</a>
