@@ -55,7 +55,9 @@ impl UpdateUserForm {
 fn to_email_subscription(subscribe: bool, until: Option<Date>) -> EmailSubscription {
     match (subscribe, until) {
         (true, _) => EmailSubscription::Subscribed,
-        (false, Some(until)) => EmailSubscription::TemporarilyUnsubscribed { until },
+        (false, Some(until)) => EmailSubscription::TemporarilyUnsubscribed {
+            until: until.into(),
+        },
         (false, None) => EmailSubscription::PermanentlyUnsubscribed,
     }
 }

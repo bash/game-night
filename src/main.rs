@@ -25,6 +25,7 @@ mod event;
 mod fmt;
 mod fs;
 mod invitation;
+mod iso_8601;
 mod login;
 mod play;
 mod poll;

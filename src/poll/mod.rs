@@ -1,5 +1,6 @@
 use crate::auth::{AuthorizedTo, ManagePoll};
 use crate::database::Repository;
+use crate::iso_8601::Iso8601;
 use crate::play::rocket_uri_macro_archive_page;
 use crate::register::rocket_uri_macro_profile;
 use crate::template::PageBuilder;
@@ -104,8 +105,7 @@ pub(crate) struct Poll<Id = i64, UserRef = User, LocationRef = Location> {
     pub(crate) strategy: DateSelectionStrategy,
     pub(crate) title: String,
     pub(crate) description: String,
-    #[serde(with = "time::serde::iso8601")]
-    pub(crate) open_until: OffsetDateTime,
+    pub(crate) open_until: Iso8601<OffsetDateTime>,
     pub(crate) closed: bool,
     pub(crate) created_by: UserRef,
     #[sqlx(rename = "location_id")]
@@ -150,8 +150,7 @@ impl Poll {
 #[derive(Debug, Clone, sqlx::FromRow, Serialize)]
 pub(crate) struct PollOption<Id = i64, UserRef = User> {
     pub(crate) id: Id,
-    #[serde(with = "time::serde::iso8601")]
-    pub(crate) starts_at: OffsetDateTime,
+    pub(crate) starts_at: Iso8601<OffsetDateTime>,
     #[sqlx(skip)]
     pub(crate) answers: Vec<Answer<Id, UserRef>>,
 }

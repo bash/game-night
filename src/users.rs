@@ -1,5 +1,6 @@
 use crate::auth::{AuthorizedTo, ManageUsers};
 use crate::database::Repository;
+use crate::iso_8601::Iso8601;
 use crate::template::PageBuilder;
 use anyhow::{Error, Result};
 use lettre::message::Mailbox;
@@ -55,8 +56,7 @@ pub(crate) struct User<Id = UserId> {
     pub(crate) campaign: Option<String>,
     pub(crate) can_update_name: bool,
     pub(crate) can_answer_strongly: bool,
-    #[serde(with = "time::serde::iso8601")]
-    pub(crate) last_active_at: OffsetDateTime,
+    pub(crate) last_active_at: Iso8601<OffsetDateTime>,
 }
 
 #[derive(Debug)]
@@ -79,19 +79,16 @@ pub(crate) enum EmailSubscription {
     #[default]
     Subscribed,
     TemporarilyUnsubscribed {
-        #[serde(with = "iso8601_date")]
-        until: Date,
+        until: Iso8601<Date>,
     },
     PermanentlyUnsubscribed,
 }
-
-time::serde::format_description!(iso8601_date, Date, "[year]-[month]-[day]");
 
 impl EmailSubscription {
     pub(crate) fn is_subscribed(&self, today: Date) -> bool {
         match self {
             EmailSubscription::Subscribed => true,
-            EmailSubscription::TemporarilyUnsubscribed { until } => today > *until,
+            EmailSubscription::TemporarilyUnsubscribed { until } => today > **until,
             EmailSubscription::PermanentlyUnsubscribed => false,
         }
     }

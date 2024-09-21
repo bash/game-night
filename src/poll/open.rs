@@ -1,6 +1,7 @@
 use super::Open;
 use super::{Answer, AnswerValue};
 use crate::database::Repository;
+use crate::iso_8601::Iso8601;
 use crate::poll::{Poll, PollOption};
 use crate::template::PageBuilder;
 use crate::users::{User, UserId};
@@ -135,8 +136,7 @@ struct OpenPollOptionsGroup {
 #[derive(Debug, Serialize)]
 struct OpenPollOption {
     id: i64,
-    #[serde(with = "time::serde::iso8601")]
-    starts_at: OffsetDateTime,
+    starts_at: Iso8601<OffsetDateTime>,
     yes: bool,
     strong: bool,
     vetoed: bool,

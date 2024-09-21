@@ -99,7 +99,8 @@ pub(crate) fn to_calendar<'a>(
 }
 
 fn to_ical_event<'a>(event: &'a Event, uri_builder: &'a UriBuilder<'a>) -> Result<ics::Event<'a>> {
-    let mut ical_event = ics::Event::new(event_uid(event), format_as_floating(event.starts_at)?);
+    let starts_at = *event.starts_at;
+    let mut ical_event = ics::Event::new(event_uid(event), format_as_floating(starts_at)?);
     ical_event.push(Summary::new(escape_text(format!(
         "{}",
         LongEventTitle(&event.title)
@@ -110,7 +111,7 @@ fn to_ical_event<'a>(event: &'a Event, uri_builder: &'a UriBuilder<'a>) -> Resul
     ical_event.push(LocationProp::new(escape_text(format_location(
         &event.location,
     ))));
-    ical_event.push(with_cet(DtStart::new(format_as_floating(event.starts_at)?)));
+    ical_event.push(with_cet(DtStart::new(format_as_floating(starts_at)?)));
     ical_event.push(with_cet(DtEnd::new(format_as_floating(
         event.estimated_ends_at(),
     )?)));

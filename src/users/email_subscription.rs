@@ -45,7 +45,7 @@ where
             "subscribed" => Ok(Subscribed),
             "unsubscribed" => Ok(PermanentlyUnsubscribed),
             other => Ok(TemporarilyUnsubscribed {
-                until: Date::parse(other, FORMAT)?,
+                until: Date::parse(other, FORMAT)?.into(),
             }),
         }
     }

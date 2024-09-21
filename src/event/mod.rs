@@ -1,3 +1,4 @@
+use crate::iso_8601::Iso8601;
 use crate::poll::{Location, Poll, PollOption};
 use crate::users::{User, UserId};
 use serde::Serialize;
@@ -13,8 +14,7 @@ pub(crate) struct Event<
     Participants: Default,
 {
     pub(crate) id: Id,
-    #[serde(with = "time::serde::iso8601")]
-    pub(crate) starts_at: OffsetDateTime,
+    pub(crate) starts_at: Iso8601<OffsetDateTime>,
     pub(crate) title: String,
     pub(crate) description: String,
     #[sqlx(rename = "location_id")]

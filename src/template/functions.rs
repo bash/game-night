@@ -1,11 +1,11 @@
 use super::AccentColor;
 use crate::decorations::{Hearts, SkinToneModifiers};
+use crate::iso_8601::Iso8601;
 use crate::users::EmailSubscription;
 use rand::rngs::SmallRng;
 use rand::seq::SliceRandom;
 use rand::{thread_rng, Rng, SeedableRng};
 use rocket_dyn_templates::tera::{self, Tera};
-use serde::Deserialize;
 use std::iter;
 use std::sync::OnceLock;
 use tera_macros::{tera_filter, tera_function};
@@ -88,12 +88,8 @@ tera_filter! {
     }
 }
 
-#[derive(Deserialize)]
-#[serde(transparent)]
-struct OffsetDateTimeIsoFormat(#[serde(with = "time::serde::iso8601")] OffsetDateTime);
-
 tera_filter! {
-    fn time_format(input: OffsetDateTimeIsoFormat, format: String) -> Result<String, tera::Error> {
+    fn time_format(input: Iso8601<OffsetDateTime>, format: String) -> Result<String, tera::Error> {
         let input = input.0.to_timezone(timezones::db::CET);
         let format = parse_format(&format).map_err(|e| tera::Error::msg(format!("Invalid format description: {e}")))?;
         input.format(&format).map_err(|e| tera::Error::msg(format!("Error formatting date {input}: {e}")))

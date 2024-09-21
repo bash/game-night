@@ -5,6 +5,7 @@ use super::{DateSelectionStrategy, Poll, PollOption};
 use crate::auth::{AuthorizedTo, ManagePoll};
 use crate::database::Repository;
 use crate::email::EmailSender;
+use crate::iso_8601::Iso8601;
 use crate::register::rocket_uri_macro_profile;
 use crate::template::PageBuilder;
 use crate::uri;
@@ -59,7 +60,7 @@ fn find_prefill(form: &CalendarData) -> impl Fn(Date) -> CalendarDayPrefill + '_
     |date| {
         form.options
             .iter()
-            .find(|o| o.date == date)
+            .find(|o| *o.date == date)
             .cloned()
             .unwrap_or_else(|| CalendarDayPrefill::empty(date))
     }
@@ -98,7 +99,7 @@ fn to_calendar_month(
 fn to_calendar_day(date: Date, prefill: &mut impl Fn(Date) -> CalendarDayPrefill) -> CalendarDay {
     const WEEKDAY_FORMAT: &[FormatItem<'_>] = format_description!("[weekday repr:long]");
     CalendarDay {
-        date,
+        date: date.into(),
         day: date.day(),
         weekday: date.format(WEEKDAY_FORMAT).unwrap(),
         prefill: prefill(date),
@@ -135,8 +136,7 @@ struct CalendarMonth {
 
 #[derive(Debug, Serialize)]
 struct CalendarDay {
-    #[serde(with = "iso8601_date")]
-    date: Date,
+    date: Iso8601<Date>,
     day: u8,
     weekday: String,
     prefill: CalendarDayPrefill,
@@ -144,25 +144,20 @@ struct CalendarDay {
 
 #[derive(Debug, Serialize, FromForm, Clone)]
 struct CalendarDayPrefill {
-    #[serde(with = "iso8601_date")]
-    date: Date,
+    date: Iso8601<Date>,
     enabled: bool,
-    #[serde(with = "iso8601_time::option")]
-    start_time: Option<Time>,
+    start_time: Option<Iso8601<Time>>,
 }
 
 impl CalendarDayPrefill {
-    fn empty(date: Date) -> Self {
+    fn empty(date: impl Into<Iso8601<Date>>) -> Self {
         Self {
-            date,
+            date: date.into(),
             enabled: false,
             start_time: None,
         }
     }
 }
-
-time::serde::format_description!(iso8601_date, Date, "[year]-[month]-[day]");
-time::serde::format_description!(iso8601_time, Time, "[hour]:[minute]");
 
 #[post("/poll/new", data = "<form>")]
 pub(super) async fn new_poll(
@@ -188,7 +183,7 @@ fn to_poll(poll: NewPollData, location: Location, user: &User) -> Result<Poll<()
         strategy: poll.strategy,
         title: poll.title.to_owned(),
         description: poll.description.to_owned(),
-        open_until: now + Duration::hours(poll.duration_in_hours),
+        open_until: (now + Duration::hours(poll.duration_in_hours)).into(),
         closed: false,
         created_by: user.id,
         location: location.id,
@@ -209,7 +204,7 @@ fn to_poll_options<'a>(
 fn to_poll_option(option: &NewPollOption, user: &User) -> Result<PollOption<(), UserId>> {
     Ok(PollOption {
         id: (),
-        starts_at: to_cet(option.date, option.start_time)?,
+        starts_at: to_cet(option.date, option.start_time)?.into(),
         // The user creating the poll is automatically added with a required attendance.
         answers: vec![Answer {
             id: (),
@@ -272,11 +267,11 @@ async fn send_poll_emails(
     poll: &Poll<(), UserId, i64>,
 ) -> Result<()> {
     for user in get_subscribed_users(repository.as_mut()).await? {
-        let poll_uri =
-            uri!(auto_login(&user, poll.open_until); uri_builder, open_poll_page()).await?;
+        let open_until = *poll.open_until;
+        let poll_uri = uri!(auto_login(&user, open_until); uri_builder, open_poll_page()).await?;
         let skip_poll_uri =
-            uri!(auto_login(&user, poll.open_until); uri_builder, super::skip::skip_poll).await?;
-        let sub_url = uri!(auto_login(&user, poll.open_until); uri_builder, profile()).await?;
+            uri!(auto_login(&user, open_until); uri_builder, super::skip::skip_poll).await?;
+        let sub_url = uri!(auto_login(&user, open_until); uri_builder, profile()).await?;
         let email = PollEmail {
             name: user.name.clone(),
             poll: poll.clone(),
