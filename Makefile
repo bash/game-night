@@ -14,7 +14,7 @@ ifeq ($(env ENABLE_SOURCE_MAPS), true)
 	SASS_FLAGS := --embed-source-map --embed-sources
 endif
 
-.PHONY: all clean recreate-db certs run publish deploy redeploy check clippy
+.PHONY: all clean recreate-db certs run publish deploy redeploy check clippy sqlx-prepare
 
 all: $(MAIN_CSS) $(EMAIL_CSS) $(RELATIVE_TIME_ELEMENT)
 
@@ -25,7 +25,10 @@ $(NPM_SENTINEL): package.json package-lock.json
 $(RELATIVE_TIME_ELEMENT): $(NPM_SENTINEL) node_modules/@github/relative-time-element/dist/bundle.js
 	cp node_modules/@github/relative-time-element/dist/bundle.js $@
 
-check:
+sqlx-prepare:
+	DATABASE_URL=sqlite://./database.sqlite cargo sqlx prepare
+
+check: sqlx-prepare
 	cargo check $(CARGO_FLAGS)
 
 clippy:

@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "DELETE FROM email_verification_codes WHERE unixepoch(valid_until) - unixepoch('now') < 0",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": []
+  },
+  "hash": "70962bdbaaf049ccf6790ee8c5b10eeb31c1fb34adb2a38f0489332342153eba"
+}

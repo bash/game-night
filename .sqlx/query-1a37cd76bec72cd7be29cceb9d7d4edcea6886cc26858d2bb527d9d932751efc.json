@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT polls.closed as \"closed: bool\" FROM polls\n                 JOIN poll_options ON poll_options.poll_id = polls.id\n                 WHERE poll_options.id = ?1",
+  "describe": {
+    "columns": [
+      {
+        "name": "closed: bool",
+        "ordinal": 0,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "1a37cd76bec72cd7be29cceb9d7d4edcea6886cc26858d2bb527d9d932751efc"
+}

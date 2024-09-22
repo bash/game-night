@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE events SET starts_at = ?2 WHERE id = ?1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "2265ed0231ba15ec35c033f38b87d753f1aceed379252a0f33f06a61c2510c13"
+}

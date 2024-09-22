@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "DELETE FROM login_tokens WHERE unixepoch(valid_until) - unixepoch('now') < 0",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": []
+  },
+  "hash": "993447ca6d5cf304cb877b45ef3805f0200298e6b88f2c6708306a7130b32ccf"
+}

@@ -94,15 +94,15 @@ impl SqliteRepository {
 #[async_trait]
 impl Repository for SqliteRepository {
     async fn add_invitation(&mut self, invitation: Invitation<()>) -> Result<Invitation> {
-        let result = sqlx::query(
+        let result = sqlx::query!(
             "INSERT INTO invitations (role, created_by, valid_until, passphrase, comment)
              VALUES (?1, ?2, ?3, ?4, ?5)",
+            invitation.role,
+            invitation.created_by,
+            invitation.valid_until,
+            invitation.passphrase,
+            invitation.comment
         )
-        .bind(invitation.role)
-        .bind(invitation.created_by)
-        .bind(invitation.valid_until)
-        .bind(&invitation.passphrase)
-        .bind(&invitation.comment)
         .execute(self.executor())
         .await?;
         Ok(invitation.with_id(InvitationId(result.last_insert_rowid())))
@@ -135,26 +135,27 @@ impl Repository for SqliteRepository {
     async fn add_user(&mut self, invitation: Invitation, user: User<()>) -> Result<UserId> {
         let mut transaction = self.0.begin().await?;
 
-        let user_id = sqlx::query(
+        let user_id = sqlx::query!(
             "INSERT INTO users (name, role, email_address, email_subscription, invited_by, campaign)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+             user.name,
+             user.role,
+             user.email_address,
+             user.email_subscription,
+             user.invited_by,
+             user.campaign,
         )
-        .bind(user.name)
-        .bind(user.role)
-        .bind(user.email_address)
-        .bind(user.email_subscription)
-        .bind(user.invited_by)
-        .bind(user.campaign)
         .execute(&mut *transaction)
         .await?
         .last_insert_rowid();
 
-        let update_result =
-            sqlx::query("UPDATE invitations SET used_by = ?2 WHERE id = ?1 AND used_by IS NULL")
-                .bind(invitation.id)
-                .bind(user_id)
-                .execute(&mut *transaction)
-                .await?;
+        let update_result = sqlx::query!(
+            "UPDATE invitations SET used_by = ?2 WHERE id = ?1 AND used_by IS NULL",
+            invitation.id,
+            user_id
+        )
+        .execute(&mut *transaction)
+        .await?;
         if update_result.rows_affected() >= 1 {
             transaction.commit().await?;
             Ok(UserId(user_id))
@@ -165,7 +166,7 @@ impl Repository for SqliteRepository {
     }
 
     async fn has_users(&mut self) -> Result<bool> {
-        let user_count: i64 = sqlx::query_scalar("SELECT count(1) FROM users")
+        let user_count: i64 = sqlx::query_scalar!("SELECT count(1) FROM users")
             .fetch_one(self.executor())
             .await?;
         Ok(user_count >= 1)
@@ -246,12 +247,12 @@ impl Repository for SqliteRepository {
     }
 
     async fn has_verification_code(&mut self, email_address: &str) -> Result<bool> {
-        let result: i64 = sqlx::query_scalar(
+        let result: i64 = sqlx::query_scalar!(
             "SELECT count(1) FROM email_verification_codes
              WHERE email_address = ?1
                AND unixepoch(valid_until) - unixepoch('now') >= 0",
+            email_address
         )
-        .bind(email_address)
         .fetch_one(self.executor())
         .await?;
         Ok(result >= 1)
@@ -306,48 +307,51 @@ impl Repository for SqliteRepository {
     async fn add_poll(&mut self, poll: Poll<New>) -> Result<Poll> {
         let mut transaction = self.0.begin().await?;
 
-        let event_id = sqlx::query(
+        let event_id = sqlx::query!(
             "INSERT INTO events (title, description, location_id, created_by)
              VALUES (?1, ?2, ?3, ?4)",
+            poll.event.title,
+            poll.event.description,
+            poll.event.location,
+            poll.event.created_by
         )
-        .bind(&poll.event.title)
-        .bind(&poll.event.description)
-        .bind(poll.event.location)
-        .bind(poll.event.created_by)
         .execute(&mut *transaction)
         .await?
         .last_insert_rowid();
 
-        let poll_id = sqlx::query(
+        let min_participants = i64::try_from(poll.min_participants)?;
+        let max_participants = i64::try_from(poll.max_participants)?;
+        let poll_id = sqlx::query!(
             "INSERT INTO polls (min_participants, max_participants, strategy, open_until, closed, event_id)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+             min_participants,
+             max_participants,
+             poll.strategy,
+             poll.open_until,
+             poll.closed,
+             event_id
         )
-        .bind(i64::try_from(poll.min_participants)?)
-        .bind(i64::try_from(poll.max_participants)?)
-        .bind(poll.strategy)
-        .bind(poll.open_until)
-        .bind(poll.closed)
-        .bind(event_id)
         .execute(&mut *transaction)
         .await?
         .last_insert_rowid();
 
         for option in poll.options.iter() {
-            let option_id =
-                sqlx::query("INSERT INTO poll_options (poll_id, starts_at) VALUES (?1, ?2)")
-                    .bind(poll_id)
-                    .bind(option.starts_at)
-                    .execute(&mut *transaction)
-                    .await?
-                    .last_insert_rowid();
+            let option_id = sqlx::query!(
+                "INSERT INTO poll_options (poll_id, starts_at) VALUES (?1, ?2)",
+                poll_id,
+                option.starts_at
+            )
+            .execute(&mut *transaction)
+            .await?
+            .last_insert_rowid();
             for answer in option.answers.iter() {
-                sqlx::query(
+                sqlx::query!(
                     "INSERT INTO poll_answers (poll_option_id, value, user_id)
                      VALUES (?1, ?2, ?3)",
+                    option_id,
+                    answer.value,
+                    answer.user
                 )
-                .bind(option_id)
-                .bind(answer.value)
-                .bind(answer.user)
                 .execute(&mut *transaction)
                 .await?;
             }
@@ -362,11 +366,13 @@ impl Repository for SqliteRepository {
     }
 
     async fn update_poll_open_until(&mut self, id: i64, open_until: OffsetDateTime) -> Result<()> {
-        sqlx::query("UPDATE polls SET open_until = ?1 WHERE id = ?2")
-            .bind(open_until)
-            .bind(id)
-            .execute(self.executor())
-            .await?;
+        sqlx::query!(
+            "UPDATE polls SET open_until = ?1 WHERE id = ?2",
+            open_until,
+            id
+        )
+        .execute(self.executor())
+        .await?;
         Ok(())
     }
 
@@ -413,12 +419,12 @@ impl Repository for SqliteRepository {
         let mut transaction = self.0.begin().await?;
 
         for (option_id, answer) in answers {
-            let closed: bool = sqlx::query_scalar(
-                "SELECT polls.closed FROM polls
+            let closed: bool = sqlx::query_scalar!(
+                r#"SELECT polls.closed as "closed: bool" FROM polls
                  JOIN poll_options ON poll_options.poll_id = polls.id
-                 WHERE poll_options.id = ?1",
+                 WHERE poll_options.id = ?1"#,
+                option_id
             )
-            .bind(option_id)
             .fetch_one(&mut *transaction)
             .await?;
 
@@ -426,13 +432,13 @@ impl Repository for SqliteRepository {
                 return Err(anyhow!("Poll already closed"));
             }
 
-            sqlx::query(
+            sqlx::query!(
                 "INSERT INTO poll_answers (poll_option_id, value, user_id)
                  VALUES (?1, ?2, ?3)",
+                option_id,
+                answer.value,
+                answer.user,
             )
-            .bind(option_id)
-            .bind(answer.value)
-            .bind(answer.user)
             .execute(&mut *transaction)
             .await?;
         }
@@ -443,9 +449,7 @@ impl Repository for SqliteRepository {
     }
 
     async fn close_poll(&mut self, id: i64) -> Result<()> {
-        sqlx::query("UPDATE polls SET closed = ?1 WHERE id = ?2")
-            .bind(true)
-            .bind(id)
+        sqlx::query!("UPDATE polls SET closed = ?1 WHERE id = ?2", true, id)
             .execute(self.executor())
             .await?;
         Ok(())
@@ -453,17 +457,21 @@ impl Repository for SqliteRepository {
 
     async fn plan_event(&mut self, id: i64, details: PlanningDetails) -> Result<Event> {
         let mut transaction = self.0.begin().await?;
-        sqlx::query("UPDATE events SET starts_at = ?2 WHERE id = ?1")
-            .bind(id)
-            .bind(details.starts_at)
+        sqlx::query!(
+            "UPDATE events SET starts_at = ?2 WHERE id = ?1",
+            id,
+            details.starts_at
+        )
+        .execute(&mut *transaction)
+        .await?;
+        for participant in details.participants.iter() {
+            sqlx::query!(
+                "INSERT INTO participants (event_id, user_id) VALUES (?1, ?2)",
+                id,
+                participant.user
+            )
             .execute(&mut *transaction)
             .await?;
-        for participant in details.participants.iter() {
-            sqlx::query("INSERT INTO participants (event_id, user_id) VALUES (?1, ?2)")
-                .bind(id)
-                .bind(participant.user)
-                .execute(&mut *transaction)
-                .await?;
         }
         todo!()
     }
@@ -519,23 +527,25 @@ impl Repository for SqliteRepository {
     }
 
     async fn add_participant(&mut self, event: i64, user: UserId) -> Result<()> {
-        sqlx::query("INSERT INTO participants (event_id, user_id) VALUES (?1, ?2)")
-            .bind(event)
-            .bind(user)
-            .execute(self.executor())
-            .await?;
+        sqlx::query!(
+            "INSERT INTO participants (event_id, user_id) VALUES (?1, ?2)",
+            event,
+            user
+        )
+        .execute(self.executor())
+        .await?;
         Ok(())
     }
 
     async fn prune(&mut self) -> Result<u64> {
         let mut transaction = self.0.begin().await?;
 
-        let tokens_result = sqlx::query(
+        let tokens_result = sqlx::query!(
             "DELETE FROM login_tokens WHERE unixepoch(valid_until) - unixepoch('now') < 0",
         )
         .execute(&mut *transaction)
         .await?;
-        let codes_result = sqlx::query("DELETE FROM email_verification_codes WHERE unixepoch(valid_until) - unixepoch('now') < 0")
+        let codes_result = sqlx::query!("DELETE FROM email_verification_codes WHERE unixepoch(valid_until) - unixepoch('now') < 0")
             .execute(&mut *transaction)
             .await?;
 
@@ -636,8 +646,7 @@ async fn delete_token<'c, E>(executor: E, token: &str) -> Result<bool>
 where
     E: Executor<'c, Database = Sqlite>,
 {
-    let delete_result = sqlx::query("DELETE FROM login_tokens WHERE token = ?1")
-        .bind(token)
+    let delete_result = sqlx::query!("DELETE FROM login_tokens WHERE token = ?1", token)
         .execute(executor)
         .await?;
     Ok(delete_result.rows_affected() >= 1)

@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO poll_options (poll_id, starts_at) VALUES (?1, ?2)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "6269c7c8e3ceb68c82ae1fc48aa83e8fb07c719a02eaa3cde9b7dbf97a72cc2d"
+}

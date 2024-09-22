@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT count(1) FROM email_verification_codes\n             WHERE email_address = ?1\n               AND unixepoch(valid_until) - unixepoch('now') >= 0",
+  "describe": {
+    "columns": [
+      {
+        "name": "count(1)",
+        "ordinal": 0,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "91dda7515ca22babc066ffcc490685e28d3d50567ebdd3c37ed645382d599a28"
+}
