@@ -16,7 +16,7 @@
 
 {% macro event_details(event, user) %}
     {% if event.title %}
-        <h2>{{macros::long_title(poll_or_event=event)}}</h2>
+        <h2>{{macros::long_title(event=event)}}</h2>
     {% endif %}
 
     <p>

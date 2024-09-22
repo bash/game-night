@@ -1,4 +1,4 @@
-use crate::event::{self, Event, Participant};
+use crate::event::{self, Event, EventLifecycle, Participant, PlanningDetails, Polling};
 use crate::invitation::{Invitation, InvitationId, Passphrase};
 use crate::login::{LoginToken, LoginTokenType};
 use crate::poll::{Answer, Location, Poll, PollOption};
@@ -67,9 +67,9 @@ pub(crate) trait Repository: fmt::Debug + Send {
 
     async fn close_poll(&mut self, id: i64) -> Result<()>;
 
-    async fn get_location(&mut self) -> Result<Location>;
+    async fn plan_event(&mut self, id: i64, details: PlanningDetails) -> Result<Event>;
 
-    async fn add_event(&mut self, event: Event<New>) -> Result<Event>;
+    async fn get_location(&mut self) -> Result<Location>;
 
     async fn get_next_event(&mut self) -> Result<Option<Event>>;
 
@@ -306,19 +306,28 @@ impl Repository for SqliteRepository {
     async fn add_poll(&mut self, poll: Poll<New>) -> Result<Poll> {
         let mut transaction = self.0.begin().await?;
 
+        let event_id = sqlx::query(
+            "INSERT INTO events (title, description, location_id, created_by)
+             VALUES (?1, ?2, ?3, ?4)",
+        )
+        .bind(&poll.event.title)
+        .bind(&poll.event.description)
+        .bind(poll.event.location)
+        .bind(poll.event.created_by)
+        .execute(&mut *transaction)
+        .await?
+        .last_insert_rowid();
+
         let poll_id = sqlx::query(
-            "INSERT INTO polls (min_participants, max_participants, strategy, title, description, location_id, created_by, open_until, closed)
+            "INSERT INTO polls (min_participants, max_participants, strategy, open_until, closed, event_id)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
         )
         .bind(i64::try_from(poll.min_participants)?)
         .bind(i64::try_from(poll.max_participants)?)
         .bind(poll.strategy)
-        .bind(&poll.title)
-        .bind(&poll.description)
-        .bind(poll.location)
-        .bind(poll.created_by)
         .bind(poll.open_until)
         .bind(poll.closed)
+        .bind(event_id)
         .execute(&mut *transaction)
         .await?
         .last_insert_rowid();
@@ -344,7 +353,7 @@ impl Repository for SqliteRepository {
             }
         }
 
-        let poll = poll.into_unmaterialized(poll_id);
+        let poll = poll.into_unmaterialized(poll_id, event_id);
         let poll = materialize_poll(&mut *transaction, poll).await?;
 
         transaction.commit().await?;
@@ -442,42 +451,27 @@ impl Repository for SqliteRepository {
         Ok(())
     }
 
-    async fn get_location(&mut self) -> Result<Location> {
-        Ok(sqlx::query_as("SELECT * FROM locations LIMIT 1")
-            .fetch_one(self.executor())
-            .await?)
-    }
-
-    async fn add_event(&mut self, event: Event<New>) -> Result<Event> {
+    async fn plan_event(&mut self, id: i64, details: PlanningDetails) -> Result<Event> {
         let mut transaction = self.0.begin().await?;
-
-        let event_id = sqlx::query(
-            "INSERT INTO events (starts_at, title, description, location_id, created_by)
-             VALUES (?1, ?2, ?3, ?4, ?5)",
-        )
-        .bind(event.starts_at)
-        .bind(&event.title)
-        .bind(&event.description)
-        .bind(event.location)
-        .bind(event.created_by)
-        .execute(&mut *transaction)
-        .await?
-        .last_insert_rowid();
-
-        for participant in event.participants.iter() {
+        sqlx::query("UPDATE events SET starts_at = ?2 WHERE id = ?1")
+            .bind(id)
+            .bind(details.starts_at)
+            .execute(&mut *transaction)
+            .await?;
+        for participant in details.participants.iter() {
             sqlx::query("INSERT INTO participants (event_id, user_id) VALUES (?1, ?2)")
-                .bind(event_id)
+                .bind(id)
                 .bind(participant.user)
                 .execute(&mut *transaction)
                 .await?;
         }
+        todo!()
+    }
 
-        let event = event.into_unmaterialized(event_id);
-        let event = materialize_event(&mut transaction, event).await?;
-
-        transaction.commit().await?;
-
-        Ok(event)
+    async fn get_location(&mut self) -> Result<Location> {
+        Ok(sqlx::query_as("SELECT * FROM locations LIMIT 1")
+            .fetch_one(self.executor())
+            .await?)
     }
 
     async fn get_next_event(&mut self) -> Result<Option<Event>> {
@@ -557,15 +551,12 @@ async fn materialize_poll(
 ) -> Result<Poll> {
     // Yes, yes using a JOIN to fetch the poll and the user at once would be better,
     // but it's very inconvenient as I can't use the auto-derived FromRow impl :/
-    let user: User = sqlx::query_as("SELECT * FROM users WHERE id = ?1")
-        .bind(poll.created_by)
-        .fetch_one(&mut *connection)
-        .await?;
-
-    let location: Location = sqlx::query_as("SELECT * FROM locations WHERE id = ?1")
-        .bind(poll.location)
-        .fetch_one(&mut *connection)
-        .await?;
+    let event: Event<Unmaterialized, Polling> =
+        sqlx::query_as("SELECT * FROM events WHERE id = ?1")
+            .bind(poll.event)
+            .fetch_one(&mut *connection)
+            .await?;
+    let event = materialize_event(connection, event).await?;
 
     let mut options: Vec<PollOption> =
         sqlx::query_as("SELECT * FROM poll_options WHERE poll_id = ?1")
@@ -585,7 +576,7 @@ async fn materialize_poll(
         }
     }
 
-    Ok(poll.into_materialized(user, location, options))
+    Ok(poll.into_materialized(event, options))
 }
 
 async fn materialize_answer(
@@ -599,10 +590,10 @@ async fn materialize_answer(
     Ok(answer.materialize(user))
 }
 
-async fn materialize_event(
+async fn materialize_event<L: EventLifecycle>(
     connection: &mut SqliteConnection,
-    event: Event<Unmaterialized>,
-) -> Result<Event> {
+    event: Event<Unmaterialized, L>,
+) -> Result<Event<Materialized, L>> {
     let created_by = sqlx::query_as("SELECT * FROM users WHERE id = ?1")
         .bind(event.created_by)
         .fetch_one(&mut *connection)

@@ -2,7 +2,7 @@
 {% block content %}
 
 <h1>
-    {% if poll.title %}Tau's Game Night «{{poll.title}}»{% else %}Another Game Night{% endif %}
+    {% if poll.event.title %}Tau's Game Night «{{poll.event.title}}»{% else %}Another Game Night{% endif %}
     is Just Around the Corner 🧙{{skin_tone}}
 </h1>
 

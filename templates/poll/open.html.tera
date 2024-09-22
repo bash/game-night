@@ -12,7 +12,7 @@
 
 <p>
     Hurray, you're invited to
-    {{macros::long_title(poll_or_event=poll, untitled_prefix='another instance of')}}
+    {{macros::long_title(event=poll.event, untitled_prefix='another instance of')}}
     🎉 <br>
 
     Fill out the poll until
@@ -21,9 +21,9 @@
         to help pick the date.
 </p>
 
-{% if poll.description %}
+{% if poll.event.description %}
     <section>
-        {{poll.description | markdown | safe}}
+        {{poll.event.description | markdown | safe}}
     </section>
 {% endif %}
 
@@ -31,7 +31,7 @@
 
 <form action="{{update_answers_uri}}" method="post">
     <p>
-        I would like to attend {{macros::long_title(poll_or_event=poll)}} on one of the following dates:
+        I would like to attend {{macros::long_title(event=poll.event)}} on one of the following dates:
     </p>
     <div class="calendar-list">
         {% for group in option_groups %}

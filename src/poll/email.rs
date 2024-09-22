@@ -42,7 +42,7 @@ impl EmailMessage for PollEmail<'_> {
     fn subject(&self) -> String {
         format!(
             "Pick a Date for {title}",
-            title = LongEventTitle(&self.poll.title)
+            title = LongEventTitle(&self.poll.event.title)
         )
     }
 

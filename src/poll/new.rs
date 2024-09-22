@@ -5,6 +5,7 @@ use super::{DateSelectionStrategy, Poll, PollOption};
 use crate::auth::{AuthorizedTo, ManagePoll};
 use crate::database::{New, Repository};
 use crate::email::EmailSender;
+use crate::event::Event;
 use crate::iso_8601::Iso8601;
 use crate::register::rocket_uri_macro_profile;
 use crate::template::PageBuilder;
@@ -181,13 +182,18 @@ fn to_poll(poll: NewPollData, location: Location, user: &User) -> Result<Poll<Ne
         min_participants: poll.min_participants,
         max_participants: poll.max_participants,
         strategy: poll.strategy,
-        title: poll.title.to_owned(),
-        description: poll.description.to_owned(),
         open_until: (now + Duration::hours(poll.duration_in_hours)).into(),
         closed: false,
-        created_by: user.id,
-        location: location.id,
         options: to_poll_options(poll.options.iter(), user)?,
+        event: Event {
+            id: (),
+            title: poll.title.to_owned(),
+            description: poll.description.to_owned(),
+            created_by: user.id,
+            location: location.id,
+            participants: vec![],
+            starts_at: None,
+        },
     })
 }
 

@@ -1,6 +1,7 @@
 use crate::auth::{AuthorizedTo, ManagePoll};
 use crate::database::{Materialized, New, Repository, Unmaterialized};
 use crate::entity_state;
+use crate::event::{Event, Polling};
 use crate::iso_8601::Iso8601;
 use crate::play::rocket_uri_macro_archive_page;
 use crate::register::rocket_uri_macro_profile;
@@ -104,13 +105,10 @@ pub(crate) struct Poll<S: PollState = Materialized> {
     #[sqlx(try_from = "i64")]
     pub(crate) max_participants: usize,
     pub(crate) strategy: DateSelectionStrategy,
-    pub(crate) title: String,
-    pub(crate) description: String,
     pub(crate) open_until: Iso8601<OffsetDateTime>,
     pub(crate) closed: bool,
-    pub(crate) created_by: S::User,
-    #[sqlx(rename = "location_id")]
-    pub(crate) location: S::Location,
+    #[sqlx(rename = "event_id")]
+    pub(crate) event: S::Event,
     #[sqlx(skip)]
     pub(crate) options: S::Options,
 }
@@ -118,25 +116,21 @@ pub(crate) struct Poll<S: PollState = Materialized> {
 entity_state! {
     pub(crate) trait PollState {
         type Id = () => i64 => i64;
-        type User = UserId => UserId => User;
-        type Location = i64 => i64 => Location;
+        type Event = Event<Self, Polling> => i64 => Event<Self, Polling>;
         type Options: Default = Vec<PollOption<Self>> => () => Vec<PollOption<Self>>;
     }
 }
 
 impl Poll<New> {
-    pub(crate) fn into_unmaterialized(self, id: i64) -> Poll<Unmaterialized> {
+    pub(crate) fn into_unmaterialized(self, id: i64, event_id: i64) -> Poll<Unmaterialized> {
         Poll {
             id,
             min_participants: self.min_participants,
             max_participants: self.max_participants,
             strategy: self.strategy,
-            title: self.title,
-            description: self.description,
             open_until: self.open_until,
             closed: self.closed,
-            created_by: self.created_by,
-            location: self.location,
+            event: event_id,
             options: (),
         }
     }
@@ -145,8 +139,7 @@ impl Poll<New> {
 impl Poll<Unmaterialized> {
     pub(crate) fn into_materialized(
         self,
-        user: User,
-        location: Location,
+        event: Event<Materialized, Polling>,
         options: Vec<PollOption>,
     ) -> Poll {
         Poll {
@@ -154,12 +147,9 @@ impl Poll<Unmaterialized> {
             min_participants: self.min_participants,
             max_participants: self.max_participants,
             strategy: self.strategy,
-            title: self.title,
-            description: self.description,
             open_until: self.open_until,
             closed: self.closed,
-            created_by: user,
-            location,
+            event,
             options,
         }
     }

@@ -45,12 +45,9 @@ CREATE TABLE polls
     , min_participants INTEGER NOT NULL
     , max_participants INTEGER NOT NULL
     , strategy TEXT NOT NULL
-    , title TEXT NOT NULL
-    , description TEXT NOT NULL
-    , location_id INTEGER NOT NULL REFERENCES locations(id) ON DELETE RESTRICT
-    , created_by INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT
     , open_until TEXT NOT NULl
     , closed INTEGER NOT NULL
+    , event_id INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE
     , created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
     , CHECK (max_participants >= min_participants)
     , CHECK (min_participants >= 2)
@@ -73,7 +70,7 @@ CREATE TABLE poll_answers
 
 CREATE TABLE events
     ( id INTEGER PRIMARY KEY
-    , starts_at TEXT NOT NULL
+    , starts_at TEXT NULL
     , title TEXT NOT NULL
     , description TEXT NOT NULL
     , location_id INTEGER NOT NULL REFERENCES locations(id) ON DELETE RESTRICT

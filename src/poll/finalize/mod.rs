@@ -1,6 +1,6 @@
 use super::{Answer, Attendance, DateSelectionStrategy, Poll, PollOption};
-use crate::database::{New, Repository};
-use crate::event::Event;
+use crate::database::Repository;
+use crate::event::PlanningDetails;
 use crate::users::User;
 use anyhow::Result;
 use itertools::{Either, Itertools};
@@ -30,31 +30,31 @@ struct FinalizeContext {
 async fn try_finalize_poll(ctx: &mut FinalizeContext, poll: Poll) -> Result<()> {
     ctx.repository.close_poll(poll.id).await?;
 
-    let result = finalize_poll_dry_run(poll);
+    let result = finalize_poll_dry_run(&poll);
 
     if let FinalizeResult::Success {
-        event,
+        details,
         invited,
         missed,
         ..
     } = result
     {
-        let event = ctx.repository.add_event(event).await?;
+        let event = ctx.repository.plan_event(poll.event.id, details).await?;
         emails::send_notification_emails(&ctx.sender, &event, &invited, &missed).await?;
     }
 
     Ok(())
 }
 
-fn finalize_poll_dry_run(poll: Poll) -> FinalizeResult {
+fn finalize_poll_dry_run(poll: &Poll) -> FinalizeResult {
     let candidates = get_candidates(&poll);
     if let Some(chosen_option) = choose_option(candidates, &poll) {
         let (invited, overflow) =
             choose_participants(&chosen_option.answers, poll.max_participants);
-        let event = Event::new(&poll, &chosen_option, &invited);
+        let details = PlanningDetails::new(&chosen_option, &invited);
         FinalizeResult::Success {
             missed: get_missed_users(&poll, &invited),
-            event,
+            details,
             invited,
             overflow,
         }
@@ -67,7 +67,7 @@ fn finalize_poll_dry_run(poll: Poll) -> FinalizeResult {
 enum FinalizeResult {
     /// Date selected, some people might not be invited though.
     Success {
-        event: Event<New>,
+        details: PlanningDetails,
         invited: Vec<User>,
         overflow: Vec<User>,
         missed: Vec<User>,

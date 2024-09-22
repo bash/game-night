@@ -1,6 +1,6 @@
-{% macro long_title(poll_or_event, untitled_prefix='') %}
-    {% if poll_or_event.title %}
-        <em>Tau's Game Night «{{poll_or_event.title}}»</em>
+{% macro long_title(event, untitled_prefix='') %}
+    {% if event.title %}
+        <em>Tau's Game Night «{{event.title}}»</em>
     {% else %}
         {{prefix}} <em>Tau's Game Night</em>
     {% endif %}

@@ -1,15 +1,15 @@
 use crate::database::{Materialized, New, Unmaterialized};
 use crate::entity_state;
 use crate::iso_8601::Iso8601;
-use crate::poll::{Location, Poll, PollOption};
+use crate::poll::{Location, PollOption};
 use crate::users::{User, UserId};
 use serde::Serialize;
 use time::{Duration, OffsetDateTime};
 
-#[derive(Debug, sqlx::FromRow, Serialize)]
-pub(crate) struct Event<S: EventState = Materialized> {
+#[derive(Debug, Clone, sqlx::FromRow, Serialize)]
+pub(crate) struct Event<S: EventState = Materialized, L: EventLifecycle = Planned> {
     pub(crate) id: S::Id,
-    pub(crate) starts_at: Iso8601<OffsetDateTime>,
+    pub(crate) starts_at: L::StartsAt,
     pub(crate) title: String,
     pub(crate) description: String,
     #[sqlx(rename = "location_id")]
@@ -17,6 +17,24 @@ pub(crate) struct Event<S: EventState = Materialized> {
     pub(crate) created_by: S::CreatedBy,
     #[sqlx(skip)]
     pub(crate) participants: S::Participants,
+}
+
+#[derive(Debug)]
+pub(crate) struct PlanningDetails {
+    pub(crate) starts_at: <Planned as EventLifecycle>::StartsAt,
+    pub(crate) participants: Vec<Participant<New>>,
+}
+
+impl PlanningDetails {
+    pub(crate) fn new(chosen_option: &PollOption, invited: &[User]) -> Self {
+        Self {
+            starts_at: chosen_option.starts_at,
+            participants: invited
+                .iter()
+                .map(|u| Participant { id: (), user: u.id })
+                .collect(),
+        }
+    }
 }
 
 entity_state! {
@@ -28,38 +46,22 @@ entity_state! {
     }
 }
 
-impl Event<New> {
-    pub(crate) fn new(poll: &Poll, chosen_option: &PollOption, participants: &[User]) -> Self {
-        Self {
-            id: (),
-            starts_at: chosen_option.starts_at,
-            title: poll.title.clone(),
-            description: poll.description.clone(),
-            location: poll.location.id,
-            created_by: poll.created_by.id,
-            participants: participants
-                .iter()
-                .map(|user| Participant {
-                    id: (),
-                    user: user.id,
-                })
-                .collect(),
-        }
-    }
+pub(crate) trait EventLifecycle {
+    type StartsAt;
 }
 
-impl Event<New> {
-    pub(crate) fn into_unmaterialized(self, id: i64) -> Event<Unmaterialized> {
-        Event {
-            id,
-            starts_at: self.starts_at,
-            title: self.title,
-            description: self.description,
-            location: self.location,
-            created_by: self.created_by,
-            participants: (),
-        }
-    }
+#[derive(Debug, Clone)]
+pub(crate) struct Polling;
+
+impl EventLifecycle for Polling {
+    type StartsAt = Option<Iso8601<OffsetDateTime>>;
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct Planned;
+
+impl EventLifecycle for Planned {
+    type StartsAt = Iso8601<OffsetDateTime>;
 }
 
 pub(crate) const ESTIMATED_DURATION: Duration = Duration::hours(4);
@@ -72,13 +74,13 @@ impl<S: EventState> Event<S> {
     }
 }
 
-impl Event<Unmaterialized> {
+impl<L: EventLifecycle> Event<Unmaterialized, L> {
     pub(crate) fn into_materialized(
         self,
         location: Location,
         created_by: User,
         participants: Vec<Participant>,
-    ) -> Event {
+    ) -> Event<Materialized, L> {
         Event {
             id: self.id,
             starts_at: self.starts_at,
