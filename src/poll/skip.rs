@@ -1,8 +1,8 @@
 use super::{Answer, AnswerValue, Open, Poll};
-use crate::database::Repository;
+use crate::database::{New, Repository};
 use crate::template::PageBuilder;
 use crate::uri;
-use crate::users::{User, UserId};
+use crate::users::User;
 use anyhow::Error;
 use rocket::response::{Debug, Redirect};
 use rocket::{get, post};
@@ -36,7 +36,7 @@ pub(super) async fn skip_poll(
     Ok(Redirect::to(uri!(skip_poll_page)))
 }
 
-fn get_no_answers(user: &User, poll: &Poll) -> Vec<(i64, Answer<(), UserId>)> {
+fn get_no_answers(user: &User, poll: &Poll) -> Vec<(i64, Answer<New>)> {
     poll.options
         .iter()
         .map(|option| {

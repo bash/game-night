@@ -1,10 +1,10 @@
 use super::Open;
 use super::{Answer, AnswerValue};
-use crate::database::Repository;
+use crate::database::{New, Repository};
 use crate::iso_8601::Iso8601;
 use crate::poll::{Poll, PollOption};
 use crate::template::PageBuilder;
-use crate::users::{User, UserId};
+use crate::users::User;
 use anyhow::Error;
 use itertools::{Either, Itertools as _};
 use rocket::form::Form;
@@ -156,18 +156,14 @@ pub(super) async fn update_answers(
     Ok(Redirect::to(uri!(open_poll_page())))
 }
 
-fn apply_updates(
-    poll: &Poll,
-    user: &User,
-    updates: AnswerUpdates,
-) -> Vec<(i64, Answer<(), UserId>)> {
+fn apply_updates(poll: &Poll, user: &User, updates: AnswerUpdates) -> Vec<(i64, Answer<New>)> {
     poll.options
         .iter()
         .map(|option| (option.id, get_answer(user, &updates, option)))
         .collect()
 }
 
-fn get_answer(user: &User, updates: &AnswerUpdates, option: &PollOption) -> Answer<(), UserId> {
+fn get_answer(user: &User, updates: &AnswerUpdates, option: &PollOption) -> Answer<New> {
     Answer {
         id: (),
         user: user.id,

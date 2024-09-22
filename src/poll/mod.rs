@@ -125,7 +125,7 @@ impl PollState for New {
     type Id = ();
     type User = UserId;
     type Location = i64;
-    type Options = Vec<PollOption<(), UserId>>;
+    type Options = Vec<PollOption<Self>>;
 }
 
 impl PollState for Unmaterialized {
@@ -139,7 +139,7 @@ impl PollState for Materialized {
     type Id = i64;
     type User = User;
     type Location = Location;
-    type Options = Vec<PollOption>;
+    type Options = Vec<PollOption<Self>>;
 }
 
 impl Poll<Unmaterialized> {
@@ -176,14 +176,38 @@ impl Poll {
 }
 
 #[derive(Debug, Clone, sqlx::FromRow, Serialize)]
-pub(crate) struct PollOption<Id = i64, UserRef = User> {
-    pub(crate) id: Id,
+pub(crate) struct PollOption<S: PollOptionState = Materialized> {
+    pub(crate) id: S::Id,
     pub(crate) starts_at: Iso8601<OffsetDateTime>,
     #[sqlx(skip)]
-    pub(crate) answers: Vec<Answer<Id, UserRef>>,
+    pub(crate) answers: S::Answers,
 }
 
-impl<Id, UserRef> PollOption<Id, UserRef> {
+pub(crate) trait PollOptionState {
+    type Id;
+    type Answers: Default;
+}
+
+impl PollOptionState for New {
+    type Id = ();
+    type Answers = Vec<Answer<Self>>;
+}
+
+impl PollOptionState for Unmaterialized {
+    type Id = i64;
+    type Answers = ();
+}
+
+impl PollOptionState for Materialized {
+    type Id = i64;
+    type Answers = Vec<Answer<Self>>;
+}
+
+impl<S> PollOption<S>
+where
+    S: AnswerState,
+    S: PollOptionState<Answers = Vec<Answer<S>>>,
+{
     pub(crate) fn count_yes_answers(&self) -> usize {
         self.answers.iter().filter(|a| a.value.is_yes()).count()
     }
@@ -208,15 +232,35 @@ impl PollOption {
 }
 
 #[derive(Debug, Clone, sqlx::FromRow, Serialize)]
-pub(crate) struct Answer<Id = i64, UserRef = User> {
-    pub(crate) id: Id,
+pub(crate) struct Answer<S: AnswerState = Materialized> {
+    pub(crate) id: S::Id,
     pub(crate) value: AnswerValue,
     #[sqlx(rename = "user_id")]
-    pub(crate) user: UserRef,
+    pub(crate) user: S::User,
 }
 
-impl<Id, UserRef> Answer<Id, UserRef> {
-    pub(crate) fn materialize(self, user: User) -> Answer<Id> {
+pub(crate) trait AnswerState {
+    type Id;
+    type User;
+}
+
+impl AnswerState for New {
+    type Id = ();
+    type User = UserId;
+}
+
+impl AnswerState for Unmaterialized {
+    type Id = i64;
+    type User = UserId;
+}
+
+impl AnswerState for Materialized {
+    type Id = i64;
+    type User = User;
+}
+
+impl Answer<Unmaterialized> {
+    pub(crate) fn materialize(self, user: User) -> Answer {
         Answer {
             id: self.id,
             value: self.value,
@@ -226,10 +270,13 @@ impl<Id, UserRef> Answer<Id, UserRef> {
 }
 
 #[derive(Debug)]
-pub(crate) struct YesAnswer<UserRef = User>(pub(crate) Attendance, pub(crate) UserRef);
+pub(crate) struct YesAnswer<S: AnswerState>(pub(crate) Attendance, pub(crate) S::User);
 
-impl<Id, UserRef: Clone> Answer<Id, UserRef> {
-    pub(crate) fn yes(&self) -> Option<YesAnswer<UserRef>> {
+impl<S: AnswerState> Answer<S>
+where
+    S::User: Clone,
+{
+    pub(crate) fn yes(&self) -> Option<YesAnswer<S>> {
         use AnswerValue::*;
         match self.value {
             No { .. } => None,

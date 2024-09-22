@@ -109,10 +109,7 @@ fn choose_option(mut candidates: Vec<PollOption>, poll: &Poll) -> Option<PollOpt
     }
 }
 
-fn max_participants<Id, UserRef>(
-    options: &[PollOption<Id, UserRef>],
-    max_allowed_participants: usize,
-) -> Option<usize> {
+fn max_participants(options: &[PollOption], max_allowed_participants: usize) -> Option<usize> {
     options
         .iter()
         .map(|o| o.count_yes_answers())
@@ -120,10 +117,7 @@ fn max_participants<Id, UserRef>(
         .map(|max| min(max, max_allowed_participants))
 }
 
-fn choose_participants<Id, UserRef: Clone>(
-    answers: &[Answer<Id, UserRef>],
-    max_participants: usize,
-) -> (Vec<UserRef>, Vec<UserRef>) {
+fn choose_participants(answers: &[Answer], max_participants: usize) -> (Vec<User>, Vec<User>) {
     let (mut accepted, mut rejected): (Vec<_>, Vec<_>) = pre_partition_by_attendance(answers);
 
     let available = max_participants.saturating_sub(accepted.len());
@@ -135,9 +129,7 @@ fn choose_participants<Id, UserRef: Clone>(
     (accepted, rejected)
 }
 
-fn pre_partition_by_attendance<Id, UserRef: Clone>(
-    answers: &[Answer<Id, UserRef>],
-) -> (Vec<UserRef>, Vec<UserRef>) {
+fn pre_partition_by_attendance(answers: &[Answer]) -> (Vec<User>, Vec<User>) {
     answers
         .iter()
         .filter_map(|a| a.yes())

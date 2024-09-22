@@ -59,7 +59,7 @@ pub(crate) trait Repository: fmt::Debug + Send {
 
     async fn update_poll_open_until(&mut self, id: i64, close_at: OffsetDateTime) -> Result<()>;
 
-    async fn add_answers(&mut self, answers: Vec<(i64, Answer<(), UserId>)>) -> Result<()>;
+    async fn add_answers(&mut self, answers: Vec<(i64, Answer<New>)>) -> Result<()>;
 
     async fn get_open_poll(&mut self) -> Result<Option<Poll>>;
 
@@ -403,7 +403,7 @@ impl Repository for SqliteRepository {
         Ok(materialized_polls)
     }
 
-    async fn add_answers(&mut self, answers: Vec<(i64, Answer<(), UserId>)>) -> Result<()> {
+    async fn add_answers(&mut self, answers: Vec<(i64, Answer<New>)>) -> Result<()> {
         let mut transaction = self.0.begin().await?;
 
         for (option_id, answer) in answers {
@@ -592,7 +592,7 @@ async fn materialize_poll(
 
 async fn materialize_answer(
     connection: &mut SqliteConnection,
-    answer: Answer<i64, UserId>,
+    answer: Answer<Unmaterialized>,
 ) -> Result<Answer> {
     let user: User = sqlx::query_as("SELECT * FROM users WHERE id = ?1")
         .bind(answer.user)

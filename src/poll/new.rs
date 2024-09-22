@@ -10,7 +10,7 @@ use crate::register::rocket_uri_macro_profile;
 use crate::template::PageBuilder;
 use crate::uri;
 use crate::uri::UriBuilder;
-use crate::users::{User, UserId};
+use crate::users::User;
 use anyhow::{Context as _, Error, Result};
 use itertools::Itertools as _;
 use rocket::form::Form;
@@ -194,14 +194,14 @@ fn to_poll(poll: NewPollData, location: Location, user: &User) -> Result<Poll<Ne
 fn to_poll_options<'a>(
     options: impl Iterator<Item = &'a NewPollOption>,
     user: &User,
-) -> Result<Vec<PollOption<(), UserId>>> {
+) -> Result<Vec<PollOption<New>>> {
     options
         .filter(|o| o.enabled)
         .map(|o| to_poll_option(o, user))
         .collect()
 }
 
-fn to_poll_option(option: &NewPollOption, user: &User) -> Result<PollOption<(), UserId>> {
+fn to_poll_option(option: &NewPollOption, user: &User) -> Result<PollOption<New>> {
     Ok(PollOption {
         id: (),
         starts_at: to_cet(option.date, option.start_time)?.into(),
