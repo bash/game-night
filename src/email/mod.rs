@@ -11,14 +11,22 @@ use rocket::figment::value::magic::RelativePathBuf;
 use rocket::figment::Figment;
 use rocket_dyn_templates::tera::Context;
 use serde::{Deserialize, Serialize};
+use std::fmt;
 
 mod headers;
+mod message_id;
+pub(crate) use message_id::*;
 mod render;
 pub(crate) use render::*;
 
 #[async_trait]
-pub(crate) trait EmailSender: Send + Sync + DynClone {
-    async fn send(&self, recipient: Mailbox, email: &dyn EmailMessage) -> Result<()>;
+pub(crate) trait EmailSender: Send + Sync + fmt::Debug + DynClone {
+    async fn send(
+        &self,
+        recipient: Mailbox,
+        email: &dyn EmailMessage,
+        options: EmailMessageOptions,
+    ) -> Result<()>;
 
     fn preview(&self, email: &dyn EmailMessage) -> Result<EmailBody>;
 }
@@ -48,7 +56,13 @@ where
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Default, Clone)]
+pub(crate) struct EmailMessageOptions {
+    pub(crate) message_id: Option<MessageId>,
+    pub(crate) in_reply_to: Option<MessageId>,
+}
+
+#[derive(Debug, Clone)]
 pub(crate) struct EmailSenderImpl {
     sender: Mailbox,
     reply_to: Option<Mailbox>,
@@ -59,7 +73,12 @@ pub(crate) struct EmailSenderImpl {
 
 #[async_trait]
 impl EmailSender for EmailSenderImpl {
-    async fn send(&self, recipient: Mailbox, email: &dyn EmailMessage) -> Result<()> {
+    async fn send(
+        &self,
+        recipient: Mailbox,
+        email: &dyn EmailMessage,
+        options: EmailMessageOptions,
+    ) -> Result<()> {
         let body = self.renderer.render(email)?;
         let multipart = email
             .attachments()?
@@ -70,6 +89,17 @@ impl EmailSender for EmailSenderImpl {
             .to(recipient)
             .subject(email.subject())
             .auto_generated();
+        if let Some(message_id) = options.message_id {
+            // Careful if you think about refactoring this.
+            // `builder.message_id(None)` generates a random message id
+            // whereas not calling message_id causes no message id to be generated.
+            builder = builder.message_id(Some(message_id.to_string()));
+        }
+        if let Some(message_id) = options.in_reply_to {
+            builder = builder
+                .in_reply_to(message_id.to_string())
+                .references(message_id.to_string());
+        }
         if let Some(reply_to) = &self.reply_to {
             builder = builder.reply_to(reply_to.clone());
         }

@@ -4,7 +4,7 @@ use crate::fmt::LongEventTitle;
 use crate::play::rocket_uri_macro_play_page;
 use crate::uri::{HasUriBuilder as _, UriBuilder};
 use crate::users::User;
-use crate::{uri, RocketExt as _};
+use crate::{default, uri, RocketExt as _};
 use anyhow::{Error, Result};
 use lettre::message::header::ContentType;
 use lettre::message::{Attachment, SinglePart};
@@ -69,7 +69,9 @@ impl EventEmailSender {
             name: &user.name,
             ics_file,
         };
-        self.email_sender.send(user.mailbox()?, &email).await?;
+        self.email_sender
+            .send(user.mailbox()?, &email, default())
+            .await?;
         Ok(())
     }
 
@@ -82,7 +84,9 @@ impl EventEmailSender {
             event_url,
             name: &user.name,
         };
-        self.email_sender.send(user.mailbox()?, &email).await?;
+        self.email_sender
+            .send(user.mailbox()?, &email, default())
+            .await?;
         Ok(())
     }
 }
@@ -92,6 +96,7 @@ struct InvitedEmail<'a> {
     event: &'a Event,
     name: &'a str,
     event_url: Absolute<'a>,
+    #[serde(skip)]
     ics_file: String,
 }
 

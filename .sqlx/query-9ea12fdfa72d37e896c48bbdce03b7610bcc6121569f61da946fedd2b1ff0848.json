@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO event_emails (event_id, user_id, message_id, subject) VALUES (?1, ?2, ?3, ?4)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "9ea12fdfa72d37e896c48bbdce03b7610bcc6121569f61da946fedd2b1ff0848"
+}

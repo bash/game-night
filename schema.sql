@@ -78,6 +78,15 @@ CREATE TABLE events
     , created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
     );
 
+CREATE TABLE event_emails
+    ( id INTEGER PRIMARY KEY
+    , event_id INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE
+    , user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE
+    , message_id TEXT NOT NULL
+    , subject TEXT NOT NULL
+    , created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+    );
+
 CREATE TABLE participants
     ( id INTEGER PRIMARY KEY
     , event_id INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE

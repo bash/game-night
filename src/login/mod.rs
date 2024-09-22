@@ -3,8 +3,8 @@ use crate::database::Repository;
 use crate::email::{EmailMessage, EmailSender};
 use crate::register::rocket_uri_macro_getting_invited_page;
 use crate::template::PageBuilder;
-use crate::uri;
 use crate::users::{User, UserId};
+use crate::{default, uri};
 use anyhow::{Error, Result};
 use lettre::message::Mailbox;
 use rand::distributions::{Alphanumeric, Distribution, Uniform};
@@ -67,7 +67,7 @@ async fn login(
     form: Form<LoginData<'_>>,
 ) -> Result<Login, Debug<Error>> {
     if let Some((mailbox, email)) = login_email_for(repository.as_mut(), form.email).await? {
-        email_sender.send(mailbox, &email).await?;
+        email_sender.send(mailbox, &email, default()).await?;
         Ok(Login::success(redirect))
     } else {
         Ok(Login::failure(builder, redirect, form.into_inner()))

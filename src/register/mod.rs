@@ -1,5 +1,6 @@
 use crate::auth::{CookieJarExt, LoginState};
 use crate::database::Repository;
+use crate::default;
 use crate::email::EmailSender;
 use crate::invitation::{Invitation, Passphrase};
 use crate::template::PageBuilder;
@@ -248,7 +249,9 @@ async fn send_verification_email(
         name: user_details.name.to_owned(),
         code: code.code,
     };
-    email_sender.send(user_details.clone().into(), &email).await
+    email_sender
+        .send(user_details.clone().into(), &email, default())
+        .await
 }
 
 async fn email_verification_step(

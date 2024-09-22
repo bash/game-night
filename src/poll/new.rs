@@ -9,9 +9,9 @@ use crate::event::Event;
 use crate::iso_8601::Iso8601;
 use crate::register::rocket_uri_macro_profile;
 use crate::template::PageBuilder;
-use crate::uri;
 use crate::uri::UriBuilder;
 use crate::users::User;
+use crate::{default, uri};
 use anyhow::{Context as _, Error, Result};
 use itertools::Itertools as _;
 use rocket::form::Form;
@@ -285,7 +285,9 @@ async fn send_poll_emails(
             skip_poll_uri,
             manage_subscription_url: sub_url,
         };
-        email_sender.send(user.mailbox()?, &email).await?;
+        email_sender
+            .send(user.mailbox()?, &email, default())
+            .await?;
     }
 
     Ok(())

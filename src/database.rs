@@ -1,4 +1,7 @@
-use crate::event::{self, Event, EventLifecycle, Participant, PlanningDetails, Polling};
+use crate::email::MessageId;
+use crate::event::{
+    self, Event, EventEmail, EventLifecycle, Participant, PlanningDetails, Polling,
+};
 use crate::invitation::{Invitation, InvitationId, Passphrase};
 use crate::login::{LoginToken, LoginTokenType};
 use crate::poll::{Answer, Location, Poll, PollOption};
@@ -18,7 +21,7 @@ mod entity;
 pub(crate) use entity::*;
 
 #[async_trait]
-pub(crate) trait Repository: fmt::Debug + Send {
+pub(crate) trait Repository: EventEmailsRepository + fmt::Debug + Send {
     async fn add_invitation(&mut self, invitation: Invitation<()>) -> Result<Invitation>;
 
     async fn get_invitation_by_passphrase(
@@ -80,6 +83,15 @@ pub(crate) trait Repository: fmt::Debug + Send {
     async fn add_participant(&mut self, event: i64, user: UserId) -> Result<()>;
 
     async fn prune(&mut self) -> Result<u64>;
+
+    fn into_event_emails_repository(self: Box<Self>) -> Box<dyn EventEmailsRepository>;
+}
+
+#[async_trait]
+pub(crate) trait EventEmailsRepository: fmt::Debug + Send {
+    async fn add_event_email(&mut self, email: EventEmail) -> Result<()>;
+
+    async fn get_last_message_id(&mut self, event: i64, user: UserId) -> Result<Option<MessageId>>;
 }
 
 #[derive(Debug)]
@@ -562,6 +574,36 @@ impl Repository for SqliteRepository {
         transaction.commit().await?;
 
         Ok(tokens_result.rows_affected() + codes_result.rows_affected())
+    }
+
+    fn into_event_emails_repository(self: Box<Self>) -> Box<dyn EventEmailsRepository> {
+        Box::new(*self)
+    }
+}
+
+#[async_trait]
+impl EventEmailsRepository for SqliteRepository {
+    async fn add_event_email(&mut self, email: EventEmail) -> Result<()> {
+        sqlx::query!(
+            "INSERT INTO event_emails (event_id, user_id, message_id, subject) VALUES (?1, ?2, ?3, ?4)",
+            email.event,
+            email.user,
+            email.message_id,
+            email.subject)
+        .execute(self.executor()).await?;
+        Ok(())
+    }
+
+    async fn get_last_message_id(&mut self, event: i64, user: UserId) -> Result<Option<MessageId>> {
+        Ok(sqlx::query_scalar!(
+            r#"SELECT message_id as "message_id: _" FROM event_emails
+               WHERE event_id = ?1 AND user_id = ?2
+               ORDER BY created_at DESC LIMIT 1"#,
+            event,
+            user
+        )
+        .fetch_optional(self.executor())
+        .await?)
     }
 }
 

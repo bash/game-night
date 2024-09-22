@@ -1,6 +1,7 @@
 use anyhow::{Context as _, Result};
-use database::Repository;
+use database::{EventEmailsRepository, Repository};
 use email::{EmailSender, EmailSenderImpl};
+use event::EventEmailSender;
 use login::RocketSecretKey;
 use poll::poll_finalizer;
 use pruning::database_pruning;
@@ -152,6 +153,8 @@ pub(crate) trait RocketExt {
     async fn repository(&self) -> Result<Box<dyn Repository>>;
 
     fn email_sender(&self) -> Result<Box<dyn EmailSender>>;
+
+    async fn event_email_sender(&self) -> Result<Box<dyn EventEmailSender>>;
 }
 
 impl<P: Phase> RocketExt for Rocket<P> {
@@ -169,4 +172,17 @@ impl<P: Phase> RocketExt for Rocket<P> {
             .context("email sender not configured")
             .cloned()
     }
+
+    async fn event_email_sender(&self) -> Result<Box<dyn EventEmailSender>> {
+        let repository = self.repository().await?;
+        let email_sender = self.email_sender()?;
+        Ok(event::create_event_email_sender(
+            repository.into_event_emails_repository(),
+            email_sender,
+        ))
+    }
+}
+
+fn default<T: Default>() -> T {
+    T::default()
 }

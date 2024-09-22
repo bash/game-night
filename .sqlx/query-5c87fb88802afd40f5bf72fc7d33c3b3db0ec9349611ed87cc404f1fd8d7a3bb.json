@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT message_id as \"message_id: _\" FROM event_emails\n               WHERE event_id = ?1 AND user_id = ?2\n               ORDER BY created_at DESC LIMIT 1",
+  "describe": {
+    "columns": [
+      {
+        "name": "message_id: _",
+        "ordinal": 0,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "5c87fb88802afd40f5bf72fc7d33c3b3db0ec9349611ed87cc404f1fd8d7a3bb"
+}

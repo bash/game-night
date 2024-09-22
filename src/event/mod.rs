@@ -6,6 +6,9 @@ use crate::users::{User, UserId};
 use serde::Serialize;
 use time::{Duration, OffsetDateTime};
 
+mod email;
+pub(crate) use email::*;
+
 #[derive(Debug, Clone, sqlx::FromRow, Serialize)]
 pub(crate) struct Event<S: EventState = Materialized, L: EventLifecycle = Planned> {
     pub(crate) id: S::Id,
