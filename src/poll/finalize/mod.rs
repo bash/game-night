@@ -142,8 +142,9 @@ fn pre_partition_by_attendance(answers: &[Answer]) -> (Vec<User>, Vec<User>) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::database::Materialized;
     use crate::poll::AnswerValue;
-    use crate::users::UserId;
+    use crate::users::{EmailSubscription, Role, UserId};
     use time::OffsetDateTime;
 
     mod choose_participants {
@@ -153,8 +154,7 @@ mod tests {
 
         #[test]
         fn accepted_and_rejected_participants_are_empty_for_empty_answers() {
-            let (accepted, rejected) =
-                choose_participants::<(), UserId>(&[], MAX_ALLOWED_PARTICIPANTS);
+            let (accepted, rejected) = choose_participants(&[], MAX_ALLOWED_PARTICIPANTS);
             assert!(accepted.is_empty());
             assert!(rejected.is_empty());
         }
@@ -169,7 +169,10 @@ mod tests {
                 ],
                 2,
             );
-            assert_eq!(vec![UserId(1), UserId(2), UserId(3)], accepted);
+            assert_eq!(
+                vec![UserId(1), UserId(2), UserId(3)],
+                accepted.into_iter().map(|u| u.id).collect::<Vec<_>>()
+            );
             assert!(rejected.is_empty());
         }
 
@@ -183,7 +186,7 @@ mod tests {
 
         #[test]
         fn max_is_none_if_options_are_empty() {
-            assert!(max_participants::<(), ()>(&[], MAX_ALLOWED_PARTICIPANTS).is_none());
+            assert!(max_participants(&[], MAX_ALLOWED_PARTICIPANTS).is_none());
         }
 
         #[test]
@@ -191,7 +194,7 @@ mod tests {
             assert_eq!(
                 Some(4),
                 max_participants(
-                    &[poll_option(0), poll_option(1), poll_option(4)],
+                    &[poll_option(1, 0), poll_option(2, 1), poll_option(3, 4)],
                     MAX_ALLOWED_PARTICIPANTS
                 )
             );
@@ -206,28 +209,43 @@ mod tests {
             assert_eq!(
                 Some(MAX_ALLOWED_PARTICIPANTS),
                 max_participants(
-                    &[poll_option(MAX_ALLOWED_PARTICIPANTS + 1)],
+                    &[poll_option(1, MAX_ALLOWED_PARTICIPANTS + 1)],
                     MAX_ALLOWED_PARTICIPANTS
                 )
             );
         }
     }
 
-    fn poll_option(yes_answers: usize) -> PollOption<(), ()> {
+    fn poll_option(id: i64, yes_answers: usize) -> PollOption<Materialized> {
         PollOption {
-            id: (),
-            starts_at: OffsetDateTime::now_utc(),
+            id,
+            starts_at: OffsetDateTime::now_utc().into(),
             answers: (0..yes_answers)
-                .map(|_| answer(AnswerValue::yes(Attendance::Optional), ()))
+                .map(|i| answer(AnswerValue::yes(Attendance::Optional), UserId(i as i64)))
                 .collect(),
         }
     }
 
-    fn answer<UserRef>(value: AnswerValue, user: UserRef) -> Answer<(), UserRef> {
+    fn answer(value: AnswerValue, user: UserId) -> Answer<Materialized> {
         Answer {
             value,
-            id: (),
-            user,
+            id: user.0,
+            user: user_stub(user),
+        }
+    }
+
+    fn user_stub(id: UserId) -> User {
+        User {
+            id,
+            name: String::default(),
+            role: Role::default(),
+            email_address: String::default(),
+            email_subscription: EmailSubscription::default(),
+            invited_by: None,
+            campaign: None,
+            can_update_name: true,
+            can_answer_strongly: true,
+            last_active_at: OffsetDateTime::now_utc().into(),
         }
     }
 }

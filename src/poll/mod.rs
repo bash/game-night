@@ -374,13 +374,15 @@ mod tests {
     use super::*;
 
     mod count_yes_answers {
+        use crate::database::New;
+
         use super::*;
 
         #[test]
         fn option_with_no_answers_has_zero_yes_answers() {
-            let option: PollOption<_, ()> = PollOption {
+            let option: PollOption<New> = PollOption {
                 id: (),
-                starts_at: OffsetDateTime::now_utc(),
+                starts_at: OffsetDateTime::now_utc().into(),
                 answers: vec![],
             };
             assert_eq!(0, option.count_yes_answers());
@@ -388,12 +390,12 @@ mod tests {
 
         #[test]
         fn counts_yes_answers() {
-            let option: PollOption<_, ()> = PollOption {
+            let option: PollOption<New> = PollOption {
                 id: (),
-                starts_at: OffsetDateTime::now_utc(),
+                starts_at: OffsetDateTime::now_utc().into(),
                 answers: vec![
-                    answer(AnswerValue::yes(Attendance::Optional)),
-                    answer(AnswerValue::yes(Attendance::Required)),
+                    answer(AnswerValue::yes(Attendance::Optional), UserId(1)),
+                    answer(AnswerValue::yes(Attendance::Required), UserId(2)),
                 ],
             };
             assert_eq!(2, option.count_yes_answers());
@@ -401,22 +403,22 @@ mod tests {
 
         #[test]
         fn counts_yes_answers_while_ignoring_no_values() {
-            let option: PollOption<_, ()> = PollOption {
+            let option: PollOption<New> = PollOption {
                 id: (),
-                starts_at: OffsetDateTime::now_utc(),
+                starts_at: OffsetDateTime::now_utc().into(),
                 answers: vec![
-                    answer(AnswerValue::no(false)),
-                    answer(AnswerValue::yes(Attendance::Optional)),
+                    answer(AnswerValue::no(false), UserId(1)),
+                    answer(AnswerValue::yes(Attendance::Optional), UserId(2)),
                 ],
             };
             assert_eq!(1, option.count_yes_answers());
         }
 
-        fn answer(value: AnswerValue) -> Answer<(), ()> {
+        fn answer(value: AnswerValue, user: UserId) -> Answer<New> {
             Answer {
                 value,
                 id: (),
-                user: (),
+                user,
             }
         }
     }
