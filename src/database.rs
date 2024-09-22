@@ -55,7 +55,7 @@ pub(crate) trait Repository: fmt::Debug + Send {
 
     async fn use_login_token(&mut self, token: &str) -> Result<Option<UserId>>;
 
-    async fn add_poll(&mut self, poll: &Poll<New>) -> Result<Poll>;
+    async fn add_poll(&mut self, poll: Poll<New>) -> Result<Poll>;
 
     async fn update_poll_open_until(&mut self, id: i64, close_at: OffsetDateTime) -> Result<()>;
 
@@ -303,7 +303,7 @@ impl Repository for SqliteRepository {
         }
     }
 
-    async fn add_poll(&mut self, poll: &Poll<New>) -> Result<Poll> {
+    async fn add_poll(&mut self, poll: Poll<New>) -> Result<Poll> {
         let mut transaction = self.0.begin().await?;
 
         let poll_id = sqlx::query(
@@ -344,10 +344,7 @@ impl Repository for SqliteRepository {
             }
         }
 
-        let poll = sqlx::query_as("SELECT * FROM polls WHERE id = ?1")
-            .bind(poll_id)
-            .fetch_one(&mut *transaction)
-            .await?;
+        let poll = poll.into_unmaterialized(poll_id);
         let poll = materialize_poll(&mut *transaction, poll).await?;
 
         transaction.commit().await?;
@@ -588,7 +585,7 @@ async fn materialize_poll(
         }
     }
 
-    Ok(poll.materialize(user, location, options))
+    Ok(poll.into_materialized(user, location, options))
 }
 
 async fn materialize_answer(

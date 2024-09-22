@@ -1,5 +1,5 @@
 use crate::auth::{AuthorizedTo, ManagePoll};
-use crate::database::{Materialized, Repository, Unmaterialized};
+use crate::database::{Materialized, New, Repository, Unmaterialized};
 use crate::entity_state;
 use crate::iso_8601::Iso8601;
 use crate::play::rocket_uri_macro_archive_page;
@@ -124,8 +124,26 @@ entity_state! {
     }
 }
 
+impl Poll<New> {
+    pub(crate) fn into_unmaterialized(self, id: i64) -> Poll<Unmaterialized> {
+        Poll {
+            id,
+            min_participants: self.min_participants,
+            max_participants: self.max_participants,
+            strategy: self.strategy,
+            title: self.title,
+            description: self.description,
+            open_until: self.open_until,
+            closed: self.closed,
+            created_by: self.created_by,
+            location: self.location,
+            options: (),
+        }
+    }
+}
+
 impl Poll<Unmaterialized> {
-    pub(crate) fn materialize(
+    pub(crate) fn into_materialized(
         self,
         user: User,
         location: Location,

@@ -169,7 +169,7 @@ pub(super) async fn new_poll(
 ) -> Result<Redirect, Debug<Error>> {
     let location = repository.get_location().await?;
     let new_poll = to_poll(form.into_inner(), location, &user)?;
-    let poll = repository.add_poll(&new_poll).await?;
+    let poll = repository.add_poll(new_poll).await?;
     send_poll_emails(repository, email_sender.as_ref(), uri_builder, &poll).await?;
     Ok(Redirect::to(uri!(open_poll_page())))
 }
