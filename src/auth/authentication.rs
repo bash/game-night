@@ -141,7 +141,7 @@ fn user_id_cookie<'a>(name: &'a str, value: impl Into<Cow<'a, str>>) -> impl Int
         .http_only(true)
         .secure(true)
         .permanent()
-        .same_site(SameSite::Strict)
+        .same_site(SameSite::Lax)
 }
 
 const USER_ID_COOKIE_NAME: &str = "user-id";
