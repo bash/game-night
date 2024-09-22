@@ -14,6 +14,9 @@ use sqlx::{Connection as _, Executor, Sqlite, SqliteConnection};
 use std::fmt;
 use time::OffsetDateTime;
 
+mod entity;
+pub(crate) use entity::*;
+
 #[async_trait]
 pub(crate) trait Repository: fmt::Debug + Send {
     async fn add_invitation(&mut self, invitation: Invitation<()>) -> Result<Invitation>;
@@ -52,7 +55,7 @@ pub(crate) trait Repository: fmt::Debug + Send {
 
     async fn use_login_token(&mut self, token: &str) -> Result<Option<UserId>>;
 
-    async fn add_poll(&mut self, poll: &Poll<(), UserId, i64>) -> Result<i64>;
+    async fn add_poll(&mut self, poll: &Poll<New>) -> Result<Poll>;
 
     async fn update_poll_open_until(&mut self, id: i64, close_at: OffsetDateTime) -> Result<()>;
 
@@ -300,7 +303,7 @@ impl Repository for SqliteRepository {
         }
     }
 
-    async fn add_poll(&mut self, poll: &Poll<(), UserId, i64>) -> Result<i64> {
+    async fn add_poll(&mut self, poll: &Poll<New>) -> Result<Poll> {
         let mut transaction = self.0.begin().await?;
 
         let poll_id = sqlx::query(
@@ -341,9 +344,15 @@ impl Repository for SqliteRepository {
             }
         }
 
+        let poll = sqlx::query_as("SELECT * FROM polls WHERE id = ?1")
+            .bind(poll_id)
+            .fetch_one(&mut *transaction)
+            .await?;
+        let poll = materialize_poll(&mut *transaction, poll).await?;
+
         transaction.commit().await?;
 
-        Ok(poll_id)
+        Ok(poll)
     }
 
     async fn update_poll_open_until(&mut self, id: i64, open_until: OffsetDateTime) -> Result<()> {
@@ -546,7 +555,7 @@ impl Repository for SqliteRepository {
 
 async fn materialize_poll(
     connection: &mut SqliteConnection,
-    poll: Poll<i64, UserId, i64>,
+    poll: Poll<Unmaterialized>,
 ) -> Result<Poll> {
     // Yes, yes using a JOIN to fetch the poll and the user at once would be better,
     // but it's very inconvenient as I can't use the auto-derived FromRow impl :/

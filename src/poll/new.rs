@@ -3,7 +3,7 @@ use super::PollEmail;
 use super::{Answer, AnswerValue, Attendance, Location};
 use super::{DateSelectionStrategy, Poll, PollOption};
 use crate::auth::{AuthorizedTo, ManagePoll};
-use crate::database::Repository;
+use crate::database::{New, Repository};
 use crate::email::EmailSender;
 use crate::iso_8601::Iso8601;
 use crate::register::rocket_uri_macro_profile;
@@ -168,13 +168,13 @@ pub(super) async fn new_poll(
     uri_builder: UriBuilder<'_>,
 ) -> Result<Redirect, Debug<Error>> {
     let location = repository.get_location().await?;
-    let poll = to_poll(form.into_inner(), location, &user)?;
-    repository.add_poll(&poll).await?;
+    let new_poll = to_poll(form.into_inner(), location, &user)?;
+    let poll = repository.add_poll(&new_poll).await?;
     send_poll_emails(repository, email_sender.as_ref(), uri_builder, &poll).await?;
     Ok(Redirect::to(uri!(open_poll_page())))
 }
 
-fn to_poll(poll: NewPollData, location: Location, user: &User) -> Result<Poll<(), UserId, i64>> {
+fn to_poll(poll: NewPollData, location: Location, user: &User) -> Result<Poll<New>> {
     let now = now_utc_without_subminutes()?;
     Ok(Poll {
         id: (),
@@ -264,7 +264,7 @@ async fn send_poll_emails(
     mut repository: Box<dyn Repository>,
     email_sender: &dyn EmailSender,
     uri_builder: UriBuilder<'_>,
-    poll: &Poll<(), UserId, i64>,
+    poll: &Poll,
 ) -> Result<()> {
     for user in get_subscribed_users(repository.as_mut()).await? {
         let open_until = *poll.open_until;

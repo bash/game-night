@@ -1,5 +1,5 @@
 use crate::auth::{AuthorizedTo, ManagePoll};
-use crate::database::Repository;
+use crate::database::{Materialized, New, Repository, Unmaterialized};
 use crate::iso_8601::Iso8601;
 use crate::play::rocket_uri_macro_archive_page;
 use crate::register::rocket_uri_macro_profile;
@@ -96,8 +96,8 @@ async fn close_poll(
 }
 
 #[derive(Debug, Clone, sqlx::FromRow, Serialize)]
-pub(crate) struct Poll<Id = i64, UserRef = User, LocationRef = Location> {
-    pub(crate) id: Id,
+pub(crate) struct Poll<S: PollState = Materialized> {
+    pub(crate) id: S::Id,
     #[sqlx(try_from = "i64")]
     pub(crate) min_participants: usize,
     #[sqlx(try_from = "i64")]
@@ -107,20 +107,48 @@ pub(crate) struct Poll<Id = i64, UserRef = User, LocationRef = Location> {
     pub(crate) description: String,
     pub(crate) open_until: Iso8601<OffsetDateTime>,
     pub(crate) closed: bool,
-    pub(crate) created_by: UserRef,
+    pub(crate) created_by: S::User,
     #[sqlx(rename = "location_id")]
-    pub(crate) location: LocationRef,
+    pub(crate) location: S::Location,
     #[sqlx(skip)]
-    pub(crate) options: Vec<PollOption<Id, UserRef>>,
+    pub(crate) options: S::Options,
 }
 
-impl<Id, UserRef, LocationRef> Poll<Id, UserRef, LocationRef> {
+pub(crate) trait PollState {
+    type Id;
+    type User;
+    type Location;
+    type Options: Default;
+}
+
+impl PollState for New {
+    type Id = ();
+    type User = UserId;
+    type Location = i64;
+    type Options = Vec<PollOption<(), UserId>>;
+}
+
+impl PollState for Unmaterialized {
+    type Id = i64;
+    type User = UserId;
+    type Location = i64;
+    type Options = ();
+}
+
+impl PollState for Materialized {
+    type Id = i64;
+    type User = User;
+    type Location = Location;
+    type Options = Vec<PollOption>;
+}
+
+impl Poll<Unmaterialized> {
     pub(crate) fn materialize(
         self,
         user: User,
         location: Location,
-        options: Vec<PollOption<Id>>,
-    ) -> Poll<Id> {
+        options: Vec<PollOption>,
+    ) -> Poll {
         Poll {
             id: self.id,
             min_participants: self.min_participants,

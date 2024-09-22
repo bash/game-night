@@ -30,20 +30,15 @@ pub(super) fn poll_email_preview(
 }
 
 #[derive(Debug, Clone, Serialize)]
-pub(super) struct PollEmail<'a, Id, UserRef, LocationRef> {
+pub(super) struct PollEmail<'a> {
     pub(super) name: String,
-    pub(super) poll: Poll<Id, UserRef, LocationRef>,
+    pub(super) poll: Poll,
     pub(super) poll_uri: Absolute<'a>,
     pub(super) skip_poll_uri: Absolute<'a>,
     pub(super) manage_subscription_url: Absolute<'a>,
 }
 
-impl<Id, UserRef, LocationRef> EmailMessage for PollEmail<'_, Id, UserRef, LocationRef>
-where
-    Id: Serialize + Send + Sync,
-    UserRef: Serialize + Send + Sync,
-    LocationRef: Serialize + Send + Sync,
-{
+impl EmailMessage for PollEmail<'_> {
     fn subject(&self) -> String {
         format!(
             "Pick a Date for {title}",
