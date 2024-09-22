@@ -449,6 +449,7 @@ impl Repository for SqliteRepository {
     }
 
     async fn close_poll(&mut self, id: i64) -> Result<()> {
+        // TODO: merge this with plan_event
         sqlx::query!("UPDATE polls SET closed = ?1 WHERE id = ?2", true, id)
             .execute(self.executor())
             .await?;
@@ -473,7 +474,16 @@ impl Repository for SqliteRepository {
             .execute(&mut *transaction)
             .await?;
         }
-        todo!()
+
+        let event: Event<_> = sqlx::query_as("SELECT * FROM events WHERE id = ?1")
+            .bind(id)
+            .fetch_one(&mut *transaction)
+            .await?;
+        let event = materialize_event(&mut transaction, event).await?;
+
+        transaction.commit().await?;
+
+        Ok(event)
     }
 
     async fn get_location(&mut self) -> Result<Location> {
