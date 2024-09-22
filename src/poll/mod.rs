@@ -1,5 +1,6 @@
 use crate::auth::{AuthorizedTo, ManagePoll};
-use crate::database::{Materialized, New, Repository, Unmaterialized};
+use crate::database::{Materialized, Repository, Unmaterialized};
+use crate::entity_state;
 use crate::iso_8601::Iso8601;
 use crate::play::rocket_uri_macro_archive_page;
 use crate::register::rocket_uri_macro_profile;
@@ -114,32 +115,13 @@ pub(crate) struct Poll<S: PollState = Materialized> {
     pub(crate) options: S::Options,
 }
 
-pub(crate) trait PollState {
-    type Id;
-    type User;
-    type Location;
-    type Options: Default;
-}
-
-impl PollState for New {
-    type Id = ();
-    type User = UserId;
-    type Location = i64;
-    type Options = Vec<PollOption<Self>>;
-}
-
-impl PollState for Unmaterialized {
-    type Id = i64;
-    type User = UserId;
-    type Location = i64;
-    type Options = ();
-}
-
-impl PollState for Materialized {
-    type Id = i64;
-    type User = User;
-    type Location = Location;
-    type Options = Vec<PollOption<Self>>;
+entity_state! {
+    pub(crate) trait PollState {
+        type Id = () => i64 => i64;
+        type User = UserId => UserId => User;
+        type Location = i64 => i64 => Location;
+        type Options: Default = Vec<PollOption<Self>> => () => Vec<PollOption<Self>>;
+    }
 }
 
 impl Poll<Unmaterialized> {
@@ -183,24 +165,11 @@ pub(crate) struct PollOption<S: PollOptionState = Materialized> {
     pub(crate) answers: S::Answers,
 }
 
-pub(crate) trait PollOptionState {
-    type Id;
-    type Answers: Default;
-}
-
-impl PollOptionState for New {
-    type Id = ();
-    type Answers = Vec<Answer<Self>>;
-}
-
-impl PollOptionState for Unmaterialized {
-    type Id = i64;
-    type Answers = ();
-}
-
-impl PollOptionState for Materialized {
-    type Id = i64;
-    type Answers = Vec<Answer<Self>>;
+entity_state! {
+    pub(crate) trait PollOptionState {
+        type Id = () => i64 => i64;
+        type Answers: Default = Vec<Answer<Self>> => () => Vec<Answer<Self>>;
+    }
 }
 
 impl<S> PollOption<S>
@@ -239,24 +208,11 @@ pub(crate) struct Answer<S: AnswerState = Materialized> {
     pub(crate) user: S::User,
 }
 
-pub(crate) trait AnswerState {
-    type Id;
-    type User;
-}
-
-impl AnswerState for New {
-    type Id = ();
-    type User = UserId;
-}
-
-impl AnswerState for Unmaterialized {
-    type Id = i64;
-    type User = UserId;
-}
-
-impl AnswerState for Materialized {
-    type Id = i64;
-    type User = User;
+entity_state! {
+    pub(crate) trait AnswerState {
+        type Id = () => i64 => i64;
+        type User = UserId => UserId => User;
+    }
 }
 
 impl Answer<Unmaterialized> {

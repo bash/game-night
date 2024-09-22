@@ -69,7 +69,7 @@ pub(crate) trait Repository: fmt::Debug + Send {
 
     async fn get_location(&mut self) -> Result<Location>;
 
-    async fn add_event(&mut self, event: Event<(), UserId, i64>) -> Result<Event>;
+    async fn add_event(&mut self, event: Event<New>) -> Result<Event>;
 
     async fn get_next_event(&mut self) -> Result<Option<Event>>;
 
@@ -451,7 +451,7 @@ impl Repository for SqliteRepository {
             .await?)
     }
 
-    async fn add_event(&mut self, event: Event<(), UserId, i64>) -> Result<Event> {
+    async fn add_event(&mut self, event: Event<New>) -> Result<Event> {
         let mut transaction = self.0.begin().await?;
 
         let event_id = sqlx::query(
@@ -475,7 +475,8 @@ impl Repository for SqliteRepository {
                 .await?;
         }
 
-        let event = materialize_event(&mut transaction, event.with_id(event_id)).await?;
+        let event = event.into_unmaterialized(event_id);
+        let event = materialize_event(&mut transaction, event).await?;
 
         transaction.commit().await?;
 
@@ -485,7 +486,7 @@ impl Repository for SqliteRepository {
     async fn get_next_event(&mut self) -> Result<Option<Event>> {
         let mut transaction = self.0.begin().await?;
 
-        let event: Option<Event<i64, UserId, i64>> = sqlx::query_as(
+        let event: Option<Event<Unmaterialized>> = sqlx::query_as(
             "SELECT * FROM events
              WHERE (unixepoch(starts_at) + ?1) - unixepoch('now') >= 0
              ORDER BY starts_at ASC
@@ -503,7 +504,7 @@ impl Repository for SqliteRepository {
     async fn get_newest_event(&mut self) -> Result<Option<Event>> {
         let mut transaction = self.0.begin().await?;
 
-        let event: Option<Event<i64, UserId, i64>> =
+        let event: Option<Event<Unmaterialized>> =
             sqlx::query_as("SELECT * FROM events ORDER BY starts_at DESC LIMIT 1")
                 .fetch_optional(&mut *transaction)
                 .await?;
@@ -515,7 +516,7 @@ impl Repository for SqliteRepository {
 
     async fn get_events(&mut self) -> Result<Vec<Event>> {
         let mut transaction = self.0.begin().await?;
-        let events: Vec<Event<i64, UserId, i64>> =
+        let events: Vec<Event<Unmaterialized>> =
             sqlx::query_as("SELECT * FROM events ORDER BY starts_at DESC")
                 .fetch_all(&mut *transaction)
                 .await?;
@@ -601,9 +602,9 @@ async fn materialize_answer(
     Ok(answer.materialize(user))
 }
 
-async fn materialize_event<Participants: Default>(
+async fn materialize_event(
     connection: &mut SqliteConnection,
-    event: Event<i64, UserId, i64, Participants>,
+    event: Event<Unmaterialized>,
 ) -> Result<Event> {
     let created_by = sqlx::query_as("SELECT * FROM users WHERE id = ?1")
         .bind(event.created_by)
@@ -618,12 +619,12 @@ async fn materialize_event<Participants: Default>(
         .fetch_all(&mut *connection)
         .await?;
     let participants = materialize_participants(connection, participants).await?;
-    Ok(event.materialize(location, created_by, participants))
+    Ok(event.into_materialized(location, created_by, participants))
 }
 
 async fn materialize_participants(
     connection: &mut SqliteConnection,
-    participants: Vec<Participant<i64, UserId>>,
+    participants: Vec<Participant<Unmaterialized>>,
 ) -> Result<Vec<Participant>> {
     let mut materialized = Vec::new();
     for participant in participants {
@@ -634,13 +635,13 @@ async fn materialize_participants(
 
 async fn materialize_participant(
     connection: &mut SqliteConnection,
-    participant: Participant<i64, UserId>,
+    participant: Participant<Unmaterialized>,
 ) -> Result<Participant> {
     let user = sqlx::query_as("SELECT * FROM users WHERE id = ?1")
         .bind(participant.user)
         .fetch_one(&mut *connection)
         .await?;
-    Ok(participant.materialize(user))
+    Ok(participant.into_materialized(user))
 }
 
 async fn delete_token<'c, E>(executor: E, token: &str) -> Result<bool>

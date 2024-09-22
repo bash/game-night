@@ -1,7 +1,7 @@
 use super::{Answer, Attendance, DateSelectionStrategy, Poll, PollOption};
-use crate::database::Repository;
+use crate::database::{New, Repository};
 use crate::event::Event;
-use crate::users::{User, UserId};
+use crate::users::User;
 use anyhow::Result;
 use itertools::{Either, Itertools};
 use rand::seq::SliceRandom;
@@ -67,7 +67,7 @@ fn finalize_poll_dry_run(poll: Poll) -> FinalizeResult {
 enum FinalizeResult {
     /// Date selected, some people might not be invited though.
     Success {
-        event: Event<(), UserId, i64>,
+        event: Event<New>,
         invited: Vec<User>,
         overflow: Vec<User>,
         missed: Vec<User>,
