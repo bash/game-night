@@ -7,7 +7,7 @@ use crate::users::{User, UserId};
 use crate::{default, uri};
 use anyhow::{Error, Result};
 use lettre::message::Mailbox;
-use rand::distributions::{Alphanumeric, Distribution, Uniform};
+use rand::distributions::{Alphanumeric, DistString, Distribution, Uniform};
 use rand::{thread_rng, Rng};
 use rocket::form::Form;
 use rocket::response::{self, Debug, Redirect, Responder};
@@ -205,10 +205,9 @@ struct ReusableToken;
 
 impl Distribution<String> for ReusableToken {
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> String {
-        rng.sample_iter(&Alphanumeric)
-            .take(20)
-            .map(|d| d.to_string())
-            .collect()
+        // We add a prefix to make the token identifiable
+        // without having to consult the database.
+        format!("r_{}", Alphanumeric.sample_string(rng, 20))
     }
 }
 
