@@ -10,6 +10,7 @@ use lettre::message::header::ContentType;
 use lettre::message::{Attachment, SinglePart};
 use rocket::http::uri::Absolute;
 use rocket::http::Status;
+use rocket::outcome::IntoOutcome;
 use rocket::request::{FromRequest, Outcome};
 use rocket::{async_trait, Orbit, Request, Rocket};
 use serde::Serialize;
@@ -50,10 +51,9 @@ impl<'r> FromRequest<'r> for EventEmailSender {
     type Error = Error;
 
     async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
-        match EventEmailSender::from_rocket(request.rocket()).await {
-            Ok(sender) => Outcome::Success(sender),
-            Err(e) => Outcome::Error((Status::InternalServerError, e)),
-        }
+        EventEmailSender::from_rocket(request.rocket())
+            .await
+            .or_error(Status::InternalServerError)
     }
 }
 

@@ -33,10 +33,7 @@ impl<'r> FromRequest<'r> for ProvidedCampaign<'r> {
         match campaign_from_figment(request.rocket().figment(), campaign) {
             Ok(Some(c)) => Outcome::Success(ProvidedCampaign(Some(c))),
             Ok(None) => Outcome::Error((Status::BadRequest, None)),
-            Err(e) => {
-                dbg!(&e);
-                Outcome::Error((Status::ServiceUnavailable, Some(e)))
-            }
+            Err(e) => Outcome::Error((Status::ServiceUnavailable, Some(e))),
         }
     }
 }

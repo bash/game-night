@@ -1,6 +1,7 @@
 use anyhow::{Error, Result};
 use rocket::http::uri::Absolute;
 use rocket::http::Status;
+use rocket::outcome::IntoOutcome;
 use rocket::request::{FromRequest, Outcome};
 use rocket::tokio::sync::Mutex;
 use rocket::{async_trait, Phase, Request, Rocket};
@@ -53,10 +54,11 @@ impl<'r> FromRequest<'r> for UriBuilder<'r> {
     type Error = Error;
 
     async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
-        match request.rocket().uri_builder().await {
-            Ok(value) => Outcome::Success(value),
-            Err(e) => Outcome::Error((Status::InternalServerError, e)),
-        }
+        request
+            .rocket()
+            .uri_builder()
+            .await
+            .or_error(Status::InternalServerError)
     }
 }
 

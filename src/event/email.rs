@@ -4,10 +4,17 @@ use crate::{
     email::{EmailMessage, EmailMessageOptions, EmailSender, MessageId},
     event::Event,
     users::{User, UserId},
+    RocketExt,
 };
-use anyhow::Result;
+use anyhow::{Error, Result};
 use rand::{thread_rng, Rng};
-use rocket::async_trait;
+use rocket::{
+    async_trait,
+    http::Status,
+    outcome::IntoOutcome,
+    request::{FromRequest, Outcome},
+    Request,
+};
 
 pub(crate) fn create_event_email_sender(
     repository: Box<dyn EventEmailsRepository>,
@@ -34,6 +41,18 @@ pub(crate) struct EventEmail {
     pub(crate) user: UserId,
     pub(crate) message_id: MessageId,
     pub(crate) subject: String,
+}
+
+#[async_trait]
+impl<'r> FromRequest<'r> for Box<dyn EventEmailSender> {
+    type Error = Error;
+    async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
+        request
+            .rocket()
+            .event_email_sender()
+            .await
+            .or_error(Status::InternalServerError)
+    }
 }
 
 #[derive(Debug)]

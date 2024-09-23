@@ -2,7 +2,7 @@ use crate::database::Repository;
 use crate::users::{User, UserId};
 use anyhow::{Error, Result};
 use rocket::http::{Cookie, CookieJar, SameSite, Status};
-use rocket::outcome::try_outcome;
+use rocket::outcome::{try_outcome, IntoOutcome};
 use rocket::request::{FromRequest, Outcome};
 use rocket::{async_trait, Request};
 use std::borrow::Cow;
@@ -35,10 +35,10 @@ impl<'r> FromRequest<'r> for LoginState {
     type Error = Error;
 
     async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
-        match request.cookies().login_state() {
-            Ok(s) => Outcome::Success(s),
-            Err(e) => Outcome::Error((Status::InternalServerError, e)),
-        }
+        request
+            .cookies()
+            .login_state()
+            .or_error(Status::InternalServerError)
     }
 }
 
