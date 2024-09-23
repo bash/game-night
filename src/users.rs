@@ -8,10 +8,12 @@ use rocket::response::Debug;
 use rocket::{get, routes, Route};
 use rocket_db_pools::sqlx;
 use rocket_dyn_templates::{context, Template};
-use serde::{Deserialize, Serialize};
-use time::{Date, OffsetDateTime};
+use serde::Serialize;
+use time::OffsetDateTime;
 
 mod email_subscription;
+pub(crate) use email_subscription::*;
+mod email_subscription_encoding;
 mod last_activity;
 pub(crate) use last_activity::LastActivity;
 
@@ -60,27 +62,6 @@ pub(crate) enum Role {
     Admin,
     #[default]
     Guest,
-}
-
-#[derive(Default, Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case", tag = "type")]
-pub(crate) enum EmailSubscription {
-    #[default]
-    Subscribed,
-    TemporarilyUnsubscribed {
-        until: Iso8601<Date>,
-    },
-    PermanentlyUnsubscribed,
-}
-
-impl EmailSubscription {
-    pub(crate) fn is_subscribed(&self, today: Date) -> bool {
-        match self {
-            EmailSubscription::Subscribed => true,
-            EmailSubscription::TemporarilyUnsubscribed { until } => today > **until,
-            EmailSubscription::PermanentlyUnsubscribed => false,
-        }
-    }
 }
 
 impl<Id> User<Id> {

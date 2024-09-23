@@ -10,7 +10,7 @@ use crate::iso_8601::Iso8601;
 use crate::register::rocket_uri_macro_profile;
 use crate::template::PageBuilder;
 use crate::uri::UriBuilder;
-use crate::users::User;
+use crate::users::{SubscribedUsers, User};
 use crate::{default, uri};
 use anyhow::{Context as _, Error, Result};
 use itertools::Itertools as _;
@@ -163,6 +163,7 @@ impl CalendarDayPrefill {
 #[post("/poll/new", data = "<form>")]
 pub(super) async fn new_poll(
     mut repository: Box<dyn Repository>,
+    subscribed_users: SubscribedUsers,
     email_sender: &State<Box<dyn EmailSender>>,
     form: Form<NewPollData<'_>>,
     user: AuthorizedTo<ManagePoll>,
@@ -171,7 +172,7 @@ pub(super) async fn new_poll(
     let location = repository.get_location().await?;
     let new_poll = to_poll(form.into_inner(), location, &user)?;
     let poll = repository.add_poll(new_poll).await?;
-    send_poll_emails(repository, email_sender.as_ref(), uri_builder, &poll).await?;
+    send_poll_emails(subscribed_users, email_sender.as_ref(), uri_builder, &poll).await?;
     Ok(Redirect::to(uri!(open_poll_page())))
 }
 
@@ -267,12 +268,12 @@ where
 }
 
 async fn send_poll_emails(
-    mut repository: Box<dyn Repository>,
+    subscribed_users: SubscribedUsers,
     email_sender: &dyn EmailSender,
     uri_builder: UriBuilder<'_>,
     poll: &Poll,
 ) -> Result<()> {
-    for user in get_subscribed_users(repository.as_mut()).await? {
+    for user in subscribed_users.0 {
         let open_until = *poll.open_until;
         let poll_uri = uri!(auto_login(&user, open_until); uri_builder, open_poll_page()).await?;
         let skip_poll_uri =
@@ -291,15 +292,4 @@ async fn send_poll_emails(
     }
 
     Ok(())
-}
-
-async fn get_subscribed_users(
-    repository: &mut dyn Repository,
-) -> Result<impl Iterator<Item = User>> {
-    let today = OffsetDateTime::now_utc().date();
-    Ok(repository
-        .get_users()
-        .await?
-        .into_iter()
-        .filter(move |u| u.email_subscription.is_subscribed(today)))
 }

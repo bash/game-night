@@ -1,52 +1,60 @@
-use super::EmailSubscription;
-use sqlx::encode::IsNull;
-use sqlx::error::BoxDynError;
-use sqlx::{Database, Decode, Encode, Type};
-use time::format_description::FormatItem;
-use time::macros::format_description;
-use time::Date;
+use super::User;
+use crate::{database::Repository, iso_8601::Iso8601};
+use anyhow::{Error, Result};
+use rocket::{
+    async_trait,
+    http::Status,
+    outcome::{try_outcome, IntoOutcome},
+    request::{FromRequest, Outcome},
+    Request,
+};
+use serde::{Deserialize, Serialize};
+use time::{Date, OffsetDateTime};
 
-impl<'a, DB: Database> Type<DB> for EmailSubscription
-where
-    &'a str: Type<DB>,
-{
-    fn type_info() -> DB::TypeInfo {
-        <&str as Type<DB>>::type_info()
-    }
-
-    fn compatible(ty: &DB::TypeInfo) -> bool {
-        <&str as Type<DB>>::compatible(ty)
-    }
+#[derive(Default, Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case", tag = "type")]
+pub(crate) enum EmailSubscription {
+    #[default]
+    Subscribed,
+    TemporarilyUnsubscribed {
+        until: Iso8601<Date>,
+    },
+    PermanentlyUnsubscribed,
 }
 
-impl<'q, DB: Database> Encode<'q, DB> for EmailSubscription
-where
-    &'q str: Encode<'q, DB>,
-    Date: Encode<'q, DB>,
-{
-    fn encode_by_ref(&self, buf: &mut DB::ArgumentBuffer<'q>) -> Result<IsNull, BoxDynError> {
-        use EmailSubscription::*;
+impl EmailSubscription {
+    pub(crate) fn is_subscribed(&self, today: Date) -> bool {
         match self {
-            Subscribed => "subscribed".encode_by_ref(buf),
-            PermanentlyUnsubscribed => "unsubscribed".encode_by_ref(buf),
-            TemporarilyUnsubscribed { until: date } => date.encode_by_ref(buf),
+            EmailSubscription::Subscribed => true,
+            EmailSubscription::TemporarilyUnsubscribed { until } => today > **until,
+            EmailSubscription::PermanentlyUnsubscribed => false,
         }
     }
 }
 
-impl<'r, DB: Database> Decode<'r, DB> for EmailSubscription
-where
-    &'r str: Decode<'r, DB>,
-{
-    fn decode(value: DB::ValueRef<'r>) -> Result<Self, sqlx::error::BoxDynError> {
-        const FORMAT: &[FormatItem<'static>] = format_description!("[year]-[month]-[day]");
-        use EmailSubscription::*;
-        match <&str as Decode<'r, DB>>::decode(value)? {
-            "subscribed" => Ok(Subscribed),
-            "unsubscribed" => Ok(PermanentlyUnsubscribed),
-            other => Ok(TemporarilyUnsubscribed {
-                until: Date::parse(other, FORMAT)?.into(),
-            }),
-        }
+#[derive(Debug, Clone)]
+pub(crate) struct SubscribedUsers(pub(crate) Vec<User>);
+
+#[async_trait]
+impl<'r> FromRequest<'r> for SubscribedUsers {
+    type Error = Error;
+
+    async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
+        let mut database: Box<dyn Repository> = try_outcome!(request.guard().await);
+        let users = try_outcome!(get_subscribed_users(&mut *database)
+            .await
+            .or_error(Status::InternalServerError));
+        Outcome::Success(SubscribedUsers(users.collect()))
     }
+}
+
+async fn get_subscribed_users(
+    repository: &mut dyn Repository,
+) -> Result<impl Iterator<Item = User>> {
+    let today = OffsetDateTime::now_utc().date();
+    Ok(repository
+        .get_users()
+        .await?
+        .into_iter()
+        .filter(move |u| u.email_subscription.is_subscribed(today)))
 }
