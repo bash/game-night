@@ -1,7 +1,7 @@
 use anyhow::{Context as _, Result};
-use database::{EventEmailsRepository, Repository};
+use database::Repository;
 use email::{EmailSender, EmailSenderImpl};
-use event::EventEmailSender;
+use event::{EventEmailSender, EventLifecycle};
 use login::RocketSecretKey;
 use poll::poll_finalizer;
 use pruning::database_pruning;
@@ -154,7 +154,7 @@ pub(crate) trait RocketExt {
 
     fn email_sender(&self) -> Result<Box<dyn EmailSender>>;
 
-    async fn event_email_sender(&self) -> Result<Box<dyn EventEmailSender>>;
+    async fn event_email_sender<L: EventLifecycle>(&self) -> Result<Box<dyn EventEmailSender<L>>>;
 }
 
 impl<P: Phase> RocketExt for Rocket<P> {
@@ -173,7 +173,7 @@ impl<P: Phase> RocketExt for Rocket<P> {
             .cloned()
     }
 
-    async fn event_email_sender(&self) -> Result<Box<dyn EventEmailSender>> {
+    async fn event_email_sender<L: EventLifecycle>(&self) -> Result<Box<dyn EventEmailSender<L>>> {
         let repository = self.repository().await?;
         let email_sender = self.email_sender()?;
         Ok(event::create_event_email_sender(

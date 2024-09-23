@@ -35,5 +35,14 @@ INSERT INTO polls_ SELECT id, min_participants, max_participants, strategy, open
 DROP TABLE polls;
 ALTER TABLE polls_ RENAME TO polls;
 
+CREATE TABLE event_emails
+    ( id INTEGER PRIMARY KEY
+    , event_id INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE
+    , user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE
+    , message_id TEXT NOT NULL
+    , subject TEXT NOT NULL
+    , created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+    );
+
 PRAGMA foreign_key_check;
 COMMIT;

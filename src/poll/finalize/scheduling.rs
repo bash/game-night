@@ -3,10 +3,11 @@ use crate::RocketExt;
 use anyhow::{Context, Result};
 use rocket::fairing::{self, Fairing};
 use rocket::tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender};
-use rocket::tokio::sync::RwLock;
+use rocket::tokio::sync::{Mutex, RwLock};
 use rocket::tokio::time::interval;
 use rocket::tokio::{self, select};
 use rocket::{async_trait, warn, Build, Orbit, Rocket, Shutdown};
+use std::sync::Arc;
 use std::time::Duration;
 
 pub(crate) fn poll_finalizer() -> impl Fairing {
@@ -65,7 +66,7 @@ impl FinalizeContext {
     async fn from_rocket(rocket: &Rocket<Orbit>) -> Result<Self> {
         Ok(Self {
             repository: rocket.repository().await?,
-            sender: EventEmailSender::from_rocket(rocket).await?,
+            sender: Arc::new(Mutex::new(EventEmailSender::from_rocket(rocket).await?)),
         })
     }
 }

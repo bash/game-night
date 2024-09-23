@@ -1,5 +1,7 @@
+use std::fmt;
+
 use crate::{
-    database::EventEmailsRepository,
+    database::{EventEmailsRepository, Materialized},
     default,
     email::{EmailMessage, EmailMessageOptions, EmailSender, MessageId},
     event::Event,
@@ -16,20 +18,22 @@ use rocket::{
     Request,
 };
 
-pub(crate) fn create_event_email_sender(
+use super::{EventLifecycle, Planned};
+
+pub(crate) fn create_event_email_sender<L: EventLifecycle>(
     repository: Box<dyn EventEmailsRepository>,
     sender: Box<dyn EmailSender>,
-) -> Box<dyn EventEmailSender> {
+) -> Box<dyn EventEmailSender<L>> {
     Box::new(EventEmailSenderImpl { repository, sender })
 }
 
 /// An email sender that sends out emails relating
 /// to an event / poll.
 #[async_trait]
-pub(crate) trait EventEmailSender {
+pub(crate) trait EventEmailSender<L: EventLifecycle = Planned>: fmt::Debug + Send {
     async fn send(
         &mut self,
-        event: &Event,
+        event: &Event<Materialized, L>,
         recipient: &User,
         email: &dyn EmailMessage,
     ) -> Result<()>;
@@ -44,7 +48,7 @@ pub(crate) struct EventEmail {
 }
 
 #[async_trait]
-impl<'r> FromRequest<'r> for Box<dyn EventEmailSender> {
+impl<L: EventLifecycle, 'r> FromRequest<'r> for Box<dyn EventEmailSender<L>> {
     type Error = Error;
 
     async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
@@ -63,10 +67,10 @@ struct EventEmailSenderImpl {
 }
 
 #[async_trait]
-impl EventEmailSender for EventEmailSenderImpl {
+impl<L: EventLifecycle> EventEmailSender<L> for EventEmailSenderImpl {
     async fn send(
         &mut self,
-        event: &Event,
+        event: &Event<Materialized, L>,
         recipient: &User,
         email: &dyn EmailMessage,
     ) -> Result<()> {
@@ -94,7 +98,11 @@ impl EventEmailSender for EventEmailSenderImpl {
 }
 
 impl EventEmailSenderImpl {
-    async fn get_in_reply_to(&mut self, event: &Event, user: &User) -> Result<Option<MessageId>> {
+    async fn get_in_reply_to<L: EventLifecycle>(
+        &mut self,
+        event: &Event<Materialized, L>,
+        user: &User,
+    ) -> Result<Option<MessageId>> {
         self.repository.get_last_message_id(event.id, user.id).await
     }
 }

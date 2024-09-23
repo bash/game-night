@@ -1,10 +1,10 @@
-use crate::email::{EmailMessage, EmailSender};
-use crate::event::Event;
+use crate::email::EmailMessage;
+use crate::event::{Event, EventEmailSender as DynEventEmailSender};
 use crate::fmt::LongEventTitle;
 use crate::play::rocket_uri_macro_play_page;
 use crate::uri::{HasUriBuilder as _, UriBuilder};
 use crate::users::User;
-use crate::{default, uri, RocketExt as _};
+use crate::{uri, RocketExt as _};
 use anyhow::{Error, Result};
 use lettre::message::header::ContentType;
 use lettre::message::{Attachment, SinglePart};
@@ -18,7 +18,7 @@ use time::format_description::FormatItem;
 use time::macros::format_description;
 
 pub(super) async fn send_notification_emails(
-    sender: &EventEmailSender,
+    sender: &mut EventEmailSender,
     event: &Event,
     invited: &[User],
     missed: &[User],
@@ -32,15 +32,17 @@ pub(super) async fn send_notification_emails(
     Ok(())
 }
 
+// TODO: rename this to something more suiting?
+// Maybe FinalizePollEmailSender?
 pub(crate) struct EventEmailSender {
-    email_sender: Box<dyn EmailSender>,
+    email_sender: Box<dyn DynEventEmailSender>,
     uri_builder: UriBuilder<'static>,
 }
 
 impl EventEmailSender {
     pub(crate) async fn from_rocket(rocket: &Rocket<Orbit>) -> Result<Self> {
         Ok(Self {
-            email_sender: rocket.email_sender()?,
+            email_sender: rocket.event_email_sender().await?,
             uri_builder: rocket.uri_builder().await?.into_static(),
         })
     }
@@ -58,7 +60,7 @@ impl<'r> FromRequest<'r> for EventEmailSender {
 }
 
 impl EventEmailSender {
-    pub(crate) async fn send(&self, event: &Event, user: &User) -> Result<()> {
+    pub(crate) async fn send(&mut self, event: &Event, user: &User) -> Result<()> {
         let event_url =
             uri!(auto_login(user, event.estimated_ends_at()); self.uri_builder, play_page())
                 .await?;
@@ -69,13 +71,11 @@ impl EventEmailSender {
             name: &user.name,
             ics_file,
         };
-        self.email_sender
-            .send(user.mailbox()?, &email, default())
-            .await?;
+        self.email_sender.send(event, user, &email).await?;
         Ok(())
     }
 
-    pub(crate) async fn send_missed(&self, event: &Event, user: &User) -> Result<()> {
+    pub(crate) async fn send_missed(&mut self, event: &Event, user: &User) -> Result<()> {
         let event_url =
             uri!(auto_login(user, event.estimated_ends_at()); self.uri_builder, play_page())
                 .await?;
@@ -84,9 +84,7 @@ impl EventEmailSender {
             event_url,
             name: &user.name,
         };
-        self.email_sender
-            .send(user.mailbox()?, &email, default())
-            .await?;
+        self.email_sender.send(event, user, &email).await?;
         Ok(())
     }
 }

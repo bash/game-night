@@ -56,7 +56,7 @@ async fn join(
     event: NextEvent,
     user: User,
     mut repository: Box<dyn Repository>,
-    sender: EventEmailSender,
+    mut sender: EventEmailSender,
 ) -> Result<Redirect, Debug<Error>> {
     repository.add_participant(event.0.id, user.id).await?;
     sender.send(&event.0, &user).await?;

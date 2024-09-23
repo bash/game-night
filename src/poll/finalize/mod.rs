@@ -6,7 +6,9 @@ use anyhow::Result;
 use itertools::{Either, Itertools};
 use rand::seq::SliceRandom;
 use rand::thread_rng;
+use rocket::tokio::sync::Mutex;
 use std::cmp::min;
+use std::sync::Arc;
 
 mod scheduling;
 pub(crate) use scheduling::*;
@@ -24,7 +26,7 @@ async fn finalize(ctx: &mut FinalizeContext) -> Result<()> {
 
 struct FinalizeContext {
     repository: Box<dyn Repository>,
-    sender: EventEmailSender,
+    sender: Arc<Mutex<EventEmailSender>>,
 }
 
 async fn try_finalize_poll(ctx: &mut FinalizeContext, poll: Poll) -> Result<()> {
@@ -40,7 +42,8 @@ async fn try_finalize_poll(ctx: &mut FinalizeContext, poll: Poll) -> Result<()> 
     } = result
     {
         let event = ctx.repository.plan_event(poll.event.id, details).await?;
-        emails::send_notification_emails(&ctx.sender, &event, &invited, &missed).await?;
+        let sender = &mut *ctx.sender.lock().await;
+        emails::send_notification_emails(sender, &event, &invited, &missed).await?;
     }
 
     Ok(())

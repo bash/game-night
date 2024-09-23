@@ -50,7 +50,7 @@ entity_state! {
 }
 
 pub(crate) trait EventLifecycle {
-    type StartsAt;
+    type StartsAt: Send + Sync;
 }
 
 #[derive(Debug, Clone)]
