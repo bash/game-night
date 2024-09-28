@@ -10,6 +10,8 @@ mod email;
 pub(crate) use email::*;
 mod stateful;
 pub(crate) use stateful::*;
+mod page;
+pub(crate) use page::*;
 
 pub type EventId = i64;
 

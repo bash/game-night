@@ -53,6 +53,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .mount("/", play::routes())
         .mount("/", users::routes())
         .mount("/", login::routes())
+        .mount("/", routes![event::event_page])
         .register("/", login::catchers())
         .register("/", auth::catchers())
         .register("/", catchers![not_found])
