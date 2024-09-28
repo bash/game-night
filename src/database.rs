@@ -1,6 +1,7 @@
 use crate::email::MessageId;
 use crate::event::{
     self, Event, EventEmail, EventId, EventLifecycle, Participant, PlanningDetails, Polling,
+    StatefulEvent,
 };
 use crate::invitation::{Invitation, InvitationId, Passphrase};
 use crate::login::{LoginToken, LoginTokenType};
@@ -71,6 +72,8 @@ pub(crate) trait Repository: EventEmailsRepository + fmt::Debug + Send {
     async fn update_poll_stage(&mut self, id: i64, stage: PollStage) -> Result<()>;
 
     async fn plan_event(&mut self, id: EventId, details: PlanningDetails) -> Result<Event>;
+
+    async fn get_stateful_event(&mut self, id: EventId) -> Result<Option<StatefulEvent>>;
 
     async fn get_location(&mut self) -> Result<Location>;
 
@@ -496,6 +499,21 @@ impl Repository for SqliteRepository {
         transaction.commit().await?;
 
         Ok(event)
+    }
+
+    async fn get_stateful_event(&mut self, id: EventId) -> Result<Option<StatefulEvent>> {
+        let mut transaction = self.0.begin().await?;
+        let poll = sqlx::query_as("SELECT * FROM polls WHERE id = ?1 LIMIT 1")
+            .bind(id)
+            .fetch_optional(&mut *transaction)
+            .await?;
+        Ok(match poll {
+            Some(poll) => {
+                let poll = materialize_poll(&mut transaction, poll).await?;
+                Some(StatefulEvent::from_poll(poll, OffsetDateTime::now_utc()))
+            }
+            None => None,
+        })
     }
 
     async fn get_location(&mut self) -> Result<Location> {

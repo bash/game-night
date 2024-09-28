@@ -8,6 +8,9 @@ use time::{Duration, OffsetDateTime};
 
 mod email;
 pub(crate) use email::*;
+mod stateful;
+pub(crate) use stateful::*;
+
 pub type EventId = i64;
 
 #[derive(Debug, Clone, sqlx::FromRow, Serialize)]
@@ -93,6 +96,23 @@ impl<L: EventLifecycle> Event<Unmaterialized, L> {
             location,
             created_by,
             participants,
+        }
+    }
+}
+
+impl<S: EventState> Event<S, Polling> {
+    pub(crate) fn into_planned(
+        self,
+        starts_at: <Planned as EventLifecycle>::StartsAt,
+    ) -> Event<S, Planned> {
+        Event {
+            id: self.id,
+            starts_at,
+            title: self.title,
+            description: self.description,
+            location: self.location,
+            created_by: self.created_by,
+            participants: self.participants,
         }
     }
 }
