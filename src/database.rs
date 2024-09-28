@@ -1,6 +1,6 @@
 use crate::email::MessageId;
 use crate::event::{
-    self, Event, EventEmail, EventLifecycle, Participant, PlanningDetails, Polling,
+    self, Event, EventEmail, EventId, EventLifecycle, Participant, PlanningDetails, Polling,
 };
 use crate::invitation::{Invitation, InvitationId, Passphrase};
 use crate::login::{LoginToken, LoginTokenType};
@@ -70,7 +70,7 @@ pub(crate) trait Repository: EventEmailsRepository + fmt::Debug + Send {
 
     async fn update_poll_stage(&mut self, id: i64, stage: PollStage) -> Result<()>;
 
-    async fn plan_event(&mut self, id: i64, details: PlanningDetails) -> Result<Event>;
+    async fn plan_event(&mut self, id: EventId, details: PlanningDetails) -> Result<Event>;
 
     async fn get_location(&mut self) -> Result<Location>;
 
@@ -80,7 +80,7 @@ pub(crate) trait Repository: EventEmailsRepository + fmt::Debug + Send {
 
     async fn get_events(&mut self) -> Result<Vec<Event>>;
 
-    async fn add_participant(&mut self, event: i64, user: UserId) -> Result<()>;
+    async fn add_participant(&mut self, event: EventId, user: UserId) -> Result<()>;
 
     async fn prune(&mut self) -> Result<u64>;
 
@@ -468,7 +468,7 @@ impl Repository for SqliteRepository {
         Ok(())
     }
 
-    async fn plan_event(&mut self, id: i64, details: PlanningDetails) -> Result<Event> {
+    async fn plan_event(&mut self, id: EventId, details: PlanningDetails) -> Result<Event> {
         let mut transaction = self.0.begin().await?;
         sqlx::query!(
             "UPDATE events SET starts_at = ?2 WHERE id = ?1",
@@ -548,7 +548,7 @@ impl Repository for SqliteRepository {
         Ok(materialized)
     }
 
-    async fn add_participant(&mut self, event: i64, user: UserId) -> Result<()> {
+    async fn add_participant(&mut self, event: EventId, user: UserId) -> Result<()> {
         sqlx::query!(
             "INSERT INTO participants (event_id, user_id) VALUES (?1, ?2)",
             event,

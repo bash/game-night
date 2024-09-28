@@ -8,6 +8,7 @@ use time::{Duration, OffsetDateTime};
 
 mod email;
 pub(crate) use email::*;
+pub type EventId = i64;
 
 #[derive(Debug, Clone, sqlx::FromRow, Serialize)]
 pub(crate) struct Event<S: EventState = Materialized, L: EventLifecycle = Planned> {
@@ -42,7 +43,7 @@ impl PlanningDetails {
 
 entity_state! {
     pub(crate) trait EventState {
-        type Id = () => i64 => i64;
+        type Id = () => EventId => EventId;
         type CreatedBy = UserId => UserId => User;
         type Location = i64 => i64 => Location;
         type Participants: Default = Vec<Participant<Self>> => () => Vec<Participant<Self>>;
