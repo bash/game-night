@@ -1,4 +1,4 @@
-use super::{Answer, Attendance, DateSelectionStrategy, Poll, PollOption};
+use super::{Answer, Attendance, DateSelectionStrategy, Poll, PollOption, PollStage};
 use crate::database::Repository;
 use crate::event::PlanningDetails;
 use crate::users::User;
@@ -30,7 +30,9 @@ struct FinalizeContext {
 }
 
 async fn try_finalize_poll(ctx: &mut FinalizeContext, poll: Poll) -> Result<()> {
-    ctx.repository.close_poll(poll.id).await?;
+    ctx.repository
+        .update_poll_stage(poll.id, PollStage::Finalizing)
+        .await?;
 
     let result = finalize_poll_dry_run(&poll);
 
@@ -45,6 +47,10 @@ async fn try_finalize_poll(ctx: &mut FinalizeContext, poll: Poll) -> Result<()> 
         let sender = &mut *ctx.sender.lock().await;
         emails::send_notification_emails(sender, &event, &invited, &missed).await?;
     }
+
+    ctx.repository
+        .update_poll_stage(poll.id, PollStage::Closed)
+        .await?;
 
     Ok(())
 }

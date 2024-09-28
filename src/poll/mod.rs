@@ -106,11 +106,20 @@ pub(crate) struct Poll<S: PollState = Materialized> {
     pub(crate) max_participants: usize,
     pub(crate) strategy: DateSelectionStrategy,
     pub(crate) open_until: Iso8601<OffsetDateTime>,
-    pub(crate) closed: bool,
+    pub(crate) stage: PollStage,
     #[sqlx(rename = "event_id")]
     pub(crate) event: S::Event,
     #[sqlx(skip)]
     pub(crate) options: S::Options,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, sqlx::Type, Serialize)]
+#[serde(rename_all = "snake_case")]
+#[sqlx(rename_all = "snake_case")]
+pub(crate) enum PollStage {
+    Open,
+    Finalizing,
+    Closed,
 }
 
 entity_state! {
@@ -129,7 +138,7 @@ impl Poll<New> {
             max_participants: self.max_participants,
             strategy: self.strategy,
             open_until: self.open_until,
-            closed: self.closed,
+            stage: self.stage,
             event: event_id,
             options: (),
         }
@@ -148,7 +157,7 @@ impl Poll<Unmaterialized> {
             max_participants: self.max_participants,
             strategy: self.strategy,
             open_until: self.open_until,
-            closed: self.closed,
+            stage: self.stage,
             event,
             options,
         }

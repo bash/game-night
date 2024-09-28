@@ -4,7 +4,7 @@ use crate::event::{
 };
 use crate::invitation::{Invitation, InvitationId, Passphrase};
 use crate::login::{LoginToken, LoginTokenType};
-use crate::poll::{Answer, Location, Poll, PollOption};
+use crate::poll::{Answer, Location, Poll, PollOption, PollStage};
 use crate::register::EmailVerificationCode;
 use crate::users::{User, UserId, UserPatch};
 use crate::GameNightDatabase;
@@ -68,7 +68,7 @@ pub(crate) trait Repository: EventEmailsRepository + fmt::Debug + Send {
 
     async fn get_polls_pending_for_finalization(&mut self) -> Result<Vec<Poll>>;
 
-    async fn close_poll(&mut self, id: i64) -> Result<()>;
+    async fn update_poll_stage(&mut self, id: i64, stage: PollStage) -> Result<()>;
 
     async fn plan_event(&mut self, id: i64, details: PlanningDetails) -> Result<Event>;
 
@@ -334,13 +334,13 @@ impl Repository for SqliteRepository {
         let min_participants = i64::try_from(poll.min_participants)?;
         let max_participants = i64::try_from(poll.max_participants)?;
         let poll_id = sqlx::query!(
-            "INSERT INTO polls (min_participants, max_participants, strategy, open_until, closed, event_id)
+            "INSERT INTO polls (min_participants, max_participants, strategy, open_until, stage, event_id)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
              min_participants,
              max_participants,
              poll.strategy,
              poll.open_until,
-             poll.closed,
+             poll.stage,
              event_id
         )
         .execute(&mut *transaction)
@@ -394,10 +394,10 @@ impl Repository for SqliteRepository {
         let poll = sqlx::query_as(
             "SELECT * FROM polls
              WHERE unixepoch(open_until) - unixepoch('now') >= 0
-               AND closed = ?1
+               AND stage = ?1
              LIMIT 1",
         )
-        .bind(false)
+        .bind(PollStage::Open)
         .fetch_optional(&mut *transaction)
         .await?;
         match poll {
@@ -412,10 +412,10 @@ impl Repository for SqliteRepository {
         let polls = sqlx::query_as(
             "SELECT * FROM polls
              WHERE unixepoch(open_until) - unixepoch('now') < 0
-               AND closed = ?1
+               AND stage = ?1
              ORDER BY open_until DESC",
         )
-        .bind(false)
+        .bind(PollStage::Open)
         .fetch_all(&mut *transaction)
         .await?;
 
@@ -431,8 +431,8 @@ impl Repository for SqliteRepository {
         let mut transaction = self.0.begin().await?;
 
         for (option_id, answer) in answers {
-            let closed: bool = sqlx::query_scalar!(
-                r#"SELECT polls.closed as "closed: bool" FROM polls
+            let stage: PollStage = sqlx::query_scalar!(
+                r#"SELECT stage as "stage: _" FROM polls
                  JOIN poll_options ON poll_options.poll_id = polls.id
                  WHERE poll_options.id = ?1"#,
                 option_id
@@ -440,7 +440,7 @@ impl Repository for SqliteRepository {
             .fetch_one(&mut *transaction)
             .await?;
 
-            if closed {
+            if stage != PollStage::Open {
                 return Err(anyhow!("Poll already closed"));
             }
 
@@ -460,9 +460,9 @@ impl Repository for SqliteRepository {
         Ok(())
     }
 
-    async fn close_poll(&mut self, id: i64) -> Result<()> {
+    async fn update_poll_stage(&mut self, id: i64, stage: PollStage) -> Result<()> {
         // TODO: merge this with plan_event
-        sqlx::query!("UPDATE polls SET closed = ?1 WHERE id = ?2", true, id)
+        sqlx::query!("UPDATE polls SET stage = ?1 WHERE id = ?2", stage, id)
             .execute(self.executor())
             .await?;
         Ok(())

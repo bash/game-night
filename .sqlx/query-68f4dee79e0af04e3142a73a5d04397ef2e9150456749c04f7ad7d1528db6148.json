@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT stage as \"stage: _\" FROM polls\n                 JOIN poll_options ON poll_options.poll_id = polls.id\n                 WHERE poll_options.id = ?1",
+  "describe": {
+    "columns": [
+      {
+        "name": "stage: _",
+        "ordinal": 0,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "68f4dee79e0af04e3142a73a5d04397ef2e9150456749c04f7ad7d1528db6148"
+}

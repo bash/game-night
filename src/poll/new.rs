@@ -1,7 +1,7 @@
 use super::open::rocket_uri_macro_open_poll_page;
-use super::PollEmail;
 use super::{Answer, AnswerValue, Attendance, Location};
 use super::{DateSelectionStrategy, Poll, PollOption};
+use super::{PollEmail, PollStage};
 use crate::auth::{AuthorizedTo, ManagePoll};
 use crate::database::{New, Repository};
 use crate::event::{Event, EventEmailSender, Polling};
@@ -183,7 +183,7 @@ fn to_poll(poll: NewPollData, location: Location, user: &User) -> Result<Poll<Ne
         max_participants: poll.max_participants,
         strategy: poll.strategy,
         open_until: (now + Duration::hours(poll.duration_in_hours)).into(),
-        closed: false,
+        stage: PollStage::Open,
         options: to_poll_options(poll.options.iter(), user)?,
         event: Event {
             id: (),
