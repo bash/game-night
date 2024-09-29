@@ -32,7 +32,6 @@ mod skip;
 
 pub(crate) fn routes() -> Vec<Route> {
     routes![
-        open::open_poll_page,
         skip::skip_poll_page,
         skip::skip_poll_fallback,
         skip::skip_poll,

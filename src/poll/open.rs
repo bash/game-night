@@ -10,21 +10,20 @@ use itertools::{Either, Itertools as _};
 use rocket::form::Form;
 use rocket::http::uri::Origin;
 use rocket::response::{Debug, Redirect};
-use rocket::{get, post, uri, FromForm};
+use rocket::{post, uri, FromForm};
 use rocket_dyn_templates::Template;
 use serde::Serialize;
 use std::collections::HashMap;
 use time::{Month, OffsetDateTime};
 
-#[get("/", rank = 10)]
 pub(crate) async fn open_poll_page(
     user: User,
-    poll: Open<Poll>,
+    poll: Poll,
     page: PageBuilder<'_>,
     mut repository: Box<dyn Repository>,
 ) -> Result<Template, Debug<Error>> {
     let users = repository.get_users().await?;
-    Ok(page.render("poll/open", to_open_poll(poll.into_inner(), &user, users)))
+    Ok(page.render("poll/open", to_open_poll(poll, &user, users)))
 }
 
 fn to_open_poll(poll: Poll, user: &User, users: Vec<User>) -> OpenPoll {
@@ -153,7 +152,9 @@ pub(super) async fn update_answers(
     repository
         .add_answers(apply_updates(&poll, &user, form.into_inner()))
         .await?;
-    Ok(Redirect::to(uri!(open_poll_page())))
+    Ok(Redirect::to(uri!(crate::event::event_page(
+        id = poll.event.id
+    ))))
 }
 
 fn apply_updates(poll: &Poll, user: &User, updates: AnswerUpdates) -> Vec<(i64, Answer<New>)> {

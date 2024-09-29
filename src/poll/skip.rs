@@ -13,7 +13,7 @@ pub(super) fn skip_poll_page(user: User, page: PageBuilder, poll: Open<Poll>) ->
     page.render(
         "poll/skip",
         context! {
-            poll_uri: uri!(crate::poll::open_poll_page()),
+            poll_uri: uri!(crate::event::event_page(id = poll.event.id)),
             has_answers: poll.has_answer(user.id),
             poll,
         },

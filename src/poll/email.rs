@@ -18,10 +18,11 @@ pub(super) fn poll_email_preview(
     email_sender: &State<Box<dyn EmailSender>>,
     uri_builder: UriBuilder,
 ) -> Result<RawHtml<String>, Debug<Error>> {
+    let event_id = poll.event.id;
     let email = PollEmail {
         name: user.name,
         poll: poll.into_inner(),
-        poll_uri: uri!(uri_builder, super::open::open_poll_page),
+        poll_uri: uri!(uri_builder, crate::event::event_page(id = event_id)),
         skip_poll_uri: uri!(uri_builder, super::skip::skip_poll),
         manage_subscription_url: uri!(uri_builder, crate::register::profile),
     };

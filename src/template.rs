@@ -23,6 +23,9 @@ mod functions;
 pub(crate) use functions::*;
 mod assets;
 
+// TODO: refactor this to have a similar API as Template
+// where everything that needs "dependencies" happens in the responder impl.
+
 pub(crate) struct PageBuilder<'r> {
     user: Option<User>,
     login_state: LoginState,
