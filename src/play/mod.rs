@@ -41,7 +41,6 @@ pub(crate) fn play_page(
     )
 }
 
-// TODO: make event-specific
 #[post("/event/<id>/join")]
 async fn join(
     id: EventId,

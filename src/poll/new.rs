@@ -275,7 +275,7 @@ async fn send_poll_emails(
         let open_until = *poll.open_until;
         let poll_uri = uri!(auto_login(&user, open_until); uri_builder, crate::event::event_page(id = poll.event.id)).await?;
         let skip_poll_uri =
-            uri!(auto_login(&user, open_until); uri_builder, super::skip::skip_poll).await?;
+            uri!(auto_login(&user, open_until); uri_builder, super::skip::skip_poll(id = poll.event.id)).await?;
         let sub_url = uri!(auto_login(&user, open_until); uri_builder, profile()).await?;
         let email = PollEmail {
             name: user.name.clone(),

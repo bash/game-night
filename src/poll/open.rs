@@ -1,15 +1,17 @@
-use super::Open;
 use super::{Answer, AnswerValue};
 use crate::database::{New, Repository};
+use crate::event::EventsQuery;
 use crate::iso_8601::Iso8601;
 use crate::poll::{Poll, PollOption};
+use crate::result::HttpResult;
 use crate::template::PageBuilder;
 use crate::users::User;
 use anyhow::Error;
 use itertools::{Either, Itertools as _};
 use rocket::form::Form;
 use rocket::http::uri::Origin;
-use rocket::response::{Debug, Redirect};
+use rocket::http::Status;
+use rocket::response::Redirect;
 use rocket::{post, uri, FromForm};
 use rocket_dyn_templates::Template;
 use serde::Serialize;
@@ -38,13 +40,13 @@ fn to_open_poll(poll: Poll, user: &User, users: Vec<User>) -> OpenPoll {
         date_selection_strategy: poll.strategy.to_string(),
         has_answers: poll.has_answer(user.id),
         can_answer_strongly: user.can_answer_strongly(),
+        update_answers_uri: uri!(update_answers(id = poll.event.id)),
+        close_poll_uri: user
+            .can_manage_poll()
+            .then(|| uri!(super::close_poll_page(id = poll.event.id))),
         poll,
         not_answered,
         no_date_answered_with_yes,
-        update_answers_uri: uri!(update_answers()),
-        close_poll_uri: user
-            .can_manage_poll()
-            .then(|| uri!(super::close_poll_page())),
     }
 }
 
@@ -142,13 +144,17 @@ struct OpenPollOption {
     yes_answers: Vec<User>,
 }
 
-#[post("/poll", data = "<form>")]
+#[post("/event/<id>/poll/answers", data = "<form>")]
 pub(super) async fn update_answers(
-    mut repository: Box<dyn Repository>,
+    id: i64,
     user: User,
     form: Form<AnswerUpdates>,
-    poll: Open<Poll>,
-) -> Result<Redirect, Debug<Error>> {
+    mut events: EventsQuery,
+    mut repository: Box<dyn Repository>,
+) -> HttpResult<Redirect> {
+    let Some(poll) = events.with_id(id, &user).await?.and_then(|e| e.polling()) else {
+        return Err(Status::BadRequest.into());
+    };
     repository
         .add_answers(apply_updates(&poll, &user, form.into_inner()))
         .await?;

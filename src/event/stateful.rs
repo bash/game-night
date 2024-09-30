@@ -53,6 +53,14 @@ impl StatefulEvent {
         use StatefulEvent::*;
         matches!(self, Polling(_) | Finalizing(_) | Planned(_))
     }
+
+    pub(crate) fn polling(self) -> Option<Poll> {
+        if let StatefulEvent::Polling(poll) = self {
+            Some(poll)
+        } else {
+            None
+        }
+    }
 }
 
 impl From<ActiveEvent> for StatefulEvent {

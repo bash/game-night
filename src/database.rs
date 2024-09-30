@@ -1,6 +1,6 @@
 use crate::email::MessageId;
 use crate::event::{
-    self, Event, EventEmail, EventId, EventLifecycle, Participant, PlanningDetails, Polling,
+    Event, EventEmail, EventId, EventLifecycle, Participant, PlanningDetails, Polling,
     StatefulEvent,
 };
 use crate::invitation::{Invitation, InvitationId, Passphrase};
@@ -64,9 +64,6 @@ pub(crate) trait Repository: EventEmailsRepository + fmt::Debug + Send {
     async fn update_poll_open_until(&mut self, id: i64, close_at: OffsetDateTime) -> Result<()>;
 
     async fn add_answers(&mut self, answers: Vec<(i64, Answer<New>)>) -> Result<()>;
-
-    #[deprecated = "Use get_stateful_event instead."]
-    async fn get_open_poll(&mut self) -> Result<Option<Poll>>;
 
     async fn get_polls_pending_for_finalization(&mut self) -> Result<Vec<Poll>>;
 
@@ -388,24 +385,6 @@ impl Repository for SqliteRepository {
         Ok(())
     }
 
-    async fn get_open_poll(&mut self) -> Result<Option<Poll>> {
-        let mut transaction = self.0.begin().await?;
-
-        let poll = sqlx::query_as(
-            "SELECT * FROM polls
-             WHERE unixepoch(open_until) - unixepoch('now') >= 0
-               AND stage = ?1
-             LIMIT 1",
-        )
-        .bind(PollStage::Open)
-        .fetch_optional(&mut *transaction)
-        .await?;
-        match poll {
-            Some(poll) => Ok(Some(materialize_poll(&mut transaction, poll).await?)),
-            None => Ok(None),
-        }
-    }
-
     async fn get_polls_pending_for_finalization(&mut self) -> Result<Vec<Poll>> {
         let mut transaction = self.0.begin().await?;
 
@@ -461,7 +440,6 @@ impl Repository for SqliteRepository {
     }
 
     async fn update_poll_stage(&mut self, id: i64, stage: PollStage) -> Result<()> {
-        // TODO: merge this with plan_event
         sqlx::query!("UPDATE polls SET stage = ?1 WHERE id = ?2", stage, id)
             .execute(self.executor())
             .await?;

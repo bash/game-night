@@ -1,29 +1,34 @@
-use super::{Open, Poll};
+use super::Poll;
 use crate::email::{EmailMessage, EmailSender};
+use crate::event::EventsQuery;
 use crate::fmt::LongEventTitle;
+use crate::result::HttpResult;
 use crate::uri;
 use crate::uri::UriBuilder;
 use crate::users::User;
-use anyhow::Error;
 use rocket::http::uri::Absolute;
+use rocket::http::Status;
 use rocket::response::content::RawHtml;
-use rocket::response::Debug;
 use rocket::{get, State};
 use serde::Serialize;
 
-#[get("/poll/email-preview")]
-pub(super) fn poll_email_preview(
+#[get("/event/<id>/poll/email-preview")]
+pub(super) async fn poll_email_preview(
+    id: i64,
     user: User,
-    poll: Open<Poll>,
+    mut events: EventsQuery,
     email_sender: &State<Box<dyn EmailSender>>,
-    uri_builder: UriBuilder,
-) -> Result<RawHtml<String>, Debug<Error>> {
+    uri_builder: UriBuilder<'_>,
+) -> HttpResult<RawHtml<String>> {
+    let Some(poll) = events.with_id(id, &user).await?.and_then(|e| e.polling()) else {
+        return Err(Status::NotFound.into());
+    };
     let event_id = poll.event.id;
     let email = PollEmail {
         name: user.name,
-        poll: poll.into_inner(),
+        poll,
         poll_uri: uri!(uri_builder, crate::event::event_page(id = event_id)),
-        skip_poll_uri: uri!(uri_builder, super::skip::skip_poll),
+        skip_poll_uri: uri!(uri_builder, super::skip::skip_poll(id = event_id)),
         manage_subscription_url: uri!(uri_builder, crate::register::profile),
     };
     let body = email_sender.preview(&email)?;
