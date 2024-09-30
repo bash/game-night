@@ -11,15 +11,14 @@
             <ul>
                 {% for event in chunk.events %}
                     <li>
-                        <span>{{event.starts_at | time(format='[day]. [month repr:long]')}}</span>
+                        <a href="{{event.view_uri}}">{{event.starts_at | time(format='[day]. [month repr:long]')}}</a>
                         <div class="time-range">
                             <time>{{event.starts_at | time(format='[hour]:[minute]')}}</time>
                         </div>
                         {% if event.title %}
                             <em>«{{event.title}}»</em>
-                        {% endif %}
-                        {% if event.view_uri %}
-                            <a href="{{event.view_uri}}" class="link-button">view</a>
+                        {% else %}
+                            <span></span>
                         {% endif %}
                         <div class="answers-list">
                             {% for participant in event.visible_participants.participants %}

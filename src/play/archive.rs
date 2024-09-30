@@ -1,10 +1,10 @@
 use crate::{
     database::Repository,
-    event::{Event, Participant},
-    play::{is_participating, rocket_uri_macro_play_page, NextEvent},
+    event::{Event, VisibleParticipants},
+    play::NextEvent,
     template::PageBuilder,
     uri,
-    users::{Role, User, UserId},
+    users::User,
 };
 use anyhow::Error;
 use itertools::Itertools;
@@ -44,47 +44,16 @@ struct Year {
 struct EventView {
     #[serde(flatten)]
     event: Event,
-    view_uri: Option<Origin<'static>>,
+    view_uri: Origin<'static>,
     visible_participants: VisibleParticipants,
-}
-
-#[derive(Debug, Serialize)]
-struct VisibleParticipants {
-    participants: Vec<Participant>,
-    redacted: bool,
 }
 
 fn to_event_view(event: Event, user: &User, next_event: Option<&NextEvent>) -> EventView {
     let is_next = next_event.is_some_and(|e| event.id == e.0.id);
-    let visible_participants = visible_participants(&event, user, is_next);
+    let visible_participants = VisibleParticipants::from_event(&event, user, is_next);
     EventView {
+        view_uri: uri!(crate::event::event_page(id = event.id)),
         event,
-        view_uri: is_next.then(|| uri!(play_page())),
         visible_participants,
     }
-}
-
-fn visible_participants(event: &Event, user: &User, is_next_event: bool) -> VisibleParticipants {
-    if is_participating(event, user) || user.role == Role::Admin || is_next_event {
-        VisibleParticipants {
-            participants: event.participants.clone(),
-            redacted: false,
-        }
-    } else {
-        // Only show the organizer if the user hasn't participated.
-        VisibleParticipants {
-            participants: find_participant(event, event.created_by.id)
-                .into_iter()
-                .collect(),
-            redacted: true,
-        }
-    }
-}
-
-fn find_participant(event: &Event, user_id: UserId) -> Option<Participant> {
-    event
-        .participants
-        .iter()
-        .find(|p| p.user.id == user_id)
-        .cloned()
 }

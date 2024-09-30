@@ -21,7 +21,7 @@ pub(crate) async fn open_poll_page(
     poll: Poll,
     page: PageBuilder<'_>,
     mut repository: Box<dyn Repository>,
-) -> Result<Template, Debug<Error>> {
+) -> Result<Template, Error> {
     let users = repository.get_users().await?;
     Ok(page.render("poll/open", to_open_poll(poll, &user, users)))
 }

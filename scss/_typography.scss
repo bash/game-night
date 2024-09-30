@@ -184,9 +184,19 @@ a {
 .success-message {
     font-size: 1rem;
     background-color: color-mix(in oklab, #40a02b, var(--background-color) 70%);
-    border-radius: 8px;
+    border-radius: var(--box-rounding);
     padding: 10px;
     margin-bottom: 1rem;
+}
+
+.message-box {
+    background-image: linear-gradient(to right, color-mix(in oklab, var(--accent-color), var(--background-color) 80%), color-mix(in oklab, var(--secondary-color), var(--background-color) 95%));
+    border-radius: var(--box-rounding);
+    padding: 1em 1.25em;
+
+    &.-small {
+        font-size: 1rem;
+    }
 }
 
 .postal-address {

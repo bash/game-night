@@ -12,6 +12,8 @@ mod stateful;
 pub(crate) use stateful::*;
 mod page;
 pub(crate) use page::*;
+mod participants;
+pub(crate) use participants::*;
 
 pub type EventId = i64;
 
@@ -116,6 +118,12 @@ impl<S: EventState> Event<S, Polling> {
             created_by: self.created_by,
             participants: self.participants,
         }
+    }
+}
+
+impl Event {
+    pub(crate) fn is_participant(&self, user: &User) -> bool {
+        self.participants.iter().any(|p| p.user.id == user.id)
     }
 }
 

@@ -1,5 +1,5 @@
 use crate::database::Repository;
-use crate::event::Event;
+use crate::event::{Event, VisibleParticipants};
 use crate::fmt::LongEventTitle;
 use crate::poll::{EventEmailSender, Location};
 use crate::template::PageBuilder;
@@ -27,30 +27,32 @@ mod archive;
 pub(crate) use archive::*;
 
 pub(crate) fn routes() -> Vec<Route> {
-    routes![play_page, play_redirect, join, event_ics, archive_page]
+    routes![play_redirect, join, event_ics, archive_page]
 }
 
 // This is a bit of an ugly workaround to
 // make the login show play as the active chapter.
 #[get("/play")]
-fn play_redirect(_user: User) -> Redirect {
-    Redirect::to(uri!(play_page()))
+pub(crate) fn play_redirect(_user: User) -> Redirect {
+    Redirect::to(uri!(crate::home_page()))
 }
 
-#[get("/", rank = 0)]
-fn play_page(event: NextEvent, page: PageBuilder<'_>, user: User) -> Template {
-    let join_uri = (!is_participating(&event.0, &user)).then(|| uri!(join()));
+pub(crate) fn play_page(
+    event: Event,
+    page: PageBuilder<'_>,
+    user: User,
+    is_archived: bool,
+) -> Template {
+    let join_uri = (!event.is_participant(&user) && !is_archived).then(|| uri!(join()));
     let archive_uri = uri!(archive_page());
+    let participants = VisibleParticipants::from_event(&event, &user, !is_archived);
     page.render(
         "play",
-        context! { event: event.0, ics_uri: uri!(event_ics()), join_uri, archive_uri },
+        context! { event: event, ics_uri: uri!(event_ics()), join_uri, archive_uri, is_archived, participants },
     )
 }
 
-fn is_participating(event: &Event, user: &User) -> bool {
-    event.participants.iter().any(|p| p.user.id == user.id)
-}
-
+// TODO: make event-specific
 #[post("/play/join")]
 async fn join(
     event: NextEvent,
@@ -58,9 +60,10 @@ async fn join(
     mut repository: Box<dyn Repository>,
     mut sender: EventEmailSender,
 ) -> Result<Redirect, Debug<Error>> {
-    repository.add_participant(event.0.id, user.id).await?;
-    sender.send(&event.0, &user).await?;
-    Ok(Redirect::to(uri!(play_page())))
+    let event = event.0;
+    repository.add_participant(event.id, user.id).await?;
+    sender.send(&event, &user).await?;
+    Ok(Redirect::to(uri!(crate::event::event_page(id = event.id))))
 }
 
 pub(crate) struct NextEvent(Event);
@@ -106,7 +109,9 @@ fn to_ical_event<'a>(event: &'a Event, uri_builder: &'a UriBuilder<'a>) -> Resul
         LongEventTitle(&event.title)
     ))));
     ical_event.push(Description::new(escape_text(&event.description)));
-    ical_event.push(URL::new(uri!(uri_builder, play_page()).to_string()));
+    ical_event.push(URL::new(
+        uri!(uri_builder, crate::event::event_page(id = event.id)).to_string(),
+    ));
     ical_event.push(Status::confirmed());
     ical_event.push(LocationProp::new(escape_text(format_location(
         &event.location,
