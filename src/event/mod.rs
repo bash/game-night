@@ -18,6 +18,8 @@ mod query;
 pub(crate) use query::*;
 mod view_model;
 pub(crate) use view_model::*;
+mod ics_file;
+pub(crate) use ics_file::*;
 
 pub type EventId = i64;
 
