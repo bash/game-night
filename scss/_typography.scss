@@ -199,6 +199,23 @@ a {
     }
 }
 
+.text-badge {
+    display: inline-block;
+    font-family: var(--sans-serif);
+    font-weight: bold;
+    font-size: .75rem;
+    padding: .2em .4em;
+    border: .1em solid color-mix(in oklab, var(--accent-color), var(--background-color) 70%);
+    border-radius: var(--box-rounding);
+    text-align: center;
+
+    &.-important {
+        background-color: var(--accent-color);
+        border-color: var(--accent-color);
+        color: #fff;
+    }
+}
+
 .postal-address {
     display: grid;
     grid-template-columns: auto auto;

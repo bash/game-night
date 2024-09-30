@@ -2,6 +2,12 @@
     display: grid;
     grid-template-columns: max-content max-content 1fr max-content;
     margin-bottom: var(--inter-block-gap);
+    --column-count: 4;
+
+    &.-events {
+        grid-template-columns: repeat(4, max-content) 1fr;
+        --column-count: 5;
+    }
 
     > ul {
         display: contents;
@@ -12,7 +18,7 @@
     > h2,
     > ul > li,
     > .placeholder {
-        grid-column: span 4;
+        grid-column: span var(--column-count);
     }
 
     // Rows with border
@@ -52,7 +58,7 @@
     }
 
     > ul > li > .answers-list {
-        grid-column: 1 / 5;
+        grid-column: span var(--column-count);
         justify-content: start;
     }
 

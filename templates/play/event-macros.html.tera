@@ -1,0 +1,57 @@
+{% macro label(entry, event) %}
+    {% if event.starts_at %}
+        {{event.starts_at | time(format='[day]. [month repr:long]')}}
+    {% elif entry.state == "polling" %}
+        until {{entry.open_until | time(format='[day]. [month repr:long]')}}
+    {% else %}
+        {{entry.open_until | time(format='[day]. [month repr:long]')}}
+    {% endif %}
+{% endmacro %}
+
+{% macro badge(entry, event) %}
+    {% if entry.state == "polling" or entry.state == "finalizing" %}<span class="text-badge -important">poll open</span>
+    {% elif entry.state == "planned" %}<span class="text-badge -important">upcoming</span>
+    {% elif entry.state == "archived" %}<span class="text-badge">passé</span>
+    {% elif entry.state == "failed" %}<span class="text-badge">failed</span>
+    {% endif %}
+{% endmacro %}
+
+{% macro event_list(events) %}
+    <ul>
+        {% for entry in events %}
+            {% if entry.event %}{% set event = entry.event %}
+            {% else %}{% set event = entry %}{% endif %}
+            <li>
+                {{ event_macros::badge(entry=entry, event=event) }}
+
+                {% if entry.view_uri %}<a href="{{entry.view_uri}}">{{ event_macros::label(entry=entry, event=event) }}</a>
+                {% else %}<span>{{ event_macros::label(entry=entry, event=event) }}</span>{% endif %}
+
+                {% if event.starts_at %}
+                    <span class="time-range"><time>{{event.starts_at | time(format='[hour]:[minute]')}}</time></span>
+                {% else %}
+                    <span></span>
+                {% endif %}
+
+                {% if event.title %}
+                    <em>«{{event.title}}»</em>
+                {% else %}
+                    <span></span>
+                {% endif %}
+
+                {% if event.visible_participants %}
+                <div class="answers-list">
+                    {% for participant in event.visible_participants.participants %}
+                        <span class="answer">
+                            {{user_macros::name(user=participant.user)}}
+                        </span>
+                    {% endfor %}
+                    {% if event.visible_participants.redacted %}
+                        <span title="some participants have been omitted">&hellip;</span>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+{% endmacro %}

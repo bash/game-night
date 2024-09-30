@@ -3,14 +3,15 @@
 
 {% extends 'base' %}
 
-{% block title %}Archive{% endblock title %}
+{% block title %}Play{% endblock title %}
 
 {% block content %}
+    <p>
+        Whoa, there are currently multiple ongoing polls / game nights 🤯
+    </p>
+
     <div class="calendar-list -events">
-         {% for chunk in events_by_year %}
-            <h2>{{chunk.year}}</h2>
-            {{ event_macros::event_list(events = chunk.events) }}
-         {% endfor %}
+         {{ event_macros::event_list(events = events) }}
     </div>
 {% endblock content %}
 

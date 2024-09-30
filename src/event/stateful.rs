@@ -5,6 +5,7 @@ use serde::Serialize;
 use time::OffsetDateTime;
 
 #[derive(Debug, Clone, Serialize)]
+#[serde(tag = "state", rename_all = "snake_case")]
 pub(crate) enum StatefulEvent {
     Polling(Poll),
     Finalizing(Poll),
@@ -14,7 +15,7 @@ pub(crate) enum StatefulEvent {
 }
 
 /// An event or poll that is not archived or failed.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone)]
 pub(crate) enum ActiveEvent {
     Polling(Poll),
     Finalizing(Poll),
@@ -27,6 +28,39 @@ impl StatefulEvent {
             from_planned(poll, starts_at, now)
         } else {
             from_polling(poll, now)
+        }
+    }
+
+    pub(crate) fn date(&self) -> OffsetDateTime {
+        use StatefulEvent::*;
+        match self {
+            Polling(poll) | Finalizing(poll) | Failed(poll) => poll.open_until.0,
+            Planned(event) | Archived(event) => event.starts_at.0,
+        }
+    }
+
+    pub(crate) fn id(&self) -> Option<EventId> {
+        use StatefulEvent::*;
+        match self {
+            Polling(poll) | Finalizing(poll) => Some(poll.event.id),
+            Planned(event) | Archived(event) => Some(event.id),
+            Failed(_) => None,
+        }
+    }
+
+    // This should match the TryFrom impl for ActiveEvent
+    pub(crate) fn is_active(&self) -> bool {
+        use StatefulEvent::*;
+        matches!(self, Polling(_) | Finalizing(_) | Planned(_))
+    }
+}
+
+impl From<ActiveEvent> for StatefulEvent {
+    fn from(value: ActiveEvent) -> Self {
+        match value {
+            ActiveEvent::Polling(poll) => StatefulEvent::Polling(poll),
+            ActiveEvent::Finalizing(poll) => StatefulEvent::Finalizing(poll),
+            ActiveEvent::Planned(event) => StatefulEvent::Planned(event),
         }
     }
 }
@@ -46,22 +80,31 @@ impl TryFrom<StatefulEvent> for ActiveEvent {
 }
 
 impl TryFrom<StatefulEvent> for Event {
-    type Error = ();
+    type Error = Poll;
 
     fn try_from(value: StatefulEvent) -> Result<Self, Self::Error> {
         use StatefulEvent::*;
         match value {
             Planned(event) | Archived(event) => Ok(event),
-            Polling(_) | Finalizing(_) | Failed(_) => Err(()),
+            Polling(poll) | Finalizing(poll) | Failed(poll) => Err(poll),
         }
     }
 }
 
 impl ActiveEvent {
     pub(crate) fn event_id(&self) -> EventId {
+        use ActiveEvent::*;
         match self {
-            ActiveEvent::Polling(poll) | ActiveEvent::Finalizing(poll) => poll.event.id,
-            ActiveEvent::Planned(event) => event.id,
+            Polling(poll) | Finalizing(poll) => poll.event.id,
+            Planned(event) => event.id,
+        }
+    }
+
+    pub(crate) fn date(&self) -> OffsetDateTime {
+        use ActiveEvent::*;
+        match self {
+            Polling(poll) | Finalizing(poll) => poll.open_until.0,
+            Planned(event) => event.starts_at.0,
         }
     }
 }

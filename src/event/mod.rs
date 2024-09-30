@@ -14,6 +14,10 @@ mod page;
 pub(crate) use page::*;
 mod participants;
 pub(crate) use participants::*;
+mod query;
+pub(crate) use query::*;
+mod view_model;
+pub(crate) use view_model::*;
 
 pub type EventId = i64;
 
