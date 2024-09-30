@@ -48,7 +48,8 @@ fn choose_event_page(
         .sorted_by_key(|e| e.date())
         .map(|e| EventViewModel::from_event(e, &user))
         .collect();
-    page.render("play/choose", context! { events })
+    let archive_uri = uri!(crate::play::archive_page());
+    page.render("play/choose", context! { events, archive_uri })
 }
 
 #[derive(Responder)]

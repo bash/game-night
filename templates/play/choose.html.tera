@@ -13,6 +13,8 @@
     <div class="calendar-list -events">
          {{ event_macros::event_list(events = events) }}
     </div>
+
+    Check out the <a href="{{archive_uri}}">archive</a> to see a list of all past game nights.
 {% endblock content %}
 
 {% block scripts %}
