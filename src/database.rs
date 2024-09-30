@@ -80,15 +80,6 @@ pub(crate) trait Repository: EventEmailsRepository + fmt::Debug + Send {
 
     async fn get_location(&mut self) -> Result<Location>;
 
-    #[deprecated = "Use get_stateful_event instead."]
-    async fn get_next_event(&mut self) -> Result<Option<Event>>;
-
-    #[deprecated = "Use get_stateful_events instead."]
-    async fn get_newest_event(&mut self) -> Result<Option<Event>>;
-
-    #[deprecated = "Use get_stateful_events instead."]
-    async fn get_events(&mut self) -> Result<Vec<Event>>;
-
     async fn add_participant(&mut self, event: EventId, user: UserId) -> Result<()>;
 
     async fn prune(&mut self) -> Result<u64>;
@@ -539,46 +530,6 @@ impl Repository for SqliteRepository {
         Ok(sqlx::query_as("SELECT * FROM locations LIMIT 1")
             .fetch_one(self.executor())
             .await?)
-    }
-
-    async fn get_next_event(&mut self) -> Result<Option<Event>> {
-        let mut transaction = self.0.begin().await?;
-
-        let event: Option<Event<Unmaterialized>> = sqlx::query_as(
-            "SELECT * FROM events
-             WHERE (unixepoch(starts_at) + ?1) - unixepoch('now') >= 0
-             ORDER BY starts_at ASC
-             LIMIT 1",
-        )
-        .bind(event::ESTIMATED_DURATION.whole_seconds())
-        .fetch_optional(&mut *transaction)
-        .await?;
-        match event {
-            None => Ok(None),
-            Some(event) => Ok(Some(materialize_event(&mut transaction, event).await?)),
-        }
-    }
-
-    async fn get_newest_event(&mut self) -> Result<Option<Event>> {
-        let mut transaction = self.0.begin().await?;
-
-        let event: Option<Event<Unmaterialized>> =
-            sqlx::query_as("SELECT * FROM events ORDER BY starts_at DESC LIMIT 1")
-                .fetch_optional(&mut *transaction)
-                .await?;
-        match event {
-            None => Ok(None),
-            Some(event) => Ok(Some(materialize_event(&mut transaction, event).await?)),
-        }
-    }
-
-    async fn get_events(&mut self) -> Result<Vec<Event>> {
-        Ok(self
-            .get_stateful_events()
-            .await?
-            .into_iter()
-            .filter_map(|e| Event::try_from(e).ok())
-            .collect())
     }
 
     async fn add_participant(&mut self, event: EventId, user: UserId) -> Result<()> {
