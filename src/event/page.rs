@@ -3,6 +3,7 @@ use crate::database::Repository;
 use crate::event::EventsQuery;
 use crate::play::play_page;
 use crate::poll::{no_open_poll_page, open_poll_page};
+use crate::result::HttpResult;
 use crate::template::PageBuilder;
 use crate::users::User;
 use anyhow::{Error, Result};
@@ -65,25 +66,13 @@ pub(crate) async fn event_page(
     mut events: EventsQuery,
     repository: Box<dyn Repository>,
     page: PageBuilder<'_>,
-) -> Result<Template, EventError> {
+) -> HttpResult<Template> {
     let event = events.with_id(id, &user).await?;
     match event {
         Some(Polling(poll)) => Ok(open_poll_page(user, poll, page, repository).await?),
         Some(Finalizing(_)) => Ok(page.render("poll/pending-finalization", context! {})),
         Some(Planned(event)) => Ok(play_page(event, page, user, false)),
         Some(Archived(event)) => Ok(play_page(event, page, user, true)),
-        Some(Failed(_)) | None => Err(EventError::Status(Status::NotFound)),
-    }
-}
-
-#[derive(Responder)]
-pub(crate) enum EventError {
-    Error(Debug<Error>),
-    Status(Status),
-}
-
-impl From<Error> for EventError {
-    fn from(value: Error) -> Self {
-        EventError::Error(Debug(value))
+        Some(Failed(_)) | None => Err(Status::NotFound.into()),
     }
 }

@@ -3,7 +3,7 @@ use super::{DateSelectionStrategy, Poll, PollOption};
 use super::{PollEmail, PollStage};
 use crate::auth::{AuthorizedTo, ManagePoll};
 use crate::database::{New, Repository};
-use crate::event::{rocket_uri_macro_event_page, Event, EventEmailSender, Polling};
+use crate::event::{rocket_uri_macro_event_page, Event, EventEmailSender, EventsQuery, Polling};
 use crate::iso_8601::Iso8601;
 use crate::register::rocket_uri_macro_profile;
 use crate::template::PageBuilder;
@@ -25,16 +25,16 @@ use time_tz::{timezones, PrimitiveDateTimeExt};
 
 #[get("/poll/new")]
 pub(super) async fn new_poll_page(
+    user: AuthorizedTo<ManagePoll>,
     page: PageBuilder<'_>,
-    mut repository: Box<dyn Repository>,
-    _user: AuthorizedTo<ManagePoll>,
+    mut events: EventsQuery,
 ) -> Result<Template, Debug<Error>> {
     let calendar = get_calendar(
         OffsetDateTime::now_utc(),
         14,
         &mut CalendarDayPrefill::empty,
     );
-    let description = repository.get_newest_event().await?.map(|e| e.description);
+    let description = events.newest(&user).await?.map(|e| e.description);
     Ok(page.render(
         "poll/new",
         context! { calendar, strategies: strategies(), calendar_uri: uri!(calendar()), description },

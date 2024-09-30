@@ -32,6 +32,7 @@ mod play;
 mod poll;
 mod pruning;
 mod register;
+mod result;
 mod socket_activation;
 #[cfg(target_os = "linux")]
 mod systemd;

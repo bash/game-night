@@ -8,6 +8,7 @@ use rocket::{async_trait, Request};
 use serde::Serialize;
 use std::ops;
 
+#[deprecated]
 #[derive(Debug, Serialize)]
 #[serde(transparent)]
 pub(crate) struct Open<T>(T);
@@ -41,6 +42,7 @@ impl<'r> FromRequest<'r> for Open<Poll> {
     }
 }
 
+#[deprecated]
 #[derive(Debug, Serialize)]
 #[serde(transparent)]
 pub(crate) struct PendingFinalization<T>(T);

@@ -1,22 +1,22 @@
 use crate::database::Repository;
-use crate::event::{Event, VisibleParticipants};
+use crate::event::{Event, EventId, EventsQuery, StatefulEvent, VisibleParticipants};
 use crate::fmt::LongEventTitle;
 use crate::poll::{EventEmailSender, Location};
+use crate::result::HttpResult;
 use crate::template::PageBuilder;
 use crate::uri;
 use crate::uri::UriBuilder;
 use crate::users::User;
-use anyhow::{Error, Result};
+use anyhow::Result;
 use ics::components::Property;
 use ics::parameters::TzIDParam;
 use ics::properties::{
     Description, DtEnd, DtStart, Location as LocationProp, Status, Summary, URL,
 };
 use ics::{escape_text, ICalendar};
-use rocket::outcome::try_outcome;
-use rocket::request::{FromRequest, Outcome};
-use rocket::response::{Debug, Redirect};
-use rocket::{async_trait, get, post, routes, Request, Responder, Route};
+use rocket::http::Status as HttpStatus;
+use rocket::response::Redirect;
+use rocket::{get, post, routes, Responder, Route};
 use rocket_dyn_templates::{context, Template};
 use time::format_description::FormatItem;
 use time::macros::format_description;
@@ -43,55 +43,50 @@ pub(crate) fn play_page(
     user: User,
     is_archived: bool,
 ) -> Template {
-    let join_uri = (!event.is_participant(&user) && !is_archived).then(|| uri!(join()));
+    let join_uri =
+        (!event.is_participant(&user) && !is_archived).then(|| uri!(join(id = event.id)));
     let archive_uri = uri!(archive_page());
     let participants = VisibleParticipants::from_event(&event, &user, !is_archived);
     page.render(
         "play",
-        context! { event: event, ics_uri: uri!(event_ics()), join_uri, archive_uri, is_archived, participants },
+        context! { ics_uri: uri!(event_ics(id = event.id)), event: event, join_uri, archive_uri, is_archived, participants },
     )
 }
 
 // TODO: make event-specific
-#[post("/play/join")]
+#[post("/event/<id>/join")]
 async fn join(
-    event: NextEvent,
+    id: EventId,
     user: User,
+    mut events: EventsQuery,
     mut repository: Box<dyn Repository>,
     mut sender: EventEmailSender,
-) -> Result<Redirect, Debug<Error>> {
-    let event = event.0;
+) -> HttpResult<Redirect> {
+    let Some(StatefulEvent::Planned(event)) = events.with_id(id, &user).await? else {
+        return Err(HttpStatus::NotFound.into());
+    };
     repository.add_participant(event.id, user.id).await?;
     sender.send(&event, &user).await?;
     Ok(Redirect::to(uri!(crate::event::event_page(id = event.id))))
 }
 
-pub(crate) struct NextEvent(Event);
-
-#[async_trait]
-impl<'r> FromRequest<'r> for NextEvent {
-    type Error = Error;
-
-    async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
-        let mut repository: Box<dyn Repository> = try_outcome!(request.guard().await);
-        match repository.get_next_event().await {
-            Ok(Some(event)) => Outcome::Success(NextEvent(event)),
-            Ok(None) => Outcome::Forward(rocket::http::Status::NotFound),
-            Err(e) => Outcome::Error((rocket::http::Status::InternalServerError, e)),
-        }
-    }
-}
-
-#[get("/event.ics")]
+#[get("/event/<id>/event.ics")]
 async fn event_ics(
-    event: NextEvent,
+    id: EventId,
+    user: User,
+    mut events: EventsQuery,
     uri_builder: UriBuilder<'_>,
-    _user: User,
-) -> Result<Ics, Debug<Error>> {
-    let calendar = to_calendar(&event.0, &uri_builder)?;
+) -> HttpResult<Ics> {
+    let Some(StatefulEvent::Planned(event) | StatefulEvent::Archived(event)) =
+        events.with_id(id, &user).await?
+    else {
+        return Err(HttpStatus::NotFound.into());
+    };
+    let calendar = to_calendar(&event, &uri_builder)?;
     Ok(Ics(calendar.to_string()))
 }
 
+// TODO: move to sub-mod
 pub(crate) fn to_calendar<'a>(
     event: &'a Event,
     uri_builder: &'a UriBuilder<'a>,
