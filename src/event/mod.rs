@@ -8,6 +8,20 @@ use time::{Duration, OffsetDateTime};
 
 mod email;
 pub(crate) use email::*;
+mod stateful;
+pub(crate) use stateful::*;
+mod page;
+pub(crate) use page::*;
+mod participants;
+pub(crate) use participants::*;
+mod query;
+pub(crate) use query::*;
+mod view_model;
+pub(crate) use view_model::*;
+mod ics_file;
+pub(crate) use ics_file::*;
+
+pub type EventId = i64;
 
 #[derive(Debug, Clone, sqlx::FromRow, Serialize)]
 pub(crate) struct Event<S: EventState = Materialized, L: EventLifecycle = Planned> {
@@ -42,7 +56,7 @@ impl PlanningDetails {
 
 entity_state! {
     pub(crate) trait EventState {
-        type Id = () => i64 => i64;
+        type Id = () => EventId => EventId;
         type CreatedBy = UserId => UserId => User;
         type Location = i64 => i64 => Location;
         type Participants: Default = Vec<Participant<Self>> => () => Vec<Participant<Self>>;
@@ -93,6 +107,29 @@ impl<L: EventLifecycle> Event<Unmaterialized, L> {
             created_by,
             participants,
         }
+    }
+}
+
+impl<S: EventState> Event<S, Polling> {
+    pub(crate) fn into_planned(
+        self,
+        starts_at: <Planned as EventLifecycle>::StartsAt,
+    ) -> Event<S, Planned> {
+        Event {
+            id: self.id,
+            starts_at,
+            title: self.title,
+            description: self.description,
+            location: self.location,
+            created_by: self.created_by,
+            participants: self.participants,
+        }
+    }
+}
+
+impl Event {
+    pub(crate) fn is_participant(&self, user: &User) -> bool {
+        self.participants.iter().any(|p| p.user.id == user.id)
     }
 }
 

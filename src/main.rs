@@ -32,6 +32,7 @@ mod play;
 mod poll;
 mod pruning;
 mod register;
+mod result;
 mod socket_activation;
 #[cfg(target_os = "linux")]
 mod systemd;
@@ -46,13 +47,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let rocket = rocket.attach(systemd::SystemdNotify);
 
     let rocket = rocket
-        .mount("/", routes![get_index_page])
+        .mount("/", routes![home_page])
         .mount("/", invitation::routes())
         .mount("/", register::routes())
         .mount("/", poll::routes())
         .mount("/", play::routes())
         .mount("/", users::routes())
         .mount("/", login::routes())
+        .mount("/", event::routes())
         .register("/", login::catchers())
         .register("/", auth::catchers())
         .register("/", catchers![not_found])
@@ -96,7 +98,7 @@ fn file_server() -> impl Into<Vec<Route>> {
 }
 
 #[get("/", rank = 20)]
-fn get_index_page(page: PageBuilder<'_>) -> Template {
+fn home_page(page: PageBuilder<'_>) -> Template {
     page.render(
         "index",
         context! { getting_invited_uri: uri!(register::getting_invited_page())},

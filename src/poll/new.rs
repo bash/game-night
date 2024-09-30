@@ -1,10 +1,9 @@
-use super::open::rocket_uri_macro_open_poll_page;
 use super::{Answer, AnswerValue, Attendance, Location};
 use super::{DateSelectionStrategy, Poll, PollOption};
 use super::{PollEmail, PollStage};
 use crate::auth::{AuthorizedTo, ManagePoll};
 use crate::database::{New, Repository};
-use crate::event::{Event, EventEmailSender, Polling};
+use crate::event::{rocket_uri_macro_event_page, Event, EventEmailSender, EventsQuery, Polling};
 use crate::iso_8601::Iso8601;
 use crate::register::rocket_uri_macro_profile;
 use crate::template::PageBuilder;
@@ -26,16 +25,16 @@ use time_tz::{timezones, PrimitiveDateTimeExt};
 
 #[get("/poll/new")]
 pub(super) async fn new_poll_page(
+    user: AuthorizedTo<ManagePoll>,
     page: PageBuilder<'_>,
-    mut repository: Box<dyn Repository>,
-    _user: AuthorizedTo<ManagePoll>,
+    mut events: EventsQuery,
 ) -> Result<Template, Debug<Error>> {
     let calendar = get_calendar(
         OffsetDateTime::now_utc(),
         14,
         &mut CalendarDayPrefill::empty,
     );
-    let description = repository.get_newest_event().await?.map(|e| e.description);
+    let description = events.newest(&user).await?.map(|e| e.description);
     Ok(page.render(
         "poll/new",
         context! { calendar, strategies: strategies(), calendar_uri: uri!(calendar()), description },
@@ -172,7 +171,7 @@ pub(super) async fn new_poll(
     let new_poll = to_poll(form.into_inner(), location, &user)?;
     let poll = repository.add_poll(new_poll).await?;
     send_poll_emails(subscribed_users, email_sender, uri_builder, &poll).await?;
-    Ok(Redirect::to(uri!(open_poll_page())))
+    Ok(Redirect::to(uri!(event_page(id = poll.event.id))))
 }
 
 fn to_poll(poll: NewPollData, location: Location, user: &User) -> Result<Poll<New>> {
@@ -274,9 +273,9 @@ async fn send_poll_emails(
 ) -> Result<()> {
     for user in subscribed_users.0 {
         let open_until = *poll.open_until;
-        let poll_uri = uri!(auto_login(&user, open_until); uri_builder, open_poll_page()).await?;
+        let poll_uri = uri!(auto_login(&user, open_until); uri_builder, crate::event::event_page(id = poll.event.id)).await?;
         let skip_poll_uri =
-            uri!(auto_login(&user, open_until); uri_builder, super::skip::skip_poll).await?;
+            uri!(auto_login(&user, open_until); uri_builder, super::skip::skip_poll(id = poll.event.id)).await?;
         let sub_url = uri!(auto_login(&user, open_until); uri_builder, profile()).await?;
         let email = PollEmail {
             name: user.name.clone(),

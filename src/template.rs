@@ -2,9 +2,7 @@ use crate::auth::LoginState;
 use crate::invitation::rocket_uri_macro_invite_page;
 use crate::invitation::Passphrase;
 use crate::login::rocket_uri_macro_logout;
-use crate::play::{
-    rocket_uri_macro_archive_page, rocket_uri_macro_play_page, rocket_uri_macro_play_redirect,
-};
+use crate::play::{rocket_uri_macro_archive_page, rocket_uri_macro_play_redirect};
 use crate::register::{rocket_uri_macro_profile, rocket_uri_macro_register_page};
 use crate::users::rocket_uri_macro_list_users;
 use crate::users::User;
@@ -152,7 +150,7 @@ fn chapters() -> &'static [Chapter] {
                 },
             },
             Chapter {
-                uri: uri!(play_page()),
+                uri: uri!(crate::event::events_entry_page()),
                 weight: 100,
                 match_uris: vec![uri!(archive_page())],
                 title: "Play",

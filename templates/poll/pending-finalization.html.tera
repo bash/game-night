@@ -10,7 +10,7 @@
 <p>
     {% if is_subscribed(sub=user.email_subscription) %}
         You will receive an email at <strong>{{user.email_address}}</strong> within the next 10 minutes
-        if one of your compatible dates was picked.
+        with the definitive date announcement.
     {% else %}
         Refresh this page from time to time to see when the event is happening.
     {% endif %}

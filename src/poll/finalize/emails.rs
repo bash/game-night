@@ -1,7 +1,6 @@
 use crate::email::EmailMessage;
-use crate::event::{Event, EventEmailSender as DynEventEmailSender};
+use crate::event::{Event, EventEmailSender as DynEventEmailSender, Ics};
 use crate::fmt::LongEventTitle;
-use crate::play::rocket_uri_macro_play_page;
 use crate::uri::{HasUriBuilder as _, UriBuilder};
 use crate::users::User;
 use crate::{uri, RocketExt as _};
@@ -62,9 +61,9 @@ impl<'r> FromRequest<'r> for EventEmailSender {
 impl EventEmailSender {
     pub(crate) async fn send(&mut self, event: &Event, user: &User) -> Result<()> {
         let event_url =
-            uri!(auto_login(user, event.estimated_ends_at()); self.uri_builder, play_page())
+            uri!(auto_login(user, event.estimated_ends_at()); self.uri_builder, crate::event::event_page(id = event.id))
                 .await?;
-        let ics_file = crate::play::to_calendar(event, &self.uri_builder)?.to_string();
+        let ics_file = Ics::from_event(event, &self.uri_builder)?.0;
         let email = InvitedEmail {
             event,
             event_url,
@@ -77,7 +76,7 @@ impl EventEmailSender {
 
     pub(crate) async fn send_missed(&mut self, event: &Event, user: &User) -> Result<()> {
         let event_url =
-            uri!(auto_login(user, event.estimated_ends_at()); self.uri_builder, play_page())
+            uri!(auto_login(user, event.estimated_ends_at()); self.uri_builder, crate::event::event_page(id = event.id))
                 .await?;
         let email = MissedEmail {
             event,

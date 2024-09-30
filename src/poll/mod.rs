@@ -1,14 +1,16 @@
 use crate::auth::{AuthorizedTo, ManagePoll};
 use crate::database::{Materialized, New, Repository, Unmaterialized};
 use crate::entity_state;
-use crate::event::{Event, Polling};
+use crate::event::{Event, EventsQuery, Polling};
 use crate::iso_8601::Iso8601;
 use crate::play::rocket_uri_macro_archive_page;
 use crate::register::rocket_uri_macro_profile;
+use crate::result::HttpResult;
 use crate::template::PageBuilder;
 use crate::users::{User, UserId};
 use anyhow::Error;
-use rocket::response::{Debug, Redirect};
+use rocket::http::Status;
+use rocket::response::Redirect;
 use rocket::{get, post, routes, uri, FromFormField, Route, State};
 use rocket_dyn_templates::{context, Template};
 use serde::Serialize;
@@ -23,8 +25,6 @@ mod finalize;
 pub(crate) use finalize::*;
 mod email;
 use email::PollEmail;
-mod guards;
-use guards::*;
 mod new;
 mod open;
 pub(crate) use open::*;
@@ -32,12 +32,8 @@ mod skip;
 
 pub(crate) fn routes() -> Vec<Route> {
     routes![
-        open::open_poll_page,
         skip::skip_poll_page,
-        skip::skip_poll_fallback,
         skip::skip_poll,
-        polls_pending_finalization_page,
-        no_open_poll_page,
         close_poll_page,
         close_poll,
         new::new_poll_page,
@@ -48,42 +44,40 @@ pub(crate) fn routes() -> Vec<Route> {
     ]
 }
 
-#[get("/", rank = 11)]
-fn polls_pending_finalization_page(
-    _polls: PendingFinalization<Vec<Poll>>,
-    _user: User,
-    page: PageBuilder<'_>,
-) -> Template {
-    page.render("poll/pending-finalization", context! {})
-}
-
-#[get("/", rank = 12)]
-fn no_open_poll_page(user: User, page: PageBuilder<'_>) -> Template {
+pub(crate) fn no_open_poll_page(user: User, page: PageBuilder<'_>) -> Template {
     let new_poll_uri = user.can_manage_poll().then(|| uri!(new::new_poll_page()));
     let profile_uri = uri!(profile());
     let archive_uri = uri!(archive_page());
     page.render("poll", context! { new_poll_uri, profile_uri, archive_uri })
 }
 
-#[get("/poll/close")]
-fn close_poll_page(
-    _user: AuthorizedTo<ManagePoll>,
-    poll: Open<Poll>,
+#[get("/event/<id>/poll/close")]
+async fn close_poll_page(
+    id: i64,
+    user: AuthorizedTo<ManagePoll>,
+    mut events: EventsQuery,
     page: PageBuilder<'_>,
-) -> Template {
-    page.render(
+) -> HttpResult<Template> {
+    let Some(poll) = events.with_id(id, &user).await?.and_then(|e| e.polling()) else {
+        return Err(Status::NotFound.into());
+    };
+    Ok(page.render(
         "poll/close",
         context! { date_selection_strategy: poll.strategy.to_string(), poll },
-    )
+    ))
 }
 
-#[post("/poll/close")]
+#[post("/event/<id>/poll/close")]
 async fn close_poll(
-    _user: AuthorizedTo<ManagePoll>,
-    poll: Open<Poll>,
+    id: i64,
+    user: AuthorizedTo<ManagePoll>,
+    mut events: EventsQuery,
     nudge: &State<NudgeFinalizer>,
     mut repository: Box<dyn Repository>,
-) -> Result<Redirect, Debug<Error>> {
+) -> HttpResult<Redirect> {
+    let Some(poll) = events.with_id(id, &user).await?.and_then(|e| e.polling()) else {
+        return Err(Status::BadRequest.into());
+    };
     // open_until is inclusive, so we have to pick a date that is already in the past
     // so that we are displayed the correct page on redirect.
     // Also, we don't need subsecond precision.
@@ -94,7 +88,8 @@ async fn close_poll(
         .update_poll_open_until(poll.id, open_until)
         .await?;
     nudge.nudge();
-    Ok(Redirect::to(uri!(no_open_poll_page())))
+    let event_uri = uri!(crate::event::event_page(id = poll.event.id));
+    Ok(Redirect::to(event_uri))
 }
 
 #[derive(Debug, Clone, sqlx::FromRow, Serialize)]

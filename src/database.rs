@@ -1,6 +1,7 @@
 use crate::email::MessageId;
 use crate::event::{
-    self, Event, EventEmail, EventLifecycle, Participant, PlanningDetails, Polling,
+    Event, EventEmail, EventId, EventLifecycle, Participant, PlanningDetails, Polling,
+    StatefulEvent,
 };
 use crate::invitation::{Invitation, InvitationId, Passphrase};
 use crate::login::{LoginToken, LoginTokenType};
@@ -64,23 +65,19 @@ pub(crate) trait Repository: EventEmailsRepository + fmt::Debug + Send {
 
     async fn add_answers(&mut self, answers: Vec<(i64, Answer<New>)>) -> Result<()>;
 
-    async fn get_open_poll(&mut self) -> Result<Option<Poll>>;
-
     async fn get_polls_pending_for_finalization(&mut self) -> Result<Vec<Poll>>;
 
     async fn update_poll_stage(&mut self, id: i64, stage: PollStage) -> Result<()>;
 
-    async fn plan_event(&mut self, id: i64, details: PlanningDetails) -> Result<Event>;
+    async fn plan_event(&mut self, id: EventId, details: PlanningDetails) -> Result<Event>;
+
+    async fn get_stateful_event(&mut self, id: EventId) -> Result<Option<StatefulEvent>>;
+
+    async fn get_stateful_events(&mut self) -> Result<Vec<StatefulEvent>>;
 
     async fn get_location(&mut self) -> Result<Location>;
 
-    async fn get_next_event(&mut self) -> Result<Option<Event>>;
-
-    async fn get_newest_event(&mut self) -> Result<Option<Event>>;
-
-    async fn get_events(&mut self) -> Result<Vec<Event>>;
-
-    async fn add_participant(&mut self, event: i64, user: UserId) -> Result<()>;
+    async fn add_participant(&mut self, event: EventId, user: UserId) -> Result<()>;
 
     async fn prune(&mut self) -> Result<u64>;
 
@@ -388,24 +385,6 @@ impl Repository for SqliteRepository {
         Ok(())
     }
 
-    async fn get_open_poll(&mut self) -> Result<Option<Poll>> {
-        let mut transaction = self.0.begin().await?;
-
-        let poll = sqlx::query_as(
-            "SELECT * FROM polls
-             WHERE unixepoch(open_until) - unixepoch('now') >= 0
-               AND stage = ?1
-             LIMIT 1",
-        )
-        .bind(PollStage::Open)
-        .fetch_optional(&mut *transaction)
-        .await?;
-        match poll {
-            Some(poll) => Ok(Some(materialize_poll(&mut transaction, poll).await?)),
-            None => Ok(None),
-        }
-    }
-
     async fn get_polls_pending_for_finalization(&mut self) -> Result<Vec<Poll>> {
         let mut transaction = self.0.begin().await?;
 
@@ -461,14 +440,13 @@ impl Repository for SqliteRepository {
     }
 
     async fn update_poll_stage(&mut self, id: i64, stage: PollStage) -> Result<()> {
-        // TODO: merge this with plan_event
         sqlx::query!("UPDATE polls SET stage = ?1 WHERE id = ?2", stage, id)
             .execute(self.executor())
             .await?;
         Ok(())
     }
 
-    async fn plan_event(&mut self, id: i64, details: PlanningDetails) -> Result<Event> {
+    async fn plan_event(&mut self, id: EventId, details: PlanningDetails) -> Result<Event> {
         let mut transaction = self.0.begin().await?;
         sqlx::query!(
             "UPDATE events SET starts_at = ?2 WHERE id = ?1",
@@ -498,57 +476,41 @@ impl Repository for SqliteRepository {
         Ok(event)
     }
 
+    async fn get_stateful_event(&mut self, id: EventId) -> Result<Option<StatefulEvent>> {
+        let mut transaction = self.0.begin().await?;
+        let poll = sqlx::query_as("SELECT * FROM polls WHERE event_id = ?1 LIMIT 1")
+            .bind(id)
+            .fetch_optional(&mut *transaction)
+            .await?;
+        Ok(match poll {
+            Some(poll) => {
+                let poll = materialize_poll(&mut transaction, poll).await?;
+                Some(StatefulEvent::from_poll(poll, OffsetDateTime::now_utc()))
+            }
+            None => None,
+        })
+    }
+
+    async fn get_stateful_events(&mut self) -> Result<Vec<StatefulEvent>> {
+        let mut transaction = self.0.begin().await?;
+        let polls = sqlx::query_as("SELECT * FROM polls")
+            .fetch_all(&mut *transaction)
+            .await?;
+        let mut materialized = Vec::with_capacity(polls.len());
+        for poll in polls {
+            let poll = materialize_poll(&mut transaction, poll).await?;
+            materialized.push(StatefulEvent::from_poll(poll, OffsetDateTime::now_utc()));
+        }
+        Ok(materialized)
+    }
+
     async fn get_location(&mut self) -> Result<Location> {
         Ok(sqlx::query_as("SELECT * FROM locations LIMIT 1")
             .fetch_one(self.executor())
             .await?)
     }
 
-    async fn get_next_event(&mut self) -> Result<Option<Event>> {
-        let mut transaction = self.0.begin().await?;
-
-        let event: Option<Event<Unmaterialized>> = sqlx::query_as(
-            "SELECT * FROM events
-             WHERE (unixepoch(starts_at) + ?1) - unixepoch('now') >= 0
-             ORDER BY starts_at ASC
-             LIMIT 1",
-        )
-        .bind(event::ESTIMATED_DURATION.whole_seconds())
-        .fetch_optional(&mut *transaction)
-        .await?;
-        match event {
-            None => Ok(None),
-            Some(event) => Ok(Some(materialize_event(&mut transaction, event).await?)),
-        }
-    }
-
-    async fn get_newest_event(&mut self) -> Result<Option<Event>> {
-        let mut transaction = self.0.begin().await?;
-
-        let event: Option<Event<Unmaterialized>> =
-            sqlx::query_as("SELECT * FROM events ORDER BY starts_at DESC LIMIT 1")
-                .fetch_optional(&mut *transaction)
-                .await?;
-        match event {
-            None => Ok(None),
-            Some(event) => Ok(Some(materialize_event(&mut transaction, event).await?)),
-        }
-    }
-
-    async fn get_events(&mut self) -> Result<Vec<Event>> {
-        let mut transaction = self.0.begin().await?;
-        let events: Vec<Event<Unmaterialized>> =
-            sqlx::query_as("SELECT * FROM events ORDER BY starts_at DESC")
-                .fetch_all(&mut *transaction)
-                .await?;
-        let mut materialized: Vec<_> = Vec::with_capacity(events.len());
-        for event in events {
-            materialized.push(materialize_event(&mut transaction, event).await?);
-        }
-        Ok(materialized)
-    }
-
-    async fn add_participant(&mut self, event: i64, user: UserId) -> Result<()> {
+    async fn add_participant(&mut self, event: EventId, user: UserId) -> Result<()> {
         sqlx::query!(
             "INSERT INTO participants (event_id, user_id) VALUES (?1, ?2)",
             event,
