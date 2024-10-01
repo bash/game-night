@@ -43,14 +43,11 @@ CREATE TABLE login_tokens
 CREATE TABLE polls
     ( id INTEGER PRIMARY KEY
     , min_participants INTEGER NOT NULL
-    , max_participants INTEGER NOT NULL
     , strategy TEXT NOT NULL
     , open_until TEXT NOT NULl
-    , closed INTEGER NOT NULL
+    , stage TEXT NOT NULL
     , event_id INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE
     , created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
-    , CHECK (max_participants >= min_participants)
-    , CHECK (min_participants >= 2)
     );
 
 CREATE TABLE poll_options

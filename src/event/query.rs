@@ -55,7 +55,7 @@ impl EventsQuery {
     }
 }
 
-fn is_invited<'a>(user: &'a User) -> impl Fn(&StatefulEvent) -> bool + 'a {
+fn is_invited(user: &User) -> impl Fn(&StatefulEvent) -> bool + '_ {
     |event| {
         let group = event.restrict_to();
         group.is_none()

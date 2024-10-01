@@ -181,7 +181,6 @@ fn to_poll(poll: NewPollData, location: Location, user: &User) -> Result<Poll<Ne
     Ok(Poll {
         id: (),
         min_participants: poll.min_participants,
-        max_participants: poll.max_participants,
         strategy: poll.strategy,
         open_until: (now + Duration::hours(poll.duration_in_hours)).into(),
         stage: PollStage::Open,
@@ -238,9 +237,8 @@ fn now_utc_without_subminutes() -> Result<OffsetDateTime> {
 
 #[derive(Debug, FromForm)]
 pub(super) struct NewPollData<'r> {
+    #[field(validate = gte(2))]
     min_participants: usize,
-    #[field(validate = gte(self.min_participants))]
-    max_participants: usize,
     strategy: DateSelectionStrategy,
     #[field(name = "duration", validate = gte(1))]
     duration_in_hours: i64,

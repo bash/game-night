@@ -345,16 +345,14 @@ impl Repository for SqliteRepository {
         .last_insert_rowid();
 
         let min_participants = i64::try_from(poll.min_participants)?;
-        let max_participants = i64::try_from(poll.max_participants)?;
         let poll_id = sqlx::query!(
-            "INSERT INTO polls (min_participants, max_participants, strategy, open_until, stage, event_id)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-             min_participants,
-             max_participants,
-             poll.strategy,
-             poll.open_until,
-             poll.stage,
-             event_id
+            "INSERT INTO polls (min_participants, strategy, open_until, stage, event_id)
+             VALUES (?1, ?2, ?3, ?4, ?5)",
+            min_participants,
+            poll.strategy,
+            poll.open_until,
+            poll.stage,
+            event_id
         )
         .execute(&mut *transaction)
         .await?

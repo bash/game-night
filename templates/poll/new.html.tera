@@ -5,9 +5,8 @@
 {% block content %}
 <form method="post">
     <p>
-        I want to invite between
-        <input type="number" class="-inline" name="min_participants" id="min-participants" size="2" inputmode="numeric" placeholder="2" required min="2"> and.
-        <input type="number" class="-inline" name="max_participants" size="2" inputmode="numeric" placeholder="4" required min="2" data-validate-gte="min-participants"> people.<br>
+        I want to invite at least
+        <input type="number" class="-inline" name="min_participants" id="min-participants" size="2" inputmode="numeric" placeholder="2" required min="2" value="2"> people.
 
         I want to invite
         <select class="-inline" name="restrict_to">

@@ -97,8 +97,6 @@ pub(crate) struct Poll<S: PollState = Materialized> {
     pub(crate) id: S::Id,
     #[sqlx(try_from = "i64")]
     pub(crate) min_participants: usize,
-    #[sqlx(try_from = "i64")]
-    pub(crate) max_participants: usize,
     pub(crate) strategy: DateSelectionStrategy,
     pub(crate) open_until: Iso8601<OffsetDateTime>,
     pub(crate) stage: PollStage,
@@ -130,7 +128,6 @@ impl Poll<New> {
         Poll {
             id,
             min_participants: self.min_participants,
-            max_participants: self.max_participants,
             strategy: self.strategy,
             open_until: self.open_until,
             stage: self.stage,
@@ -149,7 +146,6 @@ impl Poll<Unmaterialized> {
         Poll {
             id: self.id,
             min_participants: self.min_participants,
-            max_participants: self.max_participants,
             strategy: self.strategy,
             open_until: self.open_until,
             stage: self.stage,
@@ -237,18 +233,12 @@ impl Answer<Unmaterialized> {
     }
 }
 
-#[derive(Debug)]
-pub(crate) struct YesAnswer<S: AnswerState>(pub(crate) Attendance, pub(crate) S::User);
-
-impl<S: AnswerState> Answer<S>
-where
-    S::User: Clone,
-{
-    pub(crate) fn yes(&self) -> Option<YesAnswer<S>> {
+impl<S: AnswerState> Answer<S> {
+    pub(crate) fn yes(&self) -> Option<&S::User> {
         use AnswerValue::*;
         match self.value {
             No { .. } => None,
-            Yes { attendance } => Some(YesAnswer(attendance, self.user.clone())),
+            Yes { .. } => Some(&self.user),
         }
     }
 }
