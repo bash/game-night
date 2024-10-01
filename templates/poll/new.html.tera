@@ -5,9 +5,6 @@
 {% block content %}
 <form method="post">
     <p>
-        I want to invite at least
-        <input type="number" class="-inline" name="min_participants" id="min-participants" size="2" inputmode="numeric" placeholder="2" required min="2" value="2"> people.
-
         I want to invite
         <select class="-inline" name="restrict_to">
             <option value="">everyone</option>
@@ -15,6 +12,8 @@
                 <option value="{{group.id}}">members of «{{group.name}}»</option>
             {% endfor %}
         </select>
+        to a game night with at least
+        <input type="number" class="-inline" name="min_participants" id="min-participants" size="2" inputmode="numeric" placeholder="2" required min="2" value="2"> people.
     </p>
 
     <p>
