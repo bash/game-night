@@ -66,6 +66,9 @@ impl Distribution<&'static str> for Closings {
             "Give a hug, Ladybug 🐞",
             "Goodbye, Butterfly 🦋",
             "Take care, Polar Bear 🐻‍❄️",
+            "See you soon, Cute Racoon 🦝",
+            "Till then, Penguin 🐧",
+            "In a shake, Rattlesnake 🐍",
         ];
         rng.sample(distributions::Slice::new(GREETINGS).unwrap())
     }
