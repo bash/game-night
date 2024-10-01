@@ -35,7 +35,7 @@
                 {% endif %}
 
                 {% if event.title %}
-                    <em>«{{event.title}}»</em>
+                    <em class="title">«{{event.title}}»</em>
                 {% else %}
                     <span></span>
                 {% endif %}

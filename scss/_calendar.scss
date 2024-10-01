@@ -7,6 +7,16 @@
     &.-events {
         grid-template-columns: repeat(4, max-content) 1fr;
         --column-count: 5;
+
+        @media (width <= 35rem) {
+            grid-template-columns: repeat(3, max-content) 1fr;
+            --column-count: 4;
+
+            > ul > li > .title {
+                order: -1;
+                grid-column: span var(--column-count);
+            }
+        }
     }
 
     > ul {
