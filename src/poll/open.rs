@@ -24,7 +24,11 @@ pub(crate) async fn open_poll_page(
     page: PageBuilder<'_>,
     mut repository: Box<dyn Repository>,
 ) -> Result<Template, Error> {
-    let users = repository.get_users().await?;
+    let users = if let Some(group) = &poll.event.restrict_to {
+        group.members.clone()
+    } else {
+        repository.get_users().await?
+    };
     Ok(page.render("poll/open", to_open_poll(poll, &user, users)))
 }
 

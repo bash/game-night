@@ -19,6 +19,7 @@ pub(crate) use query::*;
 mod view_model;
 pub(crate) use view_model::*;
 mod ics_file;
+use crate::groups::Group;
 pub(crate) use ics_file::*;
 
 pub type EventId = i64;
@@ -32,6 +33,7 @@ pub(crate) struct Event<S: EventState = Materialized, L: EventLifecycle = Planne
     #[sqlx(rename = "location_id")]
     pub(crate) location: S::Location,
     pub(crate) created_by: S::CreatedBy,
+    pub(crate) restrict_to: Option<S::RestrictTo>,
     #[sqlx(skip)]
     pub(crate) participants: S::Participants,
 }
@@ -60,6 +62,7 @@ entity_state! {
         type CreatedBy = UserId => UserId => User;
         type Location = i64 => i64 => Location;
         type Participants: Default = Vec<Participant<Self>> => () => Vec<Participant<Self>>;
+        type RestrictTo: Serialize = i64 => i64 => Group;
     }
 }
 
@@ -97,6 +100,7 @@ impl<L: EventLifecycle> Event<Unmaterialized, L> {
         location: Location,
         created_by: User,
         participants: Vec<Participant>,
+        restrict_to: Option<Group>,
     ) -> Event<Materialized, L> {
         Event {
             id: self.id,
@@ -106,6 +110,7 @@ impl<L: EventLifecycle> Event<Unmaterialized, L> {
             location,
             created_by,
             participants,
+            restrict_to,
         }
     }
 }
@@ -123,6 +128,7 @@ impl<S: EventState> Event<S, Polling> {
             location: self.location,
             created_by: self.created_by,
             participants: self.participants,
+            restrict_to: self.restrict_to,
         }
     }
 }

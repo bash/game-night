@@ -1,4 +1,5 @@
 use super::{Event, EventId};
+use crate::groups::Group;
 use crate::iso_8601::Iso8601;
 use crate::poll::{Poll, PollStage};
 use serde::Serialize;
@@ -45,6 +46,14 @@ impl StatefulEvent {
             Polling(poll) | Finalizing(poll) => Some(poll.event.id),
             Planned(event) | Archived(event) => Some(event.id),
             Failed(_) => None,
+        }
+    }
+
+    pub(crate) fn restrict_to(&self) -> Option<&Group> {
+        use StatefulEvent::*;
+        match self {
+            Polling(poll) | Finalizing(poll) | Failed(poll) => poll.event.restrict_to.as_ref(),
+            Planned(event) | Archived(event) => event.restrict_to.as_ref(),
         }
     }
 

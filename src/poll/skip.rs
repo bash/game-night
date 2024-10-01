@@ -3,10 +3,10 @@ use crate::database::{New, Repository};
 use crate::event::EventsQuery;
 use crate::result::HttpResult;
 use crate::template::PageBuilder;
-use crate::uri;
 use crate::users::User;
+use crate::{responder, uri};
 use rocket::response::Redirect;
-use rocket::{get, post, Responder};
+use rocket::{get, post};
 use rocket_dyn_templates::{context, Template};
 
 #[get("/event/<id>/skip")]
@@ -27,10 +27,11 @@ pub(super) async fn skip_poll_page(
     Ok(page.render("poll/skip", ctx).into())
 }
 
-#[derive(Responder)]
-pub(crate) enum SkipPollResponse {
-    Redirect(Redirect),
-    Template(Template),
+responder! {
+    pub(crate) enum SkipPollResponse {
+        Redirect(Box<Redirect>),
+        Template(Template),
+    }
 }
 
 #[post("/event/<id>/skip")]
@@ -41,23 +42,11 @@ pub(super) async fn skip_poll(
     mut repository: Box<dyn Repository>,
 ) -> HttpResult<Redirect> {
     let Some(poll) = events.with_id(id, &user).await?.and_then(|e| e.polling()) else {
-        return Ok(Redirect::to(uri!(crate::home_page())).into());
+        return Ok(Redirect::to(uri!(crate::home_page())));
     };
     let answers = get_no_answers(&user, &poll);
     repository.add_answers(answers).await?;
     Ok(Redirect::to(uri!(skip_poll_page(id = poll.event.id))))
-}
-
-impl From<Redirect> for SkipPollResponse {
-    fn from(value: Redirect) -> Self {
-        SkipPollResponse::Redirect(value)
-    }
-}
-
-impl From<Template> for SkipPollResponse {
-    fn from(value: Template) -> Self {
-        SkipPollResponse::Template(value)
-    }
 }
 
 fn get_no_answers(user: &User, poll: &Poll) -> Vec<(i64, Answer<New>)> {

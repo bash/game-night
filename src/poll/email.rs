@@ -3,23 +3,24 @@ use crate::email::{EmailMessage, EmailSender};
 use crate::event::EventsQuery;
 use crate::fmt::LongEventTitle;
 use crate::result::HttpResult;
-use crate::uri;
 use crate::uri::UriBuilder;
 use crate::users::User;
+use crate::{responder, uri};
 use rocket::http::uri::Absolute;
 use rocket::http::Status;
 use rocket::response::content::RawHtml;
 use rocket::{get, State};
 use serde::Serialize;
 
-#[get("/event/<id>/poll/email-preview")]
+#[get("/event/<id>/poll/email-preview?<txt>")]
 pub(super) async fn poll_email_preview(
     id: i64,
     user: User,
+    txt: bool,
     mut events: EventsQuery,
     email_sender: &State<Box<dyn EmailSender>>,
     uri_builder: UriBuilder<'_>,
-) -> HttpResult<RawHtml<String>> {
+) -> HttpResult<PlainOrHtml> {
     let Some(poll) = events.with_id(id, &user).await?.and_then(|e| e.polling()) else {
         return Err(Status::NotFound.into());
     };
@@ -32,7 +33,18 @@ pub(super) async fn poll_email_preview(
         manage_subscription_url: uri!(uri_builder, crate::register::profile),
     };
     let body = email_sender.preview(&email)?;
-    Ok(RawHtml(body.html))
+    if txt {
+        Ok(body.plain.into())
+    } else {
+        Ok(RawHtml(body.html).into())
+    }
+}
+
+responder! {
+    pub(crate) enum PlainOrHtml {
+        Plain(String),
+        Html(RawHtml<String>),
+    }
 }
 
 #[derive(Debug, Clone, Serialize)]

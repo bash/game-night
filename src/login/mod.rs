@@ -4,7 +4,7 @@ use crate::email::{EmailMessage, EmailSender};
 use crate::register::rocket_uri_macro_getting_invited_page;
 use crate::template::PageBuilder;
 use crate::users::{User, UserId};
-use crate::{default, uri};
+use crate::{default, responder, uri};
 use anyhow::{Error, Result};
 use lettre::message::Mailbox;
 use rand::distributions::{Alphanumeric, DistString, Distribution, Uniform};
@@ -68,26 +68,21 @@ async fn login(
 ) -> Result<Login, Debug<Error>> {
     if let Some((mailbox, email)) = login_email_for(repository.as_mut(), form.email).await? {
         email_sender.send(mailbox, &email, default()).await?;
-        Ok(Login::success(redirect))
+        Ok(Redirect::to(uri!(code::login_with_code_page(redirect))).into())
     } else {
         Ok(Login::failure(builder, redirect, form.into_inner()))
     }
 }
 
-#[derive(Debug, Responder)]
-enum Login {
-    Success(Box<Redirect>),
-    #[response(status = 400)]
-    Failure(Template),
+responder! {
+    enum Login {
+        Success(Box<Redirect>),
+        #[response(status = 400)]
+        Failure(Template),
+    }
 }
 
 impl Login {
-    fn success(redirect: Option<RedirectUri>) -> Login {
-        Self::Success(Box::new(Redirect::to(uri!(code::login_with_code_page(
-            redirect
-        )))))
-    }
-
     fn failure(builder: PageBuilder, redirect: Option<RedirectUri>, form: LoginData<'_>) -> Login {
         let context = context! {
             has_redirect: redirect.is_some(),

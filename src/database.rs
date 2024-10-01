@@ -3,6 +3,7 @@ use crate::event::{
     Event, EventEmail, EventId, EventLifecycle, Participant, PlanningDetails, Polling,
     StatefulEvent,
 };
+use crate::groups::Group;
 use crate::invitation::{Invitation, InvitationId, Passphrase};
 use crate::login::{LoginToken, LoginTokenType};
 use crate::poll::{Answer, Location, Poll, PollOption, PollStage};
@@ -42,6 +43,8 @@ pub(crate) trait Repository: EventEmailsRepository + fmt::Debug + Send {
     async fn get_user_by_email(&mut self, email: &str) -> Result<Option<User>>;
 
     async fn get_users(&mut self) -> Result<Vec<User>>;
+
+    async fn get_groups(&mut self) -> Result<Vec<Group>>;
 
     async fn update_user(&mut self, id: UserId, patch: UserPatch) -> Result<()>;
 
@@ -205,6 +208,18 @@ impl Repository for SqliteRepository {
         )
     }
 
+    async fn get_groups(&mut self) -> Result<Vec<Group>> {
+        let mut transaction = self.0.begin().await?;
+        let groups = sqlx::query_as("SELECT * FROM groups")
+            .fetch_all(&mut *transaction)
+            .await?;
+        let mut materialized = Vec::with_capacity(groups.len());
+        for group in groups {
+            materialized.push(materialize_group(&mut transaction, group).await?);
+        }
+        Ok(materialized)
+    }
+
     async fn update_user(&mut self, id: UserId, patch: UserPatch) -> Result<()> {
         let mut transaction = self.0.begin().await?;
         if let Some(name) = patch.name {
@@ -235,7 +250,7 @@ impl Repository for SqliteRepository {
 
     async fn update_last_active(&mut self, id: UserId, ts: OffsetDateTime) -> Result<()> {
         sqlx::query("UPDATE users SET last_active_at = max(last_active_at, ?1) WHERE id = ?2")
-            .bind(&ts)
+            .bind(ts)
             .bind(id)
             .execute(self.executor())
             .await?;
@@ -317,12 +332,13 @@ impl Repository for SqliteRepository {
         let mut transaction = self.0.begin().await?;
 
         let event_id = sqlx::query!(
-            "INSERT INTO events (title, description, location_id, created_by)
-             VALUES (?1, ?2, ?3, ?4)",
+            "INSERT INTO events (title, description, location_id, created_by, restrict_to)
+             VALUES (?1, ?2, ?3, ?4, ?5)",
             poll.event.title,
             poll.event.description,
             poll.event.location,
-            poll.event.created_by
+            poll.event.created_by,
+            poll.event.restrict_to,
         )
         .execute(&mut *transaction)
         .await?
@@ -367,7 +383,7 @@ impl Repository for SqliteRepository {
         }
 
         let poll = poll.into_unmaterialized(poll_id, event_id);
-        let poll = materialize_poll(&mut *transaction, poll).await?;
+        let poll = materialize_poll(&mut transaction, poll).await?;
 
         transaction.commit().await?;
 
@@ -631,7 +647,31 @@ async fn materialize_event<L: EventLifecycle>(
         .fetch_all(&mut *connection)
         .await?;
     let participants = materialize_participants(connection, participants).await?;
-    Ok(event.into_materialized(location, created_by, participants))
+    let restrict_to = if let Some(restrict_to) = event.restrict_to {
+        let group = sqlx::query_as("SELECT * FROM groups WHERE id = ?1")
+            .bind(restrict_to)
+            .fetch_one(&mut *connection)
+            .await?;
+        Some(materialize_group(connection, group).await?)
+    } else {
+        None
+    };
+    Ok(event.into_materialized(location, created_by, participants, restrict_to))
+}
+
+async fn materialize_group(
+    connection: &mut SqliteConnection,
+    group: Group<Unmaterialized>,
+) -> Result<Group> {
+    let members = sqlx::query_as(
+        "SELECT users.* FROM members
+         JOIN users ON users.id = members.user_id
+         WHERE members.group_id = ?1",
+    )
+    .bind(group.id)
+    .fetch_all(&mut *connection)
+    .await?;
+    Ok(group.into_materialized(members))
 }
 
 async fn materialize_participants(

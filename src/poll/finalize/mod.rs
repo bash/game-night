@@ -52,17 +52,19 @@ async fn try_finalize_poll(ctx: &mut FinalizeContext, poll: Poll) -> Result<()> 
         .update_poll_stage(poll.id, PollStage::Closed)
         .await?;
 
+    // TODO: veto selected date in open polls of other events.
+
     Ok(())
 }
 
 fn finalize_poll_dry_run(poll: &Poll) -> FinalizeResult {
-    let candidates = get_candidates(&poll);
-    if let Some(chosen_option) = choose_option(candidates, &poll) {
+    let candidates = get_candidates(poll);
+    if let Some(chosen_option) = choose_option(candidates, poll) {
         let (invited, overflow) =
             choose_participants(&chosen_option.answers, poll.max_participants);
         let details = PlanningDetails::new(&chosen_option, &invited);
         FinalizeResult::Success {
-            missed: get_missed_users(&poll, &invited),
+            missed: get_missed_users(poll, &invited),
             details,
             invited,
             overflow,

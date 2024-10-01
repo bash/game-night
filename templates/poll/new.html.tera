@@ -6,16 +6,30 @@
 <form method="post">
     <p>
         I want to invite between
-        <input type="number" class="-inline" name="min_participants" id="min-participants" size="2" inputmode="numeric" placeholder="2" required min="2"> and
-        <input type="number" class="-inline" name="max_participants" size="2" inputmode="numeric" placeholder="4" required min="2" data-validate-gte="min-participants"> people<br>
-        to a game night titled
+        <input type="number" class="-inline" name="min_participants" id="min-participants" size="2" inputmode="numeric" placeholder="2" required min="2"> and.
+        <input type="number" class="-inline" name="max_participants" size="2" inputmode="numeric" placeholder="4" required min="2" data-validate-gte="min-participants"> people.<br>
+
+        I want to invite
+        <select class="-inline" name="restrict_to">
+            <option value="">everyone</option>
+            {% for group in groups %}
+                <option value="{{group.id}}">members of «{{group.name}}»</option>
+            {% endfor %}
+        </select>
+    </p>
+
+    <p>
+        The game night is titled:
         <input type="text" class="-inline" name="title"><br>
-        with the date chosen
+    </p>
+
+    <p>
+        The date should be chosen
         <select class="-inline" name="strategy">
             {% for strategy in strategies %}
                 <option value="{{strategy.value}}">{{strategy.name}}</option>
             {% endfor %}
-        </select>.<br>
+        </select>.
     </p>
 
     <p>

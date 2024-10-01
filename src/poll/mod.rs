@@ -358,6 +358,7 @@ pub(crate) enum DateSelectionStrategy {
     AtRandom,
     #[field(value = "to_maximize_participants")]
     ToMaximizeParticipants,
+    // TODO: everyone
 }
 
 impl fmt::Display for DateSelectionStrategy {
