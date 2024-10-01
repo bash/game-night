@@ -68,8 +68,6 @@ pub(crate) trait Repository: EventEmailsRepository + fmt::Debug + Send {
 
     async fn add_answers(&mut self, answers: Vec<(i64, Answer<New>)>) -> Result<()>;
 
-    async fn get_polls_pending_for_finalization(&mut self) -> Result<Vec<Poll>>;
-
     async fn update_poll_stage(&mut self, id: i64, stage: PollStage) -> Result<()>;
 
     async fn plan_event(&mut self, id: EventId, details: PlanningDetails) -> Result<Event>;
@@ -397,27 +395,6 @@ impl Repository for SqliteRepository {
         .execute(self.executor())
         .await?;
         Ok(())
-    }
-
-    async fn get_polls_pending_for_finalization(&mut self) -> Result<Vec<Poll>> {
-        let mut transaction = self.0.begin().await?;
-
-        let polls = sqlx::query_as(
-            "SELECT * FROM polls
-             WHERE unixepoch(open_until) - unixepoch('now') < 0
-               AND stage = ?1
-             ORDER BY open_until DESC",
-        )
-        .bind(PollStage::Open)
-        .fetch_all(&mut *transaction)
-        .await?;
-
-        let mut materialized_polls = Vec::new();
-        for poll in polls {
-            materialized_polls.push(materialize_poll(&mut transaction, poll).await?);
-        }
-
-        Ok(materialized_polls)
     }
 
     async fn add_answers(&mut self, answers: Vec<(i64, Answer<New>)>) -> Result<()> {

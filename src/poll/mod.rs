@@ -259,6 +259,10 @@ impl AnswerValue {
         Self::Yes { attendance }
     }
 
+    fn veto() -> Self {
+        Self::no(true)
+    }
+
     fn is_yes(self) -> bool {
         matches!(self, AnswerValue::Yes { .. })
     }

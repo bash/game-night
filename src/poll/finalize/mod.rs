@@ -13,10 +13,12 @@ mod scheduling;
 pub(crate) use scheduling::*;
 mod emails;
 pub(crate) use emails::*;
+use veto::veto_date_in_other_polls;
+mod veto;
 
 async fn finalize(ctx: &mut FinalizeContext) -> Result<()> {
     // not using a transaction here because we're the only ones setting polls to closed.
-    for poll in ctx.repository.get_polls_pending_for_finalization().await? {
+    while let Some(poll) = get_next_pending_poll(&mut *ctx.repository).await? {
         try_finalize_poll(ctx, poll).await?;
     }
 
@@ -43,6 +45,7 @@ async fn try_finalize_poll(ctx: &mut FinalizeContext, poll: Poll) -> Result<()> 
     } = result
     {
         let event = ctx.repository.plan_event(poll.event.id, details).await?;
+        veto_date_in_other_polls(ctx, &event).await?;
         let sender = &mut *ctx.sender.lock().await;
         emails::send_notification_emails(sender, &event, &invited, &missed).await?;
     }
@@ -51,9 +54,17 @@ async fn try_finalize_poll(ctx: &mut FinalizeContext, poll: Poll) -> Result<()> 
         .update_poll_stage(poll.id, PollStage::Closed)
         .await?;
 
-    // TODO: veto selected date in open polls of other events.
-
     Ok(())
+}
+
+async fn get_next_pending_poll(repository: &mut dyn Repository) -> Result<Option<Poll>> {
+    Ok(repository
+        .get_stateful_events()
+        .await?
+        .into_iter()
+        .filter_map(|e| e.pending())
+        .sorted_by_key(|p| p.open_until)
+        .next())
 }
 
 fn finalize_poll_dry_run(poll: &Poll) -> FinalizeResult {
