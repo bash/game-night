@@ -26,6 +26,13 @@
         and you're invited 🥳
     </p>
 
+    {% if event.restrict_to %}
+    <p>
+        This is a special game night just for members of
+        <strong>«{{event.restrict_to.name}}»</strong>.
+    </p>
+    {% endif %}
+
     <fieldset>
         <a class="link-button" href="{{ics_uri}}" download="game-night-{{event.id}}">Save to Calendar</a>
     </fieldset>

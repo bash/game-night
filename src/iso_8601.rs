@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::ops::{Deref, DerefMut};
 use time::{Date, OffsetDateTime, Time};
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, sqlx::Type, FromForm)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Ord, PartialOrd, sqlx::Type, FromForm)]
 #[sqlx(transparent)]
 #[form(transparent)]
 pub(crate) struct Iso8601<T>(pub(crate) T);

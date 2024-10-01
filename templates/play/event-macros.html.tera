@@ -9,7 +9,8 @@
 {% endmacro %}
 
 {% macro badge(entry, event) %}
-    {% if entry.state == "polling" or entry.state == "finalizing" %}<span class="text-badge -important">poll open</span>
+    {% if entry.state == "polling" %}<span class="text-badge -important">poll open</span>
+    {% elif entry.state == "finalizing" or entry.state == "pending" %}<span class="text-badge -important">closing</span>
     {% elif entry.state == "planned" %}<span class="text-badge -important">upcoming</span>
     {% elif entry.state == "archived" %}<span class="text-badge">passé</span>
     {% elif entry.state == "failed" %}<span class="text-badge">failed</span>

@@ -2,7 +2,6 @@ use std::fmt;
 
 use crate::{
     database::{EventEmailsRepository, Materialized},
-    default,
     email::{EmailMessage, EmailMessageOptions, EmailSender, MessageId},
     event::Event,
     users::{User, UserId},
@@ -80,7 +79,6 @@ impl<L: EventLifecycle> EventEmailSender<L> for EventEmailSenderImpl {
         let options = EmailMessageOptions {
             message_id: Some(message_id.clone()),
             in_reply_to,
-            ..default()
         };
         let mailbox = recipient.mailbox()?;
         self.sender.send(mailbox, email, options).await?;

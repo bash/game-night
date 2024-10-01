@@ -1,5 +1,4 @@
 import { bindDisabledTo } from '/js/bind-disabled-to.js'
-import { validateGte } from '/js/validate-gte.js'
 
 for (const button of document.querySelectorAll('[data-fetch-more-target]')) {
     const target = document.getElementById(button.dataset.fetchMoreTarget)
@@ -15,7 +14,6 @@ function fetchAndUpdateCalendar(button, url, target) {
         button.style.cursor = ''
         target.innerHTML = html
         bindDisabledTo(target)
-        validateGte(target)
     }
 }
 

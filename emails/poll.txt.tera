@@ -2,17 +2,24 @@
 
 {% if poll.event.title %}Tau's Game Night «{{poll.event.title}}»{% else %}Another Game Night{% endif %} is Just Around the Corner 🧙{{skin_tone}}
 
+{%- if poll.event.restrict_to %}
+
+This is a special game night just for members of «{{poll.event.restrict_to.name}}».
+
+{% endif -%}
+
 … and I need *you* to help pick a date.
 You can choose from the following dates:
-
 {% for option in poll.options | sort(attribute='starts_at') %}
-    • {{option.starts_at | time(format = "{date}")}} at {{option.starts_at | time(format='{time}')}}
-{% endfor %}
+• {{option.starts_at | time(format = "{date}")}} at {{option.starts_at | time(format='{time}')}}
+{%- endfor %}
 
 But don't take too long—the poll is only open until {{poll.open_until | time(format = "{date}")}} at {{poll.open_until | time(format='{time}')}} :)
 
 → Onwards to the poll! {{poll_uri}}
 → I want to skip the upcoming game night… {{skip_poll_uri}}
+
+{{closing}}
 
 ------
 

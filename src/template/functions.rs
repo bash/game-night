@@ -100,9 +100,9 @@ fn parse_format(
     format: &str,
 ) -> Result<Vec<FormatItem<'_>>, time::error::InvalidFormatDescription> {
     const DATE_FORMAT: &[FormatItem] =
-        format_description!("[day padding:none].\u{00A0}[month repr:long]");
+        format_description!("[day padding:none].\u{2009}[month repr:long padding:none]");
     const DATE_WITH_YEAR_FORMAT: &[FormatItem] =
-        format_description!("[day padding:none].\u{00A0}[month repr:long]\u{00A0}[year repr:full]");
+        format_description!("[day padding:none].\u{2009}[month repr:long]\u{2009}[year repr:full]");
     const TIME_FORMAT: &[FormatItem] = format_description!("[hour padding:none]:[minute]");
     match format {
         "{time}" => Ok(TIME_FORMAT.to_vec()),

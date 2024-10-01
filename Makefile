@@ -14,7 +14,7 @@ ifeq ($(env ENABLE_SOURCE_MAPS), true)
 	SASS_FLAGS := --embed-source-map --embed-sources
 endif
 
-.PHONY: all clean recreate-db certs run publish deploy redeploy check clippy sqlx-prepare
+.PHONY: all clean recreate-db certs run publish deploy redeploy check sqlx-prepare
 
 all: $(MAIN_CSS) $(EMAIL_CSS) $(RELATIVE_TIME_ELEMENT)
 
@@ -29,9 +29,6 @@ sqlx-prepare:
 	DATABASE_URL=sqlite://./database.sqlite cargo sqlx prepare
 
 check: sqlx-prepare
-	cargo check $(CARGO_FLAGS)
-
-clippy:
 	cargo clippy $(CARGO_FLAGS)
 
 clean:

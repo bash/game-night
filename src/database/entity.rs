@@ -15,8 +15,8 @@ pub(crate) struct Materialized;
 macro_rules! entity_state {
     ($vis:vis trait $trait:ident { $(type $name:ident $(: $bound:path)? = $new:ty => $unmaterialized:ty => $materialized:ty;)* }) => {
         pub(crate) trait $trait { $(type $name $(: $bound)? ;)* }
-        impl $trait for crate::database::New { $(type $name = $new;)* }
-        impl $trait for crate::database::Unmaterialized { $(type $name = $unmaterialized;)* }
-        impl $trait for crate::database::Materialized { $(type $name = $materialized;)* }
+        impl $trait for $crate::database::New { $(type $name = $new;)* }
+        impl $trait for $crate::database::Unmaterialized { $(type $name = $unmaterialized;)* }
+        impl $trait for $crate::database::Materialized { $(type $name = $materialized;)* }
     };
 }

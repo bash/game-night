@@ -24,7 +24,7 @@ impl EmailRenderer {
         let mut css_file_path = template_dir.to_owned();
         css_file_path.push("email.css");
         Ok(Self {
-            tera: create_tera(&template_dir)?,
+            tera: create_tera(template_dir)?,
             css: read_to_string(css_file_path)
                 .await
                 .context("email.css is missing")?,

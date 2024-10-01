@@ -3,6 +3,7 @@ use crate::event::{
     Event, EventEmail, EventId, EventLifecycle, Participant, PlanningDetails, Polling,
     StatefulEvent,
 };
+use crate::groups::Group;
 use crate::invitation::{Invitation, InvitationId, Passphrase};
 use crate::login::{LoginToken, LoginTokenType};
 use crate::poll::{Answer, Location, Poll, PollOption, PollStage};
@@ -43,6 +44,8 @@ pub(crate) trait Repository: EventEmailsRepository + fmt::Debug + Send {
 
     async fn get_users(&mut self) -> Result<Vec<User>>;
 
+    async fn get_groups(&mut self) -> Result<Vec<Group>>;
+
     async fn update_user(&mut self, id: UserId, patch: UserPatch) -> Result<()>;
 
     async fn delete_user(&mut self, id: UserId) -> Result<()>;
@@ -64,8 +67,6 @@ pub(crate) trait Repository: EventEmailsRepository + fmt::Debug + Send {
     async fn update_poll_open_until(&mut self, id: i64, close_at: OffsetDateTime) -> Result<()>;
 
     async fn add_answers(&mut self, answers: Vec<(i64, Answer<New>)>) -> Result<()>;
-
-    async fn get_polls_pending_for_finalization(&mut self) -> Result<Vec<Poll>>;
 
     async fn update_poll_stage(&mut self, id: i64, stage: PollStage) -> Result<()>;
 
@@ -205,6 +206,18 @@ impl Repository for SqliteRepository {
         )
     }
 
+    async fn get_groups(&mut self) -> Result<Vec<Group>> {
+        let mut transaction = self.0.begin().await?;
+        let groups = sqlx::query_as("SELECT * FROM groups")
+            .fetch_all(&mut *transaction)
+            .await?;
+        let mut materialized = Vec::with_capacity(groups.len());
+        for group in groups {
+            materialized.push(materialize_group(&mut transaction, group).await?);
+        }
+        Ok(materialized)
+    }
+
     async fn update_user(&mut self, id: UserId, patch: UserPatch) -> Result<()> {
         let mut transaction = self.0.begin().await?;
         if let Some(name) = patch.name {
@@ -235,7 +248,7 @@ impl Repository for SqliteRepository {
 
     async fn update_last_active(&mut self, id: UserId, ts: OffsetDateTime) -> Result<()> {
         sqlx::query("UPDATE users SET last_active_at = max(last_active_at, ?1) WHERE id = ?2")
-            .bind(&ts)
+            .bind(ts)
             .bind(id)
             .execute(self.executor())
             .await?;
@@ -317,28 +330,27 @@ impl Repository for SqliteRepository {
         let mut transaction = self.0.begin().await?;
 
         let event_id = sqlx::query!(
-            "INSERT INTO events (title, description, location_id, created_by)
-             VALUES (?1, ?2, ?3, ?4)",
+            "INSERT INTO events (title, description, location_id, created_by, restrict_to)
+             VALUES (?1, ?2, ?3, ?4, ?5)",
             poll.event.title,
             poll.event.description,
             poll.event.location,
-            poll.event.created_by
+            poll.event.created_by,
+            poll.event.restrict_to,
         )
         .execute(&mut *transaction)
         .await?
         .last_insert_rowid();
 
         let min_participants = i64::try_from(poll.min_participants)?;
-        let max_participants = i64::try_from(poll.max_participants)?;
         let poll_id = sqlx::query!(
-            "INSERT INTO polls (min_participants, max_participants, strategy, open_until, stage, event_id)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-             min_participants,
-             max_participants,
-             poll.strategy,
-             poll.open_until,
-             poll.stage,
-             event_id
+            "INSERT INTO polls (min_participants, strategy, open_until, stage, event_id)
+             VALUES (?1, ?2, ?3, ?4, ?5)",
+            min_participants,
+            poll.strategy,
+            poll.open_until,
+            poll.stage,
+            event_id
         )
         .execute(&mut *transaction)
         .await?
@@ -367,7 +379,7 @@ impl Repository for SqliteRepository {
         }
 
         let poll = poll.into_unmaterialized(poll_id, event_id);
-        let poll = materialize_poll(&mut *transaction, poll).await?;
+        let poll = materialize_poll(&mut transaction, poll).await?;
 
         transaction.commit().await?;
 
@@ -383,27 +395,6 @@ impl Repository for SqliteRepository {
         .execute(self.executor())
         .await?;
         Ok(())
-    }
-
-    async fn get_polls_pending_for_finalization(&mut self) -> Result<Vec<Poll>> {
-        let mut transaction = self.0.begin().await?;
-
-        let polls = sqlx::query_as(
-            "SELECT * FROM polls
-             WHERE unixepoch(open_until) - unixepoch('now') < 0
-               AND stage = ?1
-             ORDER BY open_until DESC",
-        )
-        .bind(PollStage::Open)
-        .fetch_all(&mut *transaction)
-        .await?;
-
-        let mut materialized_polls = Vec::new();
-        for poll in polls {
-            materialized_polls.push(materialize_poll(&mut transaction, poll).await?);
-        }
-
-        Ok(materialized_polls)
     }
 
     async fn add_answers(&mut self, answers: Vec<(i64, Answer<New>)>) -> Result<()> {
@@ -631,7 +622,31 @@ async fn materialize_event<L: EventLifecycle>(
         .fetch_all(&mut *connection)
         .await?;
     let participants = materialize_participants(connection, participants).await?;
-    Ok(event.into_materialized(location, created_by, participants))
+    let restrict_to = if let Some(restrict_to) = event.restrict_to {
+        let group = sqlx::query_as("SELECT * FROM groups WHERE id = ?1")
+            .bind(restrict_to)
+            .fetch_one(&mut *connection)
+            .await?;
+        Some(materialize_group(connection, group).await?)
+    } else {
+        None
+    };
+    Ok(event.into_materialized(location, created_by, participants, restrict_to))
+}
+
+async fn materialize_group(
+    connection: &mut SqliteConnection,
+    group: Group<Unmaterialized>,
+) -> Result<Group> {
+    let members = sqlx::query_as(
+        "SELECT users.* FROM members
+         JOIN users ON users.id = members.user_id
+         WHERE members.group_id = ?1",
+    )
+    .bind(group.id)
+    .fetch_all(&mut *connection)
+    .await?;
+    Ok(group.into_materialized(members))
 }
 
 async fn materialize_participants(

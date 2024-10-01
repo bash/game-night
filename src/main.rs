@@ -16,6 +16,7 @@ use socket_activation::listener_from_env;
 use template::configure_template_engines;
 use template::PageBuilder;
 
+mod response;
 mod uri;
 
 mod auth;
@@ -25,6 +26,7 @@ mod email;
 mod event;
 mod fmt;
 mod fs;
+mod groups;
 mod invitation;
 mod iso_8601;
 mod login;

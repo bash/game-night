@@ -1,13 +1,12 @@
 use super::User;
-use crate::{database::Repository, iso_8601::Iso8601};
+use crate::database::{Materialized, Repository};
+use crate::event::{Event, EventLifecycle};
+use crate::iso_8601::Iso8601;
 use anyhow::{Error, Result};
-use rocket::{
-    async_trait,
-    http::Status,
-    outcome::{try_outcome, IntoOutcome},
-    request::{FromRequest, Outcome},
-    Request,
-};
+use rocket::async_trait;
+use rocket::outcome::try_outcome;
+use rocket::request::{FromRequest, Outcome};
+use rocket::Request;
 use serde::{Deserialize, Serialize};
 use time::{Date, OffsetDateTime};
 
@@ -32,29 +31,38 @@ impl EmailSubscription {
     }
 }
 
-#[derive(Debug, Clone)]
-pub(crate) struct SubscribedUsers(pub(crate) Vec<User>);
+#[derive(Debug)]
+pub(crate) struct SubscribedUsers {
+    repository: Box<dyn Repository>,
+}
+
+impl SubscribedUsers {
+    pub(crate) async fn for_event<L: EventLifecycle>(
+        &mut self,
+        event: &Event<Materialized, L>,
+    ) -> Result<Vec<User>> {
+        let today = OffsetDateTime::now_utc().date();
+        let is_subscribed = |u: &User| u.email_subscription.is_subscribed(today);
+        if let Some(group) = &event.restrict_to {
+            Ok(group
+                .members
+                .iter()
+                .filter(|u| is_subscribed(u))
+                .cloned()
+                .collect())
+        } else {
+            let users = self.repository.get_users().await?;
+            Ok(users.into_iter().filter(is_subscribed).collect())
+        }
+    }
+}
 
 #[async_trait]
 impl<'r> FromRequest<'r> for SubscribedUsers {
     type Error = Error;
 
     async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
-        let mut database: Box<dyn Repository> = try_outcome!(request.guard().await);
-        let users = try_outcome!(get_subscribed_users(&mut *database)
-            .await
-            .or_error(Status::InternalServerError));
-        Outcome::Success(SubscribedUsers(users.collect()))
+        let repository = try_outcome!(request.guard().await);
+        Outcome::Success(SubscribedUsers { repository })
     }
-}
-
-async fn get_subscribed_users(
-    repository: &mut dyn Repository,
-) -> Result<impl Iterator<Item = User>> {
-    let today = OffsetDateTime::now_utc().date();
-    Ok(repository
-        .get_users()
-        .await?
-        .into_iter()
-        .filter(move |u| u.email_subscription.is_subscribed(today)))
 }

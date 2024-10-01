@@ -28,6 +28,7 @@ pub(super) async fn new_poll_page(
     user: AuthorizedTo<ManagePoll>,
     page: PageBuilder<'_>,
     mut events: EventsQuery,
+    mut repository: Box<dyn Repository>,
 ) -> Result<Template, Debug<Error>> {
     let calendar = get_calendar(
         OffsetDateTime::now_utc(),
@@ -35,9 +36,10 @@ pub(super) async fn new_poll_page(
         &mut CalendarDayPrefill::empty,
     );
     let description = events.newest(&user).await?.map(|e| e.description);
+    let groups = repository.get_groups().await?;
     Ok(page.render(
         "poll/new",
-        context! { calendar, strategies: strategies(), calendar_uri: uri!(calendar()), description },
+        context! { calendar, strategies: strategies(), calendar_uri: uri!(calendar()), description, groups },
     ))
 }
 
@@ -179,7 +181,6 @@ fn to_poll(poll: NewPollData, location: Location, user: &User) -> Result<Poll<Ne
     Ok(Poll {
         id: (),
         min_participants: poll.min_participants,
-        max_participants: poll.max_participants,
         strategy: poll.strategy,
         open_until: (now + Duration::hours(poll.duration_in_hours)).into(),
         stage: PollStage::Open,
@@ -192,6 +193,7 @@ fn to_poll(poll: NewPollData, location: Location, user: &User) -> Result<Poll<Ne
             location: location.id,
             participants: vec![],
             starts_at: None,
+            restrict_to: poll.restrict_to,
         },
     })
 }
@@ -235,15 +237,15 @@ fn now_utc_without_subminutes() -> Result<OffsetDateTime> {
 
 #[derive(Debug, FromForm)]
 pub(super) struct NewPollData<'r> {
+    #[field(validate = gte(2))]
     min_participants: usize,
-    #[field(validate = gte(self.min_participants))]
-    max_participants: usize,
     strategy: DateSelectionStrategy,
     #[field(name = "duration", validate = gte(1))]
     duration_in_hours: i64,
     title: &'r str,
     description: &'r str,
     options: Vec<NewPollOption>,
+    restrict_to: Option<i64>,
 }
 
 #[derive(Debug, FromForm)]
@@ -266,12 +268,12 @@ where
 }
 
 async fn send_poll_emails(
-    subscribed_users: SubscribedUsers,
+    mut subscribed_users: SubscribedUsers,
     mut email_sender: Box<dyn EventEmailSender<Polling>>,
     uri_builder: UriBuilder<'_>,
     poll: &Poll,
 ) -> Result<()> {
-    for user in subscribed_users.0 {
+    for user in subscribed_users.for_event(&poll.event).await? {
         let open_until = *poll.open_until;
         let poll_uri = uri!(auto_login(&user, open_until); uri_builder, crate::event::event_page(id = poll.event.id)).await?;
         let skip_poll_uri =
