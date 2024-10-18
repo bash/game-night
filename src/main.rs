@@ -1,4 +1,4 @@
-use anyhow::{Context as _, Result};
+use anyhow::{anyhow, Context as _, Result};
 use database::Repository;
 use email::{EmailSender, EmailSenderImpl};
 use event::{EventEmailSender, EventLifecycle};
@@ -6,6 +6,7 @@ use login::RocketSecretKey;
 use poll::poll_finalizer;
 use pruning::database_pruning;
 use rand::thread_rng;
+use result::HttpResult;
 use rocket::fairing::{self, Fairing};
 use rocket::figment::Figment;
 use rocket::request::FromRequest;
@@ -108,11 +109,11 @@ fn home_page(page: PageBuilder<'_>) -> Template {
 }
 
 #[catch(404)]
-async fn not_found(request: &Request<'_>) -> Template {
+async fn not_found(request: &Request<'_>) -> HttpResult<Template> {
     let page = PageBuilder::from_request(request)
         .await
-        .expect("Page builder guard is infallible");
-    page.render("errors/404", ())
+        .success_or_else(|| anyhow!("failed to create page builder"))?;
+    Ok(page.render("errors/404", ()))
 }
 
 #[derive(Debug, Database)]

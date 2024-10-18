@@ -1,6 +1,7 @@
+use crate::result::HttpResult;
 use crate::template::PageBuilder;
 use crate::users::User;
-use anyhow::Error;
+use anyhow::{anyhow, Error};
 use rocket::http::Status;
 use rocket::outcome::try_outcome;
 use rocket::request::{FromRequest, Outcome};
@@ -76,9 +77,9 @@ impl UserPredicate for ManageUsers {
 }
 
 #[catch(403)]
-async fn forbidden(request: &Request<'_>) -> Template {
+async fn forbidden(request: &Request<'_>) -> HttpResult<Template> {
     let page = PageBuilder::from_request(request)
         .await
-        .expect("Page builder guard is infallible");
-    page.render("errors/403", context! {})
+        .success_or_else(|| anyhow!("failed to create page builder"))?;
+    Ok(page.render("errors/403", context! {}))
 }

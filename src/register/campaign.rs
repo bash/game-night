@@ -1,4 +1,4 @@
-use anyhow::{Error, Result};
+use anyhow::{anyhow, Error, Result};
 use rocket::figment::{self, Figment};
 use rocket::http::Status;
 use rocket::request::{FromRequest, Outcome};
@@ -27,8 +27,9 @@ impl<'r> FromRequest<'r> for ProvidedCampaign<'r> {
 
     async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
         let campaign: &str = match campaing_name_from_query(request) {
-            Some(c) => c,
-            None => return Outcome::Success(ProvidedCampaign(None)),
+            Ok(Some(c)) => c,
+            Ok(None) => return Outcome::Success(ProvidedCampaign(None)),
+            Err(e) => return Outcome::Error((Status::BadRequest, Some(e))),
         };
         match campaign_from_figment(request.rocket().figment(), campaign) {
             Ok(Some(c)) => Outcome::Success(ProvidedCampaign(Some(c))),
@@ -38,10 +39,11 @@ impl<'r> FromRequest<'r> for ProvidedCampaign<'r> {
     }
 }
 
-fn campaing_name_from_query<'r>(request: &'r Request<'_>) -> Option<&'r str> {
+fn campaing_name_from_query<'r>(request: &'r Request<'_>) -> Result<Option<&'r str>> {
     request
         .query_value("campaign")
-        .map(|r| r.expect("Infallible conversion"))
+        .transpose()
+        .map_err(|e| anyhow!("failed to read form value: {e}"))
 }
 
 fn campaign_from_figment<'a>(figment: &'a Figment, name: &'a str) -> Result<Option<Campaign<'a>>> {

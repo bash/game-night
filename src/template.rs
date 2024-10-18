@@ -19,6 +19,7 @@ use std::sync::OnceLock;
 
 mod functions;
 pub(crate) use functions::*;
+use std::convert::Infallible;
 mod assets;
 
 pub(crate) struct PageBuilder<'r> {
@@ -85,10 +86,7 @@ impl<'r> FromRequest<'r> for PageBuilder<'r> {
     type Error = Error;
 
     async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
-        let user: Option<User> = request
-            .guard()
-            .await
-            .expect("Option<T> guard is infallible");
+        let user: Option<User> = unwrap_infallible(request.guard().await);
         let login_state: LoginState = try_outcome!(request.guard().await);
         let uri = Cow::Borrowed(request.uri());
         Outcome::Success(PageBuilder {
@@ -96,6 +94,16 @@ impl<'r> FromRequest<'r> for PageBuilder<'r> {
             uri,
             login_state,
         })
+    }
+}
+
+fn unwrap_infallible<S>(outcome: Outcome<S, Infallible>) -> S {
+    match outcome {
+        Outcome::Success(value) => value,
+        Outcome::Forward(status) => panic!(
+            "unexpectedly got a forward from an infallible guard: {:?}",
+            status
+        ),
     }
 }
 
