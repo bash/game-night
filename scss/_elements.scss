@@ -18,6 +18,7 @@
 }
 
 .users-list {
+    margin-bottom: var(--inter-block-gap);
     list-style-type: none;
     display: grid;
     gap: .5em;

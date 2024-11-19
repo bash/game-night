@@ -5,7 +5,7 @@ use crate::iso_8601::Iso8601;
 use crate::poll::{Poll, PollOption};
 use crate::result::HttpResult;
 use crate::template::PageBuilder;
-use crate::users::User;
+use crate::users::{User, UsersQuery};
 use anyhow::Error;
 use itertools::{Either, Itertools as _};
 use rocket::form::Form;
@@ -22,12 +22,12 @@ pub(crate) async fn open_poll_page(
     user: User,
     poll: Poll,
     page: PageBuilder<'_>,
-    mut repository: Box<dyn Repository>,
+    mut users_query: UsersQuery,
 ) -> Result<Template, Error> {
     let users = if let Some(group) = &poll.event.restrict_to {
         group.members.clone()
     } else {
-        repository.get_users().await?
+        users_query.active().await?
     };
     Ok(page.render("poll/open", to_open_poll(poll, &user, users)))
 }

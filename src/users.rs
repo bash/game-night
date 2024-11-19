@@ -5,17 +5,19 @@ use crate::template::PageBuilder;
 use anyhow::{Error, Result};
 use lettre::message::Mailbox;
 use rocket::response::Debug;
-use rocket::{get, routes, Route};
+use rocket::{async_trait, get, routes, Request, Route};
 use rocket_db_pools::sqlx;
 use rocket_dyn_templates::{context, Template};
 use serde::Serialize;
-use time::OffsetDateTime;
+use time::{Duration, OffsetDateTime};
 
 mod email_subscription;
 pub(crate) use email_subscription::*;
 mod email_subscription_encoding;
 mod last_activity;
 pub(crate) use last_activity::LastActivity;
+use rocket::outcome::try_outcome;
+use rocket::request::{FromRequest, Outcome};
 
 pub(crate) fn routes() -> Vec<Route> {
     routes![list_users]
@@ -24,10 +26,10 @@ pub(crate) fn routes() -> Vec<Route> {
 #[get("/users")]
 async fn list_users(
     page: PageBuilder<'_>,
-    mut repository: Box<dyn Repository>,
+    mut users: UsersQuery,
     _guard: AuthorizedTo<ManageUsers>,
 ) -> Result<Template, Debug<Error>> {
-    Ok(page.render("users", context! { users: repository.get_users().await? }))
+    Ok(page.render("users", context! { users: users.active().await? }))
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, sqlx::Type, Serialize, rocket::FromForm)]
@@ -90,5 +92,30 @@ impl<Id> User<Id> {
 
     pub(crate) fn can_update_name(&self) -> bool {
         self.can_update_name
+    }
+}
+
+pub(crate) const INACTIVITY_THRESHOLD: Duration = Duration::days(9 * 30);
+
+#[derive(Debug)]
+pub(crate) struct UsersQuery(Box<dyn Repository>);
+
+impl UsersQuery {
+    pub(crate) async fn all(&mut self) -> Result<Vec<User>> {
+        self.0.get_users().await
+    }
+
+    pub(crate) async fn active(&mut self) -> Result<Vec<User>> {
+        self.0.get_active_users(INACTIVITY_THRESHOLD).await
+    }
+}
+
+#[async_trait]
+impl<'r> FromRequest<'r> for UsersQuery {
+    type Error = <Box<dyn Repository> as FromRequest<'r>>::Error;
+
+    async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
+        let repository = try_outcome!(request.guard().await);
+        Outcome::Success(Self(repository))
     }
 }

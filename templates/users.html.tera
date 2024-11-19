@@ -30,9 +30,14 @@
         </div>
     </li>
     {% endfor %}
-
-    {% block scripts %}
-        <script src="{{asset(path='/js/relative-time-element.js')}}" type="module"></script>
-    {% endblock scripts %}
 </ul>
+
+<p>
+    <small>Note that this list may be incomplete: Users who have not been active in the last 9 months are automatically hidden.</small>
+</p>
+
 {% endblock content %}
+
+{% block scripts %}
+    <script src="{{asset(path='/js/relative-time-element.js')}}" type="module"></script>
+{% endblock scripts %}

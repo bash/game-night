@@ -6,7 +6,7 @@ use crate::register::rocket_uri_macro_register_page;
 use crate::template::PageBuilder;
 use crate::uri;
 use crate::uri::UriBuilder;
-use crate::users::{EmailSubscription, Role, User, UserId};
+use crate::users::{EmailSubscription, Role, User, UserId, UsersQuery};
 use anyhow::{Error, Result};
 use rand::prelude::*;
 use rocket::form::Form;
@@ -29,13 +29,13 @@ pub(crate) fn routes() -> Vec<Route> {
 #[get("/invite")]
 async fn invite_page(
     _user: AuthorizedTo<Invite>,
-    mut repository: Box<dyn Repository>,
+    mut users_query: UsersQuery,
     page: PageBuilder<'_>,
 ) -> Result<Template, Debug<Error>> {
     Ok(page.render(
         "invite",
         context! {
-            users: repository.get_users().await?
+            users: users_query.active().await?
         },
     ))
 }

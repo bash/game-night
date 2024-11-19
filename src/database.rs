@@ -44,6 +44,9 @@ pub(crate) trait Repository: EventEmailsRepository + fmt::Debug + Send {
 
     async fn get_users(&mut self) -> Result<Vec<User>>;
 
+    async fn get_active_users(&mut self, inactivity_threshold: time::Duration)
+        -> Result<Vec<User>>;
+
     async fn get_groups(&mut self) -> Result<Vec<Group>>;
 
     async fn update_user(&mut self, id: UserId, patch: UserPatch) -> Result<()>;
@@ -204,6 +207,21 @@ impl Repository for SqliteRepository {
                 .fetch_all(self.executor())
                 .await?,
         )
+    }
+
+    async fn get_active_users(
+        &mut self,
+        inactivity_threshold: time::Duration,
+    ) -> Result<Vec<User>> {
+        let min_active_at = OffsetDateTime::now_utc() - inactivity_threshold;
+        Ok(sqlx::query_as(
+            "SELECT * FROM users
+             WHERE unixepoch(last_active_at) - unixepoch(?1) >= 0
+             ORDER BY last_active_at DESC",
+        )
+        .bind(min_active_at)
+        .fetch_all(self.executor())
+        .await?)
     }
 
     async fn get_groups(&mut self) -> Result<Vec<Group>> {

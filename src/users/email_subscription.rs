@@ -1,5 +1,5 @@
-use super::User;
-use crate::database::{Materialized, Repository};
+use super::{User, UsersQuery};
+use crate::database::Materialized;
 use crate::event::{Event, EventLifecycle};
 use crate::iso_8601::Iso8601;
 use anyhow::{Error, Result};
@@ -33,7 +33,7 @@ impl EmailSubscription {
 
 #[derive(Debug)]
 pub(crate) struct SubscribedUsers {
-    repository: Box<dyn Repository>,
+    users: UsersQuery,
 }
 
 impl SubscribedUsers {
@@ -51,7 +51,7 @@ impl SubscribedUsers {
                 .cloned()
                 .collect())
         } else {
-            let users = self.repository.get_users().await?;
+            let users = self.users.all().await?;
             Ok(users.into_iter().filter(is_subscribed).collect())
         }
     }
@@ -62,7 +62,7 @@ impl<'r> FromRequest<'r> for SubscribedUsers {
     type Error = Error;
 
     async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
-        let repository = try_outcome!(request.guard().await);
-        Outcome::Success(SubscribedUsers { repository })
+        let users = try_outcome!(request.guard().await);
+        Outcome::Success(SubscribedUsers { users })
     }
 }
