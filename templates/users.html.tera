@@ -14,7 +14,9 @@
             <small class="invitation">
                 {% if user.invited_by %}
                     {% set invited_by = users | filter(attribute='id', value=user.invited_by) | first %}
-                    invited by <a href="#user-{{user.invited_by}}">{{invited_by.name}}</a>
+                    {% if invited_by %}
+                        invited by <a href="#user-{{user.invited_by}}">{{invited_by.name}}</a>
+                    {%- endif -%}
                 {% endif -%}
                 {%- if user.campaign %}
                     via {{user.campaign -}}
