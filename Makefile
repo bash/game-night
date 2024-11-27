@@ -73,8 +73,9 @@ publish: all
 	cp target/release/game-night $(PUBLISH_DIR)/
 	cp -R {public,templates,emails} $(PUBLISH_DIR)/
 	python3 hash-files.py
-	gzip --keep --recursive $(PUBLISH_DIR)/public --best
 	find $(PUBLISH_DIR) -name '.DS_Store' -exec rm {} +
+	gzip --keep --recursive $(PUBLISH_DIR)/public --best
+	find $(PUBLISH_DIR)/public -type f -exec brotli --keep {} \+
 
 deploy: publish redeploy
 
