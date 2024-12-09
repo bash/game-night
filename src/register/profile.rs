@@ -43,7 +43,10 @@ pub(crate) struct UpdateUserForm {
 
 impl UpdateUserForm {
     fn into_user_patch(self, user: &User) -> UserPatch {
-        let name = self.name.filter(|_| user.can_update_name());
+        let name = self
+            .name
+            .filter(|_| user.can_update_name())
+            .map(|name| name.trim().to_owned());
         let email_subscription = Some(to_email_subscription(self.subscribe, self.until));
         UserPatch {
             name,
