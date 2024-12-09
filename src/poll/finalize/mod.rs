@@ -142,7 +142,7 @@ fn choose_participants(answers: &[Answer]) -> Vec<User> {
 mod tests {
     use super::*;
     use crate::database::Materialized;
-    use crate::poll::AnswerValue;
+    use crate::poll::{AnswerValue, Attendance};
     use crate::users::{EmailSubscription, Role, UserId};
     use time::OffsetDateTime;
 
