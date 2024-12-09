@@ -21,6 +21,8 @@ pub(crate) use view_model::*;
 mod ics_file;
 use crate::groups::Group;
 pub(crate) use ics_file::*;
+mod leave;
+pub(crate) use leave::*;
 
 pub type EventId = i64;
 

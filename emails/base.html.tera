@@ -14,7 +14,7 @@
                 <table role="presentation">
                     <tr>
                         <td>
-                            <div class="greeting">{{greeting}} {{name}},</div>
+                            <div class="greeting">{{greeting}} {% block name %}{{name}}{% endblock %},</div>
                             {% block content %}{% endblock content%}
                         </td>
                     </tr>

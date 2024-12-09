@@ -83,6 +83,8 @@ pub(crate) trait Repository: EventEmailsRepository + fmt::Debug + Send {
 
     async fn add_participant(&mut self, event: EventId, user: UserId) -> Result<()>;
 
+    async fn remove_participant(&mut self, event: EventId, user: UserId) -> Result<()>;
+
     async fn prune(&mut self) -> Result<u64>;
 
     fn into_event_emails_repository(self: Box<Self>) -> Box<dyn EventEmailsRepository>;
@@ -522,6 +524,17 @@ impl Repository for SqliteRepository {
     async fn add_participant(&mut self, event: EventId, user: UserId) -> Result<()> {
         sqlx::query!(
             "INSERT INTO participants (event_id, user_id) VALUES (?1, ?2)",
+            event,
+            user
+        )
+        .execute(self.executor())
+        .await?;
+        Ok(())
+    }
+
+    async fn remove_participant(&mut self, event: EventId, user: UserId) -> Result<()> {
+        sqlx::query!(
+            "DELETE FROM participants WHERE event_id = ?1 AND user_id = ?2",
             event,
             user
         )

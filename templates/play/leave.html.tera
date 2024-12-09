@@ -1,0 +1,33 @@
+{% import 'user-macros' as user_macros %}
+{% import 'macros' as macros %}
+{% extends 'base' %}
+
+{% block title %}Leave?{% endblock title %}
+
+{% block content %}
+    <form method="post">
+        <p>
+            This will remove you from
+            {{macros::long_title(event=event)}} on <strong>{{event.starts_at | time(format='{date}')}}</strong>.
+        </p>
+        <p>
+            Don't worry—You can always rejoin should you change your mind :)
+        </p>
+        <p>
+            An email will be sent to {{user_macros::name(user=event.created_by, inline=true)}} with an optional comment:
+        </p>
+        <fieldset>
+            <textarea name="message" id="message" rows="4"
+                data-auto-resize
+                aria-label="Optional comment for organizer"
+                placeholder="Unfortunately, I cannot make it to your awesome game night because the rats ate my homework. Again 🙄. I will make sure to lock up my homework in the future."></textarea>
+        </fieldset>
+        <fieldset>
+            <button type="submit">Leave Event</button>
+        </fieldset>
+    </form>
+{% endblock content %}
+
+{% block scripts %}
+<script type="module" src="{{asset(path='/js/auto-resize.js')}}"></script>
+{% endblock scripts %}

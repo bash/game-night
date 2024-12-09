@@ -40,9 +40,12 @@ input[type=date] {
 
 textarea {
     resize: vertical;
-    aspect-ratio: 16 / 9;
     text-align: left;
     --vertical-padding: var(--horizontal-padding);
+
+    &:not(:is([rows], [cols])) {
+        aspect-ratio: 16 / 9;
+    }
 }
 
 .logout-form {

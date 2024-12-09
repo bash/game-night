@@ -20,7 +20,7 @@
     {% endif %}
 
     <p>
-        {{event.created_by.name}} is organizing a <em>game night</em>
+        {{user_macros::name(user=event.created_by, inline=true)}} is organizing a <em>game night</em>
         on <strong>{{event.starts_at | time(format='{date}')}}</strong> at
         <strong>{{event.starts_at | time(format='{time}')}}</strong>
         and you're invited 🥳
@@ -36,6 +36,16 @@
     <fieldset>
         <a class="link-button" href="{{ics_uri}}" download="game-night-{{event.id}}">Save to Calendar</a>
     </fieldset>
+
+    {% if leave_uri %}
+        <section>
+            <h2>Can't make it?</h2>
+            <p>
+                <a href="{{leave_uri}}">Leave</a> this event to
+                communicate your absence to {{user_macros::name(user=event.created_by, inline=true)}}.
+            </p>
+        </section>
+    {% endif %}
 
     <section>
         <h2>What?</h2>

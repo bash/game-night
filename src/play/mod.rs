@@ -15,7 +15,14 @@ mod archive;
 pub(crate) use archive::*;
 
 pub(crate) fn routes() -> Vec<Route> {
-    routes![play_redirect, join, event_ics, archive_page]
+    routes![
+        play_redirect,
+        join,
+        event_ics,
+        archive_page,
+        crate::event::leave_page,
+        crate::event::leave_,
+    ]
 }
 
 // This is a bit of an ugly workaround to
@@ -33,11 +40,21 @@ pub(crate) fn play_page(
 ) -> Template {
     let join_uri =
         (!event.is_participant(&user) && !is_archived).then(|| uri!(join(id = event.id)));
+    let leave_uri = (event.is_participant(&user) && !is_archived)
+        .then(|| uri!(crate::event::leave_page(id = event.id)));
     let archive_uri = uri!(archive_page());
     let participants = VisibleParticipants::from_event(&event, &user, !is_archived);
     page.render(
         "play",
-        context! { ics_uri: uri!(event_ics(id = event.id)), event: event, join_uri, archive_uri, is_archived, participants },
+        context! {
+            ics_uri: uri!(event_ics(id = event.id)),
+            event: event,
+            join_uri,
+            leave_uri,
+            archive_uri,
+            is_archived,
+            participants
+        },
     )
 }
 

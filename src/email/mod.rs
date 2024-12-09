@@ -38,6 +38,10 @@ pub(crate) trait EmailMessage: Send + Sync + EmailMessageContext {
 
     fn template_name(&self) -> String;
 
+    fn reply_to(&self) -> Option<Mailbox> {
+        None
+    }
+
     fn attachments(&self) -> Result<Vec<SinglePart>> {
         Ok(Vec::default())
     }
@@ -100,8 +104,8 @@ impl EmailSender for EmailSenderImpl {
                 .in_reply_to(message_id.to_string())
                 .references(message_id.to_string());
         }
-        if let Some(reply_to) = &self.reply_to {
-            builder = builder.reply_to(reply_to.clone());
+        if let Some(reply_to) = email.reply_to().or_else(|| self.reply_to.clone()) {
+            builder = builder.reply_to(reply_to);
         }
         let message = builder
             .multipart(multipart)
