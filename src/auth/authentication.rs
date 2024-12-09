@@ -94,7 +94,7 @@ impl LoginState {
     }
 }
 
-impl<'r> CookieJarExt for CookieJar<'r> {
+impl CookieJarExt for CookieJar<'_> {
     fn login_state(&self) -> Result<LoginState> {
         let effective = parse_user_id_cookie(self.get_private(USER_ID_COOKIE_NAME))?;
         let original = parse_user_id_cookie(self.get_private(ORIGINAL_USER_ID_COOKIE_NAME))?;

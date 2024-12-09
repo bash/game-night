@@ -28,7 +28,7 @@ pub(crate) struct PageBuilder<'r> {
     uri: Cow<'r, Origin<'r>>,
 }
 
-impl<'r> PageBuilder<'r> {
+impl PageBuilder<'_> {
     pub(crate) fn uri(mut self, uri: Option<impl Into<Origin<'static>>>) -> Self {
         if let Some(uri) = uri {
             self.uri = Cow::Owned(uri.into());

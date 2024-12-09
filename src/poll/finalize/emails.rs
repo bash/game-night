@@ -97,7 +97,7 @@ struct InvitedEmail<'a> {
     ics_file: String,
 }
 
-impl<'a> EmailMessage for InvitedEmail<'a> {
+impl EmailMessage for InvitedEmail<'_> {
     fn subject(&self) -> String {
         const FORMAT: &[FormatItem<'_>] =
             format_description!("[day padding:none]. [month repr:long]");
@@ -126,7 +126,7 @@ struct MissedEmail<'a> {
     event_url: Absolute<'a>,
 }
 
-impl<'a> EmailMessage for MissedEmail<'a> {
+impl EmailMessage for MissedEmail<'_> {
     fn subject(&self) -> String {
         const FORMAT: &[FormatItem<'_>] =
             format_description!("[day padding:none]. [month repr:long]");

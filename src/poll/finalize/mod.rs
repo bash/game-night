@@ -150,8 +150,6 @@ mod tests {
         use super::*;
         use crate::poll::Attendance;
 
-        const MAX_ALLOWED_PARTICIPANTS: usize = 5;
-
         #[test]
         fn participants_are_empty_for_empty_answers() {
             let invited = choose_participants(&[]);

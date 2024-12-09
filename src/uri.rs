@@ -18,7 +18,7 @@ pub(crate) struct UriBuilder<'a> {
     pub(crate) prefix: UrlPrefix<'a>,
 }
 
-impl<'a> UriBuilder<'a> {
+impl UriBuilder<'_> {
     pub(crate) fn into_static(self) -> UriBuilder<'static> {
         UriBuilder {
             repository: self.repository,
@@ -80,7 +80,7 @@ impl<P: Phase> HasUriBuilder for Rocket<P> {
 #[serde(transparent)]
 pub(crate) struct UrlPrefix<'a>(pub(crate) Absolute<'a>);
 
-impl<'a> UrlPrefix<'a> {
+impl UrlPrefix<'_> {
     fn to_static(&self) -> UrlPrefix<'static> {
         UrlPrefix(Absolute::parse_owned(self.0.to_string()).unwrap())
     }

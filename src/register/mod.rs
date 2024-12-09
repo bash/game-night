@@ -319,7 +319,7 @@ enum PassphraseSource {
     Form,
 }
 
-impl<'a> RegisterForm<'a> {
+impl RegisterForm<'_> {
     fn new_with_passphrase(passphrase: Option<Passphrase>) -> Self {
         Self {
             email_address: None,

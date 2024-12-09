@@ -23,7 +23,7 @@ impl RocketSecretKey {
 
 struct RocketSecretKeyFile<'a, R>(&'a mut R);
 
-impl<'a, R: Rng> crate::fs::GeneratedFile for RocketSecretKeyFile<'a, R> {
+impl<R: Rng> crate::fs::GeneratedFile for RocketSecretKeyFile<'_, R> {
     type Value = RocketSecretKey;
 
     fn generate(&mut self) -> Self::Value {
