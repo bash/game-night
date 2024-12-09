@@ -80,5 +80,5 @@ publish: all
 deploy: publish redeploy
 
 redeploy:
-	rsync --archive --verbose --human-readable --delete $(PUBLISH_DIR)/ root@fedora-01.infra.tau.garden:/opt/game-night/bin/
+	rsync --archive --verbose --human-readable --delete --no-owner --no-group $(PUBLISH_DIR)/ root@fedora-01.infra.tau.garden:/opt/game-night/bin/
 	ssh root@fedora-01.infra.tau.garden -C 'export SYSTEMD_COLORS=true; systemctl restart game-night && systemctl status game-night'
