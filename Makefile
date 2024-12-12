@@ -15,6 +15,7 @@ ifeq ($(env ENABLE_SOURCE_MAPS), true)
 endif
 
 .PHONY: all clean recreate-db certs run publish deploy redeploy check sqlx-prepare
+.NOTPARALLEL: deploy
 
 all: $(MAIN_CSS) $(EMAIL_CSS) $(RELATIVE_TIME_ELEMENT)
 
