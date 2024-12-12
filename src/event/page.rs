@@ -1,6 +1,6 @@
 use super::{ActiveEvent, EventViewModel, StatefulEvent};
 use crate::event::EventsQuery;
-use crate::play::play_page;
+use crate::play::{play_page, PlayPageStage};
 use crate::poll::{no_open_poll_page, open_poll_page};
 use crate::responder;
 use crate::result::HttpResult;
@@ -70,8 +70,9 @@ pub(crate) async fn event_page(
         Some(Pending(_) | Finalizing(_)) => {
             Ok(page.render("poll/pending-finalization", context! {}))
         }
-        Some(Planned(event)) => Ok(play_page(event, page, user, false)),
-        Some(Archived(event)) => Ok(play_page(event, page, user, true)),
+        Some(Planned(event)) => Ok(play_page(event, page, user, PlayPageStage::Planned)),
+        Some(Cancelled(event)) => Ok(play_page(event, page, user, PlayPageStage::Cancelled)),
+        Some(Archived(event)) => Ok(play_page(event, page, user, PlayPageStage::Archived)),
         Some(Failed(_)) | None => Err(Status::NotFound.into()),
     }
 }

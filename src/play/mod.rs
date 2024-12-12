@@ -36,14 +36,14 @@ pub(crate) fn play_page(
     event: Event,
     page: PageBuilder<'_>,
     user: User,
-    is_archived: bool,
+    stage: PlayPageStage,
 ) -> Template {
-    let join_uri =
-        (!event.is_participant(&user) && !is_archived).then(|| uri!(join(id = event.id)));
-    let leave_uri = (event.is_participant(&user) && !is_archived)
+    let is_planned = matches!(stage, PlayPageStage::Planned);
+    let join_uri = (!event.is_participant(&user) && is_planned).then(|| uri!(join(id = event.id)));
+    let leave_uri = (event.is_participant(&user) && is_planned)
         .then(|| uri!(crate::event::leave_page(id = event.id)));
     let archive_uri = uri!(archive_page());
-    let participants = VisibleParticipants::from_event(&event, &user, !is_archived);
+    let participants = VisibleParticipants::from_event(&event, &user, is_planned);
     page.render(
         "play",
         context! {
@@ -52,10 +52,18 @@ pub(crate) fn play_page(
             join_uri,
             leave_uri,
             archive_uri,
-            is_archived,
+            stage,
             participants
         },
     )
+}
+
+#[derive(Debug, serde::Serialize)]
+#[serde(rename_all = "snake_case")]
+pub(crate) enum PlayPageStage {
+    Planned,
+    Cancelled,
+    Archived,
 }
 
 #[post("/event/<id>/join")]

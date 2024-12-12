@@ -194,6 +194,7 @@ fn to_poll(poll: NewPollData, location: Location, user: &User) -> Result<Poll<Ne
             participants: vec![],
             starts_at: None,
             restrict_to: poll.restrict_to,
+            cancelled: false,
         },
     })
 }

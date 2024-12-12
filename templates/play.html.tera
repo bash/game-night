@@ -104,8 +104,10 @@
             </div>
         </div>
     {% else %}
-        {% if is_archived %}
+        {% if stage == "archived" %}
             <p class="message-box"><strong>Careful:</strong> You're viewing a game night that's in the past.</p>
+        {% elif stage == "cancelled" %}
+            <p class="message-box"><strong>Important:</strong> This game night has been cancelled.</p>
         {% endif %}
         {{ self::event_details(event=event, user=user) }}
     {% endif %}

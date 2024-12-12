@@ -36,6 +36,7 @@ pub(crate) struct Event<S: EventState = Materialized, L: EventLifecycle = Planne
     pub(crate) location: S::Location,
     pub(crate) created_by: S::CreatedBy,
     pub(crate) restrict_to: Option<S::RestrictTo>,
+    pub(crate) cancelled: bool,
     #[sqlx(skip)]
     pub(crate) participants: S::Participants,
 }
@@ -109,6 +110,7 @@ impl<L: EventLifecycle> Event<Unmaterialized, L> {
             starts_at: self.starts_at,
             title: self.title,
             description: self.description,
+            cancelled: self.cancelled,
             location,
             created_by,
             participants,
@@ -129,6 +131,7 @@ impl<S: EventState> Event<S, Polling> {
             description: self.description,
             location: self.location,
             created_by: self.created_by,
+            cancelled: self.cancelled,
             participants: self.participants,
             restrict_to: self.restrict_to,
         }

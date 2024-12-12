@@ -16,6 +16,8 @@ pub(crate) enum StatefulEvent {
     Finalizing(Poll),
     /// Event is planned or currently ongoing.
     Planned(Event),
+    /// An event that was cancelled.
+    Cancelled(Event),
     /// Event is in the past.
     Archived(Event),
     /// No poll option had enough votes.
@@ -29,6 +31,7 @@ pub(crate) enum ActiveEvent {
     Pending(Poll),
     Finalizing(Poll),
     Planned(Event),
+    Cancelled(Event),
 }
 
 impl StatefulEvent {
@@ -44,7 +47,7 @@ impl StatefulEvent {
         use StatefulEvent::*;
         match self {
             Polling(poll) | Pending(poll) | Finalizing(poll) | Failed(poll) => poll.open_until.0,
-            Planned(event) | Archived(event) => event.starts_at.0,
+            Planned(event) | Cancelled(event) | Archived(event) => event.starts_at.0,
         }
     }
 
@@ -52,7 +55,7 @@ impl StatefulEvent {
         use StatefulEvent::*;
         match self {
             Polling(poll) | Pending(poll) | Finalizing(poll) => Some(poll.event.id),
-            Planned(event) | Archived(event) => Some(event.id),
+            Planned(event) | Cancelled(event) | Archived(event) => Some(event.id),
             Failed(_) => None,
         }
     }
@@ -63,7 +66,7 @@ impl StatefulEvent {
             Polling(poll) | Pending(poll) | Finalizing(poll) | Failed(poll) => {
                 poll.event.restrict_to.as_ref()
             }
-            Planned(event) | Archived(event) => event.restrict_to.as_ref(),
+            Planned(event) | Cancelled(event) | Archived(event) => event.restrict_to.as_ref(),
         }
     }
 
@@ -97,6 +100,7 @@ impl From<ActiveEvent> for StatefulEvent {
             ActiveEvent::Pending(poll) => StatefulEvent::Pending(poll),
             ActiveEvent::Finalizing(poll) => StatefulEvent::Finalizing(poll),
             ActiveEvent::Planned(event) => StatefulEvent::Planned(event),
+            ActiveEvent::Cancelled(event) => StatefulEvent::Cancelled(event),
         }
     }
 }
@@ -111,6 +115,7 @@ impl TryFrom<StatefulEvent> for ActiveEvent {
             Pending(poll) => Ok(ActiveEvent::Pending(poll)),
             Finalizing(poll) => Ok(ActiveEvent::Finalizing(poll)),
             Planned(event) => Ok(ActiveEvent::Planned(event)),
+            Cancelled(event) => Ok(ActiveEvent::Cancelled(event)),
             Archived(_) | Failed(_) => Err(()),
         }
     }
@@ -122,7 +127,7 @@ impl TryFrom<StatefulEvent> for Event {
     fn try_from(value: StatefulEvent) -> Result<Self, Self::Error> {
         use StatefulEvent::*;
         match value {
-            Planned(event) | Archived(event) => Ok(event),
+            Planned(event) | Cancelled(event) | Archived(event) => Ok(event),
             Polling(poll) | Pending(poll) | Finalizing(poll) | Failed(poll) => Err(poll),
         }
     }
@@ -133,7 +138,7 @@ impl ActiveEvent {
         use ActiveEvent::*;
         match self {
             Polling(poll) | Pending(poll) | Finalizing(poll) => poll.event.id,
-            Planned(event) => event.id,
+            Planned(event) | Cancelled(event) => event.id,
         }
     }
 
@@ -141,7 +146,7 @@ impl ActiveEvent {
         use ActiveEvent::*;
         match self {
             Polling(poll) | Pending(poll) | Finalizing(poll) => poll.open_until.0,
-            Planned(event) => event.starts_at.0,
+            Planned(event) | Cancelled(event) => event.starts_at.0,
         }
     }
 }
@@ -161,8 +166,15 @@ fn from_planned(
     now: OffsetDateTime,
 ) -> StatefulEvent {
     let event = poll.event.into_planned(starts_at);
+
+    // Archived takes precedence over cancelled so that
+    // the event eventually becomes inactive.
     if now <= event.estimated_ends_at() {
-        StatefulEvent::Planned(event)
+        if event.cancelled {
+            StatefulEvent::Cancelled(event)
+        } else {
+            StatefulEvent::Planned(event)
+        }
     } else {
         StatefulEvent::Archived(event)
     }
