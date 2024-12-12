@@ -53,7 +53,7 @@ impl PageBuilder<'_> {
                 chapters,
                 page: Page {
                     uri: &self.uri,
-                    path: self.uri.path().as_str(),
+                    path: &self.uri.path().raw().percent_decode_lossy(),
                 },
             },
         )
