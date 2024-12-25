@@ -6,9 +6,9 @@ use time::format_description::FormatItem;
 use time::macros::format_description;
 use time::Date;
 
-impl<'a, DB: Database> Type<DB> for EmailSubscription
+impl<DB: Database> Type<DB> for EmailSubscription
 where
-    &'a str: Type<DB>,
+    for<'a> &'a str: Type<DB>,
 {
     fn type_info() -> DB::TypeInfo {
         <&str as Type<DB>>::type_info()
