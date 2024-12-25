@@ -151,9 +151,10 @@ impl Repository for SqliteRepository {
         let mut transaction = self.0.begin().await?;
 
         let user_id = sqlx::query!(
-            "INSERT INTO users (name, role, email_address, email_subscription, invited_by, campaign)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            "INSERT INTO users (name, symbol, role, email_address, email_subscription, invited_by, campaign)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
              user.name,
+             user.symbol,
              user.role,
              user.email_address,
              user.email_subscription,
@@ -251,6 +252,13 @@ impl Repository for SqliteRepository {
             sqlx::query("UPDATE users SET email_subscription = ?2 WHERE id = ?1")
                 .bind(id)
                 .bind(email_subscription)
+                .execute(&mut *transaction)
+                .await?;
+        }
+        if let Some(symbol) = patch.symbol {
+            sqlx::query("UPDATE users SET symbol = ?2 WHERE id = ?1")
+                .bind(id)
+                .bind(symbol)
                 .execute(&mut *transaction)
                 .await?;
         }

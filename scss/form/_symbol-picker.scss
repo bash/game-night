@@ -1,0 +1,43 @@
+.symbol-picker {
+    display: grid;
+    width: 100%;
+    grid-template-columns: repeat(auto-fit, minmax(2em, 1fr));
+    grid-gap: .5em;
+    margin-top: .5em;
+
+    > .symbol {
+        font-family: var(--symbols);
+        font-size: 1.5em;
+        border-radius: var(--box-rounding);
+        background-color: color-mix(in oklab, var(--accent-color), #fff 90%);
+
+        @media (prefers-color-scheme: dark) {
+            background-color: color-mix(in oklab, var(--accent-color), #000 85%);
+        }
+
+        &:has(:focus-visible) {
+            outline-offset: 3px;
+            outline: 2px solid var(--accent-color);
+        }
+
+        &:has(:checked) {
+            color: oklch(from var(--accent-color) calc(l + .8) calc(c - .4) h);
+            background-color: var(--accent-color);
+        }
+
+        > .label {
+            display: inline-block;
+            width: 100%;
+            text-align: center;
+            user-select: none;
+        }
+
+        > input {
+            // See <https://css-tricks.com/customise-radio-buttons-without-compromising-accessibility/>
+            // tl;dr: we can't use display: none because then we lose :focus handling
+            // and keyboard navigation.
+            clip-path: polygon(0 0);
+            position: absolute;
+        }
+    }
+}

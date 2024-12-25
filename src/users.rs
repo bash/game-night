@@ -4,6 +4,8 @@ use crate::iso_8601::Iso8601;
 use crate::template::PageBuilder;
 use anyhow::{Error, Result};
 use lettre::message::Mailbox;
+use rocket::outcome::try_outcome;
+use rocket::request::{FromRequest, Outcome};
 use rocket::response::Debug;
 use rocket::{async_trait, get, routes, Request, Route};
 use rocket_db_pools::sqlx;
@@ -15,9 +17,9 @@ mod email_subscription;
 pub(crate) use email_subscription::*;
 mod email_subscription_encoding;
 mod last_activity;
-pub(crate) use last_activity::LastActivity;
-use rocket::outcome::try_outcome;
-use rocket::request::{FromRequest, Outcome};
+pub(crate) use last_activity::*;
+mod symbol;
+pub(crate) use symbol::*;
 
 pub(crate) fn routes() -> Vec<Route> {
     routes![list_users]
@@ -42,6 +44,7 @@ pub(crate) struct UserId(pub(crate) i64);
 pub(crate) struct User<Id = UserId> {
     pub(crate) id: Id,
     pub(crate) name: String,
+    pub(crate) symbol: AstronomicalSymbol,
     pub(crate) role: Role,
     pub(crate) email_address: String,
     pub(crate) email_subscription: EmailSubscription,
@@ -55,6 +58,7 @@ pub(crate) struct User<Id = UserId> {
 #[derive(Debug)]
 pub(crate) struct UserPatch {
     pub(crate) name: Option<String>,
+    pub(crate) symbol: Option<AstronomicalSymbol>,
     pub(crate) email_subscription: Option<EmailSubscription>,
 }
 

@@ -16,6 +16,19 @@
         <input type="email" class="-inline" value="{{user.email_address}}" disabled>.
     </p>
 
+    <fieldset>
+        The following symbol is my avatar:
+
+        <div class="symbol-picker">
+            {% for symbol in symbols %}
+                <label class="symbol">
+                    <span class="label">{{symbol}}</span>
+                    <input type="radio" name="symbol" value="{{symbol}}" {% if symbol == user.symbol %}checked{% endif %} autocomplete="off">
+                </label>
+            {% endfor %}
+        </div>
+    </fieldset>
+
     <p>
         Please
         <select class="-inline" name="subscribe" id="subscription">
@@ -54,6 +67,9 @@
         if you no longer wish to participate in <em>Tau's Game Night</em>.
     </p>
 </form>
+{% endblock %}
+
+{% block scripts %}
 <script id="form-values" type="application/json">
     {% if user.email_subscription.type == 'permanently_unsubscribed' %}{% set permanence = 'permanent' %}
     {% else %}{% set permanence = 'temporary' %}{% endif %}
@@ -105,4 +121,5 @@
     bindRequiredAndVisibleTo(document)
     formValues = null
 </script>
-{% endblock %}
+<script type="module" src="{{asset(path='/js/open-modal.js')}}"></script>
+{% endblock scripts %}

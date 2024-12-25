@@ -18,7 +18,6 @@ pub(crate) fn register_custom_functions(tera: &mut Tera) {
     tera.register_filter("markdown", markdown);
     tera.register_filter("time", time_format);
     tera.register_function("accent_color", accent_color);
-    tera.register_function("avatar_symbol", avatar_symbol);
     tera.register_function("ps", ps_prefix);
     tera.register_function("random_heart", random_heart);
     tera.register_function("random_skin_tone_modifier", random_skin_tone_modifier);
@@ -44,30 +43,6 @@ tera_function! {
             accent_colors
         });
         accent_colors[index % accent_colors.len()].css_value().to_string()
-    }
-}
-
-tera_function! {
-    fn avatar_symbol(seed: usize) -> String {
-        static SHUFFLED_SYMBOLS: OnceLock<Vec<&'static str>> = OnceLock::new();
-        let symbols = SHUFFLED_SYMBOLS.get_or_init(|| {
-            const SEED: u64 = 77;
-            let mut symbols = vec![
-                "☿", "♀", "🜨", "☾", "♂", "♃", "♄", "♅", "♆", "⯓",
-                "♂I", "♂II",
-                "⚳", "⚴", "⚵", "⚶",
-                "♃I", "♃II", "♃III", "♃IV",
-                "♄I", "♄II", "♄III", "♄IV", "♄V", "♄VI", "♄VII", "♄VIII",
-                "♅I", "♅II", "♅III", "♅IV", "♅V",
-                "♆I", "♆II", /* No symbols for neptunian moons 3-7 */ "♆VIII",
-                "🝿",
-                "⯓I", "⯓V", "⯓II", "⯓IV", "⯓III",
-                "🝻", "🝾", "🝼", "🝽", "⯰", "⯰I", "⯲"];
-            symbols.shuffle(&mut SmallRng::seed_from_u64(SEED));
-            symbols
-        });
-
-        symbols[seed % symbols.len()].to_string()
     }
 }
 

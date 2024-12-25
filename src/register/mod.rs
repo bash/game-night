@@ -4,13 +4,13 @@ use crate::default;
 use crate::email::EmailSender;
 use crate::invitation::{Invitation, Passphrase};
 use crate::template::PageBuilder;
-use crate::users::{User, UserId};
+use crate::users::{AstronomicalSymbol, User, UserId};
 use anyhow::{Error, Result};
 use campaign::{Campaign, ProvidedCampaign};
 use either::Either;
 use email_address::EmailAddress;
 use lettre::message::Mailbox;
-use rand::thread_rng;
+use rand::{thread_rng, Rng};
 use rocket::form::Form;
 use rocket::http::{Cookie, CookieJar, SameSite};
 use rocket::response::{Debug, Redirect};
@@ -294,6 +294,7 @@ fn new_user(
 ) -> User<()> {
     invitation.to_user(
         user_details.name,
+        thread_rng().gen::<AstronomicalSymbol>(),
         user_details.email_address.to_string(),
         campaign.map(|c| c.name.to_owned()),
     )

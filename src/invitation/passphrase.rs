@@ -65,9 +65,7 @@ impl<'r, DB: Database> Decode<'r, DB> for Passphrase
 where
     &'r str: Decode<'r, DB>,
 {
-    fn decode(
-        value: DB::ValueRef<'r>,
-    ) -> Result<Passphrase, Box<dyn std::error::Error + 'static + Send + Sync>> {
+    fn decode(value: DB::ValueRef<'r>) -> Result<Passphrase, BoxDynError> {
         Ok(Self(
             <&str as Decode<DB>>::decode(value)?
                 .split(' ')

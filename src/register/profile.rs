@@ -1,7 +1,8 @@
 use super::delete::rocket_uri_macro_delete_profile_page;
+use super::AstronomicalSymbol;
 use crate::database::Repository;
 use crate::template::PageBuilder;
-use crate::users::{rocket_uri_macro_list_users, EmailSubscription};
+use crate::users::{rocket_uri_macro_list_users, EmailSubscription, ASTRONOMICAL_SYMBOLS};
 use crate::users::{User, UserPatch};
 use anyhow::{Error, Result};
 use rocket::form::Form;
@@ -18,6 +19,7 @@ pub(crate) fn profile(page: PageBuilder, user: User) -> Template {
             can_update_name: user.can_update_name(),
             list_users_uri: user.can_manage_users().then(|| uri!(list_users())),
             delete_profile_uri: uri!(delete_profile_page()),
+            symbols: ASTRONOMICAL_SYMBOLS,
         },
     )
 }
@@ -37,6 +39,7 @@ pub(super) async fn update_profile(
 pub(crate) struct UpdateUserForm {
     #[form(validate = len(1..))]
     name: Option<String>,
+    symbol: Option<AstronomicalSymbol>,
     subscribe: bool,
     until: Option<Date>,
 }
@@ -51,6 +54,7 @@ impl UpdateUserForm {
         UserPatch {
             name,
             email_subscription,
+            symbol: self.symbol,
         }
     }
 }

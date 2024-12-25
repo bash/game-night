@@ -6,7 +6,7 @@ use crate::register::rocket_uri_macro_register_page;
 use crate::template::PageBuilder;
 use crate::uri;
 use crate::uri::UriBuilder;
-use crate::users::{EmailSubscription, Role, User, UserId, UsersQuery};
+use crate::users::{AstronomicalSymbol, EmailSubscription, Role, User, UserId, UsersQuery};
 use anyhow::{Error, Result};
 use rand::prelude::*;
 use rocket::form::Form;
@@ -170,12 +170,14 @@ impl<Id> Invitation<Id> {
     pub(crate) fn to_user(
         &self,
         name: String,
+        symbol: AstronomicalSymbol,
         email_address: String,
         campaign: Option<String>,
     ) -> User<()> {
         User {
             id: (),
             name,
+            symbol,
             email_address,
             email_subscription: EmailSubscription::default(),
             role: self.role,
