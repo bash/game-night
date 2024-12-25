@@ -1,5 +1,4 @@
 use crate::responder;
-use anyhow::Error;
 use rocket::http::Status;
 use rocket::response::Debug;
 
@@ -7,13 +6,23 @@ pub(crate) type HttpResult<T> = Result<T, HttpError>;
 
 responder! {
     pub(crate) enum HttpError {
-        Error(Debug<Error>),
+        Error(Debug<anyhow::Error>),
         Status(Status),
     }
 }
 
-impl From<Error> for HttpError {
-    fn from(value: Error) -> Self {
-        Debug(value).into()
-    }
+macro_rules! impl_from {
+    ($($source:ty,)*) => {
+        $(impl From<$source> for HttpError {
+            fn from(value: $source) -> Self {
+                Debug(value.into()).into()
+            }
+        })*
+    };
+}
+
+impl_from! {
+    anyhow::Error,
+    std::fmt::Error,
+    std::io::Error,
 }
