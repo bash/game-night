@@ -61,9 +61,10 @@ async fn close_poll_page(
     let Some(poll) = events.with_id(id, &user).await?.and_then(|e| e.polling()) else {
         return Err(Status::NotFound.into());
     };
+    let candidates = finalize::get_candidates(&poll);
     Ok(page.render(
         "poll/close",
-        context! { date_selection_strategy: poll.strategy.to_string(), poll },
+        context! { date_selection_strategy: poll.strategy.to_string(), poll, candidates },
     ))
 }
 

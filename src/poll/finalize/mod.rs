@@ -69,7 +69,7 @@ async fn get_next_pending_poll(repository: &mut dyn Repository) -> Result<Option
 
 fn finalize_poll_dry_run(poll: &Poll) -> FinalizeResult {
     let candidates = get_candidates(poll);
-    if let Some(chosen_option) = choose_option(candidates, poll) {
+    if let Some(chosen_option) = choose_option(candidates) {
         let invited = choose_participants(&chosen_option.answers);
         let details = PlanningDetails::new(&chosen_option, &invited);
         FinalizeResult::Success {
@@ -94,13 +94,27 @@ enum FinalizeResult {
     Failure,
 }
 
-fn get_candidates(poll: &Poll) -> Vec<PollOption> {
-    poll.options
+pub(crate) fn get_candidates(poll: &Poll) -> Vec<PollOption> {
+    let mut candidates = poll
+        .options
         .iter()
         .filter(|o| !o.has_veto())
         .filter(|o| o.count_yes_answers() >= poll.min_participants)
         .cloned()
-        .collect()
+        .collect();
+    use DateSelectionStrategy::*;
+    match poll.strategy {
+        AtRandom => candidates,
+        ToMaximizeParticipants => {
+            // There are potentially multiple poll options that have
+            // a "maximal" number of participants so we choose between all maximal
+            // options at random.
+            if let Some(max) = max_participants(&candidates) {
+                candidates.retain(|o| (o.count_yes_answers()) >= max);
+            }
+            candidates
+        }
+    }
 }
 
 fn get_missed_users(poll: &Poll, invited: &[User]) -> Vec<User> {
@@ -114,20 +128,8 @@ fn get_missed_users(poll: &Poll, invited: &[User]) -> Vec<User> {
         .collect()
 }
 
-fn choose_option(mut candidates: Vec<PollOption>, poll: &Poll) -> Option<PollOption> {
-    use DateSelectionStrategy::*;
-    match poll.strategy {
-        AtRandom => candidates.choose(&mut thread_rng()).cloned(),
-        ToMaximizeParticipants => {
-            // There are potentially multiple poll options that have
-            // a "maximal" number of participants so we choose between all maximal
-            // options at random.
-            if let Some(max) = max_participants(&candidates) {
-                candidates.retain(|o| (o.count_yes_answers()) >= max);
-            }
-            candidates.choose(&mut thread_rng()).cloned()
-        }
-    }
+fn choose_option(candidates: Vec<PollOption>) -> Option<PollOption> {
+    candidates.choose(&mut thread_rng()).cloned()
 }
 
 fn max_participants(options: &[PollOption]) -> Option<usize> {
