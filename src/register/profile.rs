@@ -19,7 +19,7 @@ pub(crate) fn profile(page: PageBuilder, user: User) -> Template {
             can_update_name: user.can_update_name(),
             list_users_uri: user.can_manage_users().then(|| uri!(list_users())),
             delete_profile_uri: uri!(delete_profile_page()),
-            symbols: ASTRONOMICAL_SYMBOLS,
+            symbols: user.can_update_symbol().then_some(ASTRONOMICAL_SYMBOLS),
         },
     )
 }
@@ -51,10 +51,11 @@ impl UpdateUserForm {
             .filter(|_| user.can_update_name())
             .map(|name| name.trim().to_owned());
         let email_subscription = Some(to_email_subscription(self.subscribe, self.until));
+        let symbol = self.symbol.filter(|_| user.can_update_symbol());
         UserPatch {
             name,
             email_subscription,
-            symbol: self.symbol,
+            symbol,
         }
     }
 }

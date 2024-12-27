@@ -185,6 +185,7 @@ impl<Id> Invitation<Id> {
             campaign,
             can_update_name: true,
             can_answer_strongly: false,
+            can_update_symbol: true,
             last_active_at: OffsetDateTime::now_utc().into(),
         }
     }

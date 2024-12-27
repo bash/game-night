@@ -52,6 +52,7 @@ pub(crate) struct User<Id = UserId> {
     pub(crate) campaign: Option<String>,
     pub(crate) can_update_name: bool,
     pub(crate) can_answer_strongly: bool,
+    pub(crate) can_update_symbol: bool,
     pub(crate) last_active_at: Iso8601<OffsetDateTime>,
 }
 
@@ -96,6 +97,10 @@ impl<Id> User<Id> {
 
     pub(crate) fn can_update_name(&self) -> bool {
         self.can_update_name
+    }
+
+    pub(crate) fn can_update_symbol(&self) -> bool {
+        self.can_update_symbol
     }
 }
 

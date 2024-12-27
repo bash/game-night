@@ -16,6 +16,7 @@
         <input type="email" class="-inline" value="{{user.email_address}}" disabled>.
     </p>
 
+    {% if symbols %}
     <fieldset>
         The following symbol is my avatar:
 
@@ -28,6 +29,7 @@
             {% endfor %}
         </div>
     </fieldset>
+    {% endif %}
 
     <p>
         Please
