@@ -9,7 +9,7 @@
     <div class="calendar-list -events">
          {% for chunk in events_by_year %}
             <h2>{{chunk.year}}</h2>
-            {{ event_macros::event_list(events = chunk.events) }}
+            {{ event_macros::event_list(events = chunk.events, show_year=(chunk.year != current_year)) }}
          {% endfor %}
     </div>
 {% endblock content %}

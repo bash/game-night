@@ -7,6 +7,7 @@ use rocket::{get, response::Debug};
 use rocket_dyn_templates::{context, Template};
 use serde::Serialize;
 use std::cmp::Reverse;
+use time::OffsetDateTime;
 
 #[get("/archive")]
 pub(crate) async fn archive_page(
@@ -27,7 +28,13 @@ pub(crate) async fn archive_page(
                 .collect(),
         })
         .collect();
-    Ok(page.render("play/archive", context! { events_by_year }))
+    Ok(page.render(
+        "play/archive",
+        context! {
+            events_by_year,
+            current_year: OffsetDateTime::now_utc().year()
+        },
+    ))
 }
 
 #[derive(Debug, Serialize)]

@@ -1,10 +1,15 @@
-{% macro label(entry, event) %}
+{% macro label(entry, event, show_year=False) %}
+    {% set format = '[day]. [month repr:long]' %}
+    {% if show_year %}
+        {% set format = '[day]. [month repr:long] [year]' %}
+    {% endif %}
+
     {% if event.starts_at %}
-        {{event.starts_at | time(format='[day]. [month repr:long]')}}
+        {{event.starts_at | time(format=format)}}
     {% elif entry.state == "polling" %}
-        until {{entry.open_until | time(format='[day]. [month repr:long]')}}
+        until {{entry.open_until | time(format=format)}}
     {% else %}
-        {{entry.open_until | time(format='[day]. [month repr:long]')}}
+        {{entry.open_until | time(format=format)}}
     {% endif %}
 {% endmacro %}
 
@@ -18,7 +23,7 @@
     {% endif %}
 {% endmacro %}
 
-{% macro event_list(events) %}
+{% macro event_list(events, show_year=False) %}
     <ul>
         {% for entry in events %}
             {% if entry.event %}{% set event = entry.event %}
@@ -26,7 +31,7 @@
             <li>
                 {{ event_macros::badge(entry=entry, event=event) }}
 
-                {% if entry.view_uri %}<a href="{{entry.view_uri}}">{{ event_macros::label(entry=entry, event=event) }}</a>
+                {% if entry.view_uri %}<a href="{{entry.view_uri}}">{{ event_macros::label(entry=entry, event=event, show_year=show_year) }}</a>
                 {% else %}<span>{{ event_macros::label(entry=entry, event=event) }}</span>{% endif %}
 
                 {% if event.starts_at %}
