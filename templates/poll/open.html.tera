@@ -83,19 +83,16 @@
                             <time>{{option.starts_at | time(format='[hour]:[minute]')}}</time>
                         </div>
 
-                        {% if option.vetoed %}
-                           <div class="answer-list">
+                        <div class="answers-list">
+                            {% if option.vetoed %}
                                 <span class="error-message -inline">Vetoed!</span>
-                           </div>
-                        {% else %}
-                            <div class="answers-list">
-                                {% for user in option.yes_answers %}
-                                    <span class="answer">
-                                        {{user_macros::name(user=user)}}
-                                    </span>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
+                            {% endif %}
+                            {% for user in option.yes_answers %}
+                                <span class="answer">
+                                    {{user_macros::name(user=user)}}
+                                </span>
+                            {% endfor %}
+                        </div>
                     </li>
                 {% endfor %}
             </ul>
