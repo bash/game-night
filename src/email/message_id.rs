@@ -1,5 +1,5 @@
 use rand::{
-    distributions::{Alphanumeric, DistString, Standard},
+    distr::{Alphanumeric, SampleString, StandardUniform},
     prelude::Distribution,
     Rng,
 };
@@ -15,7 +15,7 @@ impl fmt::Display for MessageId {
     }
 }
 
-impl Distribution<MessageId> for Standard {
+impl Distribution<MessageId> for StandardUniform {
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> MessageId {
         // https://tools.ietf.org/html/rfc5322#section-3.6.4
         MessageId(format!("<{}@{}>", generate_message_id(rng), hostname()))

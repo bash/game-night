@@ -4,7 +4,7 @@ use crate::iso_8601::Iso8601;
 use crate::users::EmailSubscription;
 use rand::rngs::SmallRng;
 use rand::seq::SliceRandom;
-use rand::{thread_rng, Rng, SeedableRng};
+use rand::{rng, Rng, SeedableRng};
 use rocket_dyn_templates::tera::{self, Tera};
 use std::iter;
 use std::sync::OnceLock;
@@ -89,13 +89,13 @@ fn parse_format(
 
 tera_function! {
     fn random_heart() -> &'static str {
-        thread_rng().sample(Hearts)
+        rng().sample(Hearts)
     }
 }
 
 tera_function! {
     fn random_skin_tone_modifier() -> &'static str {
-        thread_rng().sample(SkinToneModifiers)
+        rng().sample(SkinToneModifiers)
     }
 }
 

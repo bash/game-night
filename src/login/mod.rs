@@ -7,8 +7,8 @@ use crate::users::{User, UserId};
 use crate::{default, responder, uri};
 use anyhow::{Error, Result};
 use lettre::message::Mailbox;
-use rand::distributions::{Alphanumeric, DistString, Distribution, Uniform};
-use rand::{thread_rng, Rng};
+use rand::distr::{Alphanumeric, Distribution, SampleString as _, Uniform};
+use rand::{rng, Rng};
 use rocket::form::Form;
 use rocket::response::{self, Debug, Redirect, Responder};
 use rocket::{
@@ -109,7 +109,7 @@ async fn generate_login_email(
     repository: &mut dyn Repository,
     user: User,
 ) -> Result<(Mailbox, LoginEmail)> {
-    let token = LoginToken::generate_one_time(user.id, &mut thread_rng());
+    let token = LoginToken::generate_one_time(user.id, &mut rng());
     repository.add_login_token(&token).await?;
 
     let email = LoginEmail {
@@ -210,7 +210,7 @@ struct OneTimeToken;
 
 impl Distribution<String> for OneTimeToken {
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> String {
-        rng.sample_iter(&Uniform::from(1..=9))
+        rng.sample_iter(&Uniform::try_from(1..=9).unwrap())
             .take(6)
             .map(|d| d.to_string())
             .collect()

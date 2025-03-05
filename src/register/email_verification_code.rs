@@ -1,4 +1,4 @@
-use rand::distributions::Uniform;
+use rand::distr::Uniform;
 use rand::Rng;
 use time::{Duration, OffsetDateTime};
 
@@ -20,7 +20,7 @@ impl EmailVerificationCode {
 }
 
 fn generate_code<R: Rng>(rng: &mut R) -> String {
-    rng.sample_iter(&Uniform::from(1..=9))
+    rng.sample_iter(&Uniform::try_from(1..=9).unwrap())
         .take(6)
         .map(|d| d.to_string())
         .collect()

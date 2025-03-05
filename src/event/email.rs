@@ -8,7 +8,7 @@ use crate::{
     RocketExt,
 };
 use anyhow::{Error, Result};
-use rand::{thread_rng, Rng};
+use rand::{rng, Rng};
 use rocket::{
     async_trait,
     http::Status,
@@ -74,7 +74,7 @@ impl<L: EventLifecycle> EventEmailSender<L> for EventEmailSenderImpl {
         email: &dyn EmailMessage,
     ) -> Result<()> {
         let in_reply_to = self.get_in_reply_to(event, recipient).await?;
-        let message_id: MessageId = thread_rng().gen();
+        let message_id: MessageId = rng().random();
 
         let options = EmailMessageOptions {
             message_id: Some(message_id.clone()),

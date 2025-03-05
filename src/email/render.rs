@@ -2,7 +2,7 @@ use super::EmailMessage;
 use crate::decorations::{Closings, Greetings, Hearts, SkinToneModifiers};
 use anyhow::{Context as _, Result};
 use lettre::message::MultiPart;
-use rand::{thread_rng, Rng as _};
+use rand::{rng, Rng as _};
 use rocket::tokio::fs::read_to_string;
 use rocket_dyn_templates::tera::Tera;
 use std::path::Path;
@@ -34,7 +34,7 @@ impl EmailRenderer {
     pub(crate) fn render(&self, email: &dyn EmailMessage) -> Result<EmailBody> {
         let template_name = email.template_name();
         let mut template_context = email.template_context()?;
-        let mut rng = thread_rng();
+        let mut rng = rng();
         template_context.insert("greeting", rng.sample(Greetings));
         template_context.insert("closing", rng.sample(Closings));
         template_context.insert("skin_tone", rng.sample(SkinToneModifiers));

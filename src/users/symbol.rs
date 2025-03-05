@@ -41,9 +41,9 @@ impl<'a> TryFrom<&'a str> for AstronomicalSymbol {
     }
 }
 
-impl rand::distributions::Distribution<AstronomicalSymbol> for rand::distributions::Standard {
+impl rand::distr::Distribution<AstronomicalSymbol> for rand::distr::StandardUniform {
     fn sample<R: rand::Rng + ?Sized>(&self, rng: &mut R) -> AstronomicalSymbol {
-        *rand::distributions::Slice::new(ASTRONOMICAL_SYMBOLS)
+        *rand::distr::slice::Choose::new(ASTRONOMICAL_SYMBOLS)
             .expect("symbols are not empty")
             .sample(rng)
     }

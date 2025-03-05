@@ -1,5 +1,3 @@
-use std::num::NonZeroU32;
-
 use crate::auth::{AuthorizedTo, Invite};
 use crate::database::Repository;
 use crate::register::rocket_uri_macro_register_page;
@@ -8,13 +6,14 @@ use crate::uri;
 use crate::uri::UriBuilder;
 use crate::users::{AstronomicalSymbol, EmailSubscription, Role, User, UserId, UsersQuery};
 use anyhow::{Error, Result};
-use rand::prelude::*;
+use rand::{prelude::*, rng};
 use rocket::form::Form;
 use rocket::response::Debug;
 use rocket::yansi::Paint as _;
 use rocket::{get, post, routes, FromForm, FromFormField, Route};
 use rocket_dyn_templates::{context, Template};
 use serde::Serialize;
+use std::num::NonZeroU32;
 use time::{Duration, OffsetDateTime};
 
 mod wordlist;
@@ -55,7 +54,7 @@ async fn generate_invitation(
         .created_by(form.inviter)
         .valid_until(valid_until)
         .comment(&form.comment)
-        .build(&mut thread_rng());
+        .build(&mut rng());
     let invitation = repository.add_invitation(invitation).await?;
     Ok(page.render(
         "invitation",
@@ -142,7 +141,7 @@ impl InvitationBuilder {
             created_by: self.created_by,
             valid_until: self.valid_until,
             used_by: None,
-            passphrase: rng.gen(),
+            passphrase: rng.random(),
             comment: self.comment,
         }
     }
@@ -208,7 +207,7 @@ async fn get_or_create_invitation(repository: &mut dyn Repository) -> Result<Inv
             let invitation = InvitationBuilder::default()
                 .role(Role::Admin)
                 .comment("auto-generated admin invite")
-                .build(&mut thread_rng());
+                .build(&mut rng());
             repository.add_invitation(invitation).await?
         }
     })

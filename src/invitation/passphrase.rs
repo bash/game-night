@@ -1,7 +1,7 @@
 use super::TAUS_WORDLIST;
 use anyhow::Result;
-use rand::distributions::{Distribution, Standard};
-use rand::seq::SliceRandom as _;
+use rand::distr::{Distribution, StandardUniform};
+use rand::seq::IndexedRandom as _;
 use rand::Rng;
 use rocket::form::FromFormField;
 use rocket::http::impl_from_uri_param_identity;
@@ -17,7 +17,7 @@ use std::fmt;
 #[serde(transparent)]
 pub(crate) struct Passphrase(pub(crate) Vec<String>);
 
-impl Distribution<Passphrase> for Standard {
+impl Distribution<Passphrase> for StandardUniform {
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Passphrase {
         let words: Vec<_> = TAUS_WORDLIST
             .choose_multiple(rng, 4)

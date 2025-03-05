@@ -10,7 +10,7 @@ use campaign::{Campaign, ProvidedCampaign};
 use either::Either;
 use email_address::EmailAddress;
 use lettre::message::Mailbox;
-use rand::{thread_rng, Rng};
+use rand::{rng, Rng};
 use rocket::form::Form;
 use rocket::http::{Cookie, CookieJar, SameSite};
 use rocket::response::{Debug, Redirect};
@@ -242,7 +242,7 @@ async fn send_verification_email(
     user_details: &UserDetails,
 ) -> Result<()> {
     let email_address = user_details.email_address.to_string();
-    let code = EmailVerificationCode::generate(email_address, &mut thread_rng());
+    let code = EmailVerificationCode::generate(email_address, &mut rng());
     repository.add_verification_code(&code).await?;
 
     let email = VerificationEmail {
@@ -294,7 +294,7 @@ fn new_user(
 ) -> User<()> {
     invitation.to_user(
         user_details.name,
-        thread_rng().gen::<AstronomicalSymbol>(),
+        rng().random::<AstronomicalSymbol>(),
         user_details.email_address.to_string(),
         campaign.map(|c| c.name.to_owned()),
     )

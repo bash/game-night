@@ -5,7 +5,7 @@ use event::{EventEmailSender, EventLifecycle};
 use login::RocketSecretKey;
 use poll::poll_finalizer;
 use pruning::database_pruning;
-use rand::thread_rng;
+use rand::rng;
 use result::HttpResult;
 use rocket::fairing::{self, Fairing};
 use rocket::figment::Figment;
@@ -83,7 +83,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 fn figment() -> Result<Figment> {
     let figment = Config::figment();
     let secret_keys_path: String = figment.extract_inner("secret_keys_path")?;
-    let key = RocketSecretKey::read_or_generate(secret_keys_path, &mut thread_rng()).unwrap();
+    let key = RocketSecretKey::read_or_generate(secret_keys_path, &mut rng()).unwrap();
     Ok(figment.merge((rocket::Config::SECRET_KEY, &key.0)))
 }
 

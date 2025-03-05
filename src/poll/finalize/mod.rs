@@ -4,8 +4,7 @@ use crate::event::PlanningDetails;
 use crate::users::User;
 use anyhow::Result;
 use itertools::Itertools;
-use rand::seq::SliceRandom;
-use rand::thread_rng;
+use rand::rng;
 use rocket::tokio::sync::Mutex;
 use std::sync::Arc;
 
@@ -13,6 +12,7 @@ mod scheduling;
 pub(crate) use scheduling::*;
 mod emails;
 pub(crate) use emails::*;
+use rand::seq::IndexedRandom as _;
 use veto::veto_date_in_other_polls;
 mod veto;
 
@@ -129,7 +129,7 @@ fn get_missed_users(poll: &Poll, invited: &[User]) -> Vec<User> {
 }
 
 fn choose_option(candidates: Vec<PollOption>) -> Option<PollOption> {
-    candidates.choose(&mut thread_rng()).cloned()
+    candidates.choose(&mut rng()).cloned()
 }
 
 fn max_participants(options: &[PollOption]) -> Option<usize> {

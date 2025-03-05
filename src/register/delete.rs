@@ -4,7 +4,7 @@ use crate::login::{Logout, RedirectUri};
 use crate::template::PageBuilder;
 use crate::users::User;
 use anyhow::{Error, Result};
-use rand::thread_rng;
+use rand::rng;
 use rocket::response::Debug;
 use rocket::{get, post, uri};
 use rocket_dyn_templates::{context, Template};
@@ -32,7 +32,7 @@ fn goodbye_invitation(user: &User) -> Invitation<()> {
         .role(user.role)
         .valid_until(valid_until)
         .comment(format!("Goodbye invitation for '{}'", user.name))
-        .build(&mut thread_rng())
+        .build(&mut rng())
 }
 
 #[get("/profile/deleted?<name>&<passphrase>")]

@@ -1,5 +1,5 @@
 use anyhow::Result;
-use rand::distributions::{Distribution, Standard};
+use rand::distr::{Distribution, StandardUniform};
 use rand::Rng;
 use std::io;
 use std::path::Path;
@@ -7,7 +7,7 @@ use std::path::Path;
 #[derive(Debug)]
 pub(crate) struct RocketSecretKey(pub(crate) Vec<u8>);
 
-impl Distribution<RocketSecretKey> for Standard {
+impl Distribution<RocketSecretKey> for StandardUniform {
     fn sample<R: rand::prelude::Rng + ?Sized>(&self, rng: &mut R) -> RocketSecretKey {
         let mut bytes = vec![0; 512];
         rng.fill_bytes(&mut bytes);
@@ -27,7 +27,7 @@ impl<R: Rng> crate::fs::GeneratedFile for RocketSecretKeyFile<'_, R> {
     type Value = RocketSecretKey;
 
     fn generate(&mut self) -> Self::Value {
-        self.0.gen()
+        self.0.random()
     }
 
     fn file_name(&self) -> &'static str {

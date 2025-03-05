@@ -1,4 +1,4 @@
-use rand::distributions::{self, Distribution};
+use rand::distr::{self, Distribution};
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Hearts;
@@ -6,7 +6,7 @@ pub(crate) struct Hearts;
 impl Distribution<&'static str> for Hearts {
     fn sample<R: rand::prelude::Rng + ?Sized>(&self, rng: &mut R) -> &'static str {
         const HEARTS: &[&str] = &["❤️", "💖", "💙", "🩵", "💚", "💛", "💜", "🩷", "🧡"];
-        rng.sample(distributions::Slice::new(HEARTS).unwrap())
+        rng.sample(distr::slice::Choose::new(HEARTS).unwrap())
     }
 }
 
@@ -23,7 +23,7 @@ impl Distribution<&'static str> for SkinToneModifiers {
             "\u{1F3FF}",
             "",
         ];
-        rng.sample(distributions::Slice::new(SKIN_TONE_MODIFIERS).unwrap())
+        rng.sample(distr::slice::Choose::new(SKIN_TONE_MODIFIERS).unwrap())
     }
 }
 
@@ -46,7 +46,7 @@ impl Distribution<&'static str> for Greetings {
             "Yoohoo~",
             "Ahoy",
         ];
-        rng.sample(distributions::Slice::new(GREETINGS).unwrap())
+        rng.sample(distr::slice::Choose::new(GREETINGS).unwrap())
     }
 }
 
@@ -70,6 +70,6 @@ impl Distribution<&'static str> for Closings {
             "Till then, Penguin 🐧",
             "In a shake, Rattlesnake 🐍",
         ];
-        rng.sample(distributions::Slice::new(GREETINGS).unwrap())
+        rng.sample(distr::slice::Choose::new(GREETINGS).unwrap())
     }
 }
