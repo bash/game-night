@@ -145,7 +145,7 @@ mod tests {
     use super::*;
     use crate::database::Materialized;
     use crate::poll::{AnswerValue, Attendance};
-    use crate::users::{AstronomicalSymbol, EmailSubscription, Role, UserId, ASTRONOMICAL_SYMBOLS};
+    use crate::users::{EmailSubscription, Role, UserId, ASTRONOMICAL_SYMBOLS};
     use time::OffsetDateTime;
 
     mod choose_participants {
