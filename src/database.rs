@@ -1,7 +1,7 @@
 use crate::email::MessageId;
 use crate::event::{
-    Event, EventEmail, EventId, EventLifecycle, Location, Participant, PlanningDetails, Polling,
-    StatefulEvent,
+    Event, EventEmail, EventId, EventLifecycle, Location, Organizer, Participant, PlanningDetails,
+    Polling, StatefulEvent,
 };
 use crate::groups::Group;
 use crate::invitation::{Invitation, InvitationId, Passphrase};
@@ -524,9 +524,11 @@ impl Repository for SqliteRepository {
     }
 
     async fn get_location(&mut self) -> Result<Location> {
-        Ok(sqlx::query_as("SELECT * FROM locations LIMIT 1")
-            .fetch_one(self.executor())
-            .await?)
+        let mut transaction = self.0.begin().await?;
+        let location = sqlx::query_as("SELECT * FROM locations LIMIT 1")
+            .fetch_one(&mut *transaction)
+            .await?;
+        Ok(materialize_location(&mut transaction, location).await?)
     }
 
     async fn add_participant(&mut self, event: EventId, user: UserId) -> Result<()> {
@@ -656,6 +658,7 @@ async fn materialize_event<L: EventLifecycle>(
         .bind(event.location)
         .fetch_one(&mut *connection)
         .await?;
+    let location = materialize_location(connection, location).await?;
     let participants = sqlx::query_as("SELECT * FROM participants WHERE event_id = ?1")
         .bind(event.id)
         .fetch_all(&mut *connection)
@@ -708,6 +711,40 @@ async fn materialize_participant(
         .fetch_one(&mut *connection)
         .await?;
     Ok(participant.into_materialized(user))
+}
+
+async fn materialize_location(
+    connection: &mut SqliteConnection,
+    location: Location<Unmaterialized>,
+) -> Result<Location> {
+    let organizers = sqlx::query_as("SELECT * FROM organizers WHERE location_id = ?1")
+        .bind(location.id)
+        .fetch_all(&mut *connection)
+        .await?;
+    let organizers = materialize_organizers(connection, organizers).await?;
+    Ok(location.into_materialized(organizers))
+}
+
+async fn materialize_organizers(
+    connection: &mut SqliteConnection,
+    organizers: Vec<Organizer<Unmaterialized>>,
+) -> Result<Vec<Organizer>> {
+    let mut materialized = Vec::new();
+    for organizer in organizers {
+        materialized.push(materialize_organizer(&mut *connection, organizer).await?);
+    }
+    Ok(materialized)
+}
+
+async fn materialize_organizer(
+    connection: &mut SqliteConnection,
+    organizer: Organizer<Unmaterialized>,
+) -> Result<Organizer> {
+    let user = sqlx::query_as("SELECT * FROM users WHERE id = ?1")
+        .bind(organizer.user)
+        .fetch_one(&mut *connection)
+        .await?;
+    Ok(organizer.into_materialized(user))
 }
 
 async fn delete_token<'c, E>(executor: E, token: &str) -> Result<bool>
