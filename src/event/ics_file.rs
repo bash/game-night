@@ -1,6 +1,5 @@
-use crate::event::Event;
+use crate::event::{Event, Location};
 use crate::fmt::LongEventTitle;
-use crate::poll::Location;
 use crate::uri;
 use crate::uri::UriBuilder;
 use anyhow::Result;

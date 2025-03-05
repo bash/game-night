@@ -1,9 +1,11 @@
-use super::{Answer, AnswerValue, Attendance, Location};
+use super::{Answer, AnswerValue, Attendance};
 use super::{DateSelectionStrategy, Poll, PollOption};
 use super::{PollEmail, PollStage};
 use crate::auth::{AuthorizedTo, ManagePoll};
 use crate::database::{New, Repository};
-use crate::event::{rocket_uri_macro_event_page, Event, EventEmailSender, EventsQuery, Polling};
+use crate::event::{
+    rocket_uri_macro_event_page, Event, EventEmailSender, EventsQuery, Location, Polling,
+};
 use crate::iso_8601::Iso8601;
 use crate::register::rocket_uri_macro_profile;
 use crate::template::PageBuilder;

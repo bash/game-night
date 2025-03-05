@@ -1,12 +1,12 @@
 use crate::email::MessageId;
 use crate::event::{
-    Event, EventEmail, EventId, EventLifecycle, Participant, PlanningDetails, Polling,
+    Event, EventEmail, EventId, EventLifecycle, Location, Participant, PlanningDetails, Polling,
     StatefulEvent,
 };
 use crate::groups::Group;
 use crate::invitation::{Invitation, InvitationId, Passphrase};
 use crate::login::{LoginToken, LoginTokenType};
-use crate::poll::{Answer, Location, Poll, PollOption, PollStage};
+use crate::poll::{Answer, Poll, PollOption, PollStage};
 use crate::register::EmailVerificationCode;
 use crate::users::{User, UserId, UserPatch};
 use crate::GameNightDatabase;
