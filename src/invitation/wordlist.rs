@@ -26,6 +26,10 @@ pub(crate) static TAUS_WORDLIST: &[&str] = concat_slices!(
     ]
 );
 
+#[allow(
+    clippy::large_const_arrays,
+    reason = "Only used to concat together into static"
+)]
 const EFF_LONG_WORDLIST: [&str; 7776] = [
     "abacus",
     "abdomen",

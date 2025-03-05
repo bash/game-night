@@ -145,7 +145,7 @@ mod tests {
     use super::*;
     use crate::database::Materialized;
     use crate::poll::{AnswerValue, Attendance};
-    use crate::users::{EmailSubscription, Role, UserId};
+    use crate::users::{AstronomicalSymbol, EmailSubscription, Role, UserId, ASTRONOMICAL_SYMBOLS};
     use time::OffsetDateTime;
 
     mod choose_participants {
@@ -221,6 +221,8 @@ mod tests {
             can_update_name: true,
             can_answer_strongly: true,
             last_active_at: OffsetDateTime::now_utc().into(),
+            can_update_symbol: true,
+            symbol: ASTRONOMICAL_SYMBOLS[0],
         }
     }
 }

@@ -126,7 +126,7 @@ struct LoginData<'r> {
 }
 
 #[post("/logout", data = "<form>")]
-async fn logout<'r>(form: Form<LogoutData>) -> Logout {
+async fn logout(form: Form<LogoutData>) -> Logout {
     Logout(form.into_inner().redirect)
 }
 
