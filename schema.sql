@@ -106,6 +106,12 @@ CREATE TABLE locations
     , CHECK (floor <= 127)
     );
 
+CREATE TABLE organizers
+    ( id INTEGER PRIMARY KEY
+    , location_id INTEGER NOT NULL REFERENCES locations(id) ON DELETE CASCADE
+    , user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE
+    );
+
 CREATE TABLE groups
     ( id INTEGER PRIMARY KEY
     , name TEXT NOT NULL
