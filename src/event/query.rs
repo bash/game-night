@@ -58,9 +58,11 @@ impl EventsQuery {
 fn is_invited(user: &User) -> impl Fn(&StatefulEvent) -> bool + '_ {
     |event| {
         let group = event.restrict_to();
+        let organizers = event.organizers();
         group.is_none()
             || user.role == Role::Admin
             || group.is_some_and(|group| group.has_member(user))
+            || organizers.iter().any(|o| o.user.id == user.id)
     }
 }
 

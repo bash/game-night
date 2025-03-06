@@ -1,4 +1,5 @@
-use super::{Event, EventId};
+use super::{Event, EventId, Organizer, Planned, Polling};
+use crate::database::Materialized;
 use crate::groups::Group;
 use crate::iso_8601::Iso8601;
 use crate::poll::{Poll, PollStage};
@@ -61,13 +62,13 @@ impl StatefulEvent {
     }
 
     pub(crate) fn restrict_to(&self) -> Option<&Group> {
-        use StatefulEvent::*;
-        match self {
-            Polling(poll) | Pending(poll) | Finalizing(poll) | Failed(poll) => {
-                poll.event.restrict_to.as_ref()
-            }
-            Planned(event) | Cancelled(event) | Archived(event) => event.restrict_to.as_ref(),
-        }
+        self.visit_event(|e| e.restrict_to.as_ref(), |e| e.restrict_to.as_ref())
+    }
+
+    pub(crate) fn organizers(&self) -> &[Organizer] {
+        &self
+            .visit_event(|e| &e.location, |e| &e.location)
+            .organizers
     }
 
     // This should match the TryFrom impl for ActiveEvent
@@ -89,6 +90,18 @@ impl StatefulEvent {
             Some(poll)
         } else {
             None
+        }
+    }
+
+    fn visit_event<'a, R>(
+        &'a self,
+        polling: impl FnOnce(&'a Event<Materialized, Polling>) -> R,
+        planned: impl FnOnce(&'a Event<Materialized, Planned>) -> R,
+    ) -> R {
+        use StatefulEvent::*;
+        match self {
+            Polling(poll) | Pending(poll) | Finalizing(poll) | Failed(poll) => polling(&poll.event),
+            Planned(event) | Cancelled(event) | Archived(event) => planned(event),
         }
     }
 }

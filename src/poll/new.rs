@@ -39,9 +39,10 @@ pub(super) async fn new_poll_page(
     );
     let description = events.newest(&user).await?.map(|e| e.description);
     let groups = repository.get_groups().await?;
+    let locations = repository.get_locations().await?;
     Ok(page.render(
         "poll/new",
-        context! { calendar, strategies: strategies(), calendar_uri: uri!(calendar()), description, groups },
+        context! { calendar, strategies: strategies(), calendar_uri: uri!(calendar()), description, groups, locations },
     ))
 }
 
@@ -171,7 +172,7 @@ pub(super) async fn new_poll(
     user: AuthorizedTo<ManagePoll>,
     uri_builder: UriBuilder<'_>,
 ) -> Result<Redirect, Debug<Error>> {
-    let location = repository.get_location().await?;
+    let location = repository.get_location_by_id(form.location).await?.unwrap();
     let new_poll = to_poll(form.into_inner(), location, &user)?;
     let poll = repository.add_poll(new_poll).await?;
     send_poll_emails(subscribed_users, email_sender, uri_builder, &poll).await?;
@@ -249,6 +250,7 @@ pub(super) struct NewPollData<'r> {
     description: &'r str,
     options: Vec<NewPollOption>,
     restrict_to: Option<i64>,
+    location: i64,
 }
 
 #[derive(Debug, FromForm)]

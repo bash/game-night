@@ -79,7 +79,9 @@ pub(crate) trait Repository: EventEmailsRepository + fmt::Debug + Send {
 
     async fn get_stateful_events(&mut self) -> Result<Vec<StatefulEvent>>;
 
-    async fn get_location(&mut self) -> Result<Location>;
+    async fn get_location_by_id(&mut self, id: i64) -> Result<Option<Location>>;
+
+    async fn get_locations(&mut self) -> Result<Vec<Location>>;
 
     async fn add_participant(&mut self, event: EventId, user: UserId) -> Result<()>;
 
@@ -523,12 +525,31 @@ impl Repository for SqliteRepository {
         Ok(materialized)
     }
 
-    async fn get_location(&mut self) -> Result<Location> {
+    async fn get_location_by_id(&mut self, id: i64) -> Result<Option<Location>> {
         let mut transaction = self.0.begin().await?;
-        let location = sqlx::query_as("SELECT * FROM locations LIMIT 1")
-            .fetch_one(&mut *transaction)
+        let Some(location) = sqlx::query_as("SELECT * FROM locations WHERE id = ?1")
+            .bind(id)
+            .fetch_optional(&mut *transaction)
+            .await?
+        else {
+            return Ok(None);
+        };
+        Ok(Some(
+            materialize_location(&mut transaction, location).await?,
+        ))
+    }
+
+    async fn get_locations(&mut self) -> Result<Vec<Location>> {
+        let mut transaction = self.0.begin().await?;
+        let locations = sqlx::query_as("SELECT * FROM locations")
+            .fetch_all(&mut *transaction)
             .await?;
-        Ok(materialize_location(&mut transaction, location).await?)
+        let mut materialized = Vec::with_capacity(locations.len());
+        for location in locations {
+            let location = materialize_location(&mut transaction, location).await?;
+            materialized.push(location);
+        }
+        Ok(materialized)
     }
 
     async fn add_participant(&mut self, event: EventId, user: UserId) -> Result<()> {
