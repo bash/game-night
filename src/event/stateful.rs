@@ -1,8 +1,9 @@
-use super::{Event, EventId, Organizer, Planned, Polling};
+use super::{Event, EventId, Planned, Polling};
 use crate::database::Materialized;
 use crate::groups::Group;
 use crate::iso_8601::Iso8601;
 use crate::poll::{Poll, PollStage};
+use crate::users::User;
 use serde::Serialize;
 use time::OffsetDateTime;
 
@@ -65,10 +66,8 @@ impl StatefulEvent {
         self.visit_event(|e| e.restrict_to.as_ref(), |e| e.restrict_to.as_ref())
     }
 
-    pub(crate) fn organizers(&self) -> &[Organizer] {
-        &self
-            .visit_event(|e| &e.location, |e| &e.location)
-            .organizers
+    pub(crate) fn has_organizer(&self, user: &User) -> bool {
+        self.visit_event(|e| e.has_organizer(user), |e| e.has_organizer(user))
     }
 
     // This should match the TryFrom impl for ActiveEvent

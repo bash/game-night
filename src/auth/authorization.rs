@@ -1,4 +1,5 @@
 use crate::event::StatefulEvent;
+use crate::poll::Poll;
 use crate::result::HttpResult;
 use crate::template::PageBuilder;
 use crate::users::{Role, User};
@@ -79,10 +80,13 @@ impl UserPredicate for ManageUsers {
 
 pub(crate) fn is_invited(user: &User, event: &StatefulEvent) -> bool {
     let group = event.restrict_to();
-    let organizers = event.organizers();
     user.role == Role::Admin
         || group.is_none_or(|group| group.has_member(user))
-        || organizers.iter().any(|o| o.user.id == user.id)
+        || event.has_organizer(user)
+}
+
+pub(crate) fn can_answer_strongly(user: &User, poll: &Poll) -> bool {
+    user.can_answer_strongly() || poll.event.has_organizer(user)
 }
 
 #[catch(403)]
