@@ -1,6 +1,5 @@
 use super::{User, UsersQuery};
-use crate::database::Materialized;
-use crate::event::{Event, EventLifecycle};
+use crate::event::StatefulEvent;
 use crate::iso_8601::Iso8601;
 use anyhow::{Error, Result};
 use rocket::async_trait;
@@ -37,23 +36,11 @@ pub(crate) struct SubscribedUsers {
 }
 
 impl SubscribedUsers {
-    pub(crate) async fn for_event<L: EventLifecycle>(
-        &mut self,
-        event: &Event<Materialized, L>,
-    ) -> Result<Vec<User>> {
+    pub(crate) async fn for_event(&mut self, event: &StatefulEvent) -> Result<Vec<User>> {
         let today = OffsetDateTime::now_utc().date();
         let is_subscribed = |u: &User| u.email_subscription.is_subscribed(today);
-        if let Some(group) = &event.restrict_to {
-            Ok(group
-                .members
-                .iter()
-                .filter(|u| is_subscribed(u))
-                .cloned()
-                .collect())
-        } else {
-            let users = self.users.all().await?;
-            Ok(users.into_iter().filter(is_subscribed).collect())
-        }
+        let invited = self.users.invited(event).await?;
+        Ok(invited.into_iter().filter(is_subscribed).collect())
     }
 }
 

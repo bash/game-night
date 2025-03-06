@@ -5,6 +5,7 @@ use crate::users::{User, UserId};
 #[derive(Debug, Clone, sqlx::FromRow, serde::Serialize)]
 pub(crate) struct Location<S: LocationState = Materialized> {
     pub(crate) id: S::Id,
+    pub(crate) description: String,
     pub(crate) nameplate: String,
     pub(crate) street: String,
     pub(crate) street_number: String,
@@ -20,6 +21,7 @@ impl Location<Unmaterialized> {
     pub(crate) fn into_materialized(self, organizers: Vec<Organizer>) -> Location {
         Location {
             id: self.id,
+            description: self.description,
             nameplate: self.nameplate,
             street: self.street,
             street_number: self.street_number,

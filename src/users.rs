@@ -1,4 +1,4 @@
-use crate::auth::{AuthorizedTo, ManageUsers};
+use crate::auth::{is_invited, AuthorizedTo, ManageUsers};
 use crate::database::Repository;
 use crate::iso_8601::Iso8601;
 use crate::template::PageBuilder;
@@ -19,6 +19,7 @@ mod email_subscription_encoding;
 mod last_activity;
 pub(crate) use last_activity::*;
 mod symbol;
+use crate::event::StatefulEvent;
 pub(crate) use symbol::*;
 
 pub(crate) fn routes() -> Vec<Route> {
@@ -116,6 +117,18 @@ impl UsersQuery {
 
     pub(crate) async fn active(&mut self) -> Result<Vec<User>> {
         self.0.get_active_users(INACTIVITY_THRESHOLD).await
+    }
+
+    pub(crate) async fn invited(&mut self, event: &StatefulEvent) -> Result<Vec<User>> {
+        let is_invited = |u: &User| is_invited(u, event);
+        let users = self.all().await?;
+        Ok(users.into_iter().filter(is_invited).collect())
+    }
+
+    pub(crate) async fn active_and_invited(&mut self, event: &StatefulEvent) -> Result<Vec<User>> {
+        let is_invited = |u: &User| is_invited(u, event);
+        let active = self.active().await?;
+        Ok(active.into_iter().filter(is_invited).collect())
     }
 }
 

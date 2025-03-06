@@ -1,6 +1,7 @@
 use super::{Answer, AnswerValue};
+use crate::auth::can_answer_strongly;
 use crate::database::{New, Repository};
-use crate::event::EventsQuery;
+use crate::event::{EventsQuery, StatefulEvent};
 use crate::iso_8601::Iso8601;
 use crate::poll::{Poll, PollOption};
 use crate::result::HttpResult;
@@ -24,11 +25,8 @@ pub(crate) async fn open_poll_page(
     page: PageBuilder<'_>,
     mut users_query: UsersQuery,
 ) -> Result<Template, Error> {
-    let users = if let Some(group) = &poll.event.restrict_to {
-        group.members.clone()
-    } else {
-        users_query.active().await?
-    };
+    let event = StatefulEvent::from_poll(poll.clone(), OffsetDateTime::now_utc());
+    let users = users_query.active_and_invited(&event).await?;
     Ok(page.render("poll/open", to_open_poll(poll, &user, users)))
 }
 
@@ -40,10 +38,10 @@ fn to_open_poll(poll: Poll, user: &User, users: Vec<User>) -> OpenPoll {
     };
 
     OpenPoll {
-        option_groups: to_open_poll_options(poll.options.iter(), user),
+        option_groups: to_open_poll_options(&poll, poll.options.iter(), user),
         date_selection_strategy: poll.strategy.to_string(),
         has_answers: poll.has_answer(user.id),
-        can_answer_strongly: user.can_answer_strongly(),
+        can_answer_strongly: can_answer_strongly(user, &poll),
         update_answers_uri: uri!(update_answers(id = poll.event.id)),
         close_poll_uri: user
             .can_manage_poll()
@@ -74,11 +72,12 @@ fn partition_by_answered(poll: &Poll, users: Vec<User>) -> (Vec<User>, Vec<User>
 }
 
 fn to_open_poll_options<'a>(
+    poll: &Poll,
     options: impl Iterator<Item = &'a PollOption>,
     user: &User,
 ) -> Vec<OpenPollOptionsGroup> {
     options
-        .filter(|o: &&PollOption| !o.has_veto() || user.can_answer_strongly())
+        .filter(|o: &&PollOption| !o.has_veto() || can_answer_strongly(user, poll))
         .chunk_by(|o| o.starts_at.month())
         .into_iter()
         .map(|(month, options)| to_open_poll_options_group(month, options, user))

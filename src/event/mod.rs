@@ -121,6 +121,13 @@ impl<L: EventLifecycle> Event<Unmaterialized, L> {
     }
 }
 
+impl<L: EventLifecycle> Event<Materialized, L> {
+    pub(crate) fn has_organizer(&self, user: &User) -> bool {
+        let is_same_user = |o: &Organizer| o.user.id == user.id;
+        self.location.organizers.iter().any(is_same_user)
+    }
+}
+
 impl<S: EventState> Event<S, Polling> {
     pub(crate) fn into_planned(
         self,
