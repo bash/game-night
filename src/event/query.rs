@@ -1,5 +1,5 @@
 use super::{ActiveEvent, Event, EventId, StatefulEvent};
-use crate::users::Role;
+use crate::auth::is_invited;
 use crate::{database::Repository, users::User};
 use anyhow::Result;
 use itertools::Itertools;
@@ -29,7 +29,7 @@ impl EventsQuery {
         self.repository
             .get_stateful_events()
             .await
-            .map(|e| e.into_iter().filter(is_invited(user)).collect())
+            .map(|e| e.into_iter().filter(|e| is_invited(user, e)).collect())
     }
 
     /// Fetches an event for the given id.
@@ -41,7 +41,7 @@ impl EventsQuery {
         self.repository
             .get_stateful_event(id)
             .await
-            .map(|e| e.filter(is_invited(user)))
+            .map(|e| e.filter(|e| is_invited(user, e)))
     }
 
     pub(crate) async fn newest(&mut self, user: &User) -> Result<Option<Event>> {
@@ -52,17 +52,6 @@ impl EventsQuery {
             .filter_map(|e| Event::try_from(e).ok())
             .sorted_by_key(|e| Reverse(e.starts_at.0))
             .next())
-    }
-}
-
-fn is_invited(user: &User) -> impl Fn(&StatefulEvent) -> bool + '_ {
-    |event| {
-        let group = event.restrict_to();
-        let organizers = event.organizers();
-        group.is_none()
-            || user.role == Role::Admin
-            || group.is_some_and(|group| group.has_member(user))
-            || organizers.iter().any(|o| o.user.id == user.id)
     }
 }
 

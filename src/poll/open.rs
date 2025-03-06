@@ -1,6 +1,6 @@
 use super::{Answer, AnswerValue};
 use crate::database::{New, Repository};
-use crate::event::EventsQuery;
+use crate::event::{EventsQuery, StatefulEvent};
 use crate::iso_8601::Iso8601;
 use crate::poll::{Poll, PollOption};
 use crate::result::HttpResult;
@@ -24,11 +24,8 @@ pub(crate) async fn open_poll_page(
     page: PageBuilder<'_>,
     mut users_query: UsersQuery,
 ) -> Result<Template, Error> {
-    let users = if let Some(group) = &poll.event.restrict_to {
-        group.members.clone()
-    } else {
-        users_query.active().await?
-    };
+    let event = StatefulEvent::from_poll(poll.clone(), OffsetDateTime::now_utc());
+    let users = users_query.active_and_invited(&event).await?;
     Ok(page.render("poll/open", to_open_poll(poll, &user, users)))
 }
 

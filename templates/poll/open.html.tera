@@ -24,7 +24,12 @@
 {% if poll.event.restrict_to %}
 <p>
     This is a special game night just for members of
-    <strong>«{{poll.event.restrict_to.name}}»</strong>.
+    <strong>«{{poll.event.restrict_to.name}}»</strong>
+    and will take place in <strong>{{poll.event.location.description}}</strong>.
+</p>
+{% else %}
+<p>
+    The game night will take place in <strong>{{poll.event.location.description}}</strong>.
 </p>
 {% endif %}
 

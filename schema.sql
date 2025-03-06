@@ -95,6 +95,7 @@ CREATE TABLE participants
 
 CREATE TABLE locations
     ( id INTEGER PRIMARY KEY
+    , description TEXT NOT NULL
     , nameplate TEXT NOT NULL
     , street TEXT NOT NULL
     , street_number TEXT NOT NULL

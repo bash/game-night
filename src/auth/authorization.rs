@@ -1,6 +1,7 @@
+use crate::event::StatefulEvent;
 use crate::result::HttpResult;
 use crate::template::PageBuilder;
-use crate::users::User;
+use crate::users::{Role, User};
 use anyhow::{anyhow, Error};
 use rocket::http::Status;
 use rocket::outcome::try_outcome;
@@ -74,6 +75,14 @@ impl UserPredicate for ManageUsers {
     fn is_satisfied(user: &User) -> bool {
         user.can_manage_users()
     }
+}
+
+pub(crate) fn is_invited(user: &User, event: &StatefulEvent) -> bool {
+    let group = event.restrict_to();
+    let organizers = event.organizers();
+    user.role == Role::Admin
+        || group.is_none_or(|group| group.has_member(user))
+        || organizers.iter().any(|o| o.user.id == user.id)
 }
 
 #[catch(403)]

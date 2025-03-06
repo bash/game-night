@@ -5,6 +5,7 @@ use crate::auth::{AuthorizedTo, ManagePoll};
 use crate::database::{New, Repository};
 use crate::event::{
     rocket_uri_macro_event_page, Event, EventEmailSender, EventsQuery, Location, Polling,
+    StatefulEvent,
 };
 use crate::iso_8601::Iso8601;
 use crate::register::rocket_uri_macro_profile;
@@ -172,7 +173,10 @@ pub(super) async fn new_poll(
     user: AuthorizedTo<ManagePoll>,
     uri_builder: UriBuilder<'_>,
 ) -> Result<Redirect, Debug<Error>> {
-    let location = repository.get_location_by_id(form.location).await?.unwrap();
+    let location = repository
+        .get_location_by_id(form.location)
+        .await?
+        .context("invalid location id")?;
     let new_poll = to_poll(form.into_inner(), location, &user)?;
     let poll = repository.add_poll(new_poll).await?;
     send_poll_emails(subscribed_users, email_sender, uri_builder, &poll).await?;
@@ -278,7 +282,8 @@ async fn send_poll_emails(
     uri_builder: UriBuilder<'_>,
     poll: &Poll,
 ) -> Result<()> {
-    for user in subscribed_users.for_event(&poll.event).await? {
+    let event = StatefulEvent::from_poll(poll.clone(), OffsetDateTime::now_utc());
+    for user in subscribed_users.for_event(&event).await? {
         let open_until = *poll.open_until;
         let poll_uri = uri!(auto_login(&user, open_until); uri_builder, crate::event::event_page(id = poll.event.id)).await?;
         let skip_poll_uri =
