@@ -1,17 +1,12 @@
-use crate::auth::{AuthorizedTo, ManagePoll};
-use crate::database::{Materialized, New, Repository, Unmaterialized};
+use crate::database::{Materialized, New, Unmaterialized};
 use crate::entity_state;
-use crate::event::{Event, EventsQuery, Polling};
+use crate::event::{Event, Polling};
 use crate::iso_8601::Iso8601;
-use crate::login::RedirectUri;
 use crate::play::rocket_uri_macro_archive_page;
 use crate::register::rocket_uri_macro_profile;
-use crate::result::HttpResult;
 use crate::template::PageBuilder;
 use crate::users::{User, UserId};
-use rocket::http::Status;
-use rocket::response::Redirect;
-use rocket::{get, post, routes, uri, FromFormField, Route, State};
+use rocket::{routes, uri, FromFormField, Route};
 use rocket_dyn_templates::{context, Template};
 use serde::Serialize;
 use sqlx::encode::IsNull;
@@ -35,13 +30,13 @@ pub(crate) fn routes() -> Vec<Route> {
     routes![
         skip::skip_poll_page,
         skip::skip_poll,
-        close_poll_page,
-        close_poll,
         new::new_poll_page,
         new::new_poll,
         new::calendar,
         open::update_answers,
         email::poll_email_preview,
+        admin::close_poll_page,
+        admin::close_poll,
         admin::set_close_manually,
     ]
 }
@@ -51,53 +46,6 @@ pub(crate) fn no_open_poll_page(user: User, page: PageBuilder<'_>) -> Template {
     let profile_uri = uri!(profile());
     let archive_uri = uri!(archive_page());
     page.render("poll", context! { new_poll_uri, profile_uri, archive_uri })
-}
-
-#[get("/event/<id>/poll/close")]
-async fn close_poll_page(
-    id: i64,
-    user: AuthorizedTo<ManagePoll>,
-    mut events: EventsQuery,
-    page: PageBuilder<'_>,
-) -> HttpResult<Template> {
-    let Some(poll) = events.with_id(id, &user).await?.and_then(|e| e.polling()) else {
-        return Err(Status::NotFound.into());
-    };
-    let candidates = finalize::get_candidates(&poll);
-    let close_manually = matches!(poll.stage, PollStage::Blocked);
-    let set_close_manually_uri = uri!(admin::set_close_manually(
-        id = id,
-        redirect_to = &uri!(close_poll_page(id = id))
-    ));
-    Ok(page.render(
-        "poll/close",
-        context! {
-            date_selection_strategy: poll.strategy.to_string(),
-            poll,
-            candidates,
-            close_manually,
-            set_close_manually_uri,
-        },
-    ))
-}
-
-#[post("/event/<id>/poll/close")]
-async fn close_poll(
-    id: i64,
-    user: AuthorizedTo<ManagePoll>,
-    mut events: EventsQuery,
-    nudge: &State<NudgeFinalizer>,
-    mut repository: Box<dyn Repository>,
-) -> HttpResult<Redirect> {
-    let Some(poll) = events.with_id(id, &user).await?.and_then(|e| e.polling()) else {
-        return Err(Status::BadRequest.into());
-    };
-    repository
-        .update_poll_stage(poll.id, PollStage::Pending)
-        .await?;
-    nudge.nudge();
-    let event_uri = uri!(crate::event::event_page(id = poll.event.id));
-    Ok(Redirect::to(event_uri))
 }
 
 #[derive(Debug, Clone, sqlx::FromRow, Serialize)]

@@ -1,7 +1,7 @@
-use super::PollStage;
 use crate::auth::{AuthorizedTo, ManagePoll};
 use crate::event::EventsQuery;
 use crate::login::RedirectUri;
+use crate::poll::PollStage;
 use crate::{HttpResult, Repository};
 use rocket::form::Form;
 use rocket::http::Status;
@@ -9,7 +9,7 @@ use rocket::response::Redirect;
 use rocket::{post, FromForm};
 
 #[post("/event/<id>/poll/close-manually?<redirect_to>", data = "<data>")]
-pub(super) async fn set_close_manually(
+pub(crate) async fn set_close_manually(
     id: i64,
     redirect_to: RedirectUri,
     data: Form<CloseManuallyData>,
@@ -32,6 +32,6 @@ pub(super) async fn set_close_manually(
 }
 
 #[derive(FromForm)]
-pub(super) struct CloseManuallyData {
+pub(crate) struct CloseManuallyData {
     close_manually: bool,
 }

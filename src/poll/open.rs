@@ -45,7 +45,7 @@ fn to_open_poll(poll: Poll, user: &User, users: Vec<User>) -> OpenPoll {
         update_answers_uri: uri!(update_answers(id = poll.event.id)),
         close_poll_uri: user
             .can_manage_poll()
-            .then(|| uri!(super::close_poll_page(id = poll.event.id))),
+            .then(|| uri!(super::admin::close_poll_page(id = poll.event.id))),
         poll,
         not_answered,
         no_date_answered_with_yes,
