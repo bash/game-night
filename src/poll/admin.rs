@@ -1,3 +1,4 @@
+use super::PollStage;
 use crate::auth::{AuthorizedTo, ManagePoll};
 use crate::event::EventsQuery;
 use crate::login::RedirectUri;
@@ -25,7 +26,7 @@ pub(super) async fn set_close_manually(
         return Err(Status::BadRequest.into());
     };
     repository
-        .update_poll_close_manually(id, data.close_manually)
+        .update_poll_stage(id, PollStage::from_close_manually(data.close_manually))
         .await?;
     Ok(Redirect::to(redirect_to.0))
 }

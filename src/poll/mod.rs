@@ -9,7 +9,6 @@ use crate::register::rocket_uri_macro_profile;
 use crate::result::HttpResult;
 use crate::template::PageBuilder;
 use crate::users::{User, UserId};
-use anyhow::Error;
 use rocket::http::Status;
 use rocket::response::Redirect;
 use rocket::{get, post, routes, uri, FromFormField, Route, State};
@@ -65,13 +64,20 @@ async fn close_poll_page(
         return Err(Status::NotFound.into());
     };
     let candidates = finalize::get_candidates(&poll);
+    let close_manually = matches!(poll.stage, PollStage::Blocked);
     let set_close_manually_uri = uri!(admin::set_close_manually(
         id = id,
         redirect_to = &uri!(close_poll_page(id = id))
     ));
     Ok(page.render(
         "poll/close",
-        context! { date_selection_strategy: poll.strategy.to_string(), poll, candidates, set_close_manually_uri },
+        context! {
+            date_selection_strategy: poll.strategy.to_string(),
+            poll,
+            candidates,
+            close_manually,
+            set_close_manually_uri,
+        },
     ))
 }
 
@@ -86,14 +92,8 @@ async fn close_poll(
     let Some(poll) = events.with_id(id, &user).await?.and_then(|e| e.polling()) else {
         return Err(Status::BadRequest.into());
     };
-    // open_until is inclusive, so we have to pick a date that is already in the past
-    // so that we are displayed the correct page on redirect.
-    // Also, we don't need subsecond precision.
-    let open_until = OffsetDateTime::now_utc()
-        .replace_second(0)
-        .map_err(Error::from)?;
     repository
-        .update_poll_open_until(poll.id, open_until)
+        .update_poll_stage(poll.id, PollStage::Pending)
         .await?;
     nudge.nudge();
     let event_uri = uri!(crate::event::event_page(id = poll.event.id));
@@ -107,10 +107,10 @@ pub(crate) struct Poll<S: PollState = Materialized> {
     pub(crate) min_participants: usize,
     pub(crate) strategy: DateSelectionStrategy,
     pub(crate) open_until: Iso8601<OffsetDateTime>,
-    pub(crate) close_manually: bool,
     pub(crate) stage: PollStage,
     #[sqlx(rename = "event_id")]
     pub(crate) event: S::Event,
+    // pub(crate) parent_id: i64,
     #[sqlx(skip)]
     pub(crate) options: S::Options,
 }
@@ -120,8 +120,32 @@ pub(crate) struct Poll<S: PollState = Materialized> {
 #[sqlx(rename_all = "snake_case")]
 pub(crate) enum PollStage {
     Open,
+    /// A poll that will remain open
+    /// until it is manually closed.
+    Blocked,
+    /// A poll that was manually closed
+    /// and is pending finalization.
+    Pending,
+    /// A poll that is in the process
+    /// of being finalized.
     Finalizing,
     Closed,
+}
+
+impl PollStage {
+    pub(crate) fn from_close_manually(close_manually: bool) -> Self {
+        use PollStage::*;
+        if close_manually {
+            Blocked
+        } else {
+            Open
+        }
+    }
+
+    pub(crate) fn accepts_answers(self) -> bool {
+        use PollStage::*;
+        matches!(self, Open | Blocked)
+    }
 }
 
 entity_state! {
@@ -139,7 +163,6 @@ impl Poll<New> {
             min_participants: self.min_participants,
             strategy: self.strategy,
             open_until: self.open_until,
-            close_manually: self.close_manually,
             stage: self.stage,
             event: event_id,
             options: (),
@@ -158,7 +181,6 @@ impl Poll<Unmaterialized> {
             min_participants: self.min_participants,
             strategy: self.strategy,
             open_until: self.open_until,
-            close_manually: self.close_manually,
             stage: self.stage,
             event,
             options,
