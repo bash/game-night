@@ -1,7 +1,7 @@
 use super::{Answer, DateSelectionStrategy, Poll, PollOption, PollStage};
 use crate::database::Repository;
 use crate::event::PlanningDetails;
-use crate::users::User;
+use crate::users::{User, UserId};
 use anyhow::Result;
 use itertools::Itertools;
 use rand::rng;
@@ -13,6 +13,7 @@ pub(crate) use scheduling::*;
 mod emails;
 pub(crate) use emails::*;
 use rand::seq::IndexedRandom as _;
+use std::collections::HashSet;
 use veto::veto_date_in_other_polls;
 mod veto;
 
@@ -35,7 +36,7 @@ async fn try_finalize_poll(ctx: &mut FinalizeContext, poll: Poll) -> Result<()> 
         .update_poll_stage(poll.id, PollStage::Finalizing)
         .await?;
 
-    let result = finalize_poll_dry_run(&poll);
+    let (result, promoted_events) = finalize_poll_dry_run(&poll);
 
     if let FinalizeResult::Success {
         details,
@@ -48,6 +49,14 @@ async fn try_finalize_poll(ctx: &mut FinalizeContext, poll: Poll) -> Result<()> 
         veto_date_in_other_polls(ctx, &event).await?;
         let sender = &mut *ctx.sender.lock().await;
         emails::send_notification_emails(sender, &event, &invited, &missed).await?;
+    }
+
+    for promoted in promoted_events {
+        let id = ctx.repository.add_event(poll.event.to_new()).await?;
+        let event = ctx.repository.plan_event(id, promoted.details).await?;
+        veto_date_in_other_polls(ctx, &event).await?;
+        let sender = &mut *ctx.sender.lock().await;
+        emails::send_notification_emails(sender, &event, &promoted.invited, &[]).await?;
     }
 
     ctx.repository
@@ -67,19 +76,26 @@ async fn get_next_pending_poll(repository: &mut dyn Repository) -> Result<Option
         .next())
 }
 
-fn finalize_poll_dry_run(poll: &Poll) -> FinalizeResult {
+fn finalize_poll_dry_run(poll: &Poll) -> (FinalizeResult, Vec<PromotedEvent>) {
     let candidates = get_candidates(poll);
-    if let Some(chosen_option) = choose_option(candidates) {
+    let promoted = get_promoted_events(poll).collect::<Vec<_>>();
+    let users_invited_via_promoted = promoted
+        .iter()
+        .flat_map(|p| &p.invited)
+        .map(|p| p.id)
+        .collect::<HashSet<UserId>>();
+    let result = if let Some(chosen_option) = choose_option(candidates) {
         let invited = choose_participants(&chosen_option.answers);
         let details = PlanningDetails::new(&chosen_option, &invited);
         FinalizeResult::Success {
-            missed: get_missed_users(poll, &invited),
+            missed: get_missed_users(poll, &invited, &users_invited_via_promoted),
             details,
             invited,
         }
     } else {
         FinalizeResult::Failure
-    }
+    };
+    (result, promoted)
 }
 
 #[derive(Debug)]
@@ -94,11 +110,18 @@ enum FinalizeResult {
     Failure,
 }
 
+#[derive(Debug)]
+struct PromotedEvent {
+    invited: Vec<User>,
+    details: PlanningDetails,
+}
+
 pub(crate) fn get_candidates(poll: &Poll) -> Vec<PollOption> {
     let mut candidates = poll
         .options
         .iter()
         .filter(|o| !o.has_veto())
+        .filter(|o| !o.promote)
         .filter(|o| o.count_yes_answers() >= poll.min_participants)
         .cloned()
         .collect();
@@ -117,15 +140,30 @@ pub(crate) fn get_candidates(poll: &Poll) -> Vec<PollOption> {
     }
 }
 
-fn get_missed_users(poll: &Poll, invited: &[User]) -> Vec<User> {
+fn get_missed_users(
+    poll: &Poll,
+    invited: &[User],
+    users_invited_via_promoted: &HashSet<UserId>,
+) -> Vec<User> {
+    let invited = invited.iter().map(|u| u.id).collect::<HashSet<UserId>>();
     poll.options
         .iter()
         .flat_map(|o| o.answers.iter())
         .map(|a| &a.user)
         .unique_by(|u| u.id)
-        .filter(|u| !invited.iter().any(|i| i.id == u.id))
+        .filter(|u| !invited.contains(&u.id) && !users_invited_via_promoted.contains(&u.id))
         .cloned()
         .collect()
+}
+
+fn get_promoted_events(poll: &Poll) -> impl Iterator<Item = PromotedEvent> + '_ {
+    poll.options.iter().filter(|o| o.promote).map(|o| {
+        let invited = choose_participants(&o.answers);
+        PromotedEvent {
+            details: PlanningDetails::new(o, &invited),
+            invited,
+        }
+    })
 }
 
 fn choose_option(candidates: Vec<PollOption>) -> Option<PollOption> {
@@ -195,6 +233,7 @@ mod tests {
         PollOption {
             id,
             starts_at: OffsetDateTime::now_utc().into(),
+            promote: false,
             answers: (0..yes_answers)
                 .map(|i| answer(AnswerValue::yes(Attendance::Optional), UserId(i as i64)))
                 .collect(),

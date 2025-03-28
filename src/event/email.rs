@@ -84,7 +84,7 @@ impl<L: EventLifecycle> EventEmailSender<L> for EventEmailSenderImpl {
         self.sender.send(mailbox, email, options).await?;
 
         let event_email = EventEmail {
-            event: event.id,
+            event: get_primary_id(event),
             user: recipient.id,
             message_id,
             subject: email.subject(),
@@ -101,6 +101,12 @@ impl EventEmailSenderImpl {
         event: &Event<Materialized, L>,
         user: &User,
     ) -> Result<Option<MessageId>> {
-        self.repository.get_last_message_id(event.id, user.id).await
+        self.repository
+            .get_last_message_id(get_primary_id(event), user.id)
+            .await
     }
+}
+
+fn get_primary_id<L: EventLifecycle>(event: &Event<Materialized, L>) -> i64 {
+    event.parent_id.unwrap_or(event.id)
 }

@@ -1,13 +1,16 @@
 use crate::auth::{AuthorizedTo, ManagePoll};
-use crate::database::Repository;
+use crate::database::{New, Repository};
 use crate::event::EventsQuery;
 use crate::login::RedirectUri;
-use crate::poll::{finalize, NudgeFinalizer, PollStage};
+use crate::poll::{finalize, Answer, AnswerValue, NudgeFinalizer, PollOptionPatch, PollStage};
 use crate::result::HttpResult;
 use crate::template::PageBuilder;
+use crate::users::User;
+use anyhow::Result;
+use rocket::form::Form;
 use rocket::http::Status;
 use rocket::response::Redirect;
-use rocket::{get, post, uri, State};
+use rocket::{get, post, uri, FromForm, State};
 use rocket_dyn_templates::{context, Template};
 
 #[get("/event/<id>/poll/close")]
@@ -38,9 +41,10 @@ pub(crate) async fn close_poll_page(
     ))
 }
 
-#[post("/event/<id>/poll/close")]
+#[post("/event/<id>/poll/close", data = "<data>")]
 pub(crate) async fn close_poll(
     id: i64,
+    data: Form<ClosePollData>,
     user: AuthorizedTo<ManagePoll>,
     mut events: EventsQuery,
     nudge: &State<NudgeFinalizer>,
@@ -49,10 +53,54 @@ pub(crate) async fn close_poll(
     let Some(poll) = events.with_id(id, &user).await?.and_then(|e| e.polling()) else {
         return Err(Status::BadRequest.into());
     };
+    apply_actions(&user, &mut *repository, &data.actions).await?;
     repository
         .update_poll_stage(poll.id, PollStage::Pending)
         .await?;
     nudge.nudge();
     let event_uri = uri!(crate::event::event_page(id = poll.event.id));
     Ok(Redirect::to(event_uri))
+}
+
+async fn apply_actions(
+    user: &User,
+    repository: &mut dyn Repository,
+    actions: &[PollOptionAction],
+) -> Result<()> {
+    for action in actions {
+        apply_action(user, repository, action).await?;
+    }
+    Ok(())
+}
+
+async fn apply_action(
+    user: &User,
+    repository: &mut dyn Repository,
+    action: &PollOptionAction,
+) -> Result<()> {
+    let patch = PollOptionPatch {
+        promote: Some(action.promote),
+    };
+    repository.update_poll_option(action.id, patch).await?;
+    if action.veto {
+        let answer = Answer::<New> {
+            id: (),
+            value: AnswerValue::veto(),
+            user: user.id,
+        };
+        repository.add_answers(vec![(action.id, answer)]).await?;
+    }
+    Ok(())
+}
+
+#[derive(Debug, FromForm)]
+pub(crate) struct ClosePollData {
+    actions: Vec<PollOptionAction>,
+}
+
+#[derive(Debug, FromForm)]
+pub(crate) struct PollOptionAction {
+    id: i64,
+    promote: bool,
+    veto: bool,
 }

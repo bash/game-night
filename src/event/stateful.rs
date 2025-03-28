@@ -39,9 +39,39 @@ pub(crate) enum ActiveEvent {
 impl StatefulEvent {
     pub(crate) fn from_poll(poll: Poll, now: OffsetDateTime) -> Self {
         if let Some(starts_at) = poll.event.starts_at {
-            from_planned(poll, starts_at, now)
+            Self::from_planned(poll.event, starts_at, now)
         } else {
-            from_polling(poll, now)
+            Self::from_polling(poll, now)
+        }
+    }
+
+    pub(crate) fn from_planned(
+        event: Event<Materialized, Polling>,
+        starts_at: Iso8601<OffsetDateTime>,
+        now: OffsetDateTime,
+    ) -> StatefulEvent {
+        let event = event.into_planned(starts_at);
+
+        // Archived takes precedence over cancelled so that
+        // the event eventually becomes inactive.
+        if now <= event.estimated_ends_at() {
+            if event.cancelled {
+                StatefulEvent::Cancelled(event)
+            } else {
+                StatefulEvent::Planned(event)
+            }
+        } else {
+            StatefulEvent::Archived(event)
+        }
+    }
+
+    pub(crate) fn from_polling(poll: Poll, now: OffsetDateTime) -> Self {
+        match poll.stage {
+            PollStage::Open if now <= poll.open_until.0 => StatefulEvent::Polling(poll),
+            PollStage::Blocked => StatefulEvent::Polling(poll),
+            PollStage::Open | PollStage::Pending => StatefulEvent::Pending(poll),
+            PollStage::Finalizing => StatefulEvent::Finalizing(poll),
+            PollStage::Closed => StatefulEvent::Failed(poll),
         }
     }
 
@@ -160,35 +190,5 @@ impl ActiveEvent {
             Polling(poll) | Pending(poll) | Finalizing(poll) => poll.open_until.0,
             Planned(event) | Cancelled(event) => event.starts_at.0,
         }
-    }
-}
-
-fn from_polling(poll: Poll, now: OffsetDateTime) -> StatefulEvent {
-    match poll.stage {
-        PollStage::Open if now <= poll.open_until.0 => StatefulEvent::Polling(poll),
-        PollStage::Blocked => StatefulEvent::Polling(poll),
-        PollStage::Open | PollStage::Pending => StatefulEvent::Pending(poll),
-        PollStage::Finalizing => StatefulEvent::Finalizing(poll),
-        PollStage::Closed => StatefulEvent::Failed(poll),
-    }
-}
-
-fn from_planned(
-    poll: Poll,
-    starts_at: Iso8601<OffsetDateTime>,
-    now: OffsetDateTime,
-) -> StatefulEvent {
-    let event = poll.event.into_planned(starts_at);
-
-    // Archived takes precedence over cancelled so that
-    // the event eventually becomes inactive.
-    if now <= event.estimated_ends_at() {
-        if event.cancelled {
-            StatefulEvent::Cancelled(event)
-        } else {
-            StatefulEvent::Planned(event)
-        }
-    } else {
-        StatefulEvent::Archived(event)
     }
 }

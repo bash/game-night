@@ -39,11 +39,12 @@ pub(crate) struct Event<S: EventState = Materialized, L: EventLifecycle = Planne
     pub(crate) created_by: S::CreatedBy,
     pub(crate) restrict_to: Option<S::RestrictTo>,
     pub(crate) cancelled: bool,
+    pub(crate) parent_id: Option<i64>,
     #[sqlx(skip)]
     pub(crate) participants: S::Participants,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub(crate) struct PlanningDetails {
     pub(crate) starts_at: <Planned as EventLifecycle>::StartsAt,
     pub(crate) participants: Vec<Participant<New>>,
@@ -72,7 +73,7 @@ entity_state! {
 }
 
 pub(crate) trait EventLifecycle {
-    type StartsAt: Send + Sync;
+    type StartsAt: Send + Sync + Copy;
 }
 
 #[derive(Debug, Clone)]
@@ -113,10 +114,28 @@ impl<L: EventLifecycle> Event<Unmaterialized, L> {
             title: self.title,
             description: self.description,
             cancelled: self.cancelled,
+            parent_id: self.parent_id,
             location,
             created_by,
             participants,
             restrict_to,
+        }
+    }
+}
+
+impl<L: EventLifecycle> Event<Materialized, L> {
+    pub(crate) fn to_new(&self) -> Event<New, L> {
+        Event {
+            id: (),
+            starts_at: self.starts_at,
+            title: self.title.clone(),
+            description: self.description.clone(),
+            cancelled: self.cancelled,
+            parent_id: self.parent_id,
+            location: self.location.id,
+            created_by: self.created_by.id,
+            participants: Vec::default(),
+            restrict_to: self.restrict_to.as_ref().map(|u| u.id),
         }
     }
 }
@@ -143,6 +162,7 @@ impl<S: EventState> Event<S, Polling> {
             cancelled: self.cancelled,
             participants: self.participants,
             restrict_to: self.restrict_to,
+            parent_id: self.parent_id,
         }
     }
 }

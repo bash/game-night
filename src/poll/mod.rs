@@ -150,6 +150,7 @@ impl Poll {
 pub(crate) struct PollOption<S: PollOptionState = Materialized> {
     pub(crate) id: S::Id,
     pub(crate) starts_at: Iso8601<OffsetDateTime>,
+    pub(crate) promote: bool,
     #[sqlx(skip)]
     pub(crate) answers: S::Answers,
 }
@@ -159,6 +160,11 @@ entity_state! {
         type Id = () => i64 => i64;
         type Answers: Default = Vec<Answer<Self>> => () => Vec<Answer<Self>>;
     }
+}
+
+#[derive(Debug, Default)]
+pub(crate) struct PollOptionPatch {
+    pub(crate) promote: Option<bool>,
 }
 
 impl<S> PollOption<S>
@@ -360,6 +366,7 @@ mod tests {
                 id: (),
                 starts_at: OffsetDateTime::now_utc().into(),
                 answers: vec![],
+                promote: false,
             };
             assert_eq!(0, option.count_yes_answers());
         }
@@ -369,6 +376,7 @@ mod tests {
             let option: PollOption<New> = PollOption {
                 id: (),
                 starts_at: OffsetDateTime::now_utc().into(),
+                promote: false,
                 answers: vec![
                     answer(AnswerValue::yes(Attendance::Optional), UserId(1)),
                     answer(AnswerValue::yes(Attendance::Required), UserId(2)),
@@ -382,6 +390,7 @@ mod tests {
             let option: PollOption<New> = PollOption {
                 id: (),
                 starts_at: OffsetDateTime::now_utc().into(),
+                promote: false,
                 answers: vec![
                     answer(AnswerValue::no(false), UserId(1)),
                     answer(AnswerValue::yes(Attendance::Optional), UserId(2)),

@@ -73,6 +73,8 @@ CREATE TABLE events
     , description TEXT NOT NULL
     , location_id INTEGER NOT NULL REFERENCES locations(id) ON DELETE RESTRICT
     , restrict_to INTEGER NULL REFERENCES groups(id) ON DELETE RESTRICT
+    , cancelled INTEGER NOT NULL
+    , parent_id INTEGER NULL REFERENCES events(id) ON DELETE RESTRICT
     , created_by INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT
     , created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
     );

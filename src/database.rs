@@ -6,7 +6,7 @@ use crate::event::{
 use crate::groups::Group;
 use crate::invitation::{Invitation, InvitationId, Passphrase};
 use crate::login::{LoginToken, LoginTokenType};
-use crate::poll::{Answer, Poll, PollOption, PollStage};
+use crate::poll::{Answer, Poll, PollOption, PollOptionPatch, PollStage};
 use crate::register::EmailVerificationCode;
 use crate::users::{User, UserId, UserPatch};
 use crate::GameNightDatabase;
@@ -68,6 +68,14 @@ pub(crate) trait Repository: EventEmailsRepository + fmt::Debug + Send {
     async fn add_poll(&mut self, poll: Poll<New>) -> Result<Poll>;
 
     async fn add_answers(&mut self, answers: Vec<(i64, Answer<New>)>) -> Result<()>;
+
+    async fn update_poll_option(
+        &mut self,
+        poll_option_id: i64,
+        patch: PollOptionPatch,
+    ) -> Result<()>;
+
+    async fn add_event(&mut self, event: Event<New, Polling>) -> Result<i64>;
 
     async fn update_poll_stage(&mut self, id: i64, stage: PollStage) -> Result<()>;
 
@@ -357,18 +365,7 @@ impl Repository for SqliteRepository {
     async fn add_poll(&mut self, poll: Poll<New>) -> Result<Poll> {
         let mut transaction = self.0.begin().await?;
 
-        let event_id = sqlx::query!(
-            "INSERT INTO events (title, description, location_id, created_by, restrict_to)
-             VALUES (?1, ?2, ?3, ?4, ?5)",
-            poll.event.title,
-            poll.event.description,
-            poll.event.location,
-            poll.event.created_by,
-            poll.event.restrict_to,
-        )
-        .execute(&mut *transaction)
-        .await?
-        .last_insert_rowid();
+        let event_id = insert_event(&mut transaction, &poll.event).await?;
 
         let min_participants = i64::try_from(poll.min_participants)?;
         let poll_id = sqlx::query!(
@@ -386,9 +383,10 @@ impl Repository for SqliteRepository {
 
         for option in poll.options.iter() {
             let option_id = sqlx::query!(
-                "INSERT INTO poll_options (poll_id, starts_at) VALUES (?1, ?2)",
+                "INSERT INTO poll_options (poll_id, starts_at, promote) VALUES (?1, ?2, ?3)",
                 poll_id,
-                option.starts_at
+                option.starts_at,
+                option.promote,
             )
             .execute(&mut *transaction)
             .await?
@@ -407,7 +405,7 @@ impl Repository for SqliteRepository {
         }
 
         let poll = poll.into_unmaterialized(poll_id, event_id);
-        let poll = materialize_poll(&mut transaction, poll).await?;
+        let poll = materialize_poll(&mut transaction, poll, None).await?;
 
         transaction.commit().await?;
 
@@ -445,6 +443,30 @@ impl Repository for SqliteRepository {
         transaction.commit().await?;
 
         Ok(())
+    }
+
+    async fn update_poll_option(
+        &mut self,
+        poll_option_id: i64,
+        patch: PollOptionPatch,
+    ) -> Result<()> {
+        let mut transaction = self.0.begin().await?;
+        if let Some(promote) = patch.promote {
+            sqlx::query("UPDATE poll_options SET promote = ?2 WHERE id = ?1")
+                .bind(poll_option_id)
+                .bind(promote)
+                .execute(&mut *transaction)
+                .await?;
+        }
+        transaction.commit().await?;
+        Ok(())
+    }
+
+    async fn add_event(&mut self, event: Event<New, Polling>) -> Result<i64> {
+        let mut transaction = self.0.begin().await?;
+        let id = insert_event(&mut transaction, &event).await?;
+        transaction.commit().await?;
+        Ok(id)
     }
 
     async fn update_poll_stage(&mut self, id: i64, stage: PollStage) -> Result<()> {
@@ -486,14 +508,14 @@ impl Repository for SqliteRepository {
 
     async fn get_stateful_event(&mut self, id: EventId) -> Result<Option<StatefulEvent>> {
         let mut transaction = self.0.begin().await?;
-        let poll = sqlx::query_as("SELECT * FROM polls WHERE event_id = ?1 LIMIT 1")
+        let event = sqlx::query_as("SELECT * FROM events WHERE id = ?1 LIMIT 1")
             .bind(id)
             .fetch_optional(&mut *transaction)
             .await?;
-        Ok(match poll {
-            Some(poll) => {
-                let poll = materialize_poll(&mut transaction, poll).await?;
-                Some(StatefulEvent::from_poll(poll, OffsetDateTime::now_utc()))
+        Ok(match event {
+            Some(event) => {
+                let now = OffsetDateTime::now_utc();
+                Some(materialize_stateful_event(&mut transaction, event, now).await?)
             }
             None => None,
         })
@@ -501,13 +523,14 @@ impl Repository for SqliteRepository {
 
     async fn get_stateful_events(&mut self) -> Result<Vec<StatefulEvent>> {
         let mut transaction = self.0.begin().await?;
-        let polls = sqlx::query_as("SELECT * FROM polls")
+        let events = sqlx::query_as("SELECT * FROM events")
             .fetch_all(&mut *transaction)
             .await?;
-        let mut materialized = Vec::with_capacity(polls.len());
-        for poll in polls {
-            let poll = materialize_poll(&mut transaction, poll).await?;
-            materialized.push(StatefulEvent::from_poll(poll, OffsetDateTime::now_utc()));
+        let mut materialized = Vec::with_capacity(events.len());
+        let now = OffsetDateTime::now_utc();
+        for event in events {
+            let event = materialize_stateful_event(&mut transaction, event, now).await?;
+            materialized.push(event);
         }
         Ok(materialized)
     }
@@ -612,15 +635,19 @@ impl EventEmailsRepository for SqliteRepository {
 async fn materialize_poll(
     connection: &mut SqliteConnection,
     poll: Poll<Unmaterialized>,
+    event: Option<Event<Materialized, Polling>>,
 ) -> Result<Poll> {
     // Yes, yes using a JOIN to fetch the poll and the user at once would be better,
     // but it's very inconvenient as I can't use the auto-derived FromRow impl :/
-    let event: Event<Unmaterialized, Polling> =
-        sqlx::query_as("SELECT * FROM events WHERE id = ?1")
+    let event = if let Some(event) = event {
+        event
+    } else {
+        let event = sqlx::query_as("SELECT * FROM events WHERE id = ?1")
             .bind(poll.event)
             .fetch_one(&mut *connection)
             .await?;
-    let event = materialize_event(connection, event).await?;
+        materialize_event(connection, event).await?
+    };
 
     let mut options: Vec<PollOption> =
         sqlx::query_as("SELECT * FROM poll_options WHERE poll_id = ?1")
@@ -652,6 +679,26 @@ async fn materialize_answer(
         .fetch_one(connection)
         .await?;
     Ok(answer.materialize(user))
+}
+
+async fn materialize_stateful_event(
+    connection: &mut SqliteConnection,
+    event: Event<Unmaterialized, Polling>,
+    now: OffsetDateTime,
+) -> Result<StatefulEvent> {
+    let event = materialize_event(connection, event).await?;
+    if let Some(starts_at) = event.starts_at {
+        Ok(StatefulEvent::from_planned(event, starts_at, now))
+    } else {
+        // Yes, yes using a JOIN to fetch the poll and the user at once would be better,
+        // but it's very inconvenient as I can't use the auto-derived FromRow impl :/
+        let poll = sqlx::query_as("SELECT * FROM polls WHERE id = ?1")
+            .bind(event.id)
+            .fetch_one(&mut *connection)
+            .await?;
+        let poll = materialize_poll(connection, poll, Some(event)).await?;
+        Ok(StatefulEvent::from_polling(poll, now))
+    }
 }
 
 async fn materialize_event<L: EventLifecycle>(
@@ -753,6 +800,27 @@ async fn materialize_organizer(
         .fetch_one(&mut *connection)
         .await?;
     Ok(organizer.into_materialized(user))
+}
+
+async fn insert_event<L>(connection: &mut SqliteConnection, event: &Event<New, L>) -> Result<i64>
+where
+    L: EventLifecycle,
+{
+    let event_id = sqlx::query!(
+        "INSERT INTO events (title, description, location_id, created_by, restrict_to, parent_id, cancelled)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+        event.title,
+        event.description,
+        event.location,
+        event.created_by,
+        event.restrict_to,
+        event.parent_id,
+        event.cancelled,
+    )
+    .execute(&mut *connection)
+    .await?
+    .last_insert_rowid();
+    Ok(event_id)
 }
 
 async fn delete_token<'c, E>(executor: E, token: &str) -> Result<bool>

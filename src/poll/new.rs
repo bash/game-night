@@ -202,6 +202,7 @@ fn to_poll(poll: NewPollData, location: Location, user: &User) -> Result<Poll<Ne
             starts_at: None,
             restrict_to: poll.restrict_to,
             cancelled: false,
+            parent_id: None,
         },
     })
 }
@@ -220,6 +221,7 @@ fn to_poll_option(option: &NewPollOption, user: &User) -> Result<PollOption<New>
     Ok(PollOption {
         id: (),
         starts_at: to_cet(option.date, option.start_time)?.into(),
+        promote: false,
         // The user creating the poll is automatically added with a required attendance.
         answers: vec![Answer {
             id: (),

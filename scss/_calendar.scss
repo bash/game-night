@@ -72,7 +72,8 @@
         > .day { text-align: center; }
     }
 
-    > ul > li > .answers-list {
+    > ul > li > .answers-list,
+    > ul > li > .calendar-event-actions {
         grid-column: span var(--column-count);
         justify-content: start;
     }
@@ -105,5 +106,20 @@
         grid-auto-flow: column;
         align-items: center;
         gap: .4em;
+    }
+}
+
+.calendar-event-actions {
+    font-size: .8em;
+    list-style: none;
+
+    @media (hover: hover) and (not (prefers-contrast: more)) {
+        opacity: .4;
+        will-change: opacity; // Creates a stacking context which fixes clipping in Safari
+        transition: opacity 125ms;
+
+        &:hover, &:has(:focus-visible), &:has(:checked) {
+            opacity: 1;
+        }
     }
 }
