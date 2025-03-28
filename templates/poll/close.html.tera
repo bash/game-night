@@ -5,53 +5,68 @@
 {% block title %}Close Poll?{% endblock title %}
 
 {% block content %}
-    <form method="post">
-        <p>
-            After the poll is closed, the date will be chosen
-            from one of the following candidates:
-        </p>
-        <div class="calendar-list -candidates">
-            <ul>
-                {% for option in candidates %}
-                    <li>
-                        <span class="text-badge">candidate</span>
+    <p>
+        After the poll is closed, the date will be chosen
+        from one of the following candidates:
+    </p>
+    <div class="calendar-list -candidates">
+        <ul>
+            {% for option in candidates %}
+                <li>
+                    <span class="text-badge">candidate</span>
 
-                        <span>
-                            <span class="day">{{option.starts_at | time(format="[day padding:none]")}}</span>
-                            <span class="weekday">
-                                {{option.starts_at | time(format="[weekday repr:long]")}}
-                            </span>
+                    <span>
+                        <span class="day">{{option.starts_at | time(format="[day padding:none]")}}</span>
+                        <span class="weekday">
+                            {{option.starts_at | time(format="[weekday repr:long]")}}
                         </span>
+                    </span>
 
-                        <div class="time-range">
-                            <time>{{option.starts_at | time(format='[hour]:[minute]')}}</time>
-                        </div>
+                    <div class="time-range">
+                        <time>{{option.starts_at | time(format='[hour]:[minute]')}}</time>
+                    </div>
 
-                        <div class="answers-list">
-                            {% for answer in option.answers %}
-                                {% if answer.value.type == "yes" %}
-                                    <span class="answer">
-                                        {{user_macros::name(user=answer.user)}}
-                                    </span>
-                                {% endif %}
-                            {% endfor %}
-                        </div>
-                    </li>
-                {% endfor %}
-            </ul>
-        </div>
+                    <div class="answers-list">
+                        {% for answer in option.answers %}
+                            {% if answer.value.type == "yes" %}
+                                <span class="answer">
+                                    {{user_macros::name(user=answer.user)}}
+                                </span>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+    <p>
+        <small>
+            These candidates were selected
+            <strong>{{date_selection_strategy}}</strong>,
+            where at least <strong>{{poll.min_participants}}</strong> people have said yes.
+        </small>
+    </p>
+    <p>
+        An email will be sent to all participants of the selected date.
+    </p>
+    <form method="post" action="{{set_close_manually_uri}}">
         <p>
-            <small>
-                These candidates were selected
-                <strong>{{date_selection_strategy}}</strong>,
-                where at least <strong>{{poll.min_participants}}</strong> people have said yes.
-            </small>
+            <label>
+                <input type="checkbox" name="close_manually" {% if poll.close_manually %}checked{% endif %} data-auto-submit>
+                I want to close the poll manually, ignore the open until date.
+            </label>
         </p>
-        <p>
-            An email will be sent to all participants of the selected date.
-        </p>
+    </form>
+    <form method="post">
         <fieldset>
             <button type="submit">Close Poll</button>
         </fieldset>
     </form>
 {% endblock content %}
+{% block scripts %}
+    <script type="module">
+      for (const input of document.querySelectorAll('[data-auto-submit]')) {
+        input.addEventListener('input', () => input.form.submit())
+      }
+    </script>
+{% endblock %}

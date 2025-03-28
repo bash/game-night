@@ -3,6 +3,7 @@ use crate::database::{Materialized, New, Repository, Unmaterialized};
 use crate::entity_state;
 use crate::event::{Event, EventsQuery, Polling};
 use crate::iso_8601::Iso8601;
+use crate::login::RedirectUri;
 use crate::play::rocket_uri_macro_archive_page;
 use crate::register::rocket_uri_macro_profile;
 use crate::result::HttpResult;
@@ -28,6 +29,7 @@ use email::PollEmail;
 mod new;
 mod open;
 pub(crate) use open::*;
+mod admin;
 mod skip;
 
 pub(crate) fn routes() -> Vec<Route> {
@@ -41,6 +43,7 @@ pub(crate) fn routes() -> Vec<Route> {
         new::calendar,
         open::update_answers,
         email::poll_email_preview,
+        admin::set_close_manually,
     ]
 }
 
@@ -62,9 +65,13 @@ async fn close_poll_page(
         return Err(Status::NotFound.into());
     };
     let candidates = finalize::get_candidates(&poll);
+    let set_close_manually_uri = uri!(admin::set_close_manually(
+        id = id,
+        redirect_to = &uri!(close_poll_page(id = id))
+    ));
     Ok(page.render(
         "poll/close",
-        context! { date_selection_strategy: poll.strategy.to_string(), poll, candidates },
+        context! { date_selection_strategy: poll.strategy.to_string(), poll, candidates, set_close_manually_uri },
     ))
 }
 
@@ -100,6 +107,7 @@ pub(crate) struct Poll<S: PollState = Materialized> {
     pub(crate) min_participants: usize,
     pub(crate) strategy: DateSelectionStrategy,
     pub(crate) open_until: Iso8601<OffsetDateTime>,
+    pub(crate) close_manually: bool,
     pub(crate) stage: PollStage,
     #[sqlx(rename = "event_id")]
     pub(crate) event: S::Event,
@@ -131,6 +139,7 @@ impl Poll<New> {
             min_participants: self.min_participants,
             strategy: self.strategy,
             open_until: self.open_until,
+            close_manually: self.close_manually,
             stage: self.stage,
             event: event_id,
             options: (),
@@ -149,6 +158,7 @@ impl Poll<Unmaterialized> {
             min_participants: self.min_participants,
             strategy: self.strategy,
             open_until: self.open_until,
+            close_manually: self.close_manually,
             stage: self.stage,
             event,
             options,

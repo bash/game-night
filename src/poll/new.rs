@@ -190,6 +190,7 @@ fn to_poll(poll: NewPollData, location: Location, user: &User) -> Result<Poll<Ne
         min_participants: poll.min_participants,
         strategy: poll.strategy,
         open_until: (now + Duration::hours(poll.duration_in_hours)).into(),
+        close_manually: false,
         stage: PollStage::Open,
         options: to_poll_options(poll.options.iter(), user)?,
         event: Event {

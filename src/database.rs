@@ -69,6 +69,8 @@ pub(crate) trait Repository: EventEmailsRepository + fmt::Debug + Send {
 
     async fn update_poll_open_until(&mut self, id: i64, close_at: OffsetDateTime) -> Result<()>;
 
+    async fn update_poll_close_manually(&mut self, id: i64, close_manually: bool) -> Result<()>;
+
     async fn add_answers(&mut self, answers: Vec<(i64, Answer<New>)>) -> Result<()>;
 
     async fn update_poll_stage(&mut self, id: i64, stage: PollStage) -> Result<()>;
@@ -374,11 +376,12 @@ impl Repository for SqliteRepository {
 
         let min_participants = i64::try_from(poll.min_participants)?;
         let poll_id = sqlx::query!(
-            "INSERT INTO polls (min_participants, strategy, open_until, stage, event_id)
-             VALUES (?1, ?2, ?3, ?4, ?5)",
+            "INSERT INTO polls (min_participants, strategy, open_until, close_manually, stage, event_id)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
             min_participants,
             poll.strategy,
             poll.open_until,
+            poll.close_manually,
             poll.stage,
             event_id
         )
@@ -420,6 +423,17 @@ impl Repository for SqliteRepository {
         sqlx::query!(
             "UPDATE polls SET open_until = ?1 WHERE id = ?2",
             open_until,
+            id
+        )
+        .execute(self.executor())
+        .await?;
+        Ok(())
+    }
+
+    async fn update_poll_close_manually(&mut self, id: i64, close_manually: bool) -> Result<()> {
+        sqlx::query!(
+            "UPDATE polls SET close_manually = ?1 WHERE id = ?2",
+            close_manually,
             id
         )
         .execute(self.executor())

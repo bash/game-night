@@ -46,6 +46,7 @@ CREATE TABLE polls
     , min_participants INTEGER NOT NULL
     , strategy TEXT NOT NULL
     , open_until TEXT NOT NULl
+    , close_manually INTEGER NOT NULL
     , stage TEXT NOT NULL
     , event_id INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE
     , created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))

@@ -165,7 +165,9 @@ impl ActiveEvent {
 
 fn from_polling(poll: Poll, now: OffsetDateTime) -> StatefulEvent {
     match poll.stage {
-        PollStage::Open if now <= poll.open_until.0 => StatefulEvent::Polling(poll),
+        PollStage::Open if now <= poll.open_until.0 || poll.close_manually => {
+            StatefulEvent::Polling(poll)
+        }
         PollStage::Open => StatefulEvent::Pending(poll),
         PollStage::Finalizing => StatefulEvent::Finalizing(poll),
         PollStage::Closed => StatefulEvent::Failed(poll),
