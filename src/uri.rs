@@ -1,18 +1,19 @@
+use crate::auto_resolve;
 use crate::database::Repository;
-use crate::impl_from_request_for_service;
 use crate::services::{Resolve, ResolveContext};
 use anyhow::Result;
 use rocket::http::uri::Absolute;
 use rocket::tokio::sync::Mutex;
-use rocket::{Phase, Rocket};
 use serde::Deserialize;
 
-#[derive(Debug)]
-pub(crate) struct UriBuilder {
-    #[doc(hidden)]
-    pub(crate) repository: Mutex<Box<dyn Repository>>,
-    #[doc(hidden)]
-    pub(crate) prefix: UrlPrefix<'static>,
+auto_resolve! {
+    #[derive(Debug)]
+    pub(crate) struct UriBuilder {
+        #[doc(hidden)]
+        pub(crate) repository: Mutex<Box<dyn Repository>>,
+        #[doc(hidden)]
+        pub(crate) prefix: UrlPrefix<'static>,
+    }
 }
 
 #[macro_export]
@@ -37,17 +38,6 @@ macro_rules! uri {
     }};
 }
 
-impl Resolve for UriBuilder {
-    async fn resolve(ctx: &ResolveContext<'_>) -> Result<Self> {
-        Ok(UriBuilder {
-            prefix: url_prefix(ctx.rocket())?.to_static(),
-            repository: Mutex::new(ctx.resolve().await?),
-        })
-    }
-}
-
-impl_from_request_for_service!(UriBuilder);
-
 #[doc(hidden)]
 #[derive(Debug, Deserialize)]
 #[serde(transparent)]
@@ -59,10 +49,13 @@ impl UrlPrefix<'_> {
     }
 }
 
-fn url_prefix<P: Phase>(rocket: &Rocket<P>) -> Result<UrlPrefix<'_>> {
-    rocket
-        .figment()
-        .extract_inner("url_prefix")
-        .map(UrlPrefix)
-        .map_err(Into::into)
+impl Resolve for UrlPrefix<'static> {
+    async fn resolve(ctx: &ResolveContext<'_>) -> Result<Self> {
+        ctx.rocket()
+            .figment()
+            .extract_inner("url_prefix")
+            .map(UrlPrefix)
+            .map_err(Into::into)
+            .map(|p| p.to_static())
+    }
 }

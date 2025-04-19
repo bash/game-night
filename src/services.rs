@@ -1,12 +1,26 @@
 use anyhow::{Error, Result};
 use rocket::http::Status;
 use rocket::request::{FromRequest, Outcome};
+use rocket::tokio::sync::Mutex as TokioMutex;
 use rocket::{async_trait, Orbit, Request, Rocket};
 use std::future::Future;
 use std::ops::{Deref, DerefMut};
+use std::sync::Arc;
 
 pub(crate) trait Resolve: Sized {
     fn resolve(ctx: &ResolveContext<'_>) -> impl Future<Output = Result<Self>> + Send;
+}
+
+impl<R: Resolve> Resolve for Arc<R> {
+    async fn resolve(ctx: &ResolveContext<'_>) -> Result<Self> {
+        ctx.resolve().await.map(Arc::new)
+    }
+}
+
+impl<R: Resolve> Resolve for TokioMutex<R> {
+    async fn resolve(ctx: &ResolveContext<'_>) -> Result<Self> {
+        ctx.resolve().await.map(TokioMutex::new)
+    }
 }
 
 pub(crate) struct ResolveContext<'a>(&'a Rocket<Orbit>);
@@ -92,6 +106,32 @@ macro_rules! impl_from_request_for_service {
         }
     };
     ($R:ty) => {
-        impl_from_request_for_service!(<> $R);
+        $crate::impl_from_request_for_service!(<> $R);
+    };
+}
+
+#[macro_export]
+macro_rules! auto_resolve {
+    ($(#[$($meta:meta)*])? $vis:vis struct $name:ident {$(
+        $(#[$($field_meta:meta)*])?
+        $field_vis:vis $field_name:ident : $ty:ty
+    ),* $(,)?}) => {
+        $(#[$($meta)*])?
+        $vis struct $name {
+            $(
+                $(#[$($field_meta)*])?
+                $field_vis $field_name : $ty
+            ),*
+        }
+
+        impl $crate::services::Resolve for $name {
+            async fn resolve(ctx: &$crate::services::ResolveContext<'_>) -> Result<Self> {
+                Ok(Self {
+                    $($field_name : ctx.resolve().await?),*
+                })
+            }
+        }
+
+        $crate::impl_from_request_for_service!($name);
     };
 }

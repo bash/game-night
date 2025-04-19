@@ -11,6 +11,7 @@ use std::sync::Arc;
 mod scheduling;
 pub(crate) use scheduling::*;
 mod emails;
+use crate::auto_resolve;
 pub(crate) use emails::*;
 use rand::seq::IndexedRandom as _;
 use std::collections::HashSet;
@@ -26,9 +27,11 @@ async fn finalize(ctx: &mut FinalizeContext) -> Result<()> {
     Ok(())
 }
 
-struct FinalizeContext {
-    repository: Box<dyn Repository>,
-    sender: Arc<Mutex<EventEmailSender>>,
+auto_resolve! {
+    struct FinalizeContext {
+        repository: Box<dyn Repository>,
+        sender: Arc<Mutex<EventEmailSender>>,
+    }
 }
 
 async fn try_finalize_poll(ctx: &mut FinalizeContext, poll: Poll) -> Result<()> {

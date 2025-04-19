@@ -1,10 +1,9 @@
 use crate::email::EmailMessage;
 use crate::event::{Event, EventEmailSender as DynEventEmailSender, Ics};
 use crate::fmt::LongEventTitle;
-use crate::services::{Resolve, ResolveContext};
 use crate::uri::UriBuilder;
 use crate::users::User;
-use crate::{impl_from_request_for_service, uri};
+use crate::{auto_resolve, uri};
 use anyhow::Result;
 use lettre::message::header::ContentType;
 use lettre::message::{Attachment, SinglePart};
@@ -30,21 +29,12 @@ pub(super) async fn send_notification_emails(
 
 // TODO: rename this to something more suiting?
 // Maybe FinalizePollEmailSender?
-pub(crate) struct EventEmailSender {
-    email_sender: Box<dyn DynEventEmailSender + 'static>,
-    uri_builder: UriBuilder,
-}
-
-impl Resolve for EventEmailSender {
-    async fn resolve(ctx: &ResolveContext<'_>) -> Result<Self> {
-        Ok(Self {
-            email_sender: ctx.resolve().await?,
-            uri_builder: ctx.resolve().await?,
-        })
+auto_resolve! {
+    pub(crate) struct EventEmailSender {
+        email_sender: Box<dyn DynEventEmailSender + 'static>,
+        uri_builder: UriBuilder,
     }
 }
-
-impl_from_request_for_service!(EventEmailSender);
 
 impl EventEmailSender {
     pub(crate) async fn send(&mut self, event: &Event, user: &User) -> Result<()> {

@@ -1,13 +1,12 @@
 use super::{finalize, FinalizeContext};
-use crate::services::{Resolve, ResolveContext, RocketResolveExt as _};
+use crate::services::RocketResolveExt as _;
 use anyhow::{Context, Result};
 use rocket::fairing::{self, Fairing};
 use rocket::tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender};
-use rocket::tokio::sync::{Mutex, RwLock};
+use rocket::tokio::sync::RwLock;
 use rocket::tokio::time::interval;
 use rocket::tokio::{self, select};
 use rocket::{async_trait, warn, Build, Orbit, Rocket, Shutdown};
-use std::sync::Arc;
 use std::time::Duration;
 
 pub(crate) fn poll_finalizer() -> impl Fairing {
@@ -60,15 +59,6 @@ async fn start_finalizer(
     let context = rocket.resolve().await?;
     tokio::spawn(run_finalizer(rx, rocket.shutdown(), context));
     Ok(())
-}
-
-impl Resolve for FinalizeContext {
-    async fn resolve(ctx: &ResolveContext<'_>) -> Result<Self> {
-        Ok(Self {
-            repository: ctx.resolve().await?,
-            sender: Arc::new(Mutex::new(ctx.resolve().await?)),
-        })
-    }
 }
 
 async fn run_finalizer(
