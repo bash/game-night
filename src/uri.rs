@@ -1,30 +1,18 @@
-use anyhow::{Error, Result};
+use crate::database::Repository;
+use crate::impl_from_request_for_service;
+use crate::services::{Resolve, ResolveContext};
+use anyhow::Result;
 use rocket::http::uri::Absolute;
-use rocket::http::Status;
-use rocket::outcome::IntoOutcome;
-use rocket::request::{FromRequest, Outcome};
 use rocket::tokio::sync::Mutex;
-use rocket::{async_trait, Phase, Request, Rocket};
+use rocket::{Phase, Rocket};
 use serde::Deserialize;
 
-use crate::database::Repository;
-use crate::RocketExt;
-
 #[derive(Debug)]
-pub(crate) struct UriBuilder<'a> {
+pub(crate) struct UriBuilder {
     #[doc(hidden)]
     pub(crate) repository: Mutex<Box<dyn Repository>>,
     #[doc(hidden)]
-    pub(crate) prefix: UrlPrefix<'a>,
-}
-
-impl UriBuilder<'_> {
-    pub(crate) fn into_static(self) -> UriBuilder<'static> {
-        UriBuilder {
-            repository: self.repository,
-            prefix: self.prefix.to_static(),
-        }
-    }
+    pub(crate) prefix: UrlPrefix<'static>,
 }
 
 #[macro_export]
@@ -49,31 +37,16 @@ macro_rules! uri {
     }};
 }
 
-#[async_trait]
-impl<'r> FromRequest<'r> for UriBuilder<'r> {
-    type Error = Error;
-
-    async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
-        request
-            .rocket()
-            .uri_builder()
-            .await
-            .or_error(Status::InternalServerError)
-    }
-}
-
-pub(crate) trait HasUriBuilder {
-    async fn uri_builder(&self) -> Result<UriBuilder<'_>>;
-}
-
-impl<P: Phase> HasUriBuilder for Rocket<P> {
-    async fn uri_builder(&self) -> Result<UriBuilder<'_>> {
+impl Resolve for UriBuilder {
+    async fn resolve(ctx: &ResolveContext<'_>) -> Result<Self> {
         Ok(UriBuilder {
-            prefix: url_prefix(self)?,
-            repository: Mutex::new(self.repository().await?),
+            prefix: url_prefix(ctx.rocket())?.to_static(),
+            repository: Mutex::new(ctx.resolve().await?),
         })
     }
 }
+
+impl_from_request_for_service!(UriBuilder);
 
 #[doc(hidden)]
 #[derive(Debug, Deserialize)]

@@ -9,17 +9,17 @@ use crate::login::{LoginToken, LoginTokenType};
 use crate::poll::{Answer, Poll, PollOption, PollOptionPatch, PollStage};
 use crate::register::EmailVerificationCode;
 use crate::users::{User, UserId, UserPatch};
-use crate::GameNightDatabase;
-use anyhow::{anyhow, Error, Ok, Result};
-use rocket::request::{FromRequest, Outcome};
-use rocket::{async_trait, Request};
-use rocket_db_pools::Connection;
+use crate::{impl_from_request_for_service, GameNightDatabase};
+use anyhow::{anyhow, Context as _, Ok, Result};
+use rocket::async_trait;
+use rocket_db_pools::{Database as _, Pool as _};
 use sqlx::pool::PoolConnection;
 use sqlx::{Connection as _, Executor, Sqlite, SqliteConnection};
 use std::fmt;
 use time::OffsetDateTime;
 
 mod entity;
+use crate::services::{Resolve, ResolveContext};
 pub(crate) use entity::*;
 
 #[async_trait]
@@ -843,23 +843,25 @@ fn is_one_time_token(token: &Option<LoginToken>) -> bool {
     )
 }
 
-#[async_trait]
-impl<'r> FromRequest<'r> for Box<dyn Repository> {
-    type Error = Error;
-
-    async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
-        Connection::<GameNightDatabase>::from_request(request)
-            .await
-            .map(|c| create_repository(c.into_inner()))
-            .map_error(|(status, error)| (status, into_anyhow_error(error)))
+impl Resolve for Box<dyn Repository> {
+    async fn resolve(ctx: &ResolveContext<'_>) -> Result<Self> {
+        let db = GameNightDatabase::fetch(ctx.rocket()).context("unable to retrieve database")?;
+        let connection = db.get().await?;
+        Ok(create_repository(connection))
     }
 }
 
-fn into_anyhow_error<E: std::error::Error + Send + Sync + 'static>(error: Option<E>) -> Error {
-    error
-        .map(Into::into)
-        .unwrap_or_else(|| anyhow!("Unable to retrieve database"))
+impl_from_request_for_service!(Box<dyn Repository>);
+
+impl Resolve for Box<dyn EventEmailsRepository> {
+    async fn resolve(ctx: &ResolveContext<'_>) -> Result<Self> {
+        ctx.resolve::<Box<dyn Repository>>()
+            .await
+            .map(|r| r.into_event_emails_repository())
+    }
 }
+
+impl_from_request_for_service!(Box<dyn EventEmailsRepository>);
 
 pub(crate) fn create_repository(connection: PoolConnection<Sqlite>) -> Box<dyn Repository> {
     Box::new(SqliteRepository(connection))

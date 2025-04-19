@@ -1,5 +1,5 @@
-use super::{finalize, EventEmailSender, FinalizeContext};
-use crate::RocketExt;
+use super::{finalize, FinalizeContext};
+use crate::services::{Resolve, ResolveContext, RocketResolveExt as _};
 use anyhow::{Context, Result};
 use rocket::fairing::{self, Fairing};
 use rocket::tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender};
@@ -57,16 +57,16 @@ async fn start_finalizer(
     rx: &RwLock<Option<UnboundedReceiver<()>>>,
 ) -> Result<()> {
     let rx = rx.write().await.take().context("receiver consumed twice")?;
-    let context = FinalizeContext::from_rocket(rocket).await?;
+    let context = rocket.resolve().await?;
     tokio::spawn(run_finalizer(rx, rocket.shutdown(), context));
     Ok(())
 }
 
-impl FinalizeContext {
-    async fn from_rocket(rocket: &Rocket<Orbit>) -> Result<Self> {
+impl Resolve for FinalizeContext {
+    async fn resolve(ctx: &ResolveContext<'_>) -> Result<Self> {
         Ok(Self {
-            repository: rocket.repository().await?,
-            sender: Arc::new(Mutex::new(EventEmailSender::from_rocket(rocket).await?)),
+            repository: ctx.resolve().await?,
+            sender: Arc::new(Mutex::new(ctx.resolve().await?)),
         })
     }
 }

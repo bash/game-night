@@ -45,7 +45,7 @@ async fn generate_invitation(
     page: PageBuilder<'_>,
     mut repository: Box<dyn Repository>,
     form: Form<GenerateInvitationData>,
-    uri_builder: UriBuilder<'_>,
+    uri_builder: UriBuilder,
 ) -> Result<Template, Debug<Error>> {
     let lifetime = Duration::days(i64::from(u32::from(form.lifetime_in_days)));
     let valid_until = OffsetDateTime::now_utc() + lifetime;

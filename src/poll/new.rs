@@ -171,7 +171,7 @@ pub(super) async fn new_poll(
     email_sender: Box<dyn EventEmailSender<Polling>>,
     form: Form<NewPollData<'_>>,
     user: AuthorizedTo<ManagePoll>,
-    uri_builder: UriBuilder<'_>,
+    uri_builder: UriBuilder,
 ) -> Result<Redirect, Debug<Error>> {
     let location = repository
         .get_location_by_id(form.location)
@@ -281,7 +281,7 @@ where
 async fn send_poll_emails(
     mut subscribed_users: SubscribedUsers,
     mut email_sender: Box<dyn EventEmailSender<Polling>>,
-    uri_builder: UriBuilder<'_>,
+    uri_builder: UriBuilder,
     poll: &Poll,
 ) -> Result<()> {
     let event = StatefulEvent::from_poll(poll.clone(), OffsetDateTime::now_utc());

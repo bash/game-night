@@ -1,30 +1,29 @@
-use std::fmt;
-
 use crate::{
     database::{EventEmailsRepository, Materialized},
     email::{EmailMessage, EmailMessageOptions, EmailSender, MessageId},
     event::Event,
+    impl_from_request_for_service,
+    services::{Resolve, ResolveContext},
     users::{User, UserId},
-    RocketExt,
 };
-use anyhow::{Error, Result};
+use anyhow::Result;
 use rand::{rng, Rng};
-use rocket::{
-    async_trait,
-    http::Status,
-    outcome::IntoOutcome,
-    request::{FromRequest, Outcome},
-    Request,
-};
+use rocket::async_trait;
+use std::fmt;
 
 use super::{EventLifecycle, Planned};
 
-pub(crate) fn create_event_email_sender<L: EventLifecycle>(
-    repository: Box<dyn EventEmailsRepository>,
-    sender: Box<dyn EmailSender>,
-) -> Box<dyn EventEmailSender<L>> {
-    Box::new(EventEmailSenderImpl { repository, sender })
+impl<L: EventLifecycle> Resolve for Box<dyn EventEmailSender<L>> {
+    async fn resolve(ctx: &ResolveContext<'_>) -> Result<Self> {
+        let sender = ctx.resolve::<Box<dyn EmailSender>>().await?;
+        Ok(Box::new(EventEmailSenderImpl {
+            repository: ctx.resolve().await?,
+            sender,
+        }) as Box<dyn EventEmailSender<L>>)
+    }
 }
+
+impl_from_request_for_service!(<L: EventLifecycle> Box<dyn EventEmailSender<L>>);
 
 /// An email sender that sends out emails relating
 /// to an event / poll.
@@ -44,19 +43,6 @@ pub(crate) struct EventEmail {
     pub(crate) user: UserId,
     pub(crate) message_id: MessageId,
     pub(crate) subject: String,
-}
-
-#[async_trait]
-impl<L: EventLifecycle, 'r> FromRequest<'r> for Box<dyn EventEmailSender<L>> {
-    type Error = Error;
-
-    async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
-        request
-            .rocket()
-            .event_email_sender()
-            .await
-            .or_error(Status::InternalServerError)
-    }
 }
 
 #[derive(Debug)]

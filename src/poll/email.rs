@@ -6,10 +6,10 @@ use crate::result::HttpResult;
 use crate::uri::UriBuilder;
 use crate::users::User;
 use crate::{responder, uri};
+use rocket::get;
 use rocket::http::uri::Absolute;
 use rocket::http::Status;
 use rocket::response::content::RawHtml;
-use rocket::{get, State};
 use serde::Serialize;
 
 #[get("/event/<id>/poll/email-preview?<txt>")]
@@ -18,8 +18,8 @@ pub(super) async fn poll_email_preview(
     user: User,
     txt: bool,
     mut events: EventsQuery,
-    email_sender: &State<Box<dyn EmailSender>>,
-    uri_builder: UriBuilder<'_>,
+    email_sender: Box<dyn EmailSender>,
+    uri_builder: UriBuilder,
 ) -> HttpResult<PlainOrHtml> {
     let Some(poll) = events.with_id(id, &user).await?.and_then(|e| e.polling()) else {
         return Err(Status::NotFound.into());

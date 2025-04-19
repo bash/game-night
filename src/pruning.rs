@@ -1,5 +1,5 @@
 use crate::database::Repository;
-use crate::RocketExt as _;
+use crate::services::RocketResolveExt as _;
 use anyhow::Result;
 use rocket::fairing::{self, Fairing};
 use rocket::tokio::time::interval;
@@ -20,7 +20,7 @@ async fn start_pruning_with_error_handling(rocket: &Rocket<Orbit>) {
 }
 
 async fn start_pruning(rocket: &Rocket<Orbit>) -> Result<()> {
-    let repository = rocket.repository().await?;
+    let repository = rocket.resolve().await?;
     tokio::spawn(run_pruning(repository, rocket.shutdown()));
     Ok(())
 }

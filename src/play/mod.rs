@@ -87,7 +87,7 @@ async fn event_ics(
     id: EventId,
     user: User,
     mut events: EventsQuery,
-    uri_builder: UriBuilder<'_>,
+    uri_builder: UriBuilder,
 ) -> HttpResult<Ics> {
     let Some(StatefulEvent::Planned(event) | StatefulEvent::Archived(event)) =
         events.with_id(id, &user).await?

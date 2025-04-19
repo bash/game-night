@@ -1,3 +1,5 @@
+use crate::impl_from_request_for_service;
+use crate::services::{Resolve, ResolveContext};
 use anyhow::{Context as _, Result};
 use dyn_clone::DynClone;
 use headers::MessageBuilderExt;
@@ -6,9 +8,10 @@ use lettre::Message;
 #[cfg(unix)]
 use outbox::Outbox;
 use render::EmailRenderer;
-use rocket::async_trait;
+use rocket::fairing::{self, Fairing};
 use rocket::figment::value::magic::RelativePathBuf;
 use rocket::figment::Figment;
+use rocket::{async_trait, error};
 use rocket_dyn_templates::tera::Context;
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -18,6 +21,20 @@ mod message_id;
 pub(crate) use message_id::*;
 mod render;
 pub(crate) use render::*;
+
+pub(crate) fn email_sender_fairing() -> impl Fairing {
+    fairing::AdHoc::try_on_ignite("Email Sender", |rocket| {
+        Box::pin(async {
+            match EmailSenderImpl::from_figment(rocket.figment()).await {
+                Ok(sender) => Ok(rocket.manage(Box::new(sender) as Box<dyn EmailSender>)),
+                Err(error) => {
+                    error!("failed to initialize email sender:\n{:?}", error);
+                    Err(rocket)
+                }
+            }
+        })
+    })
+}
 
 #[async_trait]
 pub(crate) trait EmailSender: Send + Sync + fmt::Debug + DynClone {
@@ -32,6 +49,18 @@ pub(crate) trait EmailSender: Send + Sync + fmt::Debug + DynClone {
 }
 
 dyn_clone::clone_trait_object!(EmailSender);
+
+impl Resolve for Box<dyn EmailSender> {
+    async fn resolve(ctx: &ResolveContext<'_>) -> Result<Self> {
+        Ok(ctx
+            .rocket()
+            .state::<Self>()
+            .context("email sender not registered")?
+            .clone())
+    }
+}
+
+impl_from_request_for_service!(Box<dyn EmailSender>);
 
 pub(crate) trait EmailMessage: Send + Sync + EmailMessageContext {
     fn subject(&self) -> String;

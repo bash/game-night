@@ -1,17 +1,14 @@
 use crate::email::EmailMessage;
 use crate::event::{Event, EventEmailSender as DynEventEmailSender, Ics};
 use crate::fmt::LongEventTitle;
-use crate::uri::{HasUriBuilder as _, UriBuilder};
+use crate::services::{Resolve, ResolveContext};
+use crate::uri::UriBuilder;
 use crate::users::User;
-use crate::{uri, RocketExt as _};
-use anyhow::{Error, Result};
+use crate::{impl_from_request_for_service, uri};
+use anyhow::Result;
 use lettre::message::header::ContentType;
 use lettre::message::{Attachment, SinglePart};
 use rocket::http::uri::Absolute;
-use rocket::http::Status;
-use rocket::outcome::IntoOutcome;
-use rocket::request::{FromRequest, Outcome};
-use rocket::{async_trait, Orbit, Request, Rocket};
 use serde::Serialize;
 use time::format_description::FormatItem;
 use time::macros::format_description;
@@ -34,29 +31,20 @@ pub(super) async fn send_notification_emails(
 // TODO: rename this to something more suiting?
 // Maybe FinalizePollEmailSender?
 pub(crate) struct EventEmailSender {
-    email_sender: Box<dyn DynEventEmailSender>,
-    uri_builder: UriBuilder<'static>,
+    email_sender: Box<dyn DynEventEmailSender + 'static>,
+    uri_builder: UriBuilder,
 }
 
-impl EventEmailSender {
-    pub(crate) async fn from_rocket(rocket: &Rocket<Orbit>) -> Result<Self> {
+impl Resolve for EventEmailSender {
+    async fn resolve(ctx: &ResolveContext<'_>) -> Result<Self> {
         Ok(Self {
-            email_sender: rocket.event_email_sender().await?,
-            uri_builder: rocket.uri_builder().await?.into_static(),
+            email_sender: ctx.resolve().await?,
+            uri_builder: ctx.resolve().await?,
         })
     }
 }
 
-#[async_trait]
-impl<'r> FromRequest<'r> for EventEmailSender {
-    type Error = Error;
-
-    async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
-        EventEmailSender::from_rocket(request.rocket())
-            .await
-            .or_error(Status::InternalServerError)
-    }
-}
+impl_from_request_for_service!(EventEmailSender);
 
 impl EventEmailSender {
     pub(crate) async fn send(&mut self, event: &Event, user: &User) -> Result<()> {

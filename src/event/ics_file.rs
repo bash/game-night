@@ -20,14 +20,14 @@ use time_tz::{timezones, OffsetDateTimeExt};
 pub(crate) struct Ics(pub(crate) String);
 
 impl Ics {
-    pub(crate) fn from_event(event: &Event, uri_builder: &UriBuilder<'_>) -> Result<Ics> {
+    pub(crate) fn from_event(event: &Event, uri_builder: &UriBuilder) -> Result<Ics> {
         let mut calendar = ICalendar::new("2.0", "game-night");
         calendar.add_event(to_ical_event(event, uri_builder)?);
         Ok(Ics(calendar.to_string()))
     }
 }
 
-fn to_ical_event<'a>(event: &'a Event, uri_builder: &'a UriBuilder<'a>) -> Result<ics::Event<'a>> {
+fn to_ical_event<'a>(event: &'a Event, uri_builder: &'a UriBuilder) -> Result<ics::Event<'a>> {
     let starts_at = *event.starts_at;
     let mut ical_event = ics::Event::new(event_uid(event), format_as_floating(starts_at)?);
     ical_event.push(Summary::new(escape_text(format!(
