@@ -1,16 +1,16 @@
 use super::{ActiveEvent, Event, EventId, StatefulEvent};
 use crate::auth::is_invited;
+use crate::auto_resolve;
 use crate::{database::Repository, users::User};
 use anyhow::Result;
 use itertools::Itertools;
-use rocket::outcome::try_outcome;
-use rocket::request::{FromRequest, Outcome};
-use rocket::{async_trait, Request};
 use std::cmp::Reverse;
 
-#[derive(Debug)]
-pub(crate) struct EventsQuery {
-    repository: Box<dyn Repository>,
+auto_resolve! {
+    #[derive(Debug)]
+    pub(crate) struct EventsQuery {
+        repository: Box<dyn Repository>,
+    }
 }
 
 impl EventsQuery {
@@ -52,15 +52,5 @@ impl EventsQuery {
             .filter_map(|e| Event::try_from(e).ok())
             .sorted_by_key(|e| Reverse(e.starts_at.0))
             .next())
-    }
-}
-
-#[async_trait]
-impl<'r> FromRequest<'r> for EventsQuery {
-    type Error = <Box<dyn Repository> as FromRequest<'r>>::Error;
-
-    async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
-        let repository = try_outcome!(request.guard().await);
-        Outcome::Success(EventsQuery { repository })
     }
 }

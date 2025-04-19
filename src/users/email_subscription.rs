@@ -1,11 +1,8 @@
 use super::{User, UsersQuery};
+use crate::auto_resolve;
 use crate::event::StatefulEvent;
 use crate::iso_8601::Iso8601;
-use anyhow::{Error, Result};
-use rocket::async_trait;
-use rocket::outcome::try_outcome;
-use rocket::request::{FromRequest, Outcome};
-use rocket::Request;
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use time::{Date, OffsetDateTime};
 
@@ -30,9 +27,11 @@ impl EmailSubscription {
     }
 }
 
-#[derive(Debug)]
-pub(crate) struct SubscribedUsers {
-    users: UsersQuery,
+auto_resolve! {
+    #[derive(Debug)]
+    pub(crate) struct SubscribedUsers {
+        users: UsersQuery,
+    }
 }
 
 impl SubscribedUsers {
@@ -41,15 +40,5 @@ impl SubscribedUsers {
         let is_subscribed = |u: &User| u.email_subscription.is_subscribed(today);
         let invited = self.users.invited(event).await?;
         Ok(invited.into_iter().filter(is_subscribed).collect())
-    }
-}
-
-#[async_trait]
-impl<'r> FromRequest<'r> for SubscribedUsers {
-    type Error = Error;
-
-    async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
-        let users = try_outcome!(request.guard().await);
-        Outcome::Success(SubscribedUsers { users })
     }
 }

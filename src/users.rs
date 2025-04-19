@@ -4,10 +4,8 @@ use crate::iso_8601::Iso8601;
 use crate::template::PageBuilder;
 use anyhow::{Error, Result};
 use lettre::message::Mailbox;
-use rocket::outcome::try_outcome;
-use rocket::request::{FromRequest, Outcome};
 use rocket::response::Debug;
-use rocket::{async_trait, get, routes, Request, Route};
+use rocket::{get, routes, Route};
 use rocket_db_pools::sqlx;
 use rocket_dyn_templates::{context, Template};
 use serde::Serialize;
@@ -19,6 +17,7 @@ mod email_subscription_encoding;
 mod last_activity;
 pub(crate) use last_activity::*;
 mod symbol;
+use crate::auto_resolve;
 use crate::event::StatefulEvent;
 pub(crate) use symbol::*;
 
@@ -107,16 +106,20 @@ impl<Id> User<Id> {
 
 pub(crate) const INACTIVITY_THRESHOLD: Duration = Duration::days(9 * 30);
 
-#[derive(Debug)]
-pub(crate) struct UsersQuery(Box<dyn Repository>);
+auto_resolve! {
+    #[derive(Debug)]
+    pub(crate) struct UsersQuery {
+        repository: Box<dyn Repository>,
+    }
+}
 
 impl UsersQuery {
     pub(crate) async fn all(&mut self) -> Result<Vec<User>> {
-        self.0.get_users().await
+        self.repository.get_users().await
     }
 
     pub(crate) async fn active(&mut self) -> Result<Vec<User>> {
-        self.0.get_active_users(INACTIVITY_THRESHOLD).await
+        self.repository.get_active_users(INACTIVITY_THRESHOLD).await
     }
 
     pub(crate) async fn invited(&mut self, event: &StatefulEvent) -> Result<Vec<User>> {
@@ -129,15 +132,5 @@ impl UsersQuery {
         let is_invited = |u: &User| is_invited(u, event);
         let active = self.active().await?;
         Ok(active.into_iter().filter(is_invited).collect())
-    }
-}
-
-#[async_trait]
-impl<'r> FromRequest<'r> for UsersQuery {
-    type Error = <Box<dyn Repository> as FromRequest<'r>>::Error;
-
-    async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
-        let repository = try_outcome!(request.guard().await);
-        Outcome::Success(Self(repository))
     }
 }
