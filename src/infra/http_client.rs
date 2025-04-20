@@ -1,13 +1,5 @@
-use crate::services::{Resolve, ResolveContext};
-use anyhow::{Context as _, Result};
+use crate::impl_resolve_for_state;
 
 pub(crate) type HttpClient = reqwest::Client;
 
-impl Resolve for HttpClient {
-    async fn resolve(ctx: &ResolveContext<'_>) -> Result<Self> {
-        ctx.rocket()
-            .state()
-            .context("http client not registered")
-            .cloned()
-    }
-}
+impl_resolve_for_state!(HttpClient: "http client", without_from_request);

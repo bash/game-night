@@ -113,8 +113,13 @@ macro_rules! impl_from_request_for_service {
 #[macro_export]
 macro_rules! impl_resolve_for_state {
     ($S:ty: $description:literal) => {
+        $crate::impl_resolve_for_state!($S: $description, without_from_request);
+        $crate::impl_from_request_for_service!($S);
+    };
+
+    ($S:ty: $description:literal, without_from_request) => {
         impl $crate::services::Resolve for $S {
-            async fn resolve(ctx: &$crate::services::ResolveContext<'_>) -> Result<Self> {
+            async fn resolve(ctx: &$crate::services::ResolveContext<'_>) -> ::anyhow::Result<Self> {
                 use ::anyhow::Context as _;
                 Ok(ctx
                     .rocket()
@@ -123,8 +128,6 @@ macro_rules! impl_resolve_for_state {
                     .clone())
             }
         }
-
-        $crate::impl_from_request_for_service!($S);
     };
 }
 

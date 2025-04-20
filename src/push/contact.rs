@@ -1,5 +1,5 @@
-use crate::services::{Resolve, ResolveContext};
-use anyhow::{Context as _, Result};
+use crate::impl_resolve_for_state;
+use anyhow::Result;
 use rocket::figment::Figment;
 
 #[derive(Debug, Clone)]
@@ -13,11 +13,4 @@ impl VapidContact {
     }
 }
 
-impl Resolve for VapidContact {
-    async fn resolve(ctx: &ResolveContext<'_>) -> Result<Self> {
-        ctx.rocket()
-            .state()
-            .context("VAPID contact not registered")
-            .cloned()
-    }
-}
+impl_resolve_for_state!(VapidContact: "VAPID contact");
