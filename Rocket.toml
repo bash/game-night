@@ -21,3 +21,4 @@ key = "private/localhost+2-key.pem"
 
 [default.web_push]
 vapid_contact = "mailto:game-night@tau.garden"
+template_dir = "notifications"

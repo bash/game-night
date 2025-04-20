@@ -1,0 +1,6 @@
+{
+    "title": "New Poll for {% if poll.event.title %}Tau's Game Night «{{poll.event.title}}»{% else %}Tau's Game Night{% endif %}",
+    "body": "Help pick a date until until {{poll.open_until | time(format = '{date}')}} at {{poll.open_until | time(format='{time}')}}",
+    "navigate": "{{event_page_uri(event_id=poll.event.id)}}",
+    "requireInteraction": true
+}

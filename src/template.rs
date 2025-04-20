@@ -16,6 +16,7 @@ use rocket_dyn_templates::{Engines, Template};
 use serde::Serialize;
 use std::borrow::Cow;
 use std::sync::OnceLock;
+use tera_macros::tera::Tera;
 
 mod functions;
 pub(crate) use functions::*;
@@ -260,7 +261,11 @@ impl AccentColor {
 pub(crate) fn configure_template_engines(
     engines: &mut Engines,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    functions::register_custom_functions(&mut engines.tera);
-    assets::register_asset_map_functions(&mut engines.tera)?;
+    Ok(configure_tera(&mut engines.tera)?)
+}
+
+pub(crate) fn configure_tera(tera: &mut Tera) -> Result<()> {
+    functions::register_custom_functions(tera);
+    assets::register_asset_map_functions(tera)?;
     Ok(())
 }

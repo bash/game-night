@@ -8,7 +8,7 @@ use crate::event::{
     StatefulEvent,
 };
 use crate::iso_8601::Iso8601;
-use crate::push::{Notification, PushMessage, PushSender};
+use crate::push::PushSender;
 use crate::register::rocket_uri_macro_profile;
 use crate::template::PageBuilder;
 use crate::uri::UriBuilder;
@@ -303,22 +303,8 @@ impl NewPollNotificationSender {
                 manage_subscription_url: sub_url,
             };
             self.email_sender.send(&poll.event, &user, &email).await?;
-            const DATE_FORMAT: &[FormatItem] =
-                format_description!("[day padding:none].\u{2009}[month repr:long padding:none]");
             self.push_sender
-                .send(
-                    &PushMessage::from(Notification {
-                        body: Some(format!(
-                            "Help pick a date until {}",
-                            poll.open_until.format(DATE_FORMAT).expect("TODO")
-                        )),
-                        navigate: Some(
-                            uri!(crate::event::event_page(id = poll.event.id)).to_string(),
-                        ),
-                        ..Notification::new("New Poll for Tau's Game Night")
-                    }),
-                    user.id,
-                )
+                .send_templated("poll.json", context! { poll: &poll }, user.id)
                 .await?;
         }
 

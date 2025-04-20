@@ -1,11 +1,13 @@
-use super::{PushMessage, PushSubscription, VapidContact, WebPushKey};
+use super::{NotificationRenderer, PushMessage, PushSubscription, VapidContact, WebPushKey};
 use crate::auto_resolve;
 use crate::database::Repository;
 use crate::infra::HttpClient;
 use crate::users::UserId;
 use anyhow::Result;
 use http::StatusCode;
+use rocket::info;
 use rocket::tokio::sync::Mutex as TokioMutex;
+use serde::Serialize;
 use std::sync::Arc;
 use web_push::WebPushBuilder;
 
@@ -15,6 +17,7 @@ auto_resolve! {
         http_client: HttpClient,
         contact: VapidContact,
         key: WebPushKey,
+        renderer: NotificationRenderer,
     }
 }
 
@@ -24,6 +27,16 @@ impl PushSender {
             self.send_to_subscription(message, &subscription).await?;
         }
         Ok(())
+    }
+
+    pub(crate) async fn send_templated(
+        &mut self,
+        template_name: &str,
+        context: impl Serialize,
+        user_id: UserId,
+    ) -> Result<()> {
+        let notification = self.renderer.render(template_name, context)?;
+        self.send(&PushMessage::from(notification), user_id).await
     }
 
     async fn get_subscriptions(&mut self, user_id: UserId) -> Result<Vec<PushSubscription>> {

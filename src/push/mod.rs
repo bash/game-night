@@ -14,7 +14,9 @@ pub(crate) use sender::*;
 mod contact;
 mod notification;
 pub(crate) use notification::*;
+mod templating;
 mod testbed;
+pub(crate) use templating::*;
 
 pub(crate) fn routes() -> Vec<Route> {
     routes![
@@ -48,6 +50,13 @@ pub(crate) fn web_push_fairing() -> impl Fairing {
         Box::pin(async {
             let rocket = rocket.manage(PushEndpoints::default());
             let rocket = match VapidContact::from_figment(rocket.figment()) {
+                Ok(key) => rocket.manage(key),
+                Err(error) => {
+                    error!("failed to initialize web push:\n{:?}", error);
+                    return Err(rocket);
+                }
+            };
+            let rocket = match NotificationRenderer::from_figment(rocket.figment()) {
                 Ok(key) => rocket.manage(key),
                 Err(error) => {
                     error!("failed to initialize web push:\n{:?}", error);

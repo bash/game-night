@@ -42,24 +42,6 @@ pub(crate) struct Notification {
     pub(crate) data: Option<serde_json::Value>,
 }
 
-impl Notification {
-    pub(crate) fn new(title: impl Into<String>) -> Self {
-        Notification {
-            title: title.into(),
-            body: None,
-            navigate: None,
-            icon: None,
-            badge: None,
-            image: None,
-            require_interaction: None,
-            renotify: None,
-            silent: None,
-            actions: Vec::new(),
-            data: None,
-        }
-    }
-}
-
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub(crate) struct NotificationAction {
     pub(crate) action: String,
