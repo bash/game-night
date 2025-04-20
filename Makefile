@@ -83,3 +83,7 @@ deploy: publish redeploy
 redeploy:
 	rsync --archive --verbose --human-readable --delete --no-owner --no-group $(PUBLISH_DIR)/ root@fedora-01.infra.tau.garden:/opt/game-night/bin/
 	ssh root@fedora-01.infra.tau.garden -C 'export SYSTEMD_COLORS=true; systemctl restart game-night && systemctl status game-night'
+
+fetch-live-db:
+	scp root@fedora-01.infra.tau.garden:/opt/game-night/data/database.sqlite database.sqlite
+	echo "DELETE FROM web_push_subscriptions;" | sqlite3 database.sqlite

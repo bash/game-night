@@ -1,11 +1,8 @@
-use crate::users::UserId;
-use crate::HttpResult;
 use anyhow::Result;
 use contact::VapidContact;
 use rocket::fairing::{self, Fairing};
 use rocket::http::uri::Origin;
-use rocket::serde::json::Json;
-use rocket::{error, post, routes, uri, Build, Rocket, Route};
+use rocket::{error, routes, uri, Build, Rocket, Route};
 
 mod key;
 pub(crate) use key::*;
@@ -17,27 +14,16 @@ pub(crate) use sender::*;
 mod contact;
 mod notification;
 pub(crate) use notification::*;
+mod testbed;
 
 pub(crate) fn routes() -> Vec<Route> {
     routes![
         manage::get_public_key,
         manage::subscribe,
         manage::unsubscribe,
-        test,
+        testbed::testbed,
+        testbed::send_push_notification,
     ]
-}
-
-#[post("/_api/push/test/<user_id>", format = "json", data = "<form>")]
-pub(crate) async fn test(
-    user_id: i64,
-    form: Json<Notification>,
-    mut sender: PushSender,
-) -> HttpResult<()> {
-    let user_id = UserId(user_id);
-    sender
-        .send(&PushMessage::from(form.into_inner()), user_id)
-        .await?;
-    Ok(())
 }
 
 #[derive(Debug, serde::Serialize)]

@@ -124,6 +124,11 @@ hr {
     }
 }
 
+._mono {
+    font-family: monospace;
+    font-size: 0.8em;
+}
+
 a {
     color: var(--accent-color);
     font-weight: bold;
