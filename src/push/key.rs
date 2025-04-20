@@ -1,4 +1,6 @@
 use anyhow::Result;
+use rocket::request::{FromRequest, Outcome};
+use rocket::{async_trait, Request, State};
 use std::io;
 use std::path::Path;
 use web_push::jwt_simple::algorithms::ES256KeyPair;
@@ -8,6 +10,18 @@ pub(crate) struct WebPushKey(ES256KeyPair);
 impl WebPushKey {
     pub(crate) fn read_or_generate(path: impl AsRef<Path>) -> Result<Self> {
         crate::fs::read_or_generate(path.as_ref(), WebPushKeyFile)
+    }
+}
+
+#[async_trait]
+impl<'r> FromRequest<'r> for &'r WebPushKey {
+    type Error = <&'r State<WebPushKey> as FromRequest<'r>>::Error;
+
+    async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
+        request
+            .guard::<&'r State<WebPushKey>>()
+            .await
+            .map(|s| s.inner())
     }
 }
 
