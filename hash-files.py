@@ -8,7 +8,7 @@ from typing import List
 
 PUBLISH_DIR = "publish"
 PUBLIC_DIR = path.join(PUBLISH_DIR, "public")
-INCLUDE = ["icons/*.svg", "js/*.js", "main.css"]
+INCLUDE = ["icons/*.svg", "js/*.js", "main.css", "service-worker.js"]
 
 
 def hash_files():

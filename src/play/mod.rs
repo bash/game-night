@@ -83,7 +83,7 @@ async fn join(
 }
 
 #[get("/event/<id>/event.ics")]
-async fn event_ics(
+pub(crate) async fn event_ics(
     id: EventId,
     user: User,
     mut events: EventsQuery,

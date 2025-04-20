@@ -75,5 +75,11 @@
 
     {% block scripts %}
     {% endblock scripts %}
+    <script type="module" async>
+        const serviceWorkerUrl = {{asset(path='/service-worker.js') | json_encode | safe}}
+        navigator.serviceWorker.register(serviceWorkerUrl, { type: 'module', scope: '/' })
+            .then(registration => registration.update())
+            .catch(error => console.warn('Service worker registration failed', error))
+    </script>
 </body>
 </html>

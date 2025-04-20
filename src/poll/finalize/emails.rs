@@ -1,6 +1,7 @@
 use crate::email::EmailMessage;
 use crate::event::{Event, EventEmailSender as DynEventEmailSender, Ics};
 use crate::fmt::LongEventTitle;
+use crate::push::PushSender;
 use crate::uri::UriBuilder;
 use crate::users::User;
 use crate::{auto_resolve, uri};
@@ -8,6 +9,7 @@ use anyhow::Result;
 use lettre::message::header::ContentType;
 use lettre::message::{Attachment, SinglePart};
 use rocket::http::uri::Absolute;
+use rocket_dyn_templates::context;
 use serde::Serialize;
 use time::format_description::FormatItem;
 use time::macros::format_description;
@@ -28,11 +30,12 @@ pub(super) async fn send_notification_emails(
 }
 
 // TODO: rename this to something more suiting?
-// Maybe FinalizePollEmailSender?
+// Maybe FinalizePollNotificationSender?
 auto_resolve! {
     pub(crate) struct EventEmailSender {
         email_sender: Box<dyn DynEventEmailSender + 'static>,
         uri_builder: UriBuilder,
+        push_sender: PushSender,
     }
 }
 
@@ -49,6 +52,9 @@ impl EventEmailSender {
             ics_file,
         };
         self.email_sender.send(event, user, &email).await?;
+        self.push_sender
+            .send_templated("invited.json", context! { event: event }, user.id)
+            .await?;
         Ok(())
     }
 
@@ -62,6 +68,9 @@ impl EventEmailSender {
             name: &user.name,
         };
         self.email_sender.send(event, user, &email).await?;
+        self.push_sender
+            .send_templated("missed.json", context! { event: event }, user.id)
+            .await?;
         Ok(())
     }
 }

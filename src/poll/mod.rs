@@ -25,6 +25,7 @@ mod open;
 pub(crate) use open::*;
 mod admin;
 mod skip;
+pub(crate) use skip::*;
 
 pub(crate) fn routes() -> Vec<Route> {
     routes![

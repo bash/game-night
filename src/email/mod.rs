@@ -1,5 +1,4 @@
-use crate::impl_from_request_for_service;
-use crate::services::{Resolve, ResolveContext};
+use crate::impl_resolve_for_state;
 use anyhow::{Context as _, Result};
 use dyn_clone::DynClone;
 use headers::MessageBuilderExt;
@@ -50,17 +49,7 @@ pub(crate) trait EmailSender: Send + Sync + fmt::Debug + DynClone {
 
 dyn_clone::clone_trait_object!(EmailSender);
 
-impl Resolve for Box<dyn EmailSender> {
-    async fn resolve(ctx: &ResolveContext<'_>) -> Result<Self> {
-        Ok(ctx
-            .rocket()
-            .state::<Self>()
-            .context("email sender not registered")?
-            .clone())
-    }
-}
-
-impl_from_request_for_service!(Box<dyn EmailSender>);
+impl_resolve_for_state!(Box<dyn EmailSender>: "email sender");
 
 pub(crate) trait EmailMessage: Send + Sync + EmailMessageContext {
     fn subject(&self) -> String;

@@ -27,12 +27,14 @@ mod event;
 mod fmt;
 mod fs;
 mod groups;
+mod infra;
 mod invitation;
 mod iso_8601;
 mod login;
 mod play;
 mod poll;
 mod pruning;
+mod push;
 mod register;
 mod result;
 mod socket_activation;
@@ -57,6 +59,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .mount("/", users::routes())
         .mount("/", login::routes())
         .mount("/", event::routes())
+        .mount("/", push::routes())
         .register("/", login::catchers())
         .register("/", auth::catchers())
         .register("/", catchers![not_found])
@@ -68,7 +71,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .attach(login::auto_login_fairing())
         .attach(poll_finalizer())
         .attach(database_pruning())
-        .attach(users::LastActivity);
+        .attach(users::LastActivity)
+        .attach(push::web_push_fairing())
+        .manage(infra::HttpClient::new());
 
     if let Some(b) = listener_from_env()? {
         rocket.launch_on(b).await?;

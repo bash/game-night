@@ -8,11 +8,12 @@ use crate::event::{
     StatefulEvent,
 };
 use crate::iso_8601::Iso8601;
+use crate::push::PushSender;
 use crate::register::rocket_uri_macro_profile;
 use crate::template::PageBuilder;
-use crate::uri;
 use crate::uri::UriBuilder;
 use crate::users::{SubscribedUsers, User};
+use crate::{auto_resolve, uri};
 use anyhow::{Context as _, Error, Result};
 use itertools::Itertools as _;
 use rocket::form::Form;
@@ -167,11 +168,9 @@ impl CalendarDayPrefill {
 #[post("/poll/new", data = "<form>")]
 pub(super) async fn new_poll(
     mut repository: Box<dyn Repository>,
-    subscribed_users: SubscribedUsers,
-    email_sender: Box<dyn EventEmailSender<Polling>>,
     form: Form<NewPollData<'_>>,
     user: AuthorizedTo<ManagePoll>,
-    uri_builder: UriBuilder,
+    mut notification_sender: NewPollNotificationSender,
 ) -> Result<Redirect, Debug<Error>> {
     let location = repository
         .get_location_by_id(form.location)
@@ -179,7 +178,7 @@ pub(super) async fn new_poll(
         .context("invalid location id")?;
     let new_poll = to_poll(form.into_inner(), location, &user)?;
     let poll = repository.add_poll(new_poll).await?;
-    send_poll_emails(subscribed_users, email_sender, uri_builder, &poll).await?;
+    notification_sender.execute(&poll).await?;
     Ok(Redirect::to(uri!(event_page(id = poll.event.id))))
 }
 
@@ -278,28 +277,37 @@ where
     }
 }
 
-async fn send_poll_emails(
-    mut subscribed_users: SubscribedUsers,
-    mut email_sender: Box<dyn EventEmailSender<Polling>>,
-    uri_builder: UriBuilder,
-    poll: &Poll,
-) -> Result<()> {
-    let event = StatefulEvent::from_poll(poll.clone(), OffsetDateTime::now_utc());
-    for user in subscribed_users.for_event(&event).await? {
-        let open_until = *poll.open_until;
-        let poll_uri = uri!(auto_login(&user, open_until); uri_builder, crate::event::event_page(id = poll.event.id)).await?;
-        let skip_poll_uri =
-            uri!(auto_login(&user, open_until); uri_builder, super::skip::skip_poll(id = poll.event.id)).await?;
-        let sub_url = uri!(auto_login(&user, open_until); uri_builder, profile()).await?;
-        let email = PollEmail {
-            name: user.name.clone(),
-            poll: poll.clone(),
-            poll_uri,
-            skip_poll_uri,
-            manage_subscription_url: sub_url,
-        };
-        email_sender.send(&poll.event, &user, &email).await?;
+auto_resolve! {
+    pub(crate) struct NewPollNotificationSender {
+        subscribed_users: SubscribedUsers,
+        email_sender: Box<dyn EventEmailSender<Polling>>,
+        push_sender: PushSender,
+        uri_builder: UriBuilder,
     }
+}
 
-    Ok(())
+impl NewPollNotificationSender {
+    async fn execute(&mut self, poll: &Poll) -> Result<()> {
+        let event = StatefulEvent::from_poll(poll.clone(), OffsetDateTime::now_utc());
+        for user in self.subscribed_users.for_event(&event).await? {
+            let open_until = *poll.open_until;
+            let poll_uri = uri!(auto_login(&user, open_until); self.uri_builder, crate::event::event_page(id = poll.event.id)).await?;
+            let skip_poll_uri =
+                uri!(auto_login(&user, open_until); self.uri_builder, super::skip::skip_poll(id = poll.event.id)).await?;
+            let sub_url = uri!(auto_login(&user, open_until); self.uri_builder, profile()).await?;
+            let email = PollEmail {
+                name: user.name.clone(),
+                poll: poll.clone(),
+                poll_uri,
+                skip_poll_uri,
+                manage_subscription_url: sub_url,
+            };
+            self.email_sender.send(&poll.event, &user, &email).await?;
+            self.push_sender
+                .send_templated("poll.json", context! { poll: &poll }, user.id)
+                .await?;
+        }
+
+        Ok(())
+    }
 }

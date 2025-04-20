@@ -1,18 +1,23 @@
 use super::delete::rocket_uri_macro_delete_profile_page;
 use super::AstronomicalSymbol;
 use crate::database::Repository;
+use crate::push::PushEndpoints;
 use crate::template::PageBuilder;
 use crate::users::{rocket_uri_macro_list_users, EmailSubscription, ASTRONOMICAL_SYMBOLS};
 use crate::users::{User, UserPatch};
 use anyhow::{Error, Result};
 use rocket::form::Form;
 use rocket::response::{Debug, Redirect};
-use rocket::{get, post, uri, FromForm};
+use rocket::{get, post, uri, FromForm, State};
 use rocket_dyn_templates::{context, Template};
 use time::Date;
 
 #[get("/profile")]
-pub(crate) fn profile(page: PageBuilder, user: User) -> Template {
+pub(crate) fn profile(
+    page: PageBuilder,
+    user: User,
+    push_endpoints: &State<PushEndpoints>,
+) -> Template {
     page.render(
         "register/profile",
         context! {
@@ -20,6 +25,7 @@ pub(crate) fn profile(page: PageBuilder, user: User) -> Template {
             list_users_uri: user.can_manage_users().then(|| uri!(list_users())),
             delete_profile_uri: uri!(delete_profile_page()),
             symbols: user.can_update_symbol().then_some(ASTRONOMICAL_SYMBOLS),
+            push_endpoints: push_endpoints.inner(),
         },
     )
 }

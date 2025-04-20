@@ -111,6 +111,27 @@ macro_rules! impl_from_request_for_service {
 }
 
 #[macro_export]
+macro_rules! impl_resolve_for_state {
+    ($S:ty: $description:literal) => {
+        $crate::impl_resolve_for_state!($S: $description, without_from_request);
+        $crate::impl_from_request_for_service!($S);
+    };
+
+    ($S:ty: $description:literal, without_from_request) => {
+        impl $crate::services::Resolve for $S {
+            async fn resolve(ctx: &$crate::services::ResolveContext<'_>) -> ::anyhow::Result<Self> {
+                use ::anyhow::Context as _;
+                Ok(ctx
+                    .rocket()
+                    .state::<Self>()
+                    .context(concat!($description, " not registered"))?
+                    .clone())
+            }
+        }
+    };
+}
+
+#[macro_export]
 macro_rules! auto_resolve {
     ($(#[$($meta:meta)*])? $vis:vis struct $name:ident {$(
         $(#[$($field_meta:meta)*])?
@@ -125,7 +146,7 @@ macro_rules! auto_resolve {
         }
 
         impl $crate::services::Resolve for $name {
-            async fn resolve(ctx: &$crate::services::ResolveContext<'_>) -> Result<Self> {
+            async fn resolve(ctx: &$crate::services::ResolveContext<'_>) -> ::anyhow::Result<Self> {
                 Ok(Self {
                     $($field_name : ctx.resolve().await?),*
                 })

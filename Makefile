@@ -27,7 +27,7 @@ $(RELATIVE_TIME_ELEMENT): $(NPM_SENTINEL) node_modules/@github/relative-time-ele
 	cp node_modules/@github/relative-time-element/dist/bundle.js $@
 
 sqlx-prepare:
-	DATABASE_URL=sqlite://./database.sqlite cargo sqlx prepare
+	DATABASE_URL=sqlite://./database.sqlite cargo sqlx prepare -- $(CARGO_FLAGS)
 
 check: sqlx-prepare
 	cargo clippy $(CARGO_FLAGS)
@@ -72,7 +72,7 @@ publish: all
 	podman volume create --ignore game-night-cargo-registry
 	podman run -t --rm -v game-night-cargo-registry:/root/.cargo/registry -v ./:/build:z --workdir /build game-night-build cargo build --release
 	cp target/release/game-night $(PUBLISH_DIR)/
-	cp -R {public,templates,emails} $(PUBLISH_DIR)/
+	cp -R {public,templates,emails,notifications} $(PUBLISH_DIR)/
 	python3 hash-files.py
 	find $(PUBLISH_DIR) -name '.DS_Store' -exec rm {} +
 	gzip --keep --recursive $(PUBLISH_DIR)/public --best
@@ -83,3 +83,7 @@ deploy: publish redeploy
 redeploy:
 	rsync --archive --verbose --human-readable --delete --no-owner --no-group $(PUBLISH_DIR)/ root@fedora-01.infra.tau.garden:/opt/game-night/bin/
 	ssh root@fedora-01.infra.tau.garden -C 'export SYSTEMD_COLORS=true; systemctl restart game-night && systemctl status game-night'
+
+fetch-live-db:
+	scp root@fedora-01.infra.tau.garden:/opt/game-night/data/database.sqlite database.sqlite
+	echo "DELETE FROM web_push_subscriptions;" | sqlite3 database.sqlite

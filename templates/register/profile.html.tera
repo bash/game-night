@@ -16,20 +16,7 @@
         <input type="email" class="-inline" value="{{user.email_address}}" disabled>.
     </p>
 
-    {% if symbols %}
-    <fieldset>
-        The following symbol is my avatar:
-
-        <div class="symbol-picker">
-            {% for symbol in symbols %}
-                <label class="symbol">
-                    <span class="label">{{symbol}}</span>
-                    <input type="radio" name="symbol" value="{{symbol}}" {% if symbol == user.symbol %}checked{% endif %} autocomplete="off">
-                </label>
-            {% endfor %}
-        </div>
-    </fieldset>
-    {% endif %}
+    <h2>Notifications</h2>
 
     <p>
         Please
@@ -37,7 +24,7 @@
             <option value="on">send</option>
             <option value="off">do not send</option>
         </select>
-        me emails about <em>Tau's Game Night</em><span data-visible-if="subscription=on"><template>.</template></span>
+        me notifications about <em>Tau's Game Night</em><span data-visible-if="subscription=on"><template>.</template></span>
 
         <span data-visible-if="subscription=off">
             <template>
@@ -56,6 +43,27 @@
             </template>
         </span>
     </p>
+
+    <p>
+        You can also receive push notifications in addition to emails.<br>
+        <push-subscription-button endpoints="{{push_endpoints | json_encode}}"></push-subscription-button>
+    </p>
+
+    {% if symbols %}
+    <h2>Avatar</h2>
+    <fieldset>
+        The following symbol is my avatar:
+
+        <div class="symbol-picker">
+            {% for symbol in symbols %}
+                <label class="symbol">
+                    <span class="label">{{symbol}}</span>
+                    <input type="radio" name="symbol" value="{{symbol}}" {% if symbol == user.symbol %}checked{% endif %} autocomplete="off">
+                </label>
+            {% endfor %}
+        </div>
+    </fieldset>
+    {% endif %}
 
     <fieldset class="-actions">
         <button type="submit">Save my details</button>
@@ -124,4 +132,5 @@
     formValues = null
 </script>
 <script type="module" src="{{asset(path='/js/open-modal.js')}}"></script>
+<script type="module" src="{{asset(path='/js/push-subscription.js')}}"></script>
 {% endblock scripts %}
