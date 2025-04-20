@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO web_push_subscriptions (endpoint, keys, user_id) VALUES (?1, ?2, ?3)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "ece2807d54d27ccacda5d76416c1c249a47a8cf3904da177d2762b0e27ace156"
+}

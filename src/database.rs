@@ -7,7 +7,9 @@ use crate::groups::Group;
 use crate::invitation::{Invitation, InvitationId, Passphrase};
 use crate::login::{LoginToken, LoginTokenType};
 use crate::poll::{Answer, Poll, PollOption, PollOptionPatch, PollStage};
+use crate::push::PushSubscription;
 use crate::register::EmailVerificationCode;
+use crate::services::{Resolve, ResolveContext};
 use crate::users::{User, UserId, UserPatch};
 use crate::{impl_from_request_for_service, GameNightDatabase};
 use anyhow::{anyhow, Context as _, Ok, Result};
@@ -19,7 +21,6 @@ use std::fmt;
 use time::OffsetDateTime;
 
 mod entity;
-use crate::services::{Resolve, ResolveContext};
 pub(crate) use entity::*;
 
 #[async_trait]
@@ -92,6 +93,12 @@ pub(crate) trait Repository: EventEmailsRepository + fmt::Debug + Send {
     async fn add_participant(&mut self, event: EventId, user: UserId) -> Result<()>;
 
     async fn remove_participant(&mut self, event: EventId, user: UserId) -> Result<()>;
+
+    async fn add_push_subscription(&mut self, subscription: PushSubscription<New>) -> Result<()>;
+
+    async fn remove_push_subscription(&mut self, user_id: UserId, endpoint: &str) -> Result<()>;
+
+    async fn get_push_subscriptions(&mut self, user_id: UserId) -> Result<Vec<PushSubscription>>;
 
     async fn prune(&mut self) -> Result<u64>;
 
@@ -582,6 +589,38 @@ impl Repository for SqliteRepository {
         .execute(self.executor())
         .await?;
         Ok(())
+    }
+
+    async fn add_push_subscription(&mut self, subscription: PushSubscription<New>) -> Result<()> {
+        sqlx::query!(
+            "INSERT INTO web_push_subscriptions (endpoint, keys, user_id) VALUES (?1, ?2, ?3)",
+            subscription.endpoint,
+            subscription.keys,
+            subscription.user_id,
+        )
+        .execute(self.executor())
+        .await?;
+        Ok(())
+    }
+
+    async fn remove_push_subscription(&mut self, user_id: UserId, endpoint: &str) -> Result<()> {
+        sqlx::query!(
+            "DELETE FROM web_push_subscriptions WHERE user_id = ?1 AND endpoint = ?2",
+            user_id,
+            endpoint,
+        )
+        .execute(self.executor())
+        .await?;
+        Ok(())
+    }
+
+    async fn get_push_subscriptions(&mut self, user_id: UserId) -> Result<Vec<PushSubscription>> {
+        Ok(
+            sqlx::query_as("SELECT * FROM web_push_subscriptions WHERE user_id = ?1")
+                .bind(user_id)
+                .fetch_all(self.executor())
+                .await?,
+        )
     }
 
     async fn prune(&mut self) -> Result<u64> {

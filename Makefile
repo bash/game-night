@@ -27,7 +27,7 @@ $(RELATIVE_TIME_ELEMENT): $(NPM_SENTINEL) node_modules/@github/relative-time-ele
 	cp node_modules/@github/relative-time-element/dist/bundle.js $@
 
 sqlx-prepare:
-	DATABASE_URL=sqlite://./database.sqlite cargo sqlx prepare
+	DATABASE_URL=sqlite://./database.sqlite cargo sqlx prepare -- $(CARGO_FLAGS)
 
 check: sqlx-prepare
 	cargo clippy $(CARGO_FLAGS)

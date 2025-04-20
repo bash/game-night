@@ -74,30 +74,45 @@
     <input type="hidden" name="auth">
     <input type="hidden" name="p256dh">
     <button type="button" data-web-push-subscribe-button>Subscribe</button>
+    <button type="button" data-web-push-unsubscribe-button>Unsubscribe</button>
 </form>
-
-<script type="module">
-    const webPushKey = {{push_key | json_encode | safe}}
-    const button = document.querySelector('[data-web-push-subscribe-button]')
-    const form = button.form
-    const endpointField = form.querySelector('[name="endpoint"]')
-    const authField = form.querySelector('[name="auth"]')
-    const p256dhField = form.querySelector('[name="p256dh"]')
-
-    button.addEventListener('click', async () => {
-        button.disabled = true
-        const registration = await navigator.serviceWorker.ready
-        const subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: webPushKey })
-        const { endpoint, keys: { auth, p256dh } } = subscription.toJSON()
-        endpointField.value = endpoint
-        authField.value = auth
-        p256dhField.value = p256dh
-        form.submit()
-    })
-</script>
 {% endblock %}
 
 {% block scripts %}
+<script type="module">
+    const endpoints = {{push_endpoints | json_encode | safe}}
+    const subscribeButton = document.querySelector('[data-web-push-subscribe-button]')
+    subscribeButton.addEventListener('click', async () => {
+        subscribeButton.disabled = true
+        const webPushKey = await fetch(endpoints.get_public_key).then(r => r.text())
+        const registration = await navigator.serviceWorker.ready
+        const subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: webPushKey })
+        const { endpoint, keys } = subscription.toJSON()
+        await fetch(endpoints.subscribe, {
+          method: 'post',
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ endpoint, keys })
+        })
+    })
+
+    const unsubscribeButton = document.querySelector('[data-web-push-unsubscribe-button]')
+    unsubscribeButton.addEventListener('click', async () => {
+        unsubscribeButton.disabled = true
+        const registration = await navigator.serviceWorker.ready
+        const subscription = await registration.pushManager.getSubscription()
+        const endpoint = subscription.endpoint
+        await subscription.unsubscribe()
+        await fetch(endpoints.unsubscribe, {
+          method: 'post',
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ endpoint })
+        })
+    })
+</script>
 <script id="form-values" type="application/json">
     {% if user.email_subscription.type == 'permanently_unsubscribed' %}{% set permanence = 'permanent' %}
     {% else %}{% set permanence = 'temporary' %}{% endif %}
