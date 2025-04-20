@@ -1,0 +1,8 @@
+{
+    "title": "Heyoooo {{user.name}} 👋{{random_skin_tone_modifier()}}",
+    "body": "This is what a notification from Tau's Game Night would look like. Thank you for testing {{random_heart()}}",
+    "navigate": "/",
+    "tag": "self-test",
+    "renotify": true,
+    "requireInteraction": true
+}

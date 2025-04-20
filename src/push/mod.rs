@@ -1,8 +1,12 @@
+use crate::users::User;
+use crate::HttpResult;
 use anyhow::Result;
 use contact::VapidContact;
 use rocket::fairing::{self, Fairing};
 use rocket::http::uri::Origin;
-use rocket::{error, routes, uri, Build, Rocket, Route};
+use rocket::response::Redirect;
+use rocket::{error, post, routes, uri, Build, Rocket, Route};
+use rocket_dyn_templates::context;
 
 mod key;
 pub(crate) use key::*;
@@ -25,7 +29,16 @@ pub(crate) fn routes() -> Vec<Route> {
         manage::unsubscribe,
         testbed::testbed,
         testbed::send_push_notification,
+        self_test,
     ]
+}
+
+#[post("/users/push/self-test")]
+pub(crate) async fn self_test(user: User, mut push_sender: PushSender) -> HttpResult<Redirect> {
+    push_sender
+        .send_templated("self-test.json", context! { user: &user }, user.id)
+        .await?;
+    Ok(Redirect::to(uri!(crate::register::profile())))
 }
 
 #[derive(Debug, serde::Serialize)]

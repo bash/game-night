@@ -11,6 +11,10 @@ fieldset {
         margin-bottom: .5rem;
     }
 
+    p {
+        margin-bottom: .5em;
+    }
+
     &.-actions {
         margin-top: calc(var(--inter-block-gap) * 2);
     }

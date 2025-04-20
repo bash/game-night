@@ -24,6 +24,7 @@ pub(crate) fn profile(
             can_update_name: user.can_update_name(),
             list_users_uri: user.can_manage_users().then(|| uri!(list_users())),
             delete_profile_uri: uri!(delete_profile_page()),
+            push_self_test_uri: uri!(crate::push::self_test),
             symbols: user.can_update_symbol().then_some(ASTRONOMICAL_SYMBOLS),
             push_endpoints: push_endpoints.inner(),
         },
