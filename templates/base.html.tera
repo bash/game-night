@@ -45,6 +45,7 @@
     </nav>
 
     <main id="main">
+        <button onclick="Notification.requestPermission()">Request</button>
         <header>
             <h1>
                 {% block title %}
@@ -75,5 +76,6 @@
 
     {% block scripts %}
     {% endblock scripts %}
+    <script type="module" src="/js/service-worker-registration.js" async></script>
 </body>
 </html>
