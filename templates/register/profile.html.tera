@@ -48,9 +48,6 @@
         You can also receive push notifications in addition to emails.
 
         <push-subscription-button endpoints="{{push_endpoints | json_encode}}"></push-subscription-button>
-
-        <button type="button" data-web-push-subscribe-button>Subscribe on this device</button>
-        <button type="button" data-web-push-unsubscribe-button>Unsubscribe</button>
     </p>
 
     {% if symbols %}
@@ -84,137 +81,6 @@
 {% endblock %}
 
 {% block scripts %}
-<script type="module">
-  const State = {
-    WAITING_FOR_SERVICE_WORKER: 1,
-    NOT_SUBSCRIBED: 2,
-    SUBSCRIBING: 3,
-    SUBSCRIBED: 4,
-    UNSUBSCRIBING: 5,
-  }
-  class PushSubscriptionButton extends HTMLElement {
-    #state = State.WAITING_FOR_SERVICE_WORKER
-    #endpoints
-    #button
-    #pushManager
-
-    connectedCallback() {
-      this.#endpoints = JSON.parse(this.getAttribute('endpoints'))
-      this.#button = document.createElement('button')
-      this.#button.addEventListener('click', (event) => this.#onClick(event))
-      this.append(this.#button)
-      this.#update()
-      this.#getPushManager()
-    }
-
-    #setState(state) {
-      this.#state = state
-      this.#update()
-    }
-
-    #update() {
-      this.#updateEnabled()
-      this.#updateLabel()
-    }
-
-    #updateEnabled() {
-      this.#button.disabled = !(
-        this.#state === State.SUBSCRIBED ||
-        this.#state === State.NOT_SUBSCRIBED)
-    }
-
-    #updateLabel() {
-      switch (this.#state) {
-        case State.WAITING_FOR_SERVICE_WORKER:
-        case State.NOT_SUBSCRIBED:
-          this.#button.innerText = 'Subscribe on this device'
-          break
-        case State.SUBSCRIBING:
-          this.#button.innerText = 'Subscribing...'
-          break
-        case State.SUBSCRIBED:
-          this.#button.innerText = 'Unsubscribe'
-          break
-        case State.UNSUBSCRIBING:
-          this.#button.innerText = 'Unsubscribing...'
-          break
-      }
-    }
-
-    async #getPushManager() {
-      const { pushManager } = await navigator.serviceWorker.ready
-      const subscription = await pushManager.getSubscription()
-      const state = subscription ? State.SUBSCRIBED : State.NOT_SUBSCRIBED
-      this.#pushManager = pushManager
-      this.#setState(state)
-    }
-
-    #onClick(event) {
-      event.preventDefault()
-      switch (this.#state) {
-        case State.NOT_SUBSCRIBED:
-          return this.#subscribe();
-        case State.SUBSCRIBED:
-          return this.#unsubscribe();
-      }
-    }
-
-    async #subscribe() {
-       const webPushKey = await fetch(this.#endpoints.get_public_key).then(r => r.text())
-       console.log(webPushKey)
-    }
-
-    async #unsubscribe() {
-    }
-  }
-  customElements.define("push-subscription-button", PushSubscriptionButton)
-</script>
-
-<script type="module">
-    const endpoints = {{push_endpoints | json_encode | safe}}
-    const subscribeButton = document.querySelector('[data-web-push-subscribe-button]')
-    subscribeButton.addEventListener('click', logErrors(async () => {
-        subscribeButton.disabled = true
-        const webPushKey = await fetch(endpoints.get_public_key).then(r => r.text())
-        const registration = await navigator.serviceWorker.ready
-        const subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: webPushKey })
-        const { endpoint, keys } = subscription.toJSON()
-        await fetch(endpoints.subscribe, {
-          method: 'post',
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ endpoint, keys })
-        })
-    }))
-
-    const unsubscribeButton = document.querySelector('[data-web-push-unsubscribe-button]')
-    unsubscribeButton.addEventListener('click', logErrors(async () => {
-        unsubscribeButton.disabled = true
-        const registration = await navigator.serviceWorker.ready
-        const subscription = await registration.pushManager.getSubscription()
-        const endpoint = subscription.endpoint
-        await subscription.unsubscribe()
-        await fetch(endpoints.unsubscribe, {
-          method: 'post',
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ endpoint })
-        })
-    }))
-
-    function logErrors(f) {
-      return async (...args) => {
-        try {
-          await f(...args)
-        } catch (e) {
-          console.error(e)
-          throw e
-        }
-      }
-    }
-</script>
 <script id="form-values" type="application/json">
     {% if user.email_subscription.type == 'permanently_unsubscribed' %}{% set permanence = 'permanent' %}
     {% else %}{% set permanence = 'temporary' %}{% endif %}
@@ -267,4 +133,5 @@
     formValues = null
 </script>
 <script type="module" src="{{asset(path='/js/open-modal.js')}}"></script>
+<script type="module" src="{{asset(path='/js/push-subscription.js')}}"></script>
 {% endblock scripts %}
