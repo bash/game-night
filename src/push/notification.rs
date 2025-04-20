@@ -31,6 +31,9 @@ pub(crate) struct Notification {
     /// If `true`, then tag also must be set.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) renotify: Option<bool>,
+    /// A string representing an identifying tag for the notification.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) tag: Option<String>,
     /// A boolean value specifying whether the notification should be silent,
     /// i.e., no sounds or vibrations should be issued regardless of the device settings.
     #[serde(skip_serializing_if = "Option::is_none")]

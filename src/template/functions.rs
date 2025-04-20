@@ -1,5 +1,6 @@
 use super::AccentColor;
 use crate::decorations::{Hearts, SkinToneModifiers};
+use crate::event::EventId;
 use crate::iso_8601::Iso8601;
 use crate::users::EmailSubscription;
 use rand::rngs::SmallRng;
@@ -24,6 +25,9 @@ pub(crate) fn register_custom_functions(tera: &mut Tera) {
     tera.register_function("random_skin_tone_modifier", random_skin_tone_modifier);
     tera.register_function("is_subscribed", is_subscribed);
     tera.register_function("event_page_uri", event_page_uri);
+    tera.register_function("skip_poll_uri", skip_poll_uri);
+    tera.register_function("event_ics_uri", event_ics_uri);
+    tera.register_function("leave_event_uri", leave_event_uri);
 }
 
 tera_function! {
@@ -110,5 +114,23 @@ tera_function! {
 tera_function! {
     fn event_page_uri(event_id: i64) -> String {
         uri!(crate::event::event_page(id = event_id)).to_string()
+    }
+}
+
+tera_function! {
+    fn skip_poll_uri(event_id: i64) -> String {
+        uri!(crate::poll::skip_poll_page(id = event_id)).to_string()
+    }
+}
+
+tera_function! {
+    fn event_ics_uri(event_id: i64) -> String {
+        uri!(crate::play::event_ics(id = event_id)).to_string()
+    }
+}
+
+tera_function! {
+    fn leave_event_uri(event_id: i64) -> String {
+        uri!(crate::event::leave_page(id = event_id)).to_string()
     }
 }
