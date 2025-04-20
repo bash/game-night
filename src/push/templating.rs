@@ -26,11 +26,10 @@ impl NotificationRenderer {
         Self::from_templates_dir(&templates_dir)
     }
 
-    pub(crate) fn from_templates_dir(templates_dir: &str) -> Result<Self> {
+    fn from_templates_dir(templates_dir: &str) -> Result<Self> {
         let mut tera = Tera::default();
-        crate::template::configure_tera(&mut tera).context("configure tera")?;
+        template::configure_tera(&mut tera).context("configure tera")?;
         let templates = scan_templates_dir(templates_dir)?;
-        dbg!(&templates);
         Ok(Self { tera, templates })
     }
 
@@ -43,11 +42,7 @@ impl NotificationRenderer {
         json::from_value(value).context("result is not a valid notification object")
     }
 
-    pub(crate) fn render_raw(
-        &mut self,
-        template_name: &str,
-        context: impl Serialize,
-    ) -> Result<json::Value> {
+    fn render_raw(&mut self, template_name: &str, context: impl Serialize) -> Result<json::Value> {
         let template = self
             .templates
             .get(template_name)
@@ -106,12 +101,12 @@ fn template_identifier(entry: &DirEntry) -> String {
         .expect("path has no file name")
         .to_str()
         .expect("not a valid UTF-8 file path")
-        .replace('\\', "/")
+        .to_owned()
 }
 
 fn load_json_file(entry: &DirEntry) -> Result<json::Value> {
     let file = fs::OpenOptions::new().read(true).open(entry.path())?;
-    Ok(json::from_reader(file).with_context(|| format!("parsing {}", entry.path().display()))?)
+    json::from_reader(file).with_context(|| format!("parsing {}", entry.path().display()))
 }
 
 fn read_files_from_dir(templates_dir: &str) -> Result<Vec<DirEntry>> {

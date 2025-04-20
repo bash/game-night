@@ -5,7 +5,6 @@ use crate::infra::HttpClient;
 use crate::users::UserId;
 use anyhow::Result;
 use http::StatusCode;
-use rocket::info;
 use rocket::tokio::sync::Mutex as TokioMutex;
 use serde::Serialize;
 use std::sync::Arc;
