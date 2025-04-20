@@ -45,7 +45,6 @@
     </nav>
 
     <main id="main">
-        <button onclick="Notification.requestPermission()">Request</button>
         <header>
             <h1>
                 {% block title %}
