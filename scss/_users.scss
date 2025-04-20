@@ -28,7 +28,7 @@
     > .actions {
         margin-top: .2rem;
         display: grid;
-        grid-template-columns: auto auto;
+        grid-auto-flow: column;
         justify-content: start;
         grid-column-gap: .5em;
         align-items: center;

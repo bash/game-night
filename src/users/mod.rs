@@ -1,13 +1,10 @@
-use crate::auth::{is_invited, AuthorizedTo, ManageUsers};
+use crate::auth::is_invited;
 use crate::database::Repository;
 use crate::iso_8601::Iso8601;
-use crate::template::PageBuilder;
-use anyhow::{Error, Result};
+use anyhow::Result;
 use lettre::message::Mailbox;
-use rocket::response::Debug;
-use rocket::{get, routes, Route};
+use rocket::{routes, Route};
 use rocket_db_pools::sqlx;
-use rocket_dyn_templates::{context, Template};
 use serde::Serialize;
 use time::{Duration, OffsetDateTime};
 
@@ -20,18 +17,11 @@ mod symbol;
 use crate::auto_resolve;
 use crate::event::StatefulEvent;
 pub(crate) use symbol::*;
+mod list;
+pub(crate) use list::*;
 
 pub(crate) fn routes() -> Vec<Route> {
-    routes![list_users]
-}
-
-#[get("/users")]
-async fn list_users(
-    page: PageBuilder<'_>,
-    mut users: UsersQuery,
-    _guard: AuthorizedTo<ManageUsers>,
-) -> Result<Template, Debug<Error>> {
-    Ok(page.render("users", context! { users: users.active().await? }))
+    routes![list::list_users]
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, sqlx::Type, Serialize, rocket::FromForm)]

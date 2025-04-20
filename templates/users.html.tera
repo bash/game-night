@@ -28,6 +28,11 @@
             <small class="actions">
                 <a href="mailto:{{user.email_address}}" class="link-button">email</a>
                 <form action="/sudo/enter" method="post"><input type="hidden" name="user" value="{{user.id}}"><button type="submit">impersonate</button></form>
+                {% if user.has_push_subscription %}
+                    <svg role="img" aria-label="Bell" title="User has push notifications enabled" class="_icon">
+                        <use href="{{asset(path='/icons/bell.svg')}}#icon" aria-hidden="true" />
+                    </svg>
+                {% endif %}
             </small>
         </div>
     </li>

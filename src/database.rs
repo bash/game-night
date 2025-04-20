@@ -100,6 +100,8 @@ pub(crate) trait Repository: EventEmailsRepository + fmt::Debug + Send {
 
     async fn get_push_subscriptions(&mut self, user_id: UserId) -> Result<Vec<PushSubscription>>;
 
+    async fn has_push_subscription(&mut self, user_id: UserId) -> Result<bool>;
+
     async fn prune(&mut self) -> Result<u64>;
 
     fn into_event_emails_repository(self: Box<Self>) -> Box<dyn EventEmailsRepository>;
@@ -621,6 +623,15 @@ impl Repository for SqliteRepository {
                 .fetch_all(self.executor())
                 .await?,
         )
+    }
+
+    async fn has_push_subscription(&mut self, user_id: UserId) -> Result<bool> {
+        let count: i64 =
+            sqlx::query_scalar("SELECT count(1) FROM web_push_subscriptions WHERE user_id = ?1")
+                .bind(user_id)
+                .fetch_one(self.executor())
+                .await?;
+        Ok(count >= 1)
     }
 
     async fn prune(&mut self) -> Result<u64> {
