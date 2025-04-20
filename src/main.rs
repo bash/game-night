@@ -33,6 +33,7 @@ mod login;
 mod play;
 mod poll;
 mod pruning;
+mod push;
 mod register;
 mod result;
 mod socket_activation;
@@ -68,7 +69,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .attach(login::auto_login_fairing())
         .attach(poll_finalizer())
         .attach(database_pruning())
-        .attach(users::LastActivity);
+        .attach(users::LastActivity)
+        .attach(push::web_push_fairing());
 
     if let Some(b) = listener_from_env()? {
         rocket.launch_on(b).await?;
