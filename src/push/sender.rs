@@ -4,6 +4,7 @@ use crate::database::Repository;
 use crate::infra::HttpClient;
 use crate::users::UserId;
 use anyhow::Result;
+use http::StatusCode;
 use rocket::tokio::sync::Mutex as TokioMutex;
 use std::sync::Arc;
 use web_push::WebPushBuilder;
@@ -19,28 +20,39 @@ auto_resolve! {
 
 impl PushSender {
     pub(crate) async fn send(&mut self, message: &PushMessage, user_id: UserId) -> Result<()> {
-        let mut repository = self.repository.lock().await;
-        let subscriptions = repository.get_push_subscriptions(user_id).await?;
-        for subscription in subscriptions {
+        for subscription in self.get_subscriptions(user_id).await? {
             self.send_to_subscription(message, &subscription).await?;
         }
         Ok(())
     }
 
+    async fn get_subscriptions(&mut self, user_id: UserId) -> Result<Vec<PushSubscription>> {
+        let mut repository = self.repository.lock().await;
+        repository.get_push_subscriptions(user_id).await
+    }
+
+    async fn remove_subscription(&mut self, user_id: UserId, endpoint: &str) -> Result<()> {
+        let mut repository = self.repository.lock().await;
+        repository.remove_push_subscription(user_id, endpoint).await
+    }
+
     async fn send_to_subscription(
-        &self,
+        &mut self,
         message: &PushMessage,
         subscription: &PushSubscription,
     ) -> Result<()> {
         let content = serde_json::to_vec(message)?;
         let request = self.request_for(&content, subscription)?;
         let request = reqwest::Request::try_from(request)?;
-        let _response = self
-            .http_client
-            .execute(request)
-            .await?
-            .error_for_status()?;
-        // TODO: deal with users who have unsubscribed
+        let response = self.http_client.execute(request).await?;
+
+        let status = response.status();
+        if status == StatusCode::GONE || status == StatusCode::NOT_FOUND {
+            self.remove_subscription(subscription.user_id, &subscription.endpoint)
+                .await?;
+        } else {
+            _ = response.error_for_status()?;
+        }
         Ok(())
     }
 
