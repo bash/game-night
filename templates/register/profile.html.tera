@@ -45,8 +45,7 @@
     </p>
 
     <p>
-        You can also receive push notifications in addition to emails.
-
+        You can also receive push notifications in addition to emails.<br>
         <push-subscription-button endpoints="{{push_endpoints | json_encode}}"></push-subscription-button>
     </p>
 

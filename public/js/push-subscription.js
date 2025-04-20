@@ -4,6 +4,7 @@ const State = {
     SUBSCRIBING: 3,
     SUBSCRIBED: 4,
     UNSUBSCRIBING: 5,
+    UNSUPPORTED: 6,
 }
 class PushSubscriptionButton extends HTMLElement {
     #state = State.WAITING_FOR_SERVICE_WORKER
@@ -13,7 +14,7 @@ class PushSubscriptionButton extends HTMLElement {
     #pushManager
     #error
 
-    connectedCallback() {
+    async connectedCallback() {
         this.#endpoints = JSON.parse(this.getAttribute('endpoints'))
         this.#button = document.createElement('button')
         this.#button.addEventListener('click', (event) => this.#onClick(event))
@@ -21,7 +22,15 @@ class PushSubscriptionButton extends HTMLElement {
         this.#errorElement.classList.add('error-message', '-inline')
         this.append(this.#button, ' ', this.#errorElement)
         this.#update()
-        this.#getPushManager()
+        try {
+            await this.#getPushManager()
+        } catch (e) {
+            const errorMessage = isMobileSafari()
+                ? 'Add this website to your homescreen to enable push notifications'
+                : 'Push notifications are not supported by your web browser'
+            console.error(e)
+            this.#setState(State.UNSUPPORTED, errorMessage)
+        }
     }
 
     #setState(state, error) {
@@ -37,6 +46,7 @@ class PushSubscriptionButton extends HTMLElement {
     }
 
     #updateEnabled() {
+        this.#button.toggleAttribute('hidden', this.#state == State.UNSUPPORTED)
         this.#button.disabled = !(
         this.#state === State.SUBSCRIBED ||
         this.#state === State.NOT_SUBSCRIBED)
@@ -123,6 +133,14 @@ async function postJson(url, body) {
         throw new Error(`non-ok response with status ${response.status}: ${response.statusText}`)
     }
     return response
+}
+
+// Adapted from <https://github.com/emilk/egui/blob/501905b60df88ff84fe6ea9a0d51543b6cc4638f/crates/eframe/src/web/text_agent.rs#L205C1-L215C2>
+function isMobileSafari() {
+    const userAgent = navigator.userAgent
+    const isIOS = userAgent.includes('iPhone') || userAgent.includes('iPad') || userAgent.includes('iPod')
+    const isSafari = userAgent.includes('Safari')
+    return isIOS && isSafari
 }
 
 customElements.define('push-subscription-button', PushSubscriptionButton)
