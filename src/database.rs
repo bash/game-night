@@ -731,7 +731,7 @@ async fn materialize_stateful_event(
     } else {
         // Yes, yes using a JOIN to fetch the poll and the user at once would be better,
         // but it's very inconvenient as I can't use the auto-derived FromRow impl :/
-        let poll = sqlx::query_as("SELECT * FROM polls WHERE id = ?1")
+        let poll = sqlx::query_as("SELECT * FROM polls WHERE event_id = ?1")
             .bind(event.id)
             .fetch_one(&mut *connection)
             .await?;
