@@ -16,20 +16,7 @@
         <input type="email" class="-inline" value="{{user.email_address}}" disabled>.
     </p>
 
-    {% if symbols %}
-    <fieldset>
-        The following symbol is my avatar:
-
-        <div class="symbol-picker">
-            {% for symbol in symbols %}
-                <label class="symbol">
-                    <span class="label">{{symbol}}</span>
-                    <input type="radio" name="symbol" value="{{symbol}}" {% if symbol == user.symbol %}checked{% endif %} autocomplete="off">
-                </label>
-            {% endfor %}
-        </div>
-    </fieldset>
-    {% endif %}
+    <h2>Notifications</h2>
 
     <p>
         Please
@@ -37,7 +24,7 @@
             <option value="on">send</option>
             <option value="off">do not send</option>
         </select>
-        me emails about <em>Tau's Game Night</em><span data-visible-if="subscription=on"><template>.</template></span>
+        me notifications about <em>Tau's Game Night</em><span data-visible-if="subscription=on"><template>.</template></span>
 
         <span data-visible-if="subscription=off">
             <template>
@@ -57,6 +44,31 @@
         </span>
     </p>
 
+    <p>
+        You can also receive push notifications in addition to emails.
+
+        <push-subscription-button endpoints="{{push_endpoints | json_encode}}"></push-subscription-button>
+
+        <button type="button" data-web-push-subscribe-button>Subscribe on this device</button>
+        <button type="button" data-web-push-unsubscribe-button>Unsubscribe</button>
+    </p>
+
+    {% if symbols %}
+    <h2>Avatar</h2>
+    <fieldset>
+        The following symbol is my avatar:
+
+        <div class="symbol-picker">
+            {% for symbol in symbols %}
+                <label class="symbol">
+                    <span class="label">{{symbol}}</span>
+                    <input type="radio" name="symbol" value="{{symbol}}" {% if symbol == user.symbol %}checked{% endif %} autocomplete="off">
+                </label>
+            {% endfor %}
+        </div>
+    </fieldset>
+    {% endif %}
+
     <fieldset class="-actions">
         <button type="submit">Save my details</button>
         {% if list_users_uri %}
@@ -69,16 +81,95 @@
         if you no longer wish to participate in <em>Tau's Game Night</em>.
     </p>
 </form>
-<form method="post" action="/web-push/subscribe">
-    <input type="hidden" name="endpoint">
-    <input type="hidden" name="auth">
-    <input type="hidden" name="p256dh">
-    <button type="button" data-web-push-subscribe-button>Subscribe</button>
-    <button type="button" data-web-push-unsubscribe-button>Unsubscribe</button>
-</form>
 {% endblock %}
 
 {% block scripts %}
+<script type="module">
+  const State = {
+    WAITING_FOR_SERVICE_WORKER: 1,
+    NOT_SUBSCRIBED: 2,
+    SUBSCRIBING: 3,
+    SUBSCRIBED: 4,
+    UNSUBSCRIBING: 5,
+  }
+  class PushSubscriptionButton extends HTMLElement {
+    #state = State.WAITING_FOR_SERVICE_WORKER
+    #endpoints
+    #button
+    #pushManager
+
+    connectedCallback() {
+      this.#endpoints = JSON.parse(this.getAttribute('endpoints'))
+      this.#button = document.createElement('button')
+      this.#button.addEventListener('click', (event) => this.#onClick(event))
+      this.append(this.#button)
+      this.#update()
+      this.#getPushManager()
+    }
+
+    #setState(state) {
+      this.#state = state
+      this.#update()
+    }
+
+    #update() {
+      this.#updateEnabled()
+      this.#updateLabel()
+    }
+
+    #updateEnabled() {
+      this.#button.disabled = !(
+        this.#state === State.SUBSCRIBED ||
+        this.#state === State.NOT_SUBSCRIBED)
+    }
+
+    #updateLabel() {
+      switch (this.#state) {
+        case State.WAITING_FOR_SERVICE_WORKER:
+        case State.NOT_SUBSCRIBED:
+          this.#button.innerText = 'Subscribe on this device'
+          break
+        case State.SUBSCRIBING:
+          this.#button.innerText = 'Subscribing...'
+          break
+        case State.SUBSCRIBED:
+          this.#button.innerText = 'Unsubscribe'
+          break
+        case State.UNSUBSCRIBING:
+          this.#button.innerText = 'Unsubscribing...'
+          break
+      }
+    }
+
+    async #getPushManager() {
+      const { pushManager } = await navigator.serviceWorker.ready
+      const subscription = await pushManager.getSubscription()
+      const state = subscription ? State.SUBSCRIBED : State.NOT_SUBSCRIBED
+      this.#pushManager = pushManager
+      this.#setState(state)
+    }
+
+    #onClick(event) {
+      event.preventDefault()
+      switch (this.#state) {
+        case State.NOT_SUBSCRIBED:
+          return this.#subscribe();
+        case State.SUBSCRIBED:
+          return this.#unsubscribe();
+      }
+    }
+
+    async #subscribe() {
+       const webPushKey = await fetch(this.#endpoints.get_public_key).then(r => r.text())
+       console.log(webPushKey)
+    }
+
+    async #unsubscribe() {
+    }
+  }
+  customElements.define("push-subscription-button", PushSubscriptionButton)
+</script>
+
 <script type="module">
     const endpoints = {{push_endpoints | json_encode | safe}}
     const subscribeButton = document.querySelector('[data-web-push-subscribe-button]')
