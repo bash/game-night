@@ -9,7 +9,7 @@ pub(crate) fn web_push_fairing() -> impl Fairing {
     fairing::AdHoc::try_on_ignite("Web Push", |rocket| {
         Box::pin(async {
             match read_or_generate_key(&rocket) {
-                Ok(key) => Ok(rocket.manage(Box::new(key))),
+                Ok(key) => Ok(rocket.manage(key)),
                 Err(error) => {
                     error!("failed to initialize web push:\n{:?}", error);
                     Err(rocket)
