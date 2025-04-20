@@ -2,7 +2,7 @@
 self.addEventListener('install', _event => self.skipWaiting())
 self.addEventListener('activate', _event => self.clients.claim())
 
-self.addEventListener('push', event => {
+self.addEventListener('push', logErrors(event => {
     if (!(self.Notification && self.Notification.permission === "granted")) {
         return
     }
@@ -23,15 +23,17 @@ self.addEventListener('push', event => {
         return
     }
 
+    console.log(title, notification)
     event.waitUntil(self.registration.showNotification(title, { ...notification, data: notification }))
-})
+}))
 
-self.addEventListener('notificationclick', event => {
+self.addEventListener('notificationclick', logErrors(event => {
     const { data } = event.notification
     const actions = data.actions ?? []
-    const navigation = event.action == '' ? data.navigation : actions.find(a => a.action == event.action)?.navigation
+    const navigation = hasAction(event) ? actions.find(a => a.action == event.action)?.navigate : data.navigate
+    event.notification.close()
     event.waitUntil(navigate(navigation))
-})
+}))
 
 async function navigate(navigation) {
     if (navigation == null) return
@@ -41,8 +43,6 @@ async function navigate(navigation) {
 
     if (clientWithDesiredUrl != null) {
         await clientWithDesiredUrl.focus()
-    } else if (windowClients.some()) {
-        await windowClients[0].navigate(url)
     } else {
         await self.clients.openWindow(url)
     }
@@ -54,4 +54,19 @@ function isEqualIgnoreHash(left, right) {
     const rightUrl = new URL(right)
     rightUrl.hash = ''
     return leftUrl.href === rightUrl.href
+}
+
+function logErrors(f) {
+  return (...args) => {
+    try {
+      f(...args)
+    } catch (e) {
+      console.error(e)
+      throw e
+    }
+  }
+}
+
+function hasAction(event) {
+  return event.action !== undefined && event.action !== ''
 }

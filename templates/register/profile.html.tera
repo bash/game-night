@@ -82,7 +82,7 @@
 <script type="module">
     const endpoints = {{push_endpoints | json_encode | safe}}
     const subscribeButton = document.querySelector('[data-web-push-subscribe-button]')
-    subscribeButton.addEventListener('click', async () => {
+    subscribeButton.addEventListener('click', logErrors(async () => {
         subscribeButton.disabled = true
         const webPushKey = await fetch(endpoints.get_public_key).then(r => r.text())
         const registration = await navigator.serviceWorker.ready
@@ -95,10 +95,10 @@
           },
           body: JSON.stringify({ endpoint, keys })
         })
-    })
+    }))
 
     const unsubscribeButton = document.querySelector('[data-web-push-unsubscribe-button]')
-    unsubscribeButton.addEventListener('click', async () => {
+    unsubscribeButton.addEventListener('click', logErrors(async () => {
         unsubscribeButton.disabled = true
         const registration = await navigator.serviceWorker.ready
         const subscription = await registration.pushManager.getSubscription()
@@ -111,7 +111,18 @@
           },
           body: JSON.stringify({ endpoint })
         })
-    })
+    }))
+
+    function logErrors(f) {
+      return async (...args) => {
+        try {
+          await f(...args)
+        } catch (e) {
+          console.error(e)
+          throw e
+        }
+      }
+    }
 </script>
 <script id="form-values" type="application/json">
     {% if user.email_subscription.type == 'permanently_unsubscribed' %}{% set permanence = 'permanent' %}

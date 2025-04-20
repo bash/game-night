@@ -7,7 +7,7 @@ use rocket::serde::json::Json;
 use rocket::{get, post};
 
 #[get("/_api/push/public-key")]
-pub(crate) fn get_public_key(push_key: &WebPushKey) -> String {
+pub(crate) fn get_public_key(push_key: WebPushKey) -> String {
     BASE64_URL_SAFE_NO_PAD.encode(push_key.public_key())
 }
 

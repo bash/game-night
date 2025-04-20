@@ -27,6 +27,7 @@ mod event;
 mod fmt;
 mod fs;
 mod groups;
+mod infra;
 mod invitation;
 mod iso_8601;
 mod login;
@@ -71,7 +72,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .attach(poll_finalizer())
         .attach(database_pruning())
         .attach(users::LastActivity)
-        .attach(push::web_push_fairing());
+        .attach(push::web_push_fairing())
+        .manage(infra::HttpClient::new());
 
     if let Some(b) = listener_from_env()? {
         rocket.launch_on(b).await?;
