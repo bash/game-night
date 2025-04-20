@@ -74,7 +74,6 @@ class PushSubscriptionButton extends HTMLElement {
     }
 
     async #onClick(event) {
-        // TODO: error handling
         event.preventDefault()
         const oldState = this.#state
         try {
