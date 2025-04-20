@@ -72,7 +72,7 @@ publish: all
 	podman volume create --ignore game-night-cargo-registry
 	podman run -t --rm -v game-night-cargo-registry:/root/.cargo/registry -v ./:/build:z --workdir /build game-night-build cargo build --release
 	cp target/release/game-night $(PUBLISH_DIR)/
-	cp -R {public,templates,emails} $(PUBLISH_DIR)/
+	cp -R {public,templates,emails,notifications} $(PUBLISH_DIR)/
 	python3 hash-files.py
 	find $(PUBLISH_DIR) -name '.DS_Store' -exec rm {} +
 	gzip --keep --recursive $(PUBLISH_DIR)/public --best
