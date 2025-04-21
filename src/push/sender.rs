@@ -6,6 +6,7 @@ use crate::users::UserId;
 use anyhow::Result;
 use http::StatusCode;
 use rocket::tokio::sync::Mutex as TokioMutex;
+use rocket::warn;
 use serde::Serialize;
 use std::sync::Arc;
 use web_push::WebPushBuilder;
@@ -23,7 +24,9 @@ auto_resolve! {
 impl PushSender {
     pub(crate) async fn send(&mut self, message: &PushMessage, user_id: UserId) -> Result<()> {
         for subscription in self.get_subscriptions(user_id).await? {
-            self.send_to_subscription(message, &subscription).await?;
+            if let Err(error) = self.send_to_subscription(message, &subscription).await {
+                warn!("failed to send message to push subscription: {error:?}");
+            }
         }
         Ok(())
     }

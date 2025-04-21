@@ -1,0 +1,16 @@
+[default]
+secret_keys_path = "data/keys"
+
+[default.databases.sqlite]
+url = "data/database.sqlite"
+
+[default.email]
+template_dir = "emails"
+outbox_socket = "outbox.sock"
+
+[default.tls]
+certs = "data/certs/localhost+2.pem"
+key = "data/certs/localhost+2-key.pem"
+
+[default.web_push]
+template_dir = "notifications"

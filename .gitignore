@@ -1,10 +1,4 @@
-/public/*.css
 /target
+/public/build/
+/data/
 *.sqlite
-/private
-/publish
-/outbox
-/emails/*.css
-/node_modules/
-/public/js/relative-time-element.js
-mprocs.log
