@@ -20,7 +20,7 @@ services:
     volumes:
     - ./data:/var/lib/game-night
     - ./public/build:/run/game-night/public:ro
-    - ./:/usr/local/etc/game-night:ro
+    - ./config:/usr/local/etc/game-night:ro
     - ./templates:/usr/local/share/game-night/templates:ro
     - outbox:/run/outbox:ro
     security_opt:
