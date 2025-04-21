@@ -1,5 +1,6 @@
 use super::EmailMessage;
 use crate::decorations::{Closings, Greetings, Hearts, SkinToneModifiers};
+use crate::infra::configure_tera;
 use anyhow::{Context as _, Result};
 use lettre::message::MultiPart;
 use rand::{rng, Rng as _};
@@ -64,7 +65,7 @@ fn create_tera(template_dir: &Path) -> Result<Tera> {
     let mut tera = Tera::new(templates).context("failed to initialize Tera")?;
     tera.build_inheritance_chains()
         .context("failed to build tera's inheritance chain")?;
-    crate::template::register_custom_functions(&mut tera);
+    configure_tera(&mut tera)?;
     Ok(tera)
 }
 

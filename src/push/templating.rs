@@ -1,4 +1,5 @@
 use super::Notification;
+use crate::infra::configure_tera;
 use crate::{impl_resolve_for_state, template};
 use anyhow::{Context as _, Error, Result};
 use itertools::Itertools;
@@ -28,7 +29,7 @@ impl NotificationRenderer {
 
     fn from_templates_dir(templates_dir: &str) -> Result<Self> {
         let mut tera = Tera::default();
-        template::configure_tera(&mut tera).context("configure tera")?;
+        configure_tera(&mut tera).context("configure tera")?;
         let templates = scan_templates_dir(templates_dir)?;
         Ok(Self { tera, templates })
     }

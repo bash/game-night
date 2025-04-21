@@ -9,7 +9,6 @@ use rocket::{catch, catchers, error, get, routes, Orbit, Request, Rocket, Route}
 use rocket_db_pools::{sqlx::SqlitePool, Database};
 use rocket_dyn_templates::{context, Template};
 use socket_activation::listener_from_env;
-use template::configure_template_engines;
 use template::PageBuilder;
 
 mod response;
@@ -61,7 +60,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .register("/", auth::catchers())
         .register("/", catchers![not_found])
         .mount("/", file_server())
-        .attach(Template::try_custom(configure_template_engines))
+        .attach(Template::try_custom(infra::configure_template_engines))
         .attach(GameNightDatabase::init())
         .attach(email::email_sender_fairing())
         .attach(invite_admin_user())
