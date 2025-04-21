@@ -16,13 +16,10 @@ RUN --mount=type=cache,target=/usr/local/src/game-night/target \
 FROM registry.fedoraproject.org/fedora-minimal:42
 COPY --from=builder /usr/local/bin/game-night /usr/local/bin/game-night
 
-ENV ROCKET_SECRET_KEYS_PATH=/var/lib/game-night/keys
-ENV ROCKET_DATABASES='{sqlite={url="/var/lib/game-night/database.sqlite"}}'
-ENV ROCKET_TEMPLATE_DIR=/usr/local/share/game-night/templates
-ENV ROCKET_EMAIL='{template_dir="/usr/local/share/game-night/emails",outbox_socket="/run/outbox/outbox.sock"}'
-ENV ROCKET_WEB_PUSH='{template_dir="/usr/local/share/game-night/notifications"}'
+ENV ROCKET_DEFAULT_CONFIG=/usr/local/share/game-night/Rocket.toml
 ENV ROCKET_CONFIG=/usr/local/etc/game-night/Rocket.toml
 WORKDIR /usr/local/share/game-night
+COPY Rocket.container.toml ./Rocket.toml
 COPY templates/ ./templates
 COPY emails/ ./emails
 RUN touch ./emails/email.css # TODO

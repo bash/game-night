@@ -1,14 +1,11 @@
 use anyhow::{anyhow, Context as _, Result};
 use database::Repository;
-use login::RocketSecretKey;
 use poll::poll_finalizer;
 use pruning::database_pruning;
-use rand::rng;
 use result::HttpResult;
 use rocket::fairing::{self, Fairing};
-use rocket::figment::Figment;
 use rocket::request::FromRequest;
-use rocket::{catch, catchers, error, get, routes, Config, Orbit, Request, Rocket, Route};
+use rocket::{catch, catchers, error, get, routes, Orbit, Request, Rocket, Route};
 use rocket_db_pools::{sqlx::SqlitePool, Database};
 use rocket_dyn_templates::{context, Template};
 use socket_activation::listener_from_env;
@@ -45,7 +42,7 @@ mod users;
 
 #[rocket::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let rocket = rocket::custom(figment()?);
+    let rocket = rocket::custom(crate::infra::figment()?);
 
     #[cfg(target_os = "linux")]
     let rocket = rocket.attach(systemd::SystemdNotify);
@@ -82,13 +79,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     Ok(())
-}
-
-fn figment() -> Result<Figment> {
-    let figment = Config::figment();
-    let secret_keys_path: String = figment.extract_inner("secret_keys_path")?;
-    let key = RocketSecretKey::read_or_generate(secret_keys_path, &mut rng()).unwrap();
-    Ok(figment.merge((rocket::Config::SECRET_KEY, &key.0)))
 }
 
 #[cfg(feature = "serve-static-files")]

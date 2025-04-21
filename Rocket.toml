@@ -1,19 +1,13 @@
 [default]
 url_prefix = "https://localhost:8000"
-secret_keys_path = "data/keys"
 
 [default.campaign.example]
 message = """
 Congratulations! 🎉 You used the <em>example</em> campaign to register."""
 
-# [default.databases.sqlite]
-# url = "database.sqlite"
-
 [default.email]
 sender = "Tau's Game Night <game-night@tau.garden>"
 reply_to = "Tau <tau@example.com>"
-template_dir = "emails"
-outbox_socket = "outbox.sock"
 
 [default.tls]
 certs = "/var/lib/game-night/certs/localhost+2.pem"
@@ -21,4 +15,3 @@ key = "/var/lib/game-night/certs/localhost+2-key.pem"
 
 [default.web_push]
 vapid_contact = "mailto:game-night@tau.garden"
-template_dir = "notifications"
