@@ -1,5 +1,6 @@
 cargo-flags := '--features development'
 prod-host := 'root@fedora-01.infra.tau.garden'
+prod-service-name := 'game-night-v2'
 
 @default:
 	just --list
@@ -31,7 +32,7 @@ publish:
 
 deploy: publish
 	podman image scp game-night {{prod-host}}::
-	ssh root@fedora-01.infra.tau.garden -C 'export SYSTEMD_COLORS=true; systemctl restart game-night-v2 && systemctl status game-night-v2'
+	ssh {{prod-host}} -C 'export SYSTEMD_COLORS=true; systemctl restart {{prod-service-name}} && systemctl status {{prod-service-name}}'
 	just deploy-public
 
 deploy-public:
