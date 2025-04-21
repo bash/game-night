@@ -1,6 +1,6 @@
 use super::Notification;
-use crate::infra::configure_tera;
-use crate::{impl_resolve_for_state, template};
+use crate::impl_resolve_for_state;
+use crate::infra::{configure_tera, TeraConfigurationContext};
 use anyhow::{Context as _, Error, Result};
 use itertools::Itertools;
 use rocket::figment::Figment;
@@ -24,12 +24,13 @@ impl NotificationRenderer {
             .focus("web_push")
             .extract_inner("template_dir")
             .context("invalid config")?;
-        Self::from_templates_dir(&templates_dir)
+        let context = TeraConfigurationContext::from_figment(figment)?;
+        Self::from_templates_dir(&templates_dir, &context)
     }
 
-    fn from_templates_dir(templates_dir: &str) -> Result<Self> {
+    fn from_templates_dir(templates_dir: &str, ctx: &TeraConfigurationContext) -> Result<Self> {
         let mut tera = Tera::default();
-        configure_tera(&mut tera).context("configure tera")?;
+        configure_tera(&mut tera, ctx).context("configure tera")?;
         let templates = scan_templates_dir(templates_dir)?;
         Ok(Self { tera, templates })
     }

@@ -46,6 +46,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     #[cfg(target_os = "linux")]
     let rocket = rocket.attach(systemd::SystemdNotify);
 
+    let tera_ctx = infra::TeraConfigurationContext::from_figment(&rocket.figment())?;
     let rocket = rocket
         .mount("/", routes![home_page])
         .mount("/", invitation::routes())
@@ -60,7 +61,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .register("/", auth::catchers())
         .register("/", catchers![not_found])
         .mount("/", file_server())
-        .attach(Template::try_custom(infra::configure_template_engines))
+        .attach(Template::try_custom(infra::configure_template_engines(
+            tera_ctx,
+        )))
         .attach(GameNightDatabase::init())
         .attach(email::email_sender_fairing())
         .attach(invite_admin_user())

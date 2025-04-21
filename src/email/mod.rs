@@ -1,4 +1,5 @@
 use crate::impl_resolve_for_state;
+use crate::infra::TeraConfigurationContext;
 use anyhow::{Context as _, Result};
 use dyn_clone::DynClone;
 use headers::MessageBuilderExt;
@@ -152,12 +153,13 @@ impl EmailSenderImpl {
         let outbox =
             Outbox::new_for_path(config.outbox_socket).context("failed to initialize outbox")?;
 
+        let context = TeraConfigurationContext::from_figment(figment)?;
         Ok(Self {
             sender: config.sender,
             reply_to: config.reply_to,
             #[cfg(unix)]
             outbox,
-            renderer: EmailRenderer::from_template_dir(&template_dir).await?,
+            renderer: EmailRenderer::from_template_dir(&template_dir, &context).await?,
         })
     }
 }

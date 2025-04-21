@@ -1,6 +1,6 @@
 use super::EmailMessage;
 use crate::decorations::{Closings, Greetings, Hearts, SkinToneModifiers};
-use crate::infra::configure_tera;
+use crate::infra::{configure_tera, TeraConfigurationContext};
 use anyhow::{Context as _, Result};
 use lettre::message::MultiPart;
 use rand::{rng, Rng as _};
@@ -21,11 +21,14 @@ pub(crate) struct EmailBody {
 }
 
 impl EmailRenderer {
-    pub(crate) async fn from_template_dir(template_dir: &Path) -> Result<Self> {
+    pub(crate) async fn from_template_dir(
+        template_dir: &Path,
+        ctx: &TeraConfigurationContext,
+    ) -> Result<Self> {
         let mut css_file_path = template_dir.to_owned();
         css_file_path.push("email.css");
         Ok(Self {
-            tera: create_tera(template_dir)?,
+            tera: create_tera(template_dir, ctx)?,
             css: read_to_string(css_file_path)
                 .await
                 .context("email.css is missing")?,
@@ -57,7 +60,7 @@ impl EmailRenderer {
     }
 }
 
-fn create_tera(template_dir: &Path) -> Result<Tera> {
+fn create_tera(template_dir: &Path, ctx: &TeraConfigurationContext) -> Result<Tera> {
     let templates = template_dir.join("**.tera");
     let templates = templates
         .to_str()
@@ -65,7 +68,7 @@ fn create_tera(template_dir: &Path) -> Result<Tera> {
     let mut tera = Tera::new(templates).context("failed to initialize Tera")?;
     tera.build_inheritance_chains()
         .context("failed to build tera's inheritance chain")?;
-    configure_tera(&mut tera)?;
+    configure_tera(&mut tera, ctx)?;
     Ok(tera)
 }
 
