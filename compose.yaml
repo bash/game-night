@@ -25,3 +25,6 @@ services:
     - outbox:/run/outbox:ro
     security_opt:
     - label=disable
+
+# TODO: watch and rebuild
+# https://docs.docker.com/reference/compose-file/develop/
