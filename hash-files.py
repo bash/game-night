@@ -6,8 +6,7 @@ import json
 from os import path, rename
 from typing import List
 
-PUBLISH_DIR = "publish"
-PUBLIC_DIR = path.join(PUBLISH_DIR, "public")
+PUBLIC_DIR = path.join("public")
 INCLUDE = ["icons/*.svg", "js/*.js", "main.css", "service-worker.js"]
 
 
@@ -22,10 +21,10 @@ def hash_files():
         }
     }
 
-    with open(path.join(PUBLISH_DIR, "import-map.json"), "w+") as f:
+    with open(path.join("import-map.json"), "w+") as f:
         json.dump(import_map, f)
 
-    with open(path.join(PUBLISH_DIR, "asset-map.json"), "w+") as f:
+    with open(path.join("asset-map.json"), "w+") as f:
         json.dump(asset_map, f)
 
     for src, dest in assets.items():

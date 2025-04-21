@@ -6,11 +6,15 @@ services:
     image: codeberg.org/tautropfli/outboxd:0.2.2
     volumes:
     - outbox:/var/lib/outboxd
-  game_night:
+  web:
     build:
       dockerfile: Containerfile
+      target: runtime
       args:
       - CARGO_BUILD_FLAGS=--features development
+    #depends_on:
+    #  outbox:
+    #    condition: service_started
     ports:
     - "8000:8000"
     environment:
