@@ -48,6 +48,8 @@ RUN python3 hash-files.py
 RUN gzip --keep --recursive public --best
 RUN find public -type f -not -name '*.gz' -exec brotli --keep {} \+
 
+FROM scratch as public_dev
+COPY --from=web_build /usr/local/src/game-night/public/ .
 
 FROM scratch as public
 COPY --from=web_publish /usr/local/src/game-night/public/ .

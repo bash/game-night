@@ -14,9 +14,12 @@ logs:
 	podman-compose logs -f
 
 build-web:
-	podman build --tag game-night-public --target web_build --build-arg 'SASS_FLAGS=--embed-source-map --embed-sources' .
-	@mkdir -p public/build
-	podman run --rm --volume ./public/build:/srv game-night-public cp -rT /usr/local/src/game-night/public/ /srv/
+	#!/usr/bin/env bash
+	set -euo pipefail
+	image_name=game-night-public-dev
+	podman build --tag $image_name --target public_dev --build-arg 'SASS_FLAGS=--embed-source-map --embed-sources' .
+	mkdir -p public/build
+	just _export_image $image_name public/build
 
 fetch-prod-db:
 	scp {{prod-host}}:/opt/game-night/data/database.sqlite database.sqlite
@@ -24,9 +27,20 @@ fetch-prod-db:
 
 publish:
 	podman build --tag game-night --target publish .
+	podman build --tag game-night-public --target public .
 
 deploy: publish
 	podman image scp game-night {{prod-host}}::
+	ssh root@fedora-01.infra.tau.garden -C 'export SYSTEMD_COLORS=true; systemctl restart game-night-v2 && systemctl status game-night-v2'
+	just deploy-public
+
+deploy-public:
+	#!/usr/bin/env bash
+	set -euo pipefail
+	public_dir=$(mktemp -d)
+	just _export_image game-night-public "$public_dir"
+	rsync --archive --verbose --human-readable --delete --no-owner --no-group "$public_dir/" {{prod-host}}:/usr/local/share/game-night/public
+	rm -rf -- "$public_dir"
 
 certs:
 	@mkdir -p data/certs
@@ -41,3 +55,13 @@ sqlx-prepare:
 
 check: sqlx-prepare
 	cargo clippy {{cargo-flags}}
+
+_export_image image output_dir:
+	#!/usr/bin/env bash
+	set -euo pipefail
+	container_id=$(podman create '{{image}}')
+	rm -f '{{image}}.tar'
+	podman export "$container_id" -o '{{image}}.tar'
+	podman rm "$container_id"
+	tar -C '{{output_dir}}' -xf '{{image}}.tar'
+	rm -f '{{image}}.tar'
