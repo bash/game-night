@@ -1,6 +1,4 @@
 /target
-/emails/*.css
-/public/js/relative-time-element.js
-/public/*.css
+/public/build/
 /data/
 *.sqlite

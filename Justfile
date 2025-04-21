@@ -1,27 +1,28 @@
 cargo-flags := '--features development'
 
 @default:
-    just --list
+	just --list
 
 up: build-web
-    podman-compose up --build -d
+	podman-compose up --build -d
 
 down:
-    podman-compose down
+	podman-compose down
 
 logs:
 	podman-compose logs -f
 
 build-web:
-    podman build --tag game-night-public --target web_build --build-arg 'SASS_FLAGS=--embed-source-map --embed-sources' .
-    podman run --rm --volume ./public:/srv game-night-public cp -rT /usr/local/src/game-night/public/ /srv/
+	podman build --tag game-night-public --target web_build --build-arg 'SASS_FLAGS=--embed-source-map --embed-sources' .
+	@mkdir -p public/build
+	podman run --rm --volume ./public/build:/srv game-night-public cp -rT /usr/local/src/game-night/public/ /srv/
 
 fetch-live-db:
 	scp root@fedora-01.infra.tau.garden:/opt/game-night/data/database.sqlite database.sqlite
 	echo "DELETE FROM web_push_subscriptions;" | sqlite3 database.sqlite
 
 publish:
-    podman build --tag game-night --target publish .
+	podman build --tag game-night --target publish .
 
 certs:
 	@mkdir -p data/certs
