@@ -66,3 +66,6 @@ _export_image image output_dir:
 	podman rm "$container_id"
 	tar -C '{{output_dir}}' -xf '{{image}}.tar'
 	rm -f '{{image}}.tar'
+
+check-flake:
+	podman build -f Containerfile.nix -v $(pwd):/usr/local/src/game-night .
