@@ -15,6 +15,7 @@ RUN --mount=type=cache,target=/usr/local/src/game-night/target \
 
 
 FROM docker.io/node:22 as npm_deps
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y brotli && rm -rf /var/lib/apt/lists/*
 WORKDIR /usr/local/src/game-night
 ENV NPM_CONFIG_UPDATE_NOTIFIER=false
 ENV NPM_CONFIG_FUND=false
@@ -43,6 +44,8 @@ RUN cp node_modules/@github/relative-time-element/dist/bundle.js public/js/relat
 
 FROM web_build as web_publish
 RUN python3 hash-files.py
+RUN gzip --keep --recursive public --best
+RUN find public -type f -not -name '*.gz' -exec brotli --keep {} \+
 
 
 FROM scratch as public
