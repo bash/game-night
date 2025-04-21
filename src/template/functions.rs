@@ -32,8 +32,7 @@ pub(crate) fn register_custom_functions(tera: &mut Tera) {
 
 tera_function! {
     fn ps_prefix(level: usize = 0) -> String {
-        iter::repeat("P.")
-            .take(level + 1)
+        std::iter::repeat_n("P.", level + 1)
             .chain(iter::once("S."))
             .collect()
     }
