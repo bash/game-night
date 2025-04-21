@@ -9,6 +9,7 @@ COPY .sqlx/ ./.sqlx
 ARG CARGO_BUILD_FLAGS=--release
 RUN --mount=type=cache,target=/usr/local/src/game-night/target \
     --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/usr/local/cargo/git \
     build_messages=$(cargo build $CARGO_BUILD_FLAGS --color=always --message-format json) && \
     executable=$(echo "$build_messages" | jq --slurp --join-output '.[] | select(.reason == "compiler-artifact") | select(.target.name == "game-night") | .executable') && \
     cp "$executable" /usr/local/bin/
