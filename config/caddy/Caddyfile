@@ -1,0 +1,12 @@
+:8000 {
+        root * /usr/local/share/game-night/public
+        tls "/var/lib/game-night/certs/localhost+2.pem" "/var/lib/game-night/certs/localhost+2-key.pem"
+        encode gzip
+        route {
+                file_server {
+                        pass_thru
+                        precompressed zstd br gzip
+                }
+                reverse_proxy http://backend.game-night.test:8000
+        }
+}

@@ -40,11 +40,6 @@ systemd = "0.10.0"
 [target.'cfg(unix)'.dependencies]
 outbox = { git = "https://codeberg.org/tautropfli/outbox.git" }
 
-[features]
-tls = ["rocket/tls"]
-serve-static-files = []
-development = ["tls", "serve-static-files"]
-
 [patch.crates-io]
 rocket = { git = "https://github.com/rwf2/Rocket/" }
 rocket_codegen = { git = "https://github.com/rwf2/Rocket/" }

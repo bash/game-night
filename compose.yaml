@@ -1,27 +1,43 @@
 volumes:
   outbox:
+  caddy_data:
 
 services:
   outbox:
     image: codeberg.org/tautropfli/outboxd:0.2.3
     volumes:
     - outbox:/var/lib/outboxd
-  web:
+
+  backend:
     build:
       dockerfile: Containerfile
       target: runtime
       args:
-      - CARGO_BUILD_FLAGS=--features development
+      - CARGO_BUILD_FLAGS=
     depends_on:
      outbox:
        condition: service_started
-    ports:
-    - "8000:8000"
     volumes:
     - ./data:/var/lib/game-night
-    - ./public/build:/run/game-night/public:ro
     - ./config:/usr/local/etc/game-night:ro
     - ./templates:/usr/local/share/game-night/templates:ro
     - outbox:/run/outbox:ro
     security_opt:
     - label=disable
+    networks:
+      default:
+        aliases:
+          - backend.game-night.test
+
+  reverse-proxy:
+    image: docker.io/caddy:2.9
+    volumes:
+    - ./public/build:/usr/local/share/game-night/public:ro
+    - ./data/certs:/var/lib/game-night/certs:ro
+    - ./config/caddy:/etc/caddy
+    - caddy_data:/data
+    ports:
+    - "8000:8000"
+    depends_on:
+     backend:
+       condition: service_started

@@ -5,7 +5,7 @@ use pruning::database_pruning;
 use result::HttpResult;
 use rocket::fairing::{self, Fairing};
 use rocket::request::FromRequest;
-use rocket::{catch, catchers, error, get, routes, Orbit, Request, Rocket, Route};
+use rocket::{catch, catchers, error, get, routes, Orbit, Request, Rocket};
 use rocket_db_pools::{sqlx::SqlitePool, Database};
 use rocket_dyn_templates::{context, Template};
 use socket_activation::listener_from_env;
@@ -60,7 +60,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .register("/", login::catchers())
         .register("/", auth::catchers())
         .register("/", catchers![not_found])
-        .mount("/", file_server())
         .attach(template)
         .attach(GameNightDatabase::init())
         .attach(email::email_sender_fairing())
@@ -79,19 +78,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     Ok(())
-}
-
-#[cfg(feature = "serve-static-files")]
-fn file_server() -> impl Into<Vec<Route>> {
-    // The goal here is that the file server is always checked first,
-    // so that Forwards from User or AuthorizedTo guards
-    // are not overruled by the file server's Forward(404).
-    rocket::fs::FileServer::new("public").rank(-100)
-}
-
-#[cfg(not(feature = "serve-static-files"))]
-fn file_server() -> impl Into<Vec<Route>> {
-    routes![]
 }
 
 #[get("/", rank = 20)]

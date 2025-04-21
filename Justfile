@@ -1,4 +1,4 @@
-cargo-flags := '--features development'
+cargo-flags := ''
 prod-host := 'root@fedora-01.infra.tau.garden'
 prod-service-name := 'game-night-v2'
 

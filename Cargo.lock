@@ -2996,7 +2996,6 @@ dependencies = [
  "rocket_codegen",
  "rocket_http",
  "rustls",
- "rustls-pemfile",
  "s2n-quic-h3",
  "serde",
  "serde_json",
