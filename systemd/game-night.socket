@@ -1,0 +1,9 @@
+[Unit]
+Description=Game Night Socket
+After=network-online.target
+
+[Socket]
+ListenStream=8000
+
+[Install]
+WantedBy=sockets.target

@@ -1,4 +1,5 @@
 cargo-flags := '--features development'
+prod-host := 'root@fedora-01.infra.tau.garden'
 
 @default:
 	just --list
@@ -17,12 +18,15 @@ build-web:
 	@mkdir -p public/build
 	podman run --rm --volume ./public/build:/srv game-night-public cp -rT /usr/local/src/game-night/public/ /srv/
 
-fetch-live-db:
-	scp root@fedora-01.infra.tau.garden:/opt/game-night/data/database.sqlite database.sqlite
+fetch-prod-db:
+	scp {{prod-host}}:/opt/game-night/data/database.sqlite database.sqlite
 	echo "DELETE FROM web_push_subscriptions;" | sqlite3 database.sqlite
 
 publish:
 	podman build --tag game-night --target publish .
+
+deploy: publish
+	podman image scp game-night {{prod-host}}::
 
 certs:
 	@mkdir -p data/certs

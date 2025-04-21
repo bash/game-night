@@ -1,0 +1,28 @@
+# An example container systemd unit
+# See: https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html
+
+[Unit]
+Description=Game Night
+After=network-online.target
+Requires=game-night.socket
+After=game-night.socket
+
+[Container]
+Image=game-night
+Volume=/opt/game-night/data:/var/lib/game-night
+Volume=/opt/game-night/config:/usr/local/etc/game-night:ro
+Volume=/run/outbox:/run/outbox:ro
+Environment=RUST_BACKTRACE=1
+
+[Service]
+Restart=always
+RestartSec=10
+User=game-night-service
+Group=game-night-service
+SupplementaryGroups=outbox
+ProtectSystem=true
+PrivateTmp=true
+WorkingDirectory=/run/game-night
+
+[Install]
+WantedBy=default.target
