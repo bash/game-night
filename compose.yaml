@@ -1,0 +1,24 @@
+volumes:
+  outbox:
+
+services:
+  outbox:
+    image: codeberg.org/tautropfli/outboxd:0.2.2
+    volumes:
+    - outbox:/var/lib/outboxd
+  game_night:
+    build:
+      dockerfile: Containerfile
+      args:
+      - CARGO_BUILD_FLAGS=--features development
+    ports:
+    - "8000:8000"
+    environment:
+    - ROCKET_ADDRESS=0.0.0.0
+    volumes:
+    - ./data:/var/lib/game-night
+    - ./public:/run/game-night/public:ro
+    - ./:/usr/local/etc/game-night:ro
+    - outbox:/run/outbox:ro
+    security_opt:
+    - label=disable
