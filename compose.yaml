@@ -17,8 +17,6 @@ services:
        condition: service_started
     ports:
     - "8000:8000"
-    environment:
-    - ROCKET_ADDRESS=0.0.0.0
     volumes:
     - ./data:/var/lib/game-night
     - ./public/build:/run/game-night/public:ro
