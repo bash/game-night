@@ -58,7 +58,7 @@ COPY --from=builder /usr/local/bin/game-night /usr/local/bin/game-night
 ENV ROCKET_DEFAULT_CONFIG=/usr/local/share/game-night/Rocket.toml
 ENV ROCKET_CONFIG=/usr/local/etc/game-night/Rocket.toml
 WORKDIR /usr/local/share/game-night
-COPY rocket/Rocket.container.toml ./Rocket.toml
+COPY config/Rocket.container.toml ./Rocket.toml
 COPY templates/ ./templates
 COPY emails/ ./emails
 COPY --from=email_css /usr/local/src/game-night/emails/*.css ./emails/

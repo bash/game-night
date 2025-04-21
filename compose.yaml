@@ -3,7 +3,7 @@ volumes:
 
 services:
   outbox:
-    image: codeberg.org/tautropfli/outboxd:0.2.2
+    image: codeberg.org/tautropfli/outboxd:0.2.3
     volumes:
     - outbox:/var/lib/outboxd
   web:
