@@ -38,7 +38,7 @@ walkdir = "2.5.0"
 systemd = "0.10.0"
 
 [target.'cfg(unix)'.dependencies]
-outbox = { git = "https://codeberg.org/tautropfli/outbox.git", branch = "v2" }
+outbox = { git = "https://codeberg.org/tautropfli/outbox.git" }
 
 [features]
 tls = ["rocket/tls"]

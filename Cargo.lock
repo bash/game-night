@@ -1958,7 +1958,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fc2f4eb4bc735547cfed7c0a4922cbd04a4655978c09b54f1f7b228750664c34"
 dependencies = [
  "cfg-if",
- "windows-targets 0.52.6",
+ "windows-targets 0.48.5",
 ]
 
 [[package]]
@@ -2371,7 +2371,7 @@ dependencies = [
 [[package]]
 name = "outbox"
 version = "0.1.0"
-source = "git+https://codeberg.org/tautropfli/outbox.git?branch=v2#6e691222cb23817d3496f663cf497777e56d2a0e"
+source = "git+https://codeberg.org/tautropfli/outbox.git#6b3ea7a4bd9df0a51804edf05c762f06b8f620ab"
 dependencies = [
  "reqwest",
 ]
@@ -4689,7 +4689,7 @@ version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf221c93e13a30d793f7645a0e7762c55d169dbb0a49671918a2319d289b10bb"
 dependencies = [
- "windows-sys 0.59.0",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]
