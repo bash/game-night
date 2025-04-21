@@ -149,12 +149,8 @@ impl EmailSenderImpl {
             .context("failed to read email sender configuration")?;
         let template_dir = config.template_dir.relative();
         #[cfg(unix)]
-        let outbox_bus = config.outbox_bus.unwrap_or(OutboxBus::System);
-        #[cfg(unix)]
-        let outbox = outbox_bus
-            .to_outbox()
-            .await
-            .context("failed to initialize outbox")?;
+        let outbox =
+            Outbox::new_for_path(config.outbox_socket).context("failed to initialize outbox")?;
 
         Ok(Self {
             sender: config.sender,
@@ -166,29 +162,11 @@ impl EmailSenderImpl {
     }
 }
 
-#[cfg(unix)]
-#[derive(Debug, Copy, Clone, Deserialize)]
-#[serde(rename_all = "snake_case")]
-enum OutboxBus {
-    System,
-    Session,
-}
-
-#[cfg(unix)]
-impl OutboxBus {
-    async fn to_outbox(self) -> Result<Outbox> {
-        match self {
-            OutboxBus::Session => Ok(Outbox::session().await?),
-            OutboxBus::System => Ok(Outbox::system().await?),
-        }
-    }
-}
-
 #[derive(Debug, Deserialize)]
 struct EmailSenderConfig {
     sender: Mailbox,
     reply_to: Option<Mailbox>,
     template_dir: RelativePathBuf,
     #[cfg(unix)]
-    outbox_bus: Option<OutboxBus>,
+    outbox_socket: String,
 }

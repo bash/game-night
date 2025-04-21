@@ -12,8 +12,8 @@ url = "database.sqlite"
 [default.email]
 sender = "Tau's Game Night <game-night@tau.garden>"
 reply_to = "Tau <tau@example.com>"
-outbox_bus = "session"
 template_dir = "emails"
+outbox_socket = "outbox.sock"
 
 [default.tls]
 certs = "private/localhost+2.pem"

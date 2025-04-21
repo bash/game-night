@@ -38,7 +38,7 @@ walkdir = "2.5.0"
 systemd = "0.10.0"
 
 [target.'cfg(unix)'.dependencies]
-outbox = { git = "https://github.com/bash/outbox.git", version = "0.1.0" }
+outbox = { git = "https://codeberg.org/tautropfli/outbox.git", branch = "v2" }
 
 [features]
 tls = ["rocket/tls"]
@@ -52,6 +52,7 @@ rocket_http = { git = "https://github.com/rwf2/Rocket/" }
 rocket_db_pools = { git = "https://github.com/rwf2/Rocket/" }
 rocket_db_pools_codegen = { git = "https://github.com/rwf2/Rocket/" }
 rocket_dyn_templates = { git = "https://github.com/rwf2/Rocket/" }
+reqwest = { git = "https://github.com/seanmonstar/reqwest.git", branch = "uds" }
 
 [workspace]
 members = ["crates/tera-macros"]
