@@ -6,22 +6,18 @@ use crate::play::{rocket_uri_macro_archive_page, rocket_uri_macro_play_redirect}
 use crate::register::{rocket_uri_macro_profile, rocket_uri_macro_register_page};
 use crate::users::rocket_uri_macro_list_users;
 use crate::users::User;
-use anyhow::{Error, Result};
+use anyhow::Error;
 use itertools::Itertools;
 use rocket::http::uri::Origin;
 use rocket::outcome::try_outcome;
 use rocket::request::{FromRequest, Outcome};
 use rocket::{async_trait, uri, Request};
-use rocket_dyn_templates::{Engines, Template};
+use rocket_dyn_templates::Template;
 use serde::Serialize;
 use std::borrow::Cow;
 use std::sync::OnceLock;
-use tera_macros::tera::Tera;
 
-mod functions;
-pub(crate) use functions::*;
 use std::convert::Infallible;
-mod assets;
 
 pub(crate) struct PageBuilder<'r> {
     user: Option<User>,
@@ -256,16 +252,4 @@ impl AccentColor {
             Orange => "var(--orange-color)",
         }
     }
-}
-
-pub(crate) fn configure_template_engines(
-    engines: &mut Engines,
-) -> Result<(), Box<dyn std::error::Error>> {
-    Ok(configure_tera(&mut engines.tera)?)
-}
-
-pub(crate) fn configure_tera(tera: &mut Tera) -> Result<()> {
-    functions::register_custom_functions(tera);
-    assets::register_asset_map_functions(tera)?;
-    Ok(())
 }
