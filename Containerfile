@@ -7,7 +7,6 @@ COPY src/ ./src
 COPY crates/ ./crates
 COPY .sqlx/ ./.sqlx
 ARG CARGO_BUILD_FLAGS=--release
-ARG CARGO_BUILD_TARGET
 RUN --mount=type=cache,target=/usr/local/src/game-night/target \
     --mount=type=cache,target=/usr/local/cargo/registry \
     build_messages=$(cargo build $CARGO_BUILD_FLAGS --color=always --message-format json) && \
