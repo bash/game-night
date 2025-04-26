@@ -23,8 +23,8 @@ build-web:
 	just _export_image $image_name public/build
 
 fetch-prod-db:
-	scp {{prod-host}}:/opt/game-night/data/database.sqlite database.sqlite
-	echo "DELETE FROM web_push_subscriptions;" | sqlite3 database.sqlite
+	scp {{prod-host}}:/opt/game-night/data/database.sqlite data/database.sqlite
+	echo "DELETE FROM web_push_subscriptions;" | sqlite3 data/database.sqlite
 
 publish:
 	podman build --tag game-night --target publish .
