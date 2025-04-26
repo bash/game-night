@@ -1,6 +1,7 @@
 cargo-flags := ''
 prod-host := 'root@fedora-01.infra.tau.garden'
 prod-service-name := 'game-night-v2'
+build-image-name := 'game-night-public-dev'
 
 @default:
 	just --list
@@ -15,12 +16,9 @@ logs:
 	podman-compose logs -f
 
 build-web:
-	#!/usr/bin/env bash
-	set -euo pipefail
-	image_name=game-night-public-dev
-	podman build --tag $image_name --target public_dev --build-arg 'SASS_FLAGS=--embed-source-map --embed-sources' .
-	mkdir -p public/build
-	just _export_image $image_name public/build
+	podman build --tag {{build-image-name}} --target public_dev --build-arg 'SASS_FLAGS=--embed-source-map --embed-sources' .
+	@mkdir -p public/build
+	just _export_image {{build-image-name}} public/build
 
 fetch-prod-db:
 	scp {{prod-host}}:/opt/game-night/data/database.sqlite data/database.sqlite
@@ -59,7 +57,7 @@ check: sqlx-prepare
 
 _export_image image output_dir:
 	#!/usr/bin/env bash
-	set -euo pipefail
+	set -euxo pipefail
 	container_id=$(podman create '{{image}}')
 	rm -f '{{image}}.tar'
 	podman export "$container_id" -o '{{image}}.tar'
