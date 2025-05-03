@@ -8,7 +8,7 @@ use crate::event::{
     StatefulEvent,
 };
 use crate::iso_8601::Iso8601;
-use crate::push::PushSender;
+use crate::push::{PollNotification, PushSender};
 use crate::register::rocket_uri_macro_profile;
 use crate::template::PageBuilder;
 use crate::uri::UriBuilder;
@@ -303,8 +303,9 @@ impl NewPollNotificationSender {
                 manage_subscription_url: sub_url,
             };
             self.email_sender.send(&poll.event, &user, &email).await?;
+            let notification = PollNotification { poll };
             self.push_sender
-                .send_templated("poll.json", context! { poll: &poll }, user.id)
+                .send_templated(&notification, user.id)
                 .await?;
         }
 

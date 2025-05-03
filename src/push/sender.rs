@@ -1,13 +1,14 @@
-use super::{NotificationRenderer, PushMessage, PushSubscription, VapidContact, WebPushKey};
+use super::{Notification, PushMessage, PushSubscription, VapidContact, WebPushKey};
 use crate::auto_resolve;
 use crate::database::Repository;
 use crate::infra::HttpClient;
 use crate::users::UserId;
-use anyhow::Result;
+use anyhow::{Context as _, Result};
+use askama_json::JsonTemplate;
 use http::StatusCode;
 use rocket::tokio::sync::Mutex as TokioMutex;
 use rocket::warn;
-use serde::Serialize;
+use serde_json as json;
 use std::sync::Arc;
 use web_push::WebPushBuilder;
 
@@ -17,7 +18,6 @@ auto_resolve! {
         http_client: HttpClient,
         contact: VapidContact,
         key: WebPushKey,
-        renderer: NotificationRenderer,
     }
 }
 
@@ -33,11 +33,12 @@ impl PushSender {
 
     pub(crate) async fn send_templated(
         &mut self,
-        template_name: &str,
-        context: impl Serialize,
+        template: &impl JsonTemplate,
         user_id: UserId,
     ) -> Result<()> {
-        let notification = self.renderer.render(template_name, context)?;
+        let raw = template.render()?;
+        let notification: Notification =
+            json::from_value(raw).context("result is not a valid notification object")?;
         self.send(&PushMessage::from(notification), user_id).await
     }
 

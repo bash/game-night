@@ -15,12 +15,16 @@ down:
 logs:
 	podman-compose logs -f
 
+restart service:
+    podman-compose up --build -d --force-recreate --no-deps {{service}}
+
 build-web:
 	podman build --tag {{build-image-name}} --target public_dev --build-arg 'SASS_FLAGS=--embed-source-map --embed-sources' .
 	@mkdir -p public/build
 	just _export_image {{build-image-name}} public/build
 
 fetch-prod-db:
+	@mkdir -p data
 	scp {{prod-host}}:/opt/game-night/data/database.sqlite data/database.sqlite
 	echo "DELETE FROM web_push_subscriptions;" | sqlite3 data/database.sqlite
 

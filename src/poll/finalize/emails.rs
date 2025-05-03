@@ -1,7 +1,8 @@
+use crate::decorations::Random;
 use crate::email::EmailMessage;
 use crate::event::{Event, EventEmailSender as DynEventEmailSender, Ics};
 use crate::fmt::LongEventTitle;
-use crate::push::PushSender;
+use crate::push::{InvitedNotification, MissedNotification, PushSender};
 use crate::uri::UriBuilder;
 use crate::users::User;
 use crate::{auto_resolve, uri};
@@ -9,7 +10,6 @@ use anyhow::Result;
 use lettre::message::header::ContentType;
 use lettre::message::{Attachment, SinglePart};
 use rocket::http::uri::Absolute;
-use rocket_dyn_templates::context;
 use serde::Serialize;
 use time::format_description::FormatItem;
 use time::macros::format_description;
@@ -52,8 +52,12 @@ impl EventEmailSender {
             ics_file,
         };
         self.email_sender.send(event, user, &email).await?;
+        let notification = InvitedNotification {
+            event,
+            random: Random::default(),
+        };
         self.push_sender
-            .send_templated("invited.json", context! { event: event }, user.id)
+            .send_templated(&notification, user.id)
             .await?;
         Ok(())
     }
@@ -68,8 +72,9 @@ impl EventEmailSender {
             name: &user.name,
         };
         self.email_sender.send(event, user, &email).await?;
+        let notification = MissedNotification { event };
         self.push_sender
-            .send_templated("missed.json", context! { event: event }, user.id)
+            .send_templated(&notification, user.id)
             .await?;
         Ok(())
     }

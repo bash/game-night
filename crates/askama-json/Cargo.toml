@@ -1,0 +1,9 @@
+[package]
+name = "askama-json"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+askama = "0.14.0"
+serde_json = "1.0.140"
+askama-json-macros.path = "../askama-json-macros"

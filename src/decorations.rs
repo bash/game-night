@@ -1,4 +1,31 @@
 use rand::distr::{self, Distribution};
+use rand::{rng, Rng as _};
+use std::sync::LazyLock;
+
+#[derive(Debug)]
+pub(crate) struct Random {
+    heart: LazyLock<&'static str>,
+    skin_tone_modifier: LazyLock<&'static str>,
+}
+
+impl Random {
+    pub(crate) fn heart(&self) -> &'static str {
+        &self.heart
+    }
+
+    pub(crate) fn skin_tone_modifier(&self) -> &'static str {
+        &self.skin_tone_modifier
+    }
+}
+
+impl Default for Random {
+    fn default() -> Self {
+        Self {
+            heart: LazyLock::new(|| rng().sample(Hearts)),
+            skin_tone_modifier: LazyLock::new(|| rng().sample(SkinToneModifiers)),
+        }
+    }
+}
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Hearts;

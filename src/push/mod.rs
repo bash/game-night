@@ -6,7 +6,6 @@ use rocket::fairing::{self, Fairing};
 use rocket::http::uri::Origin;
 use rocket::response::Redirect;
 use rocket::{error, post, routes, uri, Build, Rocket, Route};
-use rocket_dyn_templates::context;
 
 mod key;
 pub(crate) use key::*;
@@ -18,9 +17,10 @@ pub(crate) use sender::*;
 mod contact;
 mod notification;
 pub(crate) use notification::*;
-mod templating;
+mod notifications;
 mod testbed;
-pub(crate) use templating::*;
+use crate::decorations::Random;
+pub(crate) use notifications::*;
 
 pub(crate) fn routes() -> Vec<Route> {
     routes![
@@ -35,9 +35,11 @@ pub(crate) fn routes() -> Vec<Route> {
 
 #[post("/users/push/self-test")]
 pub(crate) async fn self_test(user: User, mut push_sender: PushSender) -> HttpResult<Redirect> {
-    push_sender
-        .send_templated("self-test.json", context! { user: &user }, user.id)
-        .await?;
+    let notification = SelfTestNotification {
+        user: &user,
+        random: Random::default(),
+    };
+    push_sender.send_templated(&notification, user.id).await?;
     Ok(Redirect::to(uri!(crate::register::profile())))
 }
 
@@ -63,13 +65,6 @@ pub(crate) fn web_push_fairing() -> impl Fairing {
         Box::pin(async {
             let rocket = rocket.manage(PushEndpoints::default());
             let rocket = match VapidContact::from_figment(rocket.figment()) {
-                Ok(key) => rocket.manage(key),
-                Err(error) => {
-                    error!("failed to initialize web push:\n{:?}", error);
-                    return Err(rocket);
-                }
-            };
-            let rocket = match NotificationRenderer::from_figment(rocket.figment()) {
                 Ok(key) => rocket.manage(key),
                 Err(error) => {
                     error!("failed to initialize web push:\n{:?}", error);
