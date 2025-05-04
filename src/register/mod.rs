@@ -13,7 +13,7 @@ use lettre::message::Mailbox;
 use rand::{rng, Rng};
 use rocket::form::Form;
 use rocket::http::{Cookie, CookieJar, SameSite};
-use rocket::response::{Debug, Redirect};
+use rocket::response::{Debug, Redirect, Responder};
 use rocket::{get, post, routes, uri, FromForm, Route, State};
 use rocket_dyn_templates::{context, Template};
 use serde::Serialize;
@@ -27,8 +27,10 @@ mod delete;
 mod email_verification_code;
 mod profile;
 mod verification;
+use crate::template_v2::responder::Templated;
 pub(crate) use email_verification_code::*;
 pub(crate) use profile::*;
+use templates::GettingInvitedPage;
 
 macro_rules! unwrap_or_return {
     ($result:expr, $e:ident => $ret:expr) => {
@@ -69,11 +71,11 @@ async fn getting_invited_redirect(_user: User) -> Redirect {
 }
 
 #[get("/getting-invited", rank = 20)]
-pub(crate) async fn getting_invited_page(page: PageBuilder<'_>) -> Template {
-    page.render(
-        "register/getting-invited",
-        context! { register_uri: uri!(register_page(passphrase = Option::<Passphrase>::None)) },
-    )
+pub(crate) async fn getting_invited_page(page: PageBuilder<'_>) -> impl Responder {
+    Templated(GettingInvitedPage {
+        register_uri: uri!(register_page(passphrase = Option::<Passphrase>::None)),
+        ctx: page.build(),
+    })
 }
 
 #[get("/register", rank = 10)]
@@ -343,5 +345,17 @@ impl From<UserDetails> for Mailbox {
             Some(value.name),
             value.email_address.as_str().parse().unwrap(),
         )
+    }
+}
+
+mod templates {
+    use crate::template_v2::prelude::*;
+    use rocket::http::uri::Origin;
+
+    #[derive(Template, Debug)]
+    #[template(path = "register/getting-invited.html")]
+    pub(crate) struct GettingInvitedPage {
+        pub(crate) register_uri: Origin<'static>,
+        pub(crate) ctx: PageContext,
     }
 }
