@@ -34,6 +34,7 @@ pub type EventId = i64;
 pub(crate) struct Event<S: EventState = Materialized, L: EventLifecycle = Planned> {
     pub(crate) id: S::Id,
     pub(crate) starts_at: L::StartsAt,
+    // TODO: make title an option with a non-empty string.
     pub(crate) title: String,
     pub(crate) description: String,
     #[sqlx(rename = "location_id")]
