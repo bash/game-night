@@ -1,11 +1,11 @@
-{% extends 'base' %}
+{% extends "base.html" %}
 
 {% block title %}Goodbye?{% endblock title %}
 
 {% block content %}
     <form method="post">
         <p>
-            Thank you <strong>{{user.name}}</strong> for being a part of <em>Tau's Game Night</em> {{ random_heart() }}
+            Thank you <strong>{{user.name}}</strong> for being a part of <em>Tau's Game Night</em> {{ random.heart() }}
         </p>
         <p>
             While it's sad to see you go, I will treasure all the awesome memories that we made along the way~
