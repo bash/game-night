@@ -2,7 +2,7 @@ use crate::auth::{CookieJarExt, LoginState};
 use crate::database::Repository;
 use crate::email::EmailSender;
 use crate::invitation::{Invitation, Passphrase};
-use crate::template::PageBuilder;
+use crate::template_v2::prelude::*;
 use crate::users::{AstronomicalSymbol, User, UserId};
 use crate::{default, HttpResult};
 use anyhow::Result;
@@ -11,6 +11,7 @@ use email_address::EmailAddress;
 use lettre::message::Mailbox;
 use rand::{rng, Rng};
 use rocket::form::Form;
+use rocket::http::uri::Origin;
 use rocket::http::{Cookie, CookieJar, SameSite};
 use rocket::response::{Redirect, Responder};
 use rocket::{get, post, routes, uri, FromForm, Route, State};
@@ -24,10 +25,8 @@ mod delete;
 mod email_verification_code;
 mod profile;
 mod verification;
-use crate::template_v2::responder::Templated;
 pub(crate) use email_verification_code::*;
 pub(crate) use profile::*;
-use templates::{GettingInvitedPage, InvalidCampaignPage, RegisterPage, RegisterStep};
 
 macro_rules! unwrap_or_return {
     ($result:expr, $e:ident => $ret:expr) => {
@@ -378,51 +377,44 @@ impl From<UserDetails> for Mailbox {
     }
 }
 
-mod templates {
-    use super::{Campaign, PassphraseSource, RegisterForm};
-    use crate::template_v2::prelude::*;
-    use email_address::EmailAddress;
-    use rocket::http::uri::Origin;
+#[derive(Template, Debug)]
+#[template(path = "register/getting-invited.html")]
+pub(crate) struct GettingInvitedPage {
+    register_uri: Origin<'static>,
+    ctx: PageContext,
+}
 
-    #[derive(Template, Debug)]
-    #[template(path = "register/getting-invited.html")]
-    pub(crate) struct GettingInvitedPage {
-        pub(super) register_uri: Origin<'static>,
-        pub(super) ctx: PageContext,
-    }
+#[derive(Template, Debug)]
+#[template(path = "register/invalid-campaign.html")]
+pub(crate) struct InvalidCampaignPage {
+    ctx: PageContext,
+}
 
-    #[derive(Template, Debug)]
-    #[template(path = "register/invalid-campaign.html")]
-    pub(crate) struct InvalidCampaignPage {
-        pub(super) ctx: PageContext,
-    }
+#[derive(Template, Debug)]
+#[template(path = "register/register.html")]
+pub(crate) struct RegisterPage<'r> {
+    step: RegisterStep,
+    error_message: Option<String>,
+    form: RegisterForm<'r>,
+    campaign: Option<Campaign<'r>>,
+    passphrase_source: PassphraseSource,
+    ctx: PageContext,
+}
 
-    #[derive(Template, Debug)]
-    #[template(path = "register/register.html")]
-    pub(crate) struct RegisterPage<'r> {
-        pub(super) step: RegisterStep,
-        pub(super) error_message: Option<String>,
-        pub(super) form: RegisterForm<'r>,
-        pub(super) campaign: Option<Campaign<'r>>,
-        pub(super) passphrase_source: PassphraseSource,
-        pub(super) ctx: PageContext,
-    }
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub(crate) enum RegisterStep {
+    InvitationCode,
+    UserDetails,
+    VerifyEmail(EmailAddress),
+}
 
-    #[derive(Debug, Clone, Eq, PartialEq)]
-    pub(crate) enum RegisterStep {
-        InvitationCode,
-        UserDetails,
-        VerifyEmail(EmailAddress),
-    }
-
-    impl RegisterPage<'_> {
-        fn nth_word_or_empty(&self, n: usize) -> &str {
-            self.form
-                .words
-                .as_ref()
-                .and_then(|w| w.get(n))
-                .map(|w| w.as_str())
-                .unwrap_or_default()
-        }
+impl RegisterPage<'_> {
+    fn nth_word_or_empty(&self, n: usize) -> &str {
+        self.form
+            .words
+            .as_ref()
+            .and_then(|w| w.get(n))
+            .map(|w| w.as_str())
+            .unwrap_or_default()
     }
 }

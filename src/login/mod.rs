@@ -2,7 +2,7 @@ use crate::auth::{CookieJarExt, LoginState};
 use crate::database::Repository;
 use crate::email::{EmailMessage, EmailSender};
 use crate::register::rocket_uri_macro_getting_invited_page;
-use crate::template::PageBuilder;
+use crate::template_v2::prelude::*;
 use crate::users::{User, UserId};
 use crate::{default, responder, uri, HttpResult};
 use anyhow::Result;
@@ -10,20 +10,20 @@ use lettre::message::Mailbox;
 use rand::distr::{Alphanumeric, Distribution, SampleString as _, Uniform};
 use rand::{rng, Rng};
 use rocket::form::Form;
+use rocket::http::uri::Origin;
 use rocket::response::{self, Redirect, Responder};
 use rocket::{
     catch, catchers, get, post, routes, Catcher, FromForm, Request, Response, Route, State,
 };
+use serde::Serialize;
+use time::{Duration, OffsetDateTime};
 
 mod auto_login;
 pub(crate) use auto_login::*;
-use serde::Serialize;
-use time::{Duration, OffsetDateTime};
 mod code;
 mod secret_key;
 pub(crate) use secret_key::*;
 mod redirect;
-use crate::template_v2::responder::Templated;
 pub(crate) use redirect::*;
 mod sudo;
 
@@ -52,7 +52,7 @@ fn login_redirect(_user: User, redirect: Option<RedirectUri>) -> Redirect {
 
 #[get("/login?<redirect>", rank = 20)]
 fn login_page(redirect: Option<RedirectUri>, page: PageBuilder<'_>) -> impl Responder {
-    let template = templates::LoginPage {
+    let template = LoginPage {
         has_redirect: redirect.is_some(),
         getting_invited_uri: uri!(getting_invited_page()),
         error_message: None,
@@ -62,19 +62,14 @@ fn login_page(redirect: Option<RedirectUri>, page: PageBuilder<'_>) -> impl Resp
     Templated(template)
 }
 
-mod templates {
-    use crate::template_v2::prelude::*;
-    use rocket::http::uri::Origin;
-
-    #[derive(Template, Debug)]
-    #[template(path = "login.html")]
-    pub(crate) struct LoginPage {
-        pub(crate) has_redirect: bool,
-        pub(crate) getting_invited_uri: Origin<'static>,
-        pub(crate) error_message: Option<String>,
-        pub(crate) email_field: Option<String>,
-        pub(crate) ctx: PageContext,
-    }
+#[derive(Template, Debug)]
+#[template(path = "login.html")]
+pub(crate) struct LoginPage {
+    pub(crate) has_redirect: bool,
+    pub(crate) getting_invited_uri: Origin<'static>,
+    pub(crate) error_message: Option<String>,
+    pub(crate) email_field: Option<String>,
+    pub(crate) ctx: PageContext,
 }
 
 #[post("/login?<redirect>", data = "<form>")]
@@ -97,13 +92,13 @@ responder! {
     enum Login {
         Success(Box<Redirect>),
         #[response(status = 400)]
-        Failure(Box<Templated<templates::LoginPage>>),
+        Failure(Box<Templated<LoginPage>>),
     }
 }
 
 impl Login {
     fn failure(builder: PageBuilder, redirect: Option<RedirectUri>, form: LoginData<'_>) -> Login {
-        let template = templates::LoginPage {
+        let template = LoginPage {
             has_redirect: redirect.is_some(),
             email_field: Some(form.email.to_string()),
             error_message: Some("I don't know what to do with this email address, are you sure that you spelled it correctly? 🤔".to_string()),

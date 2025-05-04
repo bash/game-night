@@ -1,8 +1,8 @@
-use crate::template_v2::responder::Templated;
+use crate::template_v2::prelude::*;
 use crate::{uri, PageBuilder};
 use rocket::get;
+use rocket::http::uri::Origin;
 use rocket::response::Responder;
-use templates::HomePage;
 
 #[get("/", rank = 20)]
 pub(crate) fn home_page(page: PageBuilder<'_>) -> impl Responder {
@@ -12,14 +12,9 @@ pub(crate) fn home_page(page: PageBuilder<'_>) -> impl Responder {
     })
 }
 
-mod templates {
-    use crate::template_v2::prelude::*;
-    use rocket::http::uri::Origin;
-
-    #[derive(Template, Debug)]
-    #[template(path = "index.html")]
-    pub(crate) struct HomePage {
-        pub(super) getting_invited_uri: Origin<'static>,
-        pub(super) ctx: PageContext,
-    }
+#[derive(Template, Debug)]
+#[template(path = "index.html")]
+pub(crate) struct HomePage {
+    pub(super) getting_invited_uri: Origin<'static>,
+    pub(super) ctx: PageContext,
 }

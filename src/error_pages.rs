@@ -1,9 +1,8 @@
-use crate::template_v2::responder::Templated;
-use crate::{HttpResult, PageBuilder};
+use crate::template_v2::prelude::*;
+use crate::HttpResult;
 use anyhow::anyhow;
 use rocket::request::FromRequest as _;
 use rocket::{catch, catchers, Catcher, Request};
-use templates::{ForbiddenPage, NotFoundPage};
 
 pub(crate) fn catchers() -> Vec<Catcher> {
     catchers![not_found, forbidden]
@@ -27,18 +26,14 @@ async fn forbidden(request: &Request<'_>) -> HttpResult<Templated<ForbiddenPage>
     Ok(Templated(ForbiddenPage { ctx }))
 }
 
-mod templates {
-    use crate::template_v2::prelude::*;
+#[derive(Template)]
+#[template(path = "errors/404.html")]
+pub(super) struct NotFoundPage {
+    pub(super) ctx: PageContext,
+}
 
-    #[derive(Template)]
-    #[template(path = "errors/404.html")]
-    pub(super) struct NotFoundPage {
-        pub(super) ctx: PageContext,
-    }
-
-    #[derive(Template)]
-    #[template(path = "errors/403.html")]
-    pub(super) struct ForbiddenPage {
-        pub(super) ctx: PageContext,
-    }
+#[derive(Template)]
+#[template(path = "errors/403.html")]
+pub(super) struct ForbiddenPage {
+    pub(super) ctx: PageContext,
 }

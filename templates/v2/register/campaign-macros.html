@@ -1,5 +1,5 @@
 {% macro campaign_ps(campaign, level) %}
     <p>
-        <strong>{{self::ps(**level)}}</strong> {{campaign.message | safe}}
+        <strong>{{functions::ps(**level)}}</strong> {{campaign.message | safe}}
     </p>
 {% endmacro %}

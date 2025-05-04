@@ -1,7 +1,7 @@
 {
     "title": "You're Invited to Tau's Game Night{% if !event.title.is_empty() %} «{{event.title}}»{% endif %}",
     "body": "The game night is happening on {{*event.starts_at | time(\"{date}\")}} at {{*event.starts_at | time(\"{time}\")}} and you are warmly invited {{random.heart()}}",
-    "navigate": "{{self::event_page_uri(*event.id)}}",
+    "navigate": "{{functions::event_page_uri(*event.id)}}",
     "requireInteraction": true,
     "renotify": true,
     "tag": "event-{{event.id}}",
@@ -9,12 +9,12 @@
         {
             "action": "saveToCalendar",
             "title": "Save to Calendar",
-            "navigate": "{{self::event_ics_uri(*event.id)}}"
+            "navigate": "{{functions::event_ics_uri(*event.id)}}"
         },
         {
             "action": "leave",
             "title": "Leave Event...",
-            "navigate": "{{self::leave_event_uri(*event.id)}}"
+            "navigate": "{{functions::leave_event_uri(*event.id)}}"
         }
     ]
 }

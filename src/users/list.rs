@@ -1,11 +1,10 @@
-use super::{User, UsersQuery};
+use super::{Role, User, UserId, UsersQuery};
 use crate::auth::{AuthorizedTo, ManageUsers};
-use crate::template_v2::responder::Templated;
-use crate::{auto_resolve, HttpResult, PageBuilder, Repository};
+use crate::template_v2::prelude::*;
+use crate::{auto_resolve, HttpResult, Repository};
 use anyhow::Result;
 use rocket::get;
 use std::ops;
-use templates::UsersPage;
 
 #[get("/users")]
 pub(crate) async fn list_users(
@@ -61,25 +60,19 @@ impl UserViewModel {
     }
 }
 
-mod templates {
-    use super::UserViewModel;
-    use crate::template_v2::prelude::*;
-    use crate::users::{Role, UserId};
+#[derive(Template, Debug)]
+#[template(path = "users.html")]
+pub(crate) struct UsersPage {
+    pub(super) users: Vec<UserViewModel>,
+    pub(super) ctx: PageContext,
+}
 
-    #[derive(Template, Debug)]
-    #[template(path = "users.html")]
-    pub(crate) struct UsersPage {
-        pub(super) users: Vec<UserViewModel>,
-        pub(super) ctx: PageContext,
+impl UsersPage {
+    fn user_by_id(&self, user_id: UserId) -> Option<&UserViewModel> {
+        self.users.iter().find(|u| u.id == user_id)
     }
 
-    impl UsersPage {
-        fn user_by_id(&self, user_id: UserId) -> Option<&UserViewModel> {
-            self.users.iter().find(|u| u.id == user_id)
-        }
-    }
-
-    fn fmt_role(role: Role) -> &'static str {
+    fn fmt_role(&self, role: Role) -> &'static str {
         match role {
             Role::Admin => "admin",
             Role::Guest => "guest",

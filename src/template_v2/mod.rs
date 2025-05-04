@@ -7,7 +7,9 @@ pub(crate) mod functions;
 pub(crate) mod responder;
 
 pub(crate) mod prelude {
-    pub(crate) use super::{filters, functions::*, PageContext};
+    pub(crate) use super::responder::Templated;
+    pub(crate) use super::{filters, functions, PageContext};
+    pub(crate) use crate::template::PageBuilder;
     pub(crate) use askama::Template;
 }
 

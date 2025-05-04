@@ -2,15 +2,16 @@ use super::delete::rocket_uri_macro_delete_profile_page;
 use super::AstronomicalSymbol;
 use crate::database::Repository;
 use crate::push::PushEndpoints;
-use crate::template::PageBuilder;
-use crate::template_v2::responder::Templated;
-use crate::users::{rocket_uri_macro_list_users, EmailSubscription, ASTRONOMICAL_SYMBOLS};
-use crate::users::{User, UserPatch};
+use crate::template_v2::prelude::*;
+use crate::users::{
+    rocket_uri_macro_list_users, EmailSubscription, User, UserPatch, ASTRONOMICAL_SYMBOLS,
+};
 use crate::HttpResult;
 use rocket::form::Form;
+use rocket::http::uri::Origin;
 use rocket::response::Redirect;
 use rocket::{get, post, uri, FromForm, State};
-use templates::ProfilePage;
+use serde_json::json;
 use time::Date;
 
 #[get("/profile")]
@@ -78,46 +79,38 @@ fn to_email_subscription(subscribe: bool, until: Option<Date>) -> EmailSubscript
     }
 }
 
-mod templates {
-    use crate::push::PushEndpoints;
-    use crate::template_v2::prelude::*;
-    use crate::users::{AstronomicalSymbol, EmailSubscription, User};
-    use rocket::http::uri::Origin;
-    use serde_json::json;
+#[derive(Template, Debug)]
+#[template(path = "register/profile.html")]
+pub(crate) struct ProfilePage {
+    pub(crate) can_update_name: bool,
+    pub(crate) list_users_uri: Option<Origin<'static>>,
+    pub(crate) delete_profile_uri: Origin<'static>,
+    pub(crate) push_self_test_uri: Origin<'static>,
+    pub(crate) symbols: Option<&'static [AstronomicalSymbol]>,
+    pub(crate) push_endpoints: PushEndpoints,
+    pub(crate) user: User,
+    pub(crate) ctx: PageContext,
+}
 
-    #[derive(Template, Debug)]
-    #[template(path = "register/profile.html")]
-    pub(crate) struct ProfilePage {
-        pub(crate) can_update_name: bool,
-        pub(crate) list_users_uri: Option<Origin<'static>>,
-        pub(crate) delete_profile_uri: Origin<'static>,
-        pub(crate) push_self_test_uri: Origin<'static>,
-        pub(crate) symbols: Option<&'static [AstronomicalSymbol]>,
-        pub(crate) push_endpoints: PushEndpoints,
-        pub(crate) user: User,
-        pub(crate) ctx: PageContext,
-    }
-
-    impl ProfilePage {
-        fn subscription_values(&self) -> serde_json::Value {
-            use EmailSubscription::*;
-            let permanence = match self.user.email_subscription {
-                PermanentlyUnsubscribed => "permanent",
-                Subscribed | TemporarilyUnsubscribed { .. } => "temporary",
-            };
-            let subscription = match self.user.email_subscription {
-                Subscribed => "on",
-                TemporarilyUnsubscribed { .. } | PermanentlyUnsubscribed => "off",
-            };
-            let until = match self.user.email_subscription {
-                TemporarilyUnsubscribed { until } => Some(serde_json::to_value(until).unwrap()),
-                Subscribed | PermanentlyUnsubscribed => None,
-            };
-            json!({
-                "permanence": permanence,
-                "subscription": subscription,
-                "until": until
-            })
-        }
+impl ProfilePage {
+    fn subscription_values(&self) -> serde_json::Value {
+        use EmailSubscription::*;
+        let permanence = match self.user.email_subscription {
+            PermanentlyUnsubscribed => "permanent",
+            Subscribed | TemporarilyUnsubscribed { .. } => "temporary",
+        };
+        let subscription = match self.user.email_subscription {
+            Subscribed => "on",
+            TemporarilyUnsubscribed { .. } | PermanentlyUnsubscribed => "off",
+        };
+        let until = match self.user.email_subscription {
+            TemporarilyUnsubscribed { until } => Some(serde_json::to_value(until).unwrap()),
+            Subscribed | PermanentlyUnsubscribed => None,
+        };
+        json!({
+            "permanence": permanence,
+            "subscription": subscription,
+            "until": until
+        })
     }
 }

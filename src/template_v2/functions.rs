@@ -1,4 +1,6 @@
+use crate::event::EventId;
 use crate::template::AccentColor;
+use crate::uri;
 use crate::users::UserId;
 use rand::rngs::SmallRng;
 use rand::seq::SliceRandom as _;
@@ -21,4 +23,20 @@ pub(crate) fn ps(level: usize) -> String {
     std::iter::repeat_n("P.", level + 1)
         .chain(iter::once("S."))
         .collect()
+}
+
+pub(crate) fn event_ics_uri(event_id: EventId) -> String {
+    uri!(crate::play::event_ics(id = event_id)).to_string()
+}
+
+pub(crate) fn leave_event_uri(event_id: EventId) -> String {
+    uri!(crate::event::leave_page(id = event_id)).to_string()
+}
+
+pub(crate) fn skip_poll_uri(event_id: EventId) -> String {
+    uri!(crate::poll::skip_poll_page(id = event_id)).to_string()
+}
+
+pub(crate) fn event_page_uri(event_id: EventId) -> String {
+    uri!(crate::event::event_page(id = event_id)).to_string()
 }

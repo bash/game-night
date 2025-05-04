@@ -2,14 +2,12 @@ use crate::database::Repository;
 use crate::decorations::Random;
 use crate::invitation::{Invitation, Passphrase};
 use crate::login::{Logout, RedirectUri};
-use crate::template::PageBuilder;
-use crate::template_v2::responder::Templated;
+use crate::template_v2::prelude::*;
 use crate::users::User;
 use crate::HttpResult;
 use rand::rng;
 use rocket::response::Responder;
 use rocket::{get, post, uri};
-use templates::{DeleteProfilePage, ProfileDeletedPage};
 use time::{Duration, OffsetDateTime};
 
 #[get("/profile/delete")]
@@ -55,26 +53,19 @@ pub(crate) fn profile_deleted_page(
     })
 }
 
-mod templates {
-    use crate::decorations::Random;
-    use crate::invitation::Passphrase;
-    use crate::template_v2::prelude::*;
-    use crate::users::User;
+#[derive(Template, Debug)]
+#[template(path = "register/delete.html")]
+pub(crate) struct DeleteProfilePage {
+    pub(crate) user: User,
+    pub(crate) random: Random,
+    pub(crate) ctx: PageContext,
+}
 
-    #[derive(Template, Debug)]
-    #[template(path = "register/delete.html")]
-    pub(crate) struct DeleteProfilePage {
-        pub(crate) user: User,
-        pub(crate) random: Random,
-        pub(crate) ctx: PageContext,
-    }
-
-    #[derive(Template, Debug)]
-    #[template(path = "register/deleted.html")]
-    pub(crate) struct ProfileDeletedPage {
-        pub(crate) name: String,
-        pub(crate) passphrase: Passphrase,
-        pub(crate) random: Random,
-        pub(crate) ctx: PageContext,
-    }
+#[derive(Template, Debug)]
+#[template(path = "register/deleted.html")]
+pub(crate) struct ProfileDeletedPage {
+    pub(crate) name: String,
+    pub(crate) passphrase: Passphrase,
+    pub(crate) random: Random,
+    pub(crate) ctx: PageContext,
 }

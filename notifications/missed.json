@@ -1,7 +1,7 @@
 {
     "title": "Tau's Game Night{% if !event.title.is_empty() %} «{{event.title}}»{% endif %} is set for {{*event.starts_at | time(\"{date}\")}} 🥳",
     "body": "According to the poll, this is a date that you're not available on. If your plans change, you can always join us. 😊",
-    "navigate": "{{self::event_page_uri(*event.id)}}",
+    "navigate": "{{functions::event_page_uri(*event.id)}}",
     "requireInteraction": true,
     "renotify": true,
     "tag": "event-{{event.id}}",
@@ -9,12 +9,12 @@
         {
             "action": "saveToCalendar",
             "title": "Save to Calendar",
-            "navigate": "{{self::event_ics_uri(*event.id)}}"
+            "navigate": "{{functions::event_ics_uri(*event.id)}}"
         },
         {
             "action": "add",
             "title": "Add me to the Event...",
-            "navigate": "{{self::event_page_uri(*event.id)}}"
+            "navigate": "{{functions::event_page_uri(*event.id)}}"
         }
     ]
 }

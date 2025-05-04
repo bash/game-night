@@ -28,6 +28,7 @@ pub(crate) use location::*;
 mod postal_address;
 pub(crate) use postal_address::*;
 
+// TODO: strong type
 pub type EventId = i64;
 
 #[derive(Debug, Clone, sqlx::FromRow, Serialize)]

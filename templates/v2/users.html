@@ -9,7 +9,7 @@
     <li class="user" id="user-{{user.id}}">
         <div class="user-card">
             <span class="avatar">{% call user_macros::name(user) %}</span>
-            <small class="role" title="Role">{{self::fmt_role(*user.role)}}</small>
+            <small class="role" title="Role">{{fmt_role(*user.role)}}</small>
             <small class="invitation">
                 {% if let Some(invited_by) = user.invited_by %}
                     {% if let Some(inviter) = user_by_id(**invited_by) %}
