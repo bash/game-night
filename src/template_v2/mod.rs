@@ -2,11 +2,12 @@ use crate::template::Chapter;
 use crate::users::User;
 use rocket::http::uri::Origin;
 
+pub(crate) mod filters;
 pub(crate) mod functions;
 pub(crate) mod responder;
 
 pub(crate) mod prelude {
-    pub(crate) use super::{functions::*, PageContext};
+    pub(crate) use super::{filters, functions::*, PageContext};
     pub(crate) use askama::Template;
 }
 

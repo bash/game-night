@@ -1,6 +1,5 @@
-{% import 'user-macros' as user_macros %}
-
-{% extends 'base' %}
+{% import "user-macros.html" as user_macros %}
+{% extends "base.html" %}
 
 {% block title %}Users{% endblock title %}
 
@@ -9,20 +8,19 @@
     {% for user in users %}
     <li class="user" id="user-{{user.id}}">
         <div class="user-card">
-            <span class="avatar">{{user_macros::name(user=user)}}</span>
-            <small class="role" title="Role">{{user.role}}</small>
+            <span class="avatar">{% call user_macros::name(user) %}</span>
+            <small class="role" title="Role">{{self::fmt_role(*user.role)}}</small>
             <small class="invitation">
-                {% if user.invited_by %}
-                    {% set invited_by = users | filter(attribute='id', value=user.invited_by) | first %}
-                    {% if invited_by %}
-                        invited by <a href="#user-{{user.invited_by}}">{{invited_by.name}}</a>
+                {% if let Some(invited_by) = user.invited_by %}
+                    {% if let Some(inviter) = user_by_id(**invited_by) %}
+                        invited by <a href="#user-{{inviter.id}}">{{inviter.name}}</a>
                     {%- endif -%}
                 {% endif -%}
-                {%- if user.campaign %}
-                    via {{user.campaign -}}
+                {%- if let Some(campaign) = user.campaign %}
+                    via {{campaign -}}
                 {% endif %}
-                {%- if user.invited_by or user.campaign %},{% endif %}
-                active <em><relative-time datetime="{{user.last_active_at}}">{{user.last_active_at | time(format="{date_with_year}")}}</relative-time></em>
+                {%- if user.invited_by.is_some() || user.campaign.is_some() %},{% endif %}
+                active <em><relative-time datetime='{{*user.last_active_at | time(format="{iso_8601}")}}'>{{*user.last_active_at | time(format="{date_with_year}")}}</relative-time></em>
             </small>
             <small class="anchor"><a href="#user-{{user.id}}">#</a></small>
             <small class="actions">
@@ -30,7 +28,7 @@
                 <form action="/sudo/enter" method="post"><input type="hidden" name="user" value="{{user.id}}"><button type="submit">impersonate</button></form>
                 {% if user.has_push_subscription %}
                     <svg role="img" aria-label="Bell" title="User has push notifications enabled" class="_icon">
-                        <use href="{{asset(path='/icons/bell.svg')}}#icon" aria-hidden="true" />
+                        <use href='{{ctx.asset("/icons/bell.svg")}}#icon' aria-hidden="true" />
                     </svg>
                 {% endif %}
             </small>
@@ -46,5 +44,5 @@
 {% endblock content %}
 
 {% block scripts %}
-    <script src="{{asset(path='/js/relative-time-element.js')}}" type="module"></script>
+    <script src='{{ctx.asset("/js/relative-time-element.js")}}' type="module"></script>
 {% endblock scripts %}

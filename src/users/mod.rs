@@ -6,6 +6,7 @@ use lettre::message::Mailbox;
 use rocket::{routes, Route};
 use rocket_db_pools::sqlx;
 use serde::Serialize;
+use std::fmt;
 use time::{Duration, OffsetDateTime};
 
 mod email_subscription;
@@ -29,6 +30,12 @@ pub(crate) fn routes() -> Vec<Route> {
 #[serde(transparent)]
 #[form(transparent)]
 pub(crate) struct UserId(pub(crate) i64);
+
+impl fmt::Display for UserId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
 
 #[derive(Debug, Clone, sqlx::FromRow, Serialize)]
 pub(crate) struct User<Id = UserId> {
