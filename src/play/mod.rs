@@ -29,7 +29,7 @@ pub(crate) fn routes() -> Vec<Route> {
 // make the login show play as the active chapter.
 #[get("/play")]
 pub(crate) fn play_redirect(_user: User) -> Redirect {
-    Redirect::to(uri!(crate::home_page()))
+    Redirect::to(uri!(crate::home::home_page()))
 }
 
 pub(crate) fn play_page(

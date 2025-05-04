@@ -179,7 +179,7 @@ async fn register<'r>(
 
     cookies.set_login_state(LoginState::Authenticated(user_id));
     Ok(RegisterResponse::Redirect(Box::new(Redirect::to(uri!(
-        crate::home_page()
+        crate::home::home_page()
     )))))
 }
 

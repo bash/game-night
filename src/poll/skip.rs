@@ -17,7 +17,7 @@ pub(super) async fn skip_poll_page(
     page: PageBuilder<'_>,
 ) -> HttpResult<SkipPollResponse> {
     let Some(poll) = events.with_id(id, &user).await?.and_then(|e| e.polling()) else {
-        return Ok(Redirect::to(uri!(crate::home_page())).into());
+        return Ok(Redirect::to(uri!(crate::home::home_page())).into());
     };
     let ctx = context! {
         poll_uri: uri!(crate::event::event_page(id = poll.event.id)),
@@ -42,7 +42,7 @@ pub(super) async fn skip_poll(
     mut repository: Box<dyn Repository>,
 ) -> HttpResult<Redirect> {
     let Some(poll) = events.with_id(id, &user).await?.and_then(|e| e.polling()) else {
-        return Ok(Redirect::to(uri!(crate::home_page())));
+        return Ok(Redirect::to(uri!(crate::home::home_page())));
     };
     let answers = get_no_answers(&user, &poll);
     repository.add_answers(answers).await?;

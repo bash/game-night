@@ -5,9 +5,9 @@ use pruning::database_pruning;
 use result::HttpResult;
 use rocket::fairing::{self, Fairing};
 use rocket::request::FromRequest;
-use rocket::{catch, catchers, error, get, routes, Orbit, Request, Rocket};
+use rocket::{catch, catchers, error, routes, Orbit, Request, Rocket};
 use rocket_db_pools::{sqlx::SqlitePool, Database};
-use rocket_dyn_templates::{context, Template};
+use rocket_dyn_templates::Template;
 use socket_activation::listener_from_env;
 use template::PageBuilder;
 
@@ -23,6 +23,7 @@ mod event;
 mod fmt;
 mod fs;
 mod groups;
+mod home;
 mod infra;
 mod invitation;
 mod iso_8601;
@@ -49,7 +50,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let template = infra::template_fairing(rocket.figment())?;
     let rocket = rocket
-        .mount("/", routes![home_page])
+        .mount("/", routes![home::home_page])
         .mount("/", invitation::routes())
         .mount("/", register::routes())
         .mount("/", poll::routes())
@@ -79,14 +80,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     Ok(())
-}
-
-#[get("/", rank = 20)]
-fn home_page(page: PageBuilder<'_>) -> Template {
-    page.render(
-        "index",
-        context! { getting_invited_uri: uri!(register::getting_invited_page())},
-    )
 }
 
 #[catch(404)]
