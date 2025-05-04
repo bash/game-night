@@ -1,4 +1,4 @@
-{% extends 'base' %}
+{% extends "base.html" %}
 
 {% block title %}Invited{% endblock title %}
 
@@ -10,6 +10,6 @@
     Here, have a cookie: 🍪
 </p>
 <p>
-    <a href="{{page.path}}" class="link-button">Onward to the registration!</a>
+    <a href="{{ctx.page.path}}" class="link-button">Onward to the registration!</a>
 </p>
 {% endblock %}

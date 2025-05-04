@@ -1,25 +1,23 @@
 use crate::auth::{CookieJarExt, LoginState};
 use crate::database::Repository;
-use crate::default;
 use crate::email::EmailSender;
 use crate::invitation::{Invitation, Passphrase};
 use crate::template::PageBuilder;
 use crate::users::{AstronomicalSymbol, User, UserId};
-use anyhow::{Error, Result};
+use crate::{default, HttpResult};
+use anyhow::Result;
 use campaign::{Campaign, ProvidedCampaign};
-use either::Either;
 use email_address::EmailAddress;
 use lettre::message::Mailbox;
 use rand::{rng, Rng};
 use rocket::form::Form;
 use rocket::http::{Cookie, CookieJar, SameSite};
-use rocket::response::{Debug, Redirect, Responder};
+use rocket::response::{Redirect, Responder};
 use rocket::{get, post, routes, uri, FromForm, Route, State};
 use rocket_dyn_templates::{context, Template};
 use serde::Serialize;
 use std::str::FromStr;
 use verification::VerificationEmail;
-use Either::*;
 use StepResult::*;
 
 mod campaign;
@@ -30,7 +28,7 @@ mod verification;
 use crate::template_v2::responder::Templated;
 pub(crate) use email_verification_code::*;
 pub(crate) use profile::*;
-use templates::GettingInvitedPage;
+use templates::{GettingInvitedPage, InvalidCampaignPage};
 
 macro_rules! unwrap_or_return {
     ($result:expr, $e:ident => $ret:expr) => {
@@ -91,7 +89,7 @@ async fn register_page(
     page: PageBuilder<'_>,
     campaign: Option<ProvidedCampaign<'_>>,
     passphrase: Option<Passphrase>,
-) -> Result<Either<Template, Redirect>, Debug<Error>> {
+) -> HttpResult<RegisterResponse> {
     let form = RegisterForm::new_with_passphrase(passphrase);
     register(
         cookies,
@@ -113,7 +111,7 @@ async fn register_form(
     page: PageBuilder<'_>,
     campaign: Option<ProvidedCampaign<'_>>,
     form: Form<RegisterForm<'_>>,
-) -> Result<Either<Template, Redirect>, Debug<Error>> {
+) -> HttpResult<RegisterResponse> {
     register(
         cookies,
         repository,
@@ -134,16 +132,18 @@ async fn register(
     campaign: Option<ProvidedCampaign<'_>>,
     form: RegisterForm<'_>,
     passphrase_source: PassphraseSource,
-) -> Result<Either<Template, Redirect>, Debug<Error>> {
+) -> HttpResult<RegisterResponse> {
     let campaign = if let Some(campaign) = campaign {
         campaign
     } else {
-        return Ok(Left(invalid_campaign(cookies, page)));
+        return Ok(RegisterResponse::InvalidCampaign(Box::new(
+            invalid_campaign(cookies, page),
+        )));
     };
 
     let invitation = unwrap_or_return!(
         invitation_code_step(&form, repository.as_mut()).await?,
-        error_message => Ok(Left(page.render(
+        error_message => Ok(RegisterResponse::Template(page.render(
             "register",
             context! { step: "invitation_code", error_message, form, campaign },
         )))
@@ -151,7 +151,7 @@ async fn register(
 
     let user_details = unwrap_or_return!(
         user_details_step(&form, repository.as_mut(), email_sender).await?,
-        error_message => Ok(Left(page.render(
+        error_message => Ok(RegisterResponse::Template(page.render(
             "register",
             context! { step: "user_details", error_message, form, campaign, passphrase_source },
         )))
@@ -159,24 +159,36 @@ async fn register(
 
     let user_id = unwrap_or_return!(
         email_verification_step(repository.as_mut(), &form, invitation, user_details, campaign.clone()).await?,
-        error_message => Ok(Left(page.render(
+        error_message => Ok(RegisterResponse::Template(page.render(
             "register",
             context! { step: "verify_email", error_message, form, campaign },
         )))
     );
 
     cookies.set_login_state(LoginState::Authenticated(user_id));
-    Ok(Right(Redirect::to(uri!(crate::home_page()))))
+    Ok(RegisterResponse::Redirect(Box::new(Redirect::to(uri!(
+        crate::home_page()
+    )))))
 }
 
-fn invalid_campaign(cookies: &CookieJar<'_>, page: PageBuilder<'_>) -> Template {
+#[derive(Debug, Responder)]
+pub(crate) enum RegisterResponse {
+    Redirect(Box<Redirect>),
+    Template(Template),
+    InvalidCampaign(Box<Templated<InvalidCampaignPage>>),
+}
+
+fn invalid_campaign(
+    cookies: &CookieJar<'_>,
+    page: PageBuilder<'_>,
+) -> Templated<InvalidCampaignPage> {
     cookies.add(
         Cookie::build(("vary-smart", "A_cookie_for_very_smart_people"))
             .http_only(true)
             .secure(true)
             .same_site(SameSite::Lax),
     );
-    page.render("register/invalid_campaign", context! {})
+    Templated(InvalidCampaignPage { ctx: page.build() })
 }
 
 async fn invitation_code_step(
@@ -356,6 +368,12 @@ mod templates {
     #[template(path = "register/getting-invited.html")]
     pub(crate) struct GettingInvitedPage {
         pub(crate) register_uri: Origin<'static>,
+        pub(crate) ctx: PageContext,
+    }
+
+    #[derive(Template, Debug)]
+    #[template(path = "register/invalid-campaign.html")]
+    pub(crate) struct InvalidCampaignPage {
         pub(crate) ctx: PageContext,
     }
 }
