@@ -1,4 +1,4 @@
-{% extends 'base' %}
+{% extends "base.html" %}
 
 {% block title %}Profile{% endblock title %}
 
@@ -46,11 +46,11 @@
 
     <fieldset class="-actions">
         <p>You can also receive push notifications in addition to emails.</p>
-        <push-subscription-button endpoints="{{push_endpoints | json_encode}}"></push-subscription-button>
+        <push-subscription-button endpoints="{{push_endpoints | json}}"></push-subscription-button>
         <button type="submit" formaction="{{push_self_test_uri}}" formmethod="post">Send a test notification</button>
     </fieldset>
 
-    {% if symbols %}
+    {% if let Some(symbols) = symbols %}
     <h2>Avatar</h2>
     <fieldset>
         The following symbol is my avatar:
@@ -59,7 +59,7 @@
             {% for symbol in symbols %}
                 <label class="symbol">
                     <span class="label">{{symbol}}</span>
-                    <input type="radio" name="symbol" value="{{symbol}}" {% if symbol == user.symbol %}checked{% endif %} autocomplete="off">
+                    <input type="radio" name="symbol" value="{{symbol}}" {% if *symbol == user.symbol %}checked{% endif %} autocomplete="off">
                 </label>
             {% endfor %}
         </div>
@@ -68,7 +68,7 @@
 
     <fieldset class="-actions">
         <button type="submit">Save my details</button>
-        {% if list_users_uri %}
+        {% if let Some(list_users_uri) = list_users_uri %}
             <a href="{{list_users_uri}}" class="link-button">Show me the list of users, please</a>
         {% endif %}
     </fieldset>
@@ -82,16 +82,8 @@
 
 {% block scripts %}
 <script id="form-values" type="application/json">
-    {% if user.email_subscription.type == 'permanently_unsubscribed' %}{% set permanence = 'permanent' %}
-    {% else %}{% set permanence = 'temporary' %}{% endif %}
-
-    {% if user.email_subscription.type == 'subscribed' %}{% set subscription = 'on' %}
-    {% else %}{% set subscription = 'off' %}{% endif %}
-
-    { "subscription": {{ subscription | json_encode | safe }}
-    , "permanence": {{ permanence | json_encode | safe }}
-    , "until": {{ user.email_subscription.until | default(value='') | json_encode | safe }}
-    }</script>
+  {{subscription_values() | json | safe}}
+</script>
 <script>
     let formValues = JSON.parse(document.getElementById('form-values').innerText)
 
@@ -132,6 +124,6 @@
     bindRequiredAndVisibleTo(document)
     formValues = null
 </script>
-<script type="module" src="{{asset(path='/js/open-modal.js')}}"></script>
-<script type="module" src="{{asset(path='/js/push-subscription.js')}}"></script>
+<script type="module" src='{{ctx.asset("/js/open-modal.js")}}'></script>
+<script type="module" src='{{ctx.asset("/js/push-subscription.js")}}'></script>
 {% endblock scripts %}

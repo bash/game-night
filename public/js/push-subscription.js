@@ -17,6 +17,7 @@ class PushSubscriptionButton extends HTMLElement {
     async connectedCallback() {
         this.#endpoints = JSON.parse(this.getAttribute('endpoints'))
         this.#button = document.createElement('button')
+        this.#button.setAttribute('type', 'button')
         this.#button.addEventListener('click', (event) => this.#onClick(event))
         this.#errorElement = document.createElement('span')
         this.#errorElement.classList.add('error-message', '-inline')

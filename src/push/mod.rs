@@ -43,7 +43,7 @@ pub(crate) async fn self_test(user: User, mut push_sender: PushSender) -> HttpRe
     Ok(Redirect::to(uri!(crate::register::profile())))
 }
 
-#[derive(Debug, serde::Serialize)]
+#[derive(Debug, Clone, serde::Serialize)]
 pub(crate) struct PushEndpoints {
     get_public_key: Origin<'static>,
     subscribe: Origin<'static>,
