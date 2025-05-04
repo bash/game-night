@@ -1,13 +1,11 @@
-use anyhow::{anyhow, Context as _, Result};
+use anyhow::{Context as _, Result};
 use database::Repository;
 use poll::poll_finalizer;
 use pruning::database_pruning;
 use result::HttpResult;
 use rocket::fairing::{self, Fairing};
-use rocket::request::FromRequest;
-use rocket::{catch, catchers, error, routes, Orbit, Request, Rocket};
+use rocket::{error, routes, Orbit, Rocket};
 use rocket_db_pools::{sqlx::SqlitePool, Database};
-use rocket_dyn_templates::Template;
 use socket_activation::listener_from_env;
 use template::PageBuilder;
 
@@ -19,6 +17,7 @@ mod auth;
 mod database;
 mod decorations;
 mod email;
+mod error_pages;
 mod event;
 mod fmt;
 mod fs;
@@ -60,8 +59,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .mount("/", event::routes())
         .mount("/", push::routes())
         .register("/", login::catchers())
-        .register("/", auth::catchers())
-        .register("/", catchers![not_found])
+        .register("/", error_pages::catchers())
         .attach(template)
         .attach(GameNightDatabase::init())
         .attach(email::email_sender_fairing())
@@ -80,14 +78,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     Ok(())
-}
-
-#[catch(404)]
-async fn not_found(request: &Request<'_>) -> HttpResult<Template> {
-    let page = PageBuilder::from_request(request)
-        .await
-        .success_or_else(|| anyhow!("failed to create page builder"))?;
-    Ok(page.render("errors/404", ()))
 }
 
 #[derive(Debug, Database)]

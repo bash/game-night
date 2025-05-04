@@ -1,21 +1,14 @@
 use crate::event::StatefulEvent;
 use crate::poll::Poll;
-use crate::result::HttpResult;
-use crate::template::PageBuilder;
 use crate::users::{Role, User};
-use anyhow::{anyhow, Error};
+use anyhow::Error;
 use rocket::http::Status;
 use rocket::outcome::try_outcome;
 use rocket::request::{FromRequest, Outcome};
-use rocket::{async_trait, catch, catchers, Catcher, Request};
-use rocket_dyn_templates::{context, Template};
+use rocket::{async_trait, Request};
 use std::marker::PhantomData;
 use std::ops::Deref;
 use std::sync::Arc;
-
-pub(crate) fn catchers() -> Vec<Catcher> {
-    catchers![forbidden]
-}
 
 pub(crate) struct AuthorizedTo<P>(User, PhantomData<P>);
 
@@ -87,12 +80,4 @@ pub(crate) fn is_invited(user: &User, event: &StatefulEvent) -> bool {
 
 pub(crate) fn can_answer_strongly(user: &User, poll: &Poll) -> bool {
     user.can_answer_strongly() || poll.event.has_organizer(user)
-}
-
-#[catch(403)]
-async fn forbidden(request: &Request<'_>) -> HttpResult<Template> {
-    let page = PageBuilder::from_request(request)
-        .await
-        .success_or_else(|| anyhow!("failed to create page builder"))?;
-    Ok(page.render("errors/403", context! {}))
 }
