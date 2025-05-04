@@ -6,9 +6,9 @@ use crate::template::PageBuilder;
 use crate::template_v2::responder::Templated;
 use crate::users::{rocket_uri_macro_list_users, EmailSubscription, ASTRONOMICAL_SYMBOLS};
 use crate::users::{User, UserPatch};
-use anyhow::{Error, Result};
+use crate::HttpResult;
 use rocket::form::Form;
-use rocket::response::{Debug, Redirect};
+use rocket::response::Redirect;
 use rocket::{get, post, uri, FromForm, State};
 use templates::ProfilePage;
 use time::Date;
@@ -37,7 +37,7 @@ pub(super) async fn update_profile(
     mut repository: Box<dyn Repository>,
     form: Form<UpdateUserForm>,
     user: User,
-) -> Result<Redirect, Debug<Error>> {
+) -> HttpResult<Redirect> {
     let patch = form.into_inner().into_user_patch(&user);
     repository.update_user(user.id, patch).await?;
     Ok(Redirect::to(uri!(profile)))

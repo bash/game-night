@@ -4,13 +4,13 @@ use crate::email::{EmailMessage, EmailSender};
 use crate::register::rocket_uri_macro_getting_invited_page;
 use crate::template::PageBuilder;
 use crate::users::{User, UserId};
-use crate::{default, responder, uri};
-use anyhow::{Error, Result};
+use crate::{default, responder, uri, HttpResult};
+use anyhow::Result;
 use lettre::message::Mailbox;
 use rand::distr::{Alphanumeric, Distribution, SampleString as _, Uniform};
 use rand::{rng, Rng};
 use rocket::form::Form;
-use rocket::response::{self, Debug, Redirect, Responder};
+use rocket::response::{self, Redirect, Responder};
 use rocket::{
     catch, catchers, get, post, routes, Catcher, FromForm, Request, Response, Route, State,
 };
@@ -84,7 +84,7 @@ async fn login(
     email_sender: &State<Box<dyn EmailSender>>,
     redirect: Option<RedirectUri>,
     form: Form<LoginData<'_>>,
-) -> Result<Login, Debug<Error>> {
+) -> HttpResult<Login> {
     if let Some((mailbox, email)) = login_email_for(repository.as_mut(), form.email).await? {
         email_sender.send(mailbox, &email, default()).await?;
         Ok(Redirect::to(uri!(code::login_with_code_page(redirect))).into())

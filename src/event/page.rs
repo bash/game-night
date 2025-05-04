@@ -6,10 +6,9 @@ use crate::responder;
 use crate::result::HttpResult;
 use crate::template::PageBuilder;
 use crate::users::{User, UsersQuery};
-use anyhow::{Error, Result};
 use itertools::Itertools;
 use rocket::http::Status;
-use rocket::response::{Debug, Redirect};
+use rocket::response::Redirect;
 use rocket::{get, routes, uri, Route};
 use rocket_dyn_templates::{context, Template};
 use StatefulEvent::*;
@@ -23,7 +22,7 @@ pub(crate) async fn events_entry_page(
     user: User,
     page: PageBuilder<'_>,
     mut events: EventsQuery,
-) -> Result<EventsResponse, Debug<Error>> {
+) -> HttpResult<EventsResponse> {
     let active_events = events.active(&user).await?;
     match active_events.len() {
         0 => Ok(no_open_poll_page(user, page).into()),

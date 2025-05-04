@@ -1,9 +1,9 @@
 use crate::event::{EventViewModel, EventsQuery};
 use crate::template::PageBuilder;
 use crate::users::User;
-use anyhow::Error;
+use crate::HttpResult;
 use itertools::Itertools;
-use rocket::{get, response::Debug};
+use rocket::get;
 use rocket_dyn_templates::{context, Template};
 use serde::Serialize;
 use std::cmp::Reverse;
@@ -14,7 +14,7 @@ pub(crate) async fn archive_page(
     user: User,
     page: PageBuilder<'_>,
     mut events: EventsQuery,
-) -> Result<Template, Debug<Error>> {
+) -> HttpResult<Template> {
     let events = events.all(&user).await?;
     let events_by_year: Vec<_> = events
         .into_iter()

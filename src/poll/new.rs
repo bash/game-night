@@ -13,11 +13,11 @@ use crate::register::rocket_uri_macro_profile;
 use crate::template::PageBuilder;
 use crate::uri::UriBuilder;
 use crate::users::{SubscribedUsers, User};
-use crate::{auto_resolve, uri};
-use anyhow::{Context as _, Error, Result};
+use crate::{auto_resolve, uri, HttpResult};
+use anyhow::{Context as _, Result};
 use itertools::Itertools as _;
 use rocket::form::Form;
-use rocket::response::{Debug, Redirect};
+use rocket::response::Redirect;
 use rocket::{get, post, FromForm};
 use rocket_dyn_templates::{context, Template};
 use serde::Serialize;
@@ -33,7 +33,7 @@ pub(super) async fn new_poll_page(
     page: PageBuilder<'_>,
     mut events: EventsQuery,
     mut repository: Box<dyn Repository>,
-) -> Result<Template, Debug<Error>> {
+) -> HttpResult<Template> {
     let calendar = get_calendar(
         OffsetDateTime::now_utc(),
         14,
@@ -171,7 +171,7 @@ pub(super) async fn new_poll(
     form: Form<NewPollData<'_>>,
     user: AuthorizedTo<ManagePoll>,
     mut notification_sender: NewPollNotificationSender,
-) -> Result<Redirect, Debug<Error>> {
+) -> HttpResult<Redirect> {
     let location = repository
         .get_location_by_id(form.location)
         .await?

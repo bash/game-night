@@ -2,13 +2,12 @@ use crate::auth::{AuthorizedTo, Invite};
 use crate::database::Repository;
 use crate::register::rocket_uri_macro_register_page;
 use crate::template::PageBuilder;
-use crate::uri;
 use crate::uri::UriBuilder;
 use crate::users::{AstronomicalSymbol, EmailSubscription, Role, User, UserId, UsersQuery};
-use anyhow::{Error, Result};
+use crate::{uri, HttpResult};
+use anyhow::Result;
 use rand::{prelude::*, rng};
 use rocket::form::Form;
-use rocket::response::Debug;
 use rocket::yansi::Paint as _;
 use rocket::{get, post, routes, FromForm, FromFormField, Route};
 use rocket_dyn_templates::{context, Template};
@@ -30,7 +29,7 @@ async fn invite_page(
     _user: AuthorizedTo<Invite>,
     mut users_query: UsersQuery,
     page: PageBuilder<'_>,
-) -> Result<Template, Debug<Error>> {
+) -> HttpResult<Template> {
     Ok(page.render(
         "invite",
         context! {
@@ -46,7 +45,7 @@ async fn generate_invitation(
     mut repository: Box<dyn Repository>,
     form: Form<GenerateInvitationData>,
     uri_builder: UriBuilder,
-) -> Result<Template, Debug<Error>> {
+) -> HttpResult<Template> {
     let lifetime = Duration::days(i64::from(u32::from(form.lifetime_in_days)));
     let valid_until = OffsetDateTime::now_utc() + lifetime;
     let invitation = Invitation::builder()

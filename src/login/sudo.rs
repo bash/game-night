@@ -1,10 +1,10 @@
 use super::RedirectUri;
 use crate::auth::{AuthorizedTo, CookieJarExt, LoginState, ManageUsers};
 use crate::users::{User, UserId};
-use anyhow::Error;
+use crate::HttpResult;
 use rocket::form::Form;
 use rocket::http::CookieJar;
-use rocket::response::{Debug, Redirect};
+use rocket::response::Redirect;
 use rocket::{post, FromForm};
 use LoginState::*;
 
@@ -13,7 +13,7 @@ pub(super) fn enter(
     form: Form<SudoForm>,
     cookies: &'_ CookieJar<'_>,
     _guard: AuthorizedTo<ManageUsers>,
-) -> Result<Redirect, Debug<Error>> {
+) -> HttpResult<Redirect> {
     cookies.set_login_state(cookies.login_state()?.impersonate(UserId(form.user)));
     Ok(Redirect::to("/"))
 }
@@ -23,7 +23,7 @@ pub(super) fn exit(
     form: Form<ExitSudoForm>,
     cookies: &'_ CookieJar<'_>,
     _guard: User,
-) -> Result<Redirect, Debug<Error>> {
+) -> HttpResult<Redirect> {
     if let Impersonating { original, .. } = cookies.login_state()? {
         cookies.set_login_state(Authenticated(original));
     }

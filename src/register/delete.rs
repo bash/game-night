@@ -5,9 +5,9 @@ use crate::login::{Logout, RedirectUri};
 use crate::template::PageBuilder;
 use crate::template_v2::responder::Templated;
 use crate::users::User;
-use anyhow::{Error, Result};
+use crate::HttpResult;
 use rand::rng;
-use rocket::response::{Debug, Responder};
+use rocket::response::Responder;
 use rocket::{get, post, uri};
 use templates::{DeleteProfilePage, ProfileDeletedPage};
 use time::{Duration, OffsetDateTime};
@@ -25,7 +25,7 @@ pub(crate) fn delete_profile_page(page: PageBuilder, user: User) -> impl Respond
 pub(crate) async fn delete_profile(
     mut repository: Box<dyn Repository>,
     user: User,
-) -> Result<Logout, Debug<Error>> {
+) -> HttpResult<Logout> {
     let invitation = repository.add_invitation(goodbye_invitation(&user)).await?;
     repository.delete_user(user.id).await?;
     let redirect_uri = RedirectUri(uri!(profile_deleted_page(user.name, invitation.passphrase)));
