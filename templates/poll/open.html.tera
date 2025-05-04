@@ -1,4 +1,3 @@
-{% import 'play/location-macros' as location_macros %}
 {% import 'user-macros' as user_macros %}
 {% import 'macros' as macros %}
 

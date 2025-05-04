@@ -69,9 +69,9 @@ pub(crate) async fn event_page(
         Some(Pending(_) | Finalizing(_)) => {
             Ok(page.render("poll/pending-finalization", context! {}))
         }
-        Some(Planned(event)) => Ok(play_page(event, page, user, PlayPageStage::Planned)),
-        Some(Cancelled(event)) => Ok(play_page(event, page, user, PlayPageStage::Cancelled)),
-        Some(Archived(event)) => Ok(play_page(event, page, user, PlayPageStage::Archived)),
+        Some(Planned(event)) => play_page(event, page, user, PlayPageStage::Planned),
+        Some(Cancelled(event)) => play_page(event, page, user, PlayPageStage::Cancelled),
+        Some(Archived(event)) => play_page(event, page, user, PlayPageStage::Archived),
         Some(Failed(_)) | None => Err(Status::NotFound.into()),
     }
 }

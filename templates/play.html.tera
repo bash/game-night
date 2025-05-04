@@ -1,4 +1,3 @@
-{% import 'play/location-macros' as location_macros %}
 {% import 'user-macros' as user_macros %}
 {% import 'macros' as macros %}
 
@@ -62,7 +61,7 @@
 
     <section>
         <h2>Where?</h2>
-        {{ location_macros::postal_address(location=event.location) }}
+        {{ postal_address | safe }}
     </section>
 
     <section>

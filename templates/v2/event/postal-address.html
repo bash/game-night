@@ -1,0 +1,15 @@
+<div class="postal-address">
+    <div class="nameplate">
+        <div>
+            {% for name in location.nameplate.split(",") %}
+                {{name}}
+                {% if !loop.last %}<br>{% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    <div class="floor" aria-label="Floor"><span>{{location.floor}}</span></div>
+    <div class="address">
+        {{location.street}} {{location.street_number}}<br>
+        {{location.plz}} {{location.city}}
+    </div>
+</div>

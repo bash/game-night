@@ -1,5 +1,7 @@
 use crate::database::Repository;
-use crate::event::{Event, EventId, EventsQuery, Ics, StatefulEvent, VisibleParticipants};
+use crate::event::{
+    Event, EventId, EventsQuery, Ics, PostalAddressComponent, StatefulEvent, VisibleParticipants,
+};
 use crate::poll::EventEmailSender;
 use crate::result::HttpResult;
 use crate::template::PageBuilder;
@@ -13,6 +15,7 @@ use rocket_dyn_templates::{context, Template};
 
 mod archive;
 pub(crate) use archive::*;
+use askama::Template as _;
 
 pub(crate) fn routes() -> Vec<Route> {
     routes![
@@ -37,25 +40,26 @@ pub(crate) fn play_page(
     page: PageBuilder<'_>,
     user: User,
     stage: PlayPageStage,
-) -> Template {
+) -> HttpResult<Template> {
     let is_planned = matches!(stage, PlayPageStage::Planned);
     let join_uri = (!event.is_participant(&user) && is_planned).then(|| uri!(join(id = event.id)));
     let leave_uri = (event.is_participant(&user) && is_planned)
         .then(|| uri!(crate::event::leave_page(id = event.id)));
     let archive_uri = uri!(archive_page());
     let participants = VisibleParticipants::from_event(&event, &user, is_planned);
-    page.render(
+    Ok(page.render(
         "play",
         context! {
             ics_uri: uri!(event_ics(id = event.id)),
+            postal_address: PostalAddressComponent { location: &event.location }.render()?,
             event: event,
             join_uri,
             leave_uri,
             archive_uri,
             stage,
-            participants
+            participants,
         },
-    )
+    ))
 }
 
 #[derive(Debug, serde::Serialize)]

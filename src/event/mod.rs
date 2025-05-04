@@ -25,6 +25,8 @@ mod leave;
 pub(crate) use leave::*;
 mod location;
 pub(crate) use location::*;
+mod postal_address;
+pub(crate) use postal_address::*;
 
 pub type EventId = i64;
 
