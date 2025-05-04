@@ -1,4 +1,3 @@
-{% import "user-macros.html" as user_macros %}
 {% extends "base.html" %}
 
 {% block title %}Users{% endblock title %}
@@ -8,7 +7,7 @@
     {% for user in users %}
     <li class="user" id="user-{{user.id}}">
         <div class="user-card">
-            <span class="avatar">{% call user_macros::name(user) %}</span>
+            <span class="avatar">{{ crate::users::UserNameComponent::for_user(user).with_symbol() | safe }}</span>
             <small class="role" title="Role">{{fmt_role(*user.role)}}</small>
             <small class="invitation">
                 {% if let Some(invited_by) = user.invited_by %}

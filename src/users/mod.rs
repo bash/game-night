@@ -20,6 +20,8 @@ use crate::event::StatefulEvent;
 pub(crate) use symbol::*;
 mod list;
 pub(crate) use list::*;
+mod name;
+pub(crate) use name::*;
 
 pub(crate) fn routes() -> Vec<Route> {
     routes![list::list_users]

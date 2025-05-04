@@ -1,4 +1,3 @@
-{% import "user-macros.html" as user_macros %}
 <!doctype html>
 <html lang="en" class="{{ctx.active_chapter.accent_color.css_class()}}">
 <head>
@@ -59,7 +58,7 @@
     {% if let Some(user) = ctx.user %}
         <footer>
             <form action="{{ctx.logout_uri}}" method="post" class="logout-form">
-                <span>Signed in as&nbsp;&nbsp;{% call user_macros::name(user) %}</span>
+                <span>Signed in as&nbsp;&nbsp;{{ crate::users::UserNameComponent::for_user(user).with_symbol() | safe }}</span>
                 <button type="submit">Log out</button>
                 <input type="hidden" name="redirect" value="{{ctx.page.uri}}">
             </form>
