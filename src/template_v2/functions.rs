@@ -3,6 +3,7 @@ use crate::users::UserId;
 use rand::rngs::SmallRng;
 use rand::seq::SliceRandom as _;
 use rand::SeedableRng as _;
+use std::iter;
 use std::sync::OnceLock;
 
 pub(crate) fn accent_color(index: UserId) -> AccentColor {
@@ -14,4 +15,10 @@ pub(crate) fn accent_color(index: UserId) -> AccentColor {
         accent_colors
     });
     accent_colors[(index.0 as usize) % accent_colors.len()]
+}
+
+pub(crate) fn ps(level: usize) -> String {
+    std::iter::repeat_n("P.", level + 1)
+        .chain(iter::once("S."))
+        .collect()
 }

@@ -14,7 +14,6 @@ use rocket::form::Form;
 use rocket::http::{Cookie, CookieJar, SameSite};
 use rocket::response::{Redirect, Responder};
 use rocket::{get, post, routes, uri, FromForm, Route, State};
-use rocket_dyn_templates::{context, Template};
 use serde::Serialize;
 use std::str::FromStr;
 use verification::VerificationEmail;
@@ -28,7 +27,7 @@ mod verification;
 use crate::template_v2::responder::Templated;
 pub(crate) use email_verification_code::*;
 pub(crate) use profile::*;
-use templates::{GettingInvitedPage, InvalidCampaignPage};
+use templates::{GettingInvitedPage, InvalidCampaignPage, RegisterPage, RegisterStep};
 
 macro_rules! unwrap_or_return {
     ($result:expr, $e:ident => $ret:expr) => {
@@ -82,14 +81,14 @@ async fn register_redirect(_user: User) -> Redirect {
 }
 
 #[get("/register?<passphrase>", rank = 20)]
-async fn register_page(
+async fn register_page<'r>(
     cookies: &CookieJar<'_>,
     repository: Box<dyn Repository>,
     email_sender: &State<Box<dyn EmailSender>>,
     page: PageBuilder<'_>,
-    campaign: Option<ProvidedCampaign<'_>>,
+    campaign: Option<ProvidedCampaign<'r>>,
     passphrase: Option<Passphrase>,
-) -> HttpResult<RegisterResponse> {
+) -> HttpResult<RegisterResponse<'r>> {
     let form = RegisterForm::new_with_passphrase(passphrase);
     register(
         cookies,
@@ -104,14 +103,14 @@ async fn register_page(
 }
 
 #[post("/register", data = "<form>")]
-async fn register_form(
+async fn register_form<'r>(
     cookies: &CookieJar<'_>,
     repository: Box<dyn Repository>,
     email_sender: &State<Box<dyn EmailSender>>,
     page: PageBuilder<'_>,
-    campaign: Option<ProvidedCampaign<'_>>,
-    form: Form<RegisterForm<'_>>,
-) -> HttpResult<RegisterResponse> {
+    campaign: Option<ProvidedCampaign<'r>>,
+    form: Form<RegisterForm<'r>>,
+) -> HttpResult<RegisterResponse<'r>> {
     register(
         cookies,
         repository,
@@ -124,15 +123,15 @@ async fn register_form(
     .await
 }
 
-async fn register(
+async fn register<'r>(
     cookies: &CookieJar<'_>,
     mut repository: Box<dyn Repository>,
     email_sender: &dyn EmailSender,
     page: PageBuilder<'_>,
-    campaign: Option<ProvidedCampaign<'_>>,
-    form: RegisterForm<'_>,
+    campaign: Option<ProvidedCampaign<'r>>,
+    form: RegisterForm<'r>,
     passphrase_source: PassphraseSource,
-) -> HttpResult<RegisterResponse> {
+) -> HttpResult<RegisterResponse<'r>> {
     let campaign = if let Some(campaign) = campaign {
         campaign
     } else {
@@ -143,26 +142,39 @@ async fn register(
 
     let invitation = unwrap_or_return!(
         invitation_code_step(&form, repository.as_mut()).await?,
-        error_message => Ok(RegisterResponse::Template(page.render(
-            "register",
-            context! { step: "invitation_code", error_message, form, campaign },
-        )))
+        error_message => Ok(RegisterPage {
+            step: RegisterStep::InvitationCode,
+            error_message,
+            form,
+            campaign: campaign.into_inner(),
+            passphrase_source,
+            ctx: page.build(),
+        }.into())
     );
 
     let user_details = unwrap_or_return!(
         user_details_step(&form, repository.as_mut(), email_sender).await?,
-        error_message => Ok(RegisterResponse::Template(page.render(
-            "register",
-            context! { step: "user_details", error_message, form, campaign, passphrase_source },
-        )))
+        error_message => Ok(RegisterPage {
+            step: RegisterStep::UserDetails,
+            error_message,
+            form,
+            campaign: campaign.into_inner(),
+            passphrase_source,
+            ctx: page.build(),
+        }.into())
     );
 
+    let email_address = user_details.email_address.clone();
     let user_id = unwrap_or_return!(
         email_verification_step(repository.as_mut(), &form, invitation, user_details, campaign.clone()).await?,
-        error_message => Ok(RegisterResponse::Template(page.render(
-            "register",
-            context! { step: "verify_email", error_message, form, campaign },
-        )))
+        error_message => Ok(RegisterPage {
+            step: RegisterStep::VerifyEmail(email_address),
+            error_message,
+            form,
+            campaign: campaign.into_inner(),
+            passphrase_source,
+            ctx: page.build(),
+        }.into())
     );
 
     cookies.set_login_state(LoginState::Authenticated(user_id));
@@ -172,10 +184,16 @@ async fn register(
 }
 
 #[derive(Debug, Responder)]
-pub(crate) enum RegisterResponse {
+pub(crate) enum RegisterResponse<'r> {
     Redirect(Box<Redirect>),
-    Template(Template),
+    Form(Box<Templated<RegisterPage<'r>>>),
     InvalidCampaign(Box<Templated<InvalidCampaignPage>>),
+}
+
+impl<'r> From<RegisterPage<'r>> for RegisterResponse<'r> {
+    fn from(value: RegisterPage<'r>) -> Self {
+        RegisterResponse::Form(Box::new(Templated(value)))
+    }
 }
 
 fn invalid_campaign(
@@ -319,7 +337,7 @@ enum StepResult<T> {
     Complete(T),
 }
 
-#[derive(FromForm, Serialize)]
+#[derive(FromForm, Debug, Serialize)]
 pub(crate) struct RegisterForm<'r> {
     words: Option<Vec<String>>,
     name: Option<&'r str>,
@@ -361,19 +379,50 @@ impl From<UserDetails> for Mailbox {
 }
 
 mod templates {
+    use super::{Campaign, PassphraseSource, RegisterForm};
     use crate::template_v2::prelude::*;
+    use email_address::EmailAddress;
     use rocket::http::uri::Origin;
 
     #[derive(Template, Debug)]
     #[template(path = "register/getting-invited.html")]
     pub(crate) struct GettingInvitedPage {
-        pub(crate) register_uri: Origin<'static>,
-        pub(crate) ctx: PageContext,
+        pub(super) register_uri: Origin<'static>,
+        pub(super) ctx: PageContext,
     }
 
     #[derive(Template, Debug)]
     #[template(path = "register/invalid-campaign.html")]
     pub(crate) struct InvalidCampaignPage {
-        pub(crate) ctx: PageContext,
+        pub(super) ctx: PageContext,
+    }
+
+    #[derive(Template, Debug)]
+    #[template(path = "register/register.html")]
+    pub(crate) struct RegisterPage<'r> {
+        pub(super) step: RegisterStep,
+        pub(super) error_message: Option<String>,
+        pub(super) form: RegisterForm<'r>,
+        pub(super) campaign: Option<Campaign<'r>>,
+        pub(super) passphrase_source: PassphraseSource,
+        pub(super) ctx: PageContext,
+    }
+
+    #[derive(Debug, Clone, Eq, PartialEq)]
+    pub(crate) enum RegisterStep {
+        InvitationCode,
+        UserDetails,
+        VerifyEmail(EmailAddress),
+    }
+
+    impl RegisterPage<'_> {
+        fn nth_word_or_empty(&self, n: usize) -> &str {
+            self.form
+                .words
+                .as_ref()
+                .and_then(|w| w.get(n))
+                .map(|w| w.as_str())
+                .unwrap_or_default()
+        }
     }
 }
