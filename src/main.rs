@@ -1,14 +1,3 @@
-use anyhow::{Context as _, Result};
-use database::Repository;
-use poll::poll_finalizer;
-use pruning::database_pruning;
-use result::HttpResult;
-use rocket::fairing::{self, Fairing};
-use rocket::{error, routes, Orbit, Rocket};
-use rocket_db_pools::{sqlx::SqlitePool, Database};
-use socket_activation::listener_from_env;
-use template::PageBuilder;
-
 mod response;
 mod services;
 mod uri;
@@ -42,6 +31,8 @@ mod users;
 
 #[rocket::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    use rocket_db_pools::Database as _;
+
     let rocket = rocket::custom(crate::infra::figment()?);
 
     #[cfg(target_os = "linux")]
@@ -49,7 +40,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let template = infra::template_fairing(rocket.figment())?;
     let rocket = rocket
-        .mount("/", routes![home::home_page])
+        .mount("/", rocket::routes![home::home_page])
         .mount("/", invitation::routes())
         .mount("/", register::routes())
         .mount("/", poll::routes())
@@ -61,45 +52,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .register("/", login::catchers())
         .register("/", error_pages::catchers())
         .attach(template)
-        .attach(GameNightDatabase::init())
+        .attach(database::GameNightDatabase::init())
         .attach(email::email_sender_fairing())
-        .attach(invite_admin_user())
+        .attach(users::invite_admin_user_fairing())
         .attach(login::auto_login_fairing())
-        .attach(poll_finalizer())
-        .attach(database_pruning())
+        .attach(poll::poll_finalizer())
+        .attach(pruning::database_pruning())
         .attach(users::LastActivity)
         .attach(push::web_push_fairing())
         .manage(infra::HttpClient::new());
 
-    if let Some(b) = listener_from_env()? {
+    if let Some(b) = socket_activation::listener_from_env()? {
         rocket.launch_on(b).await?;
     } else {
         rocket.launch().await?;
     }
 
     Ok(())
-}
-
-#[derive(Debug, Database)]
-#[database("sqlite")]
-pub(crate) struct GameNightDatabase(SqlitePool);
-
-fn invite_admin_user() -> impl Fairing {
-    fairing::AdHoc::on_liftoff("Invite Admin User", |rocket| {
-        Box::pin(async move {
-            if let Err(e) = try_invite_admin_user(rocket).await {
-                error!("{:?}", e);
-            }
-        })
-    })
-}
-
-async fn try_invite_admin_user(rocket: &Rocket<Orbit>) -> Result<()> {
-    use crate::services::RocketResolveExt as _;
-    let mut repository: Box<dyn crate::database::Repository> = rocket.resolve().await?;
-    invitation::invite_admin_user(&mut *repository)
-        .await
-        .context("failed to invite admin user")
 }
 
 fn default<T: Default>() -> T {

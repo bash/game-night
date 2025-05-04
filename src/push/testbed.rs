@@ -1,7 +1,8 @@
 use super::{Notification, PushMessage, PushSender};
 use crate::auth::{AuthorizedTo, ManageUsers};
+use crate::result::HttpResult;
+use crate::template::PageBuilder;
 use crate::users::{UserId, UsersQuery};
-use crate::{HttpResult, PageBuilder};
 use anyhow::Error;
 use rocket::form::Form;
 use rocket::serde::json::Json;

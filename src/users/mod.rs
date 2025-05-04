@@ -22,6 +22,8 @@ mod list;
 pub(crate) use list::*;
 mod name;
 pub(crate) use name::*;
+mod admin_user;
+pub(crate) use admin_user::*;
 
 pub(crate) fn routes() -> Vec<Route> {
     routes![list::list_users]

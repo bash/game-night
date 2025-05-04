@@ -1,8 +1,9 @@
 use crate::auth::{AuthorizedTo, ManagePoll};
+use crate::database::Repository;
 use crate::event::EventsQuery;
 use crate::login::RedirectUri;
 use crate::poll::PollStage;
-use crate::{HttpResult, Repository};
+use crate::result::HttpResult;
 use rocket::form::Form;
 use rocket::http::Status;
 use rocket::response::Redirect;

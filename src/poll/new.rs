@@ -10,10 +10,11 @@ use crate::event::{
 use crate::iso_8601::Iso8601;
 use crate::push::{PollNotification, PushSender};
 use crate::register::rocket_uri_macro_profile;
+use crate::result::HttpResult;
 use crate::template::PageBuilder;
 use crate::uri::UriBuilder;
 use crate::users::{SubscribedUsers, User};
-use crate::{auto_resolve, uri, HttpResult};
+use crate::{auto_resolve, uri};
 use anyhow::{Context as _, Result};
 use itertools::Itertools as _;
 use rocket::form::Form;

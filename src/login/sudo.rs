@@ -1,7 +1,7 @@
 use super::RedirectUri;
 use crate::auth::{AuthorizedTo, CookieJarExt, LoginState, ManageUsers};
+use crate::result::HttpResult;
 use crate::users::{User, UserId};
-use crate::HttpResult;
 use rocket::form::Form;
 use rocket::http::CookieJar;
 use rocket::response::Redirect;

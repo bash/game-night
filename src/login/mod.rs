@@ -4,7 +4,7 @@ use crate::email::{EmailMessage, EmailSender};
 use crate::register::rocket_uri_macro_getting_invited_page;
 use crate::template_v2::prelude::*;
 use crate::users::{User, UserId};
-use crate::{default, responder, uri, HttpResult};
+use crate::{default, responder, uri};
 use anyhow::Result;
 use lettre::message::Mailbox;
 use rand::distr::{Alphanumeric, Distribution, SampleString as _, Uniform};
@@ -24,6 +24,7 @@ mod code;
 mod secret_key;
 pub(crate) use secret_key::*;
 mod redirect;
+use crate::result::HttpResult;
 pub(crate) use redirect::*;
 mod sudo;
 

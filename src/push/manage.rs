@@ -1,7 +1,7 @@
 use super::{PushSubscription, PushSubscriptionKeys, WebPushKey};
-use crate::database::New;
+use crate::database::{New, Repository};
+use crate::result::HttpResult;
 use crate::users::{User, UserId};
-use crate::{HttpResult, Repository};
 use base64::prelude::{Engine as _, BASE64_URL_SAFE_NO_PAD};
 use rocket::serde::json::Json;
 use rocket::{get, post};

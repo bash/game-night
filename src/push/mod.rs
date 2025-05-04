@@ -1,5 +1,4 @@
 use crate::users::User;
-use crate::HttpResult;
 use anyhow::Result;
 use contact::VapidContact;
 use rocket::fairing::{self, Fairing};
@@ -20,6 +19,7 @@ pub(crate) use notification::*;
 mod notifications;
 mod testbed;
 use crate::decorations::Random;
+use crate::result::HttpResult;
 pub(crate) use notifications::*;
 
 pub(crate) fn routes() -> Vec<Route> {

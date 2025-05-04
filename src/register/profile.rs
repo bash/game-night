@@ -2,11 +2,11 @@ use super::delete::rocket_uri_macro_delete_profile_page;
 use super::AstronomicalSymbol;
 use crate::database::Repository;
 use crate::push::PushEndpoints;
+use crate::result::HttpResult;
 use crate::template_v2::prelude::*;
 use crate::users::{
     rocket_uri_macro_list_users, EmailSubscription, User, UserPatch, ASTRONOMICAL_SYMBOLS,
 };
-use crate::HttpResult;
 use rocket::form::Form;
 use rocket::http::uri::Origin;
 use rocket::response::Redirect;

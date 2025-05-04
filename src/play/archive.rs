@@ -1,7 +1,7 @@
 use crate::event::{EventViewModel, EventsQuery};
+use crate::result::HttpResult;
 use crate::template::PageBuilder;
 use crate::users::User;
-use crate::HttpResult;
 use itertools::Itertools;
 use rocket::get;
 use rocket_dyn_templates::{context, Template};

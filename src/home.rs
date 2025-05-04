@@ -1,5 +1,5 @@
 use crate::template_v2::prelude::*;
-use crate::{uri, PageBuilder};
+use crate::uri;
 use rocket::get;
 use rocket::http::uri::Origin;
 use rocket::response::Responder;

@@ -1,5 +1,5 @@
+use crate::result::HttpResult;
 use crate::template_v2::prelude::*;
-use crate::HttpResult;
 use anyhow::anyhow;
 use rocket::request::FromRequest as _;
 use rocket::{catch, catchers, Catcher, Request};

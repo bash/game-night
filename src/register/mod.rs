@@ -1,10 +1,10 @@
 use crate::auth::{CookieJarExt, LoginState};
 use crate::database::Repository;
+use crate::default;
 use crate::email::EmailSender;
 use crate::invitation::{Invitation, Passphrase};
 use crate::template_v2::prelude::*;
 use crate::users::{AstronomicalSymbol, User, UserId};
-use crate::{default, HttpResult};
 use anyhow::Result;
 use campaign::{Campaign, ProvidedCampaign};
 use email_address::EmailAddress;
@@ -25,6 +25,7 @@ mod delete;
 mod email_verification_code;
 mod profile;
 mod verification;
+use crate::result::HttpResult;
 pub(crate) use email_verification_code::*;
 pub(crate) use profile::*;
 
