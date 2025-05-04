@@ -14,7 +14,6 @@ use rocket::response::{self, Debug, Redirect, Responder};
 use rocket::{
     catch, catchers, get, post, routes, Catcher, FromForm, Request, Response, Route, State,
 };
-use rocket_dyn_templates::{context, Template};
 
 mod auto_login;
 pub(crate) use auto_login::*;
@@ -24,6 +23,7 @@ mod code;
 mod secret_key;
 pub(crate) use secret_key::*;
 mod redirect;
+use crate::template_v2::responder::Templated;
 pub(crate) use redirect::*;
 mod sudo;
 
@@ -51,11 +51,30 @@ fn login_redirect(_user: User, redirect: Option<RedirectUri>) -> Redirect {
 }
 
 #[get("/login?<redirect>", rank = 20)]
-fn login_page(redirect: Option<RedirectUri>, page: PageBuilder<'_>) -> Template {
-    page.uri(redirect.clone()).render(
-        "login",
-        context! { has_redirect: redirect.is_some(), getting_invited_uri: uri!(getting_invited_page()) },
-    )
+fn login_page(redirect: Option<RedirectUri>, page: PageBuilder<'_>) -> impl Responder {
+    let template = templates::LoginPage {
+        has_redirect: redirect.is_some(),
+        getting_invited_uri: uri!(getting_invited_page()),
+        error_message: None,
+        email_field: None,
+        ctx: page.uri(redirect.clone()).build(),
+    };
+    Templated(template)
+}
+
+mod templates {
+    use crate::template_v2::prelude::*;
+    use rocket::http::uri::Origin;
+
+    #[derive(Template, Debug)]
+    #[template(path = "login.html")]
+    pub(crate) struct LoginPage {
+        pub(crate) has_redirect: bool,
+        pub(crate) getting_invited_uri: Origin<'static>,
+        pub(crate) error_message: Option<String>,
+        pub(crate) email_field: Option<String>,
+        pub(crate) ctx: PageContext,
+    }
 }
 
 #[post("/login?<redirect>", data = "<form>")]
@@ -78,19 +97,20 @@ responder! {
     enum Login {
         Success(Box<Redirect>),
         #[response(status = 400)]
-        Failure(Template),
+        Failure(Box<Templated<templates::LoginPage>>),
     }
 }
 
 impl Login {
     fn failure(builder: PageBuilder, redirect: Option<RedirectUri>, form: LoginData<'_>) -> Login {
-        let context = context! {
+        let template = templates::LoginPage {
             has_redirect: redirect.is_some(),
-            form,
-            error_message: "I don't know what to do with this email address, are you sure that you spelled it correctly? 🤔",
+            email_field: Some(form.email.to_string()),
+            error_message: Some("I don't know what to do with this email address, are you sure that you spelled it correctly? 🤔".to_string()),
             getting_invited_uri: uri!(getting_invited_page()),
+            ctx: builder.build(),
         };
-        Self::Failure(builder.render("login", context))
+        Self::Failure(Box::new(Templated(template)))
     }
 }
 

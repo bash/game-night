@@ -1,0 +1,3 @@
+[general]
+dirs = ["templates/v2"]
+whitespace = "preserve"

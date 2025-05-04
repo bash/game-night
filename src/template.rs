@@ -17,6 +17,7 @@ use serde::Serialize;
 use std::borrow::Cow;
 use std::sync::OnceLock;
 
+use rocket::http::ext::IntoOwned;
 use std::convert::Infallible;
 
 pub(crate) struct PageBuilder<'r> {
@@ -31,6 +32,23 @@ impl PageBuilder<'_> {
             self.uri = Cow::Owned(uri.into());
         }
         self
+    }
+
+    pub(crate) fn build(self) -> crate::template_v2::PageContext {
+        use crate::template_v2::{Page, PageContext};
+        let chapters = visible_chapters(&self.user);
+        PageContext {
+            user: self.user,
+            logout_uri: uri!(logout()),
+            impersonating: self.login_state.is_impersonating(),
+            active_chapter: active_chapter(&chapters, &self.uri),
+            chapters,
+            import_map: None, // TODO
+            page: Page {
+                uri: self.uri.clone().into_owned().into_owned(),
+                path: self.uri.path().raw().percent_decode_lossy().into_owned(),
+            },
+        }
     }
 
     pub(crate) fn render(
@@ -209,20 +227,20 @@ fn chapters() -> &'static [Chapter] {
 
 #[derive(Debug, Clone, Serialize)]
 pub(crate) struct Chapter {
-    uri: Origin<'static>,
+    pub(crate) uri: Origin<'static>,
     match_uris: Vec<Origin<'static>>,
     weight: usize,
-    title: &'static str,
+    pub(crate) title: &'static str,
     #[serde(skip)]
     visible_if: fn(&Option<User>) -> bool,
-    accent_color: AccentColor,
-    icon: SvgIcon,
+    pub(crate) accent_color: AccentColor,
+    pub(crate) icon: SvgIcon,
 }
 
 #[derive(Debug, Clone, Serialize)]
 pub(crate) struct SvgIcon {
-    name: &'static str,
-    aria_label: &'static str,
+    pub(crate) name: &'static str,
+    pub(crate) aria_label: &'static str,
 }
 
 #[derive(Debug, Copy, Clone, Serialize, Default)]
@@ -250,6 +268,17 @@ impl AccentColor {
             Blue => "var(--blue-color)",
             Green => "var(--green-color)",
             Orange => "var(--orange-color)",
+        }
+    }
+
+    pub(crate) fn css_class(self) -> &'static str {
+        use AccentColor::*;
+        match self {
+            Pink => "_pink",
+            Purple => "_purple",
+            Blue => "_blue",
+            Green => "_green",
+            Orange => "_orange",
         }
     }
 }

@@ -1,4 +1,4 @@
-{% extends 'base' %}
+{% extends "base.html" %}
 
 {% block title %}Login{% endblock title %}
 
@@ -11,10 +11,15 @@
         Enter your email address below to receive a login code ✨
     </p>
 
-    {% include 'error_message' %}
+    {% include "error_message.html" %}
 
     <fieldset>
-        <input type="email" autocomplete="email" inputmode="email" placeholder="awesome-person@example.com" name="email" required autofocus />
+        <input type="email"
+            autocomplete="email"
+            inputmode="email"
+            placeholder="awesome-person@example.com"
+            name="email" required autofocus
+            value="{{email_field.as_deref().unwrap_or_default()}}"/>
     </fieldset>
 
     <fieldset class="-actions">

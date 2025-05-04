@@ -43,6 +43,7 @@ reqwest = "0.12.15"
 serde_json = { version = "1.0.140", features = ["preserve_order"] }
 walkdir = "2.5.0"
 askama-json.path = "crates/askama-json"
+askama = { version = "0.14.0", features = ["serde_json"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 systemd = "0.10.0"

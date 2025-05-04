@@ -3,8 +3,10 @@ WORKDIR /usr/local/src/game-night
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y libsystemd-dev jq && rm -rf /var/lib/apt/lists/*
 COPY Cargo.toml ./
 COPY Cargo.lock ./
+COPY askama.toml ./
 COPY src/ ./src
 COPY crates/ ./crates
+COPY templates/ ./templates
 COPY notifications/ ./notifications
 COPY .sqlx/ ./.sqlx
 ARG CARGO_BUILD_FLAGS=--release

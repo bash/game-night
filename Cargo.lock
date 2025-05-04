@@ -1166,6 +1166,7 @@ name = "game-night"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "askama",
  "askama-json",
  "base64",
  "constcat",

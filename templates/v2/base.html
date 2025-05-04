@@ -1,0 +1,86 @@
+{% import "user-macros.html" as user_macros %}
+<!doctype html>
+<html lang="en" class="{{ctx.active_chapter.accent_color.css_class()}}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light dark">
+    <link rel="manifest" href="/manifest.json" />
+    {# Chrome only picks the SVG over the PNG icon if it has sizes=any #}
+    <link rel="icon" sizes="any" href="/favicon.svg" type="image/svg+xml">
+    {# Firefox only picks the SVG over the PNG icon if its size >= the size of the PNG #}
+    <link rel="icon" sizes="512x512" href="/favicon.svg" type="image/svg+xml">
+    <link rel="icon" sizes="192x192" href="/favicon-192x192.png" type="image/png">
+    <link rel="icon" sizes="512x512" href="/favicon-512x512.png" type="image/png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="mask-icon" href="/mask-icon.svg" color="#ec68aa">
+    <link rel="stylesheet" type="text/css" href='{{ctx.asset("/main.css")}}'>
+    <title>
+        {% block page_title %}
+            Tau's Game Night
+        {% endblock %}
+    </title>
+</head>
+<body>
+    <a href="#main" tabindex="0" class="skip-link">Skip to content</a>
+
+    {% if let Some(user) = ctx.user %}
+    {% if ctx.impersonating %}
+        <form class="page-banner" action="/sudo/exit" method="post">
+            You are acting on behalf of <strong>{{user.name}}</strong>
+            <input type="hidden" name="redirect" value="{{ctx.page.uri}}">
+            <button type="submit">Exit</button>
+        </form>
+    {% endif %}
+    {% endif %}
+
+    <nav>
+        {% for chapter in ctx.chapters %}
+            <a href="{{chapter.uri}}" class="{{chapter.accent_color.css_class()}}" title="{{chapter.title}}">
+                <span class="bookmark{% if chapter.uri == ctx.active_chapter.uri %} -active{% endif%}">
+                    <svg role="img" aria-label="{{chapter.icon.aria_label}}">
+                        <use href='{{ctx.asset("/icons/" ~ chapter.icon.name ~ ".svg")}}#icon' aria-hidden="true" />
+                    </svg>
+                </span>
+            </a>
+        {% endfor %}
+    </nav>
+
+    <main id="main">
+        <header>
+            <h1>
+                {% block title %}
+                {% endblock title %}
+            </h1>
+        </header>
+        {% block content %}{% endblock content %}
+    </main>
+
+    {% if let Some(user) = ctx.user %}
+        <footer>
+            <form action="{{ctx.logout_uri}}" method="post" class="logout-form">
+                <span>Signed in as&nbsp;&nbsp;{% call user_macros::name(user) %}</span>
+                <button type="submit">Log out</button>
+                <input type="hidden" name="redirect" value="{{ctx.page.uri}}">
+            </form>
+        </footer>
+    {% else %}
+        <footer>
+            <span>a website by <a href="https://tau.garden">Tau</a>.</span>
+        </footer>
+    {% endif %}
+
+    {% if let Some(map) = ctx.import_map %}
+        <script type="importmap">{{map | safe}}</script>
+    {% endif %}
+
+    {% block scripts %}
+    {% endblock scripts %}
+    <script type="module" async>
+        const serviceWorkerUrl = {{ctx.asset("/service-worker.js") | json | safe}}
+        navigator.serviceWorker.register(serviceWorkerUrl, { type: 'module', scope: '/' })
+            .then(registration => registration.update())
+            .catch(error => console.warn('Service worker registration failed', error))
+    </script>
+</body>
+</html>
