@@ -82,7 +82,7 @@ pub(crate) trait Repository: EventEmailsRepository + fmt::Debug + Send {
 
     async fn add_event(&mut self, event: Event<New, Polling>) -> Result<i64>;
 
-    async fn update_poll_stage(&mut self, id: i64, stage: PollStage) -> Result<()>;
+    async fn update_poll_stage(&mut self, id: EventId, stage: PollStage) -> Result<()>;
 
     async fn plan_event(&mut self, id: EventId, details: PlanningDetails) -> Result<Event>;
 
@@ -483,7 +483,7 @@ impl Repository for SqliteRepository {
     }
 
     async fn update_poll_stage(&mut self, id: i64, stage: PollStage) -> Result<()> {
-        sqlx::query!("UPDATE polls SET stage = ?1 WHERE id = ?2", stage, id)
+        sqlx::query!("UPDATE polls SET stage = ?1 WHERE event_id = ?2", stage, id)
             .execute(self.executor())
             .await?;
         Ok(())

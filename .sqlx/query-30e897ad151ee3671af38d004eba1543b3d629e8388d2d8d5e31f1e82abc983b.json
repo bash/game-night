@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE polls SET stage = ?1 WHERE event_id = ?2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "30e897ad151ee3671af38d004eba1543b3d629e8388d2d8d5e31f1e82abc983b"
+}

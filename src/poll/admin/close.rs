@@ -55,7 +55,7 @@ pub(crate) async fn close_poll(
     };
     apply_actions(&user, &mut *repository, &data.actions).await?;
     repository
-        .update_poll_stage(poll.id, PollStage::Pending)
+        .update_poll_stage(poll.event.id, PollStage::Pending)
         .await?;
     nudge.nudge();
     let event_uri = uri!(crate::event::event_page(id = poll.event.id));

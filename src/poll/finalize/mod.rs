@@ -36,7 +36,7 @@ auto_resolve! {
 
 async fn try_finalize_poll(ctx: &mut FinalizeContext, poll: Poll) -> Result<()> {
     ctx.repository
-        .update_poll_stage(poll.id, PollStage::Finalizing)
+        .update_poll_stage(poll.event.id, PollStage::Finalizing)
         .await?;
 
     let (result, promoted_events) = finalize_poll_dry_run(&poll);
@@ -63,7 +63,7 @@ async fn try_finalize_poll(ctx: &mut FinalizeContext, poll: Poll) -> Result<()> 
     }
 
     ctx.repository
-        .update_poll_stage(poll.id, PollStage::Closed)
+        .update_poll_stage(poll.event.id, PollStage::Closed)
         .await?;
 
     Ok(())
