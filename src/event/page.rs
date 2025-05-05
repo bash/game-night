@@ -1,12 +1,13 @@
-use super::{ActiveEvent, EventViewModel, StatefulEvent};
-use crate::event::EventsQuery;
+use super::{ActiveEvent, EventListComponent, EventViewModel, EventsQuery, StatefulEvent};
 use crate::play::{play_page, PlayPageStage};
 use crate::poll::{no_open_poll_page, open_poll_page};
 use crate::responder;
 use crate::result::HttpResult;
 use crate::template::PageBuilder;
+use crate::template_v2::prelude::*;
 use crate::users::{User, UsersQuery};
 use itertools::Itertools;
+use rocket::http::uri::Origin;
 use rocket::http::Status;
 use rocket::response::Redirect;
 use rocket::{get, routes, uri, Route};
@@ -38,19 +39,32 @@ fn choose_event_page(
     user: User,
     page: PageBuilder<'_>,
     active_events: Vec<ActiveEvent>,
-) -> Template {
+) -> Templated<ChooseEventPage> {
     let events: Vec<_> = active_events
         .into_iter()
         .sorted_by_key(|e| e.date())
         .map(|e| EventViewModel::from_event(e, &user))
         .collect();
-    let archive_uri = uri!(crate::play::archive_page());
-    page.render("play/choose", context! { events, archive_uri })
+    let archive_uri = (!events.is_empty()).then(|| uri!(crate::play::archive_page()));
+    Templated(ChooseEventPage {
+        events,
+        archive_uri,
+        ctx: page.build(),
+    })
+}
+
+#[derive(Debug, Template)]
+#[template(path = "event/choose.html")]
+pub(crate) struct ChooseEventPage {
+    events: Vec<EventViewModel>,
+    archive_uri: Option<Origin<'static>>,
+    ctx: PageContext,
 }
 
 responder! {
     pub(crate) enum EventsResponse {
         Template(Template),
+        Choose(Box<Templated<ChooseEventPage>>),
         Redirect(Box<Redirect>),
     }
 }

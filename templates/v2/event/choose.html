@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Play{% endblock title %}
+
+{% block content %}
+    <p>
+        Whoa, there are currently multiple ongoing polls / game nights 🤯
+    </p>
+
+    <div class="calendar-list -events">
+         {{ EventListComponent::for_events(events) | safe }}
+    </div>
+
+    {% if let Some(archive_uri) = archive_uri %}
+        Check out the <a href="{{archive_uri}}">archive</a> to see a list of all past game nights.
+    {% endif %}
+{% endblock content %}
+
+{% block scripts %}
+    <script src='{{ctx.asset("/js/relative-time-element.js")}}' type="module"></script>
+{% endblock scripts %}
