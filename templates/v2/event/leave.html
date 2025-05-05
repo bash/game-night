@@ -13,7 +13,7 @@
             Don't worry—You can always rejoin should you change your mind :)
         </p>
         <p>
-            An email will be sent to {{ UserNameComponent::for_user(event.created_by) }} with an optional comment:
+            An email will be sent to {{ UserNameComponent::for_user(event.created_by) | safe }} with an optional comment:
         </p>
         <fieldset>
             <textarea name="message" id="message" rows="4"
