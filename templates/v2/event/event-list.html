@@ -1,0 +1,46 @@
+<ul>
+    {% for event in events %}
+        <li>
+            {{ EventBadgeComponent::for_event(event) | safe }}
+
+            {% if let Some(uri) = event.view_uri %}<a href="{{uri}}">{% call label(event=event) %}</a>
+            {% else %}<span>{% call label(event=event) %}</span>{% endif %}
+
+            {% let date = event.date() %}
+            <span class="time-range"><time datetime='{{ date | time("{iso_8601}") }}'>{{date | time("[hour]:[minute]")}}</time></span>
+
+            {% let details = event.details() %}
+            {% let title = details.title() %}
+
+            {% if !title.is_empty() %}
+                <em class="title">{{title | guillemets}}</em>
+            {% else %}
+                <span></span>
+            {% endif %}
+
+            {% if let Some(visible) = event.visible_participants %}
+            <div class="answers-list">
+                {% for participant in visible.participants %}
+                    <span class="answer">
+                        {{ UserNameComponent::for_user(participant.user).with_symbol() | safe }}
+                    </span>
+                {% endfor %}
+                {% if visible.redacted %}
+                    <span title="some participants have been omitted">&hellip;</span>
+                {% endif %}
+            </div>
+            {% endif %}
+        </li>
+    {% endfor %}
+</ul>
+
+{% macro label(event) %}
+    {% match EventLabel::for_event(event) %}
+    {% when EventLabel::Date(date) %}
+        {{ date | time(date_format()) }}
+    {% when EventLabel::OpenUntil(date) %}
+        until {{ date | time(date_format()) }}
+    {% when EventLabel::ClosedAt(date) %}
+        closed on {{ date | time(date_format()) }}
+    {% endmatch %}
+{% endmacro %}

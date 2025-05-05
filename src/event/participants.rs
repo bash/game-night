@@ -4,8 +4,8 @@ use serde::Serialize;
 
 #[derive(Debug, Serialize)]
 pub(crate) struct VisibleParticipants {
-    redacted: bool,
-    participants: Vec<Participant>,
+    pub(crate) redacted: bool,
+    pub(crate) participants: Vec<Participant>,
 }
 
 impl VisibleParticipants {

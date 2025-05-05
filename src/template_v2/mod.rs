@@ -2,6 +2,7 @@ use crate::template::Chapter;
 use crate::users::User;
 use rocket::http::uri::Origin;
 
+pub(crate) mod convert;
 pub(crate) mod filters;
 pub(crate) mod functions;
 pub(crate) mod responder;

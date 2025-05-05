@@ -27,6 +27,8 @@ mod location;
 pub(crate) use location::*;
 mod postal_address;
 pub(crate) use postal_address::*;
+mod list;
+pub(crate) use list::*;
 
 // TODO: strong type
 pub type EventId = i64;
