@@ -29,6 +29,10 @@ mod postal_address;
 pub(crate) use postal_address::*;
 mod list;
 pub(crate) use list::*;
+mod title;
+pub(crate) use title::*;
+mod convert;
+pub(crate) use convert::*;
 
 // TODO: strong type
 pub type EventId = i64;

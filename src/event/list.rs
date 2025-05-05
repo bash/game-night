@@ -1,4 +1,4 @@
-use super::{EventViewModel, StatefulEvent};
+use super::{EventLike, EventViewModel, StatefulEvent};
 use crate::template_v2::prelude::*;
 use crate::users::UserNameComponent;
 use time::OffsetDateTime;

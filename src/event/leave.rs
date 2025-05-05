@@ -1,17 +1,18 @@
-use super::EventEmailSender;
+use super::{
+    Event, EventEmailSender, EventId, EventsQuery, LongEventTitleComponent, StatefulEvent,
+};
 use crate::database::Repository;
 use crate::email::EmailMessage;
-use crate::event::{Event, EventId, EventsQuery, StatefulEvent};
 use crate::result::HttpResult;
 use crate::template::PageBuilder;
+use crate::template_v2::prelude::*;
 use crate::uri;
-use crate::users::User;
+use crate::users::{User, UserNameComponent};
 use lettre::message::Mailbox;
 use rocket::form::Form;
 use rocket::http::Status;
 use rocket::response::Redirect;
 use rocket::{get, post, FromForm};
-use rocket_dyn_templates::{context, Template};
 use serde::Serialize;
 
 #[get("/event/<id>/leave")]
@@ -20,10 +21,11 @@ pub(crate) async fn leave_page(
     user: User,
     page: PageBuilder<'_>,
     mut events_query: EventsQuery,
-) -> HttpResult<Template> {
+) -> HttpResult<Templated<LeavePage>> {
     let event = events_query.with_id(id, &user).await?;
     if let Some(StatefulEvent::Planned(event)) = event {
-        Ok(page.render("play/leave", context! { event }))
+        let ctx = page.build();
+        Ok(Templated(LeavePage { event, ctx }))
     } else {
         Err(Status::NotFound.into())
     }
@@ -52,6 +54,13 @@ pub(crate) async fn leave_(
     } else {
         Err(Status::UnprocessableEntity.into())
     }
+}
+
+#[derive(Debug, Template)]
+#[template(path = "event/leave.html")]
+pub(crate) struct LeavePage {
+    event: Event,
+    ctx: PageContext,
 }
 
 #[derive(Debug, FromForm)]

@@ -1,6 +1,4 @@
-{% import 'user-macros' as user_macros %}
-{% import 'macros' as macros %}
-{% extends 'base' %}
+{% extends "base.html" %}
 
 {% block title %}Leave?{% endblock title %}
 
@@ -8,13 +6,14 @@
     <form method="post">
         <p>
             This will remove you from
-            {{macros::long_title(event=event)}} on <strong>{{event.starts_at | time(format='{date}')}}</strong>.
+
+            {{ LongEventTitleComponent::for_event(event) | safe }} on <strong>{{event.starts_at | time("{date}")}}</strong>.
         </p>
         <p>
             Don't worry—You can always rejoin should you change your mind :)
         </p>
         <p>
-            An email will be sent to {{user_macros::name(user=event.created_by, inline=true)}} with an optional comment:
+            An email will be sent to {{ UserNameComponent::for_user(event.created_by) }} with an optional comment:
         </p>
         <fieldset>
             <textarea name="message" id="message" rows="4"
@@ -29,5 +28,5 @@
 {% endblock content %}
 
 {% block scripts %}
-<script type="module" src="{{asset(path='/js/auto-resize.js')}}"></script>
+<script type="module" src='{{ctx.asset("/js/auto-resize.js")}}'></script>
 {% endblock scripts %}

@@ -1,5 +1,6 @@
-use super::{Event, EventId, EventLifecycle, Location, Planned, Polling};
+use super::{Event, EventId, Planned, Polling, SafeEventDetails};
 use crate::database::Materialized;
+use crate::event::EventLike;
 use crate::groups::Group;
 use crate::iso_8601::Iso8601;
 use crate::poll::{Poll, PollStage};
@@ -34,39 +35,6 @@ pub(crate) enum ActiveEvent {
     Finalizing(Poll),
     Planned(Event),
     Cancelled(Event),
-}
-
-macro_rules! impl_safe_event_details {
-    ($($field:ident : $ty:ty,)*) => {
-        trait EventAnyLifecycle {
-            $(fn $field(&self) -> $ty;)*
-        }
-
-        impl<L: EventLifecycle> EventAnyLifecycle for Event<Materialized, L> {
-            $(
-                fn $field(&self) -> $ty {
-                    &self.$field
-                }
-            )*
-        }
-        impl SafeEventDetails<'_> {
-            $(
-                pub(crate) fn $field(&self) -> $ty {
-                    &self.0.$field()
-                }
-            )*
-        }
-    };
-}
-
-/// Details about an event that are always safe to access
-/// (even while the event is polling).
-pub(crate) struct SafeEventDetails<'a>(&'a dyn EventAnyLifecycle);
-
-impl_safe_event_details! {
-    title: &str,
-    description: &str,
-    location: &Location,
 }
 
 impl StatefulEvent {
@@ -113,16 +81,6 @@ impl StatefulEvent {
         match self {
             Polling(poll) | Pending(poll) | Finalizing(poll) | Failed(poll) => poll.open_until.0,
             Planned(event) | Cancelled(event) | Archived(event) => event.starts_at.0,
-        }
-    }
-
-    pub(crate) fn details(&self) -> SafeEventDetails {
-        use StatefulEvent::*;
-        match self {
-            Polling(poll) | Pending(poll) | Finalizing(poll) | Failed(poll) => {
-                SafeEventDetails(&poll.event)
-            }
-            Planned(event) | Cancelled(event) | Archived(event) => SafeEventDetails(event),
         }
     }
 
@@ -174,6 +132,16 @@ impl StatefulEvent {
         match self {
             Polling(poll) | Pending(poll) | Finalizing(poll) | Failed(poll) => polling(&poll.event),
             Planned(event) | Cancelled(event) | Archived(event) => planned(event),
+        }
+    }
+}
+
+impl EventLike for StatefulEvent {
+    fn details(&self) -> SafeEventDetails {
+        use StatefulEvent::*;
+        match self {
+            Polling(poll) | Pending(poll) | Finalizing(poll) | Failed(poll) => poll.event.details(),
+            Planned(event) | Cancelled(event) | Archived(event) => event.details(),
         }
     }
 }
