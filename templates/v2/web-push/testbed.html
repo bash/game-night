@@ -9,7 +9,7 @@
 
         <select name="recipient" class="-inline">
             {% for u in users %}
-                <option value="{{u.id}}" {% if u.id == user.id %}selected{% endif %}>{{u.name}}</option>
+                <option value="{{u.id}}" {% if u.id == recipient_id %}selected{% endif %}>{{u.name}}</option>
             {% endfor %}
         </select>
     </p>

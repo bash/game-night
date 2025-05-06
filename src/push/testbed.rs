@@ -34,15 +34,15 @@ pub(crate) async fn testbed(
     let users = users.active().await?;
     Ok(Templated(TestbedPage {
         notification: DEFAULT_NOTIFICATION.to_string(),
-        user: admin.into_inner(),
         users,
+        recipient_id: admin.id,
         ctx: page.build(),
     }))
 }
 
 #[post("/users/push", data = "<form>")]
 pub(crate) async fn send_push_notification(
-    admin: AuthorizedTo<ManageUsers>,
+    _admin: AuthorizedTo<ManageUsers>,
     form: Form<SendPushNotificationData>,
     mut users: UsersQuery,
     mut sender: PushSender,
@@ -56,8 +56,8 @@ pub(crate) async fn send_push_notification(
     let notification = serde_json::to_string_pretty(&message.notification).map_err(Error::from)?;
     Ok(Templated(TestbedPage {
         notification,
-        user: admin.into_inner(),
         users,
+        recipient_id: form.recipient,
         ctx: page.build(),
     }))
 }
@@ -72,7 +72,7 @@ pub(crate) struct SendPushNotificationData {
 #[template(path = "web-push/testbed.html")]
 pub(crate) struct TestbedPage {
     users: Vec<User>,
-    user: User,
+    recipient_id: UserId,
     notification: String,
     ctx: PageContext,
 }
