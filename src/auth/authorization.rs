@@ -39,6 +39,12 @@ where
     }
 }
 
+impl<P> AuthorizedTo<P> {
+    pub(crate) fn into_inner(self) -> User {
+        self.0
+    }
+}
+
 impl<P> Deref for AuthorizedTo<P> {
     type Target = User;
 

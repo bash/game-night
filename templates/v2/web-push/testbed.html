@@ -1,4 +1,4 @@
-{% extends 'base' %}
+{% extends "base.html" %}
 
 {% block title %}Send a Push Notification{% endblock title %}
 
@@ -26,5 +26,5 @@
 {% endblock content %}
 
 {% block scripts %}
-<script type="module" src="{{asset(path='/js/auto-resize.js')}}"></script>
+<script type="module" src='{{ctx.asset("/js/auto-resize.js")}}'></script>
 {% endblock scripts %}
