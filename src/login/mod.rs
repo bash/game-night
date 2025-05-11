@@ -2,7 +2,7 @@ use crate::auth::{CookieJarExt, LoginState};
 use crate::database::Repository;
 use crate::email::{EmailMessage, EmailSender};
 use crate::register::rocket_uri_macro_getting_invited_page;
-use crate::template_v2::prelude::*;
+use crate::template::prelude::*;
 use crate::users::{User, UserId};
 use crate::{default, responder, uri};
 use anyhow::Result;

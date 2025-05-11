@@ -3,7 +3,7 @@ use crate::auth::{CookieJarExt, LoginState};
 use crate::database::Repository;
 use crate::responder;
 use crate::result::HttpResult;
-use crate::template_v2::prelude::*;
+use crate::template::prelude::*;
 use rocket::form::Form;
 use rocket::http::CookieJar;
 use rocket::response::Redirect;

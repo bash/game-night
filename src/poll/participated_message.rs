@@ -1,5 +1,5 @@
 use super::Poll;
-use crate::template_v2::prelude::*;
+use crate::template::prelude::*;
 use crate::users::User;
 
 #[derive(Template, Debug)]

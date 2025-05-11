@@ -12,7 +12,7 @@ use crate::groups::Group;
 use crate::push::{PollNotification, PushSender};
 use crate::register::rocket_uri_macro_profile;
 use crate::result::HttpResult;
-use crate::template_v2::prelude::*;
+use crate::template::prelude::*;
 use crate::uri::UriBuilder;
 use crate::users::{SubscribedUsers, User};
 use crate::{auto_resolve, uri};

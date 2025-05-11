@@ -3,7 +3,7 @@ use crate::auth::{AuthorizedTo, ManageUsers};
 use crate::auto_resolve;
 use crate::database::Repository;
 use crate::result::HttpResult;
-use crate::template_v2::prelude::*;
+use crate::template::prelude::*;
 use anyhow::Result;
 use rocket::get;
 use std::ops;

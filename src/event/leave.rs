@@ -4,7 +4,7 @@ use super::{
 use crate::database::Repository;
 use crate::email::EmailMessage;
 use crate::result::HttpResult;
-use crate::template_v2::prelude::*;
+use crate::template::prelude::*;
 use crate::uri;
 use crate::users::{User, UserNameComponent};
 use lettre::message::Mailbox;

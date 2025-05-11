@@ -4,7 +4,7 @@ use crate::play::{play_page, PlayPage, PlayPageStage};
 use crate::poll::{open_poll_page, NoOpenPollPage, OpenPollPage};
 use crate::responder;
 use crate::result::HttpResult;
-use crate::template_v2::prelude::*;
+use crate::template::prelude::*;
 use crate::users::{User, UsersQuery};
 use itertools::Itertools;
 use rocket::http::Status;

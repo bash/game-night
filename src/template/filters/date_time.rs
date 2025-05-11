@@ -1,4 +1,4 @@
-use crate::template_v2::convert::OffsetDateTimeLike;
+use crate::template::convert::OffsetDateTimeLike;
 use askama_json::askama;
 use time::format_description::well_known::Iso8601 as Iso8601Format;
 use time::format_description::{self, BorrowedFormatItem as FormatItem};

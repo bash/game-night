@@ -1,7 +1,7 @@
 use super::{Notification, PushMessage, PushSender};
 use crate::auth::{AuthorizedTo, ManageUsers};
 use crate::result::HttpResult;
-use crate::template_v2::prelude::*;
+use crate::template::prelude::*;
 use crate::users::User;
 use crate::users::{UserId, UsersQuery};
 use anyhow::Error;

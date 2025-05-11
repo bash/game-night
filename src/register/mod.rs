@@ -3,7 +3,7 @@ use crate::database::Repository;
 use crate::default;
 use crate::email::EmailSender;
 use crate::invitation::{Invitation, Passphrase};
-use crate::template_v2::prelude::*;
+use crate::template::prelude::*;
 use crate::users::{AstronomicalSymbol, User, UserId};
 use anyhow::Result;
 use campaign::{Campaign, ProvidedCampaign};

@@ -1,5 +1,5 @@
 use super::User;
-use crate::template_v2::prelude::*;
+use crate::template::prelude::*;
 
 #[derive(Debug, Template)]
 #[template(path = "users/user-name.html")]

@@ -25,7 +25,7 @@ mod result;
 mod socket_activation;
 #[cfg(target_os = "linux")]
 mod systemd;
-mod template_v2;
+mod template;
 mod users;
 
 // TODO: remove no longer needed Serialize impls

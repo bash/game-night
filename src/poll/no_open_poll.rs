@@ -1,5 +1,5 @@
 use crate::auth::UriProvider;
-use crate::template_v2::prelude::*;
+use crate::template::prelude::*;
 use crate::users::User;
 
 #[derive(Debug, Template)]

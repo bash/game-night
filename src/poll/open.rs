@@ -7,7 +7,7 @@ use crate::event::{EventsQuery, StatefulEvent};
 use crate::iso_8601::Iso8601;
 use crate::poll::{Poll, PollOption};
 use crate::result::HttpResult;
-use crate::template_v2::prelude::*;
+use crate::template::prelude::*;
 use crate::users::UserNameComponent;
 use crate::users::{User, UsersQuery};
 use itertools::{Either, Itertools as _};

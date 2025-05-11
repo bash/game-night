@@ -1,7 +1,7 @@
 use crate::decorations::Random;
 use crate::event::Event;
 use crate::poll::Poll;
-use crate::template_v2::{filters, functions};
+use crate::template::{filters, functions};
 use crate::users::User;
 use askama_json::JsonTemplate;
 

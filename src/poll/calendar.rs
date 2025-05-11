@@ -1,5 +1,5 @@
 use crate::iso_8601::Iso8601;
-use crate::template_v2::prelude::*;
+use crate::template::prelude::*;
 use itertools::Itertools as _;
 use std::iter;
 use time::format_description::BorrowedFormatItem as FormatItem;

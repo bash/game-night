@@ -6,7 +6,7 @@ use crate::poll::{
     finalize, Answer, AnswerValue, NudgeFinalizer, Poll, PollOption, PollOptionPatch, PollStage,
 };
 use crate::result::HttpResult;
-use crate::template_v2::prelude::*;
+use crate::template::prelude::*;
 use crate::users::User;
 use crate::users::UserNameComponent;
 use anyhow::Result;

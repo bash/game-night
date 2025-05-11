@@ -3,7 +3,7 @@ use crate::decorations::Random;
 use crate::invitation::{Invitation, Passphrase};
 use crate::login::{Logout, RedirectUri};
 use crate::result::HttpResult;
-use crate::template_v2::prelude::*;
+use crate::template::prelude::*;
 use crate::users::User;
 use rand::rng;
 use rocket::response::Responder;

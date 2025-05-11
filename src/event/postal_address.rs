@@ -1,5 +1,5 @@
 use super::Location;
-use crate::template_v2::prelude::*;
+use crate::template::prelude::*;
 
 #[derive(Template, Debug)]
 #[template(path = "event/postal-address.html")]

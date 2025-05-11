@@ -1,4 +1,4 @@
-use crate::template_v2::prelude::*;
+use crate::template::prelude::*;
 use crate::uri;
 use rocket::get;
 use rocket::http::uri::Origin;

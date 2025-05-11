@@ -1,6 +1,6 @@
 use crate::event::{EventListComponent, EventViewModel, EventsQuery, StatefulEvent};
 use crate::result::HttpResult;
-use crate::template_v2::prelude::*;
+use crate::template::prelude::*;
 use crate::users::User;
 use itertools::Itertools;
 use rocket::get;

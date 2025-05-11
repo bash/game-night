@@ -3,7 +3,7 @@ use super::AstronomicalSymbol;
 use crate::database::Repository;
 use crate::push::PushEndpoints;
 use crate::result::HttpResult;
-use crate::template_v2::prelude::*;
+use crate::template::prelude::*;
 use crate::users::{
     rocket_uri_macro_list_users, EmailSubscription, User, UserPatch, ASTRONOMICAL_SYMBOLS,
 };

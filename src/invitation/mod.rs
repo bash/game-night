@@ -2,7 +2,7 @@ use crate::auth::{AuthorizedTo, Invite};
 use crate::database::Repository;
 use crate::register::rocket_uri_macro_register_page;
 use crate::result::HttpResult;
-use crate::template_v2::prelude::*;
+use crate::template::prelude::*;
 use crate::uri;
 use crate::uri::UriBuilder;
 use crate::users::{AstronomicalSymbol, EmailSubscription, Role, User, UserId, UsersQuery};
