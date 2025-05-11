@@ -64,6 +64,7 @@ ENV ROCKET_DEFAULT_CONFIG=/usr/local/share/game-night/Rocket.toml
 ENV ROCKET_CONFIG=/usr/local/etc/game-night/Rocket.toml
 WORKDIR /usr/local/share/game-night
 COPY config/Rocket.container.toml ./Rocket.toml
+# TODO: this is ugly, make path configurable
 COPY --from=email_css /usr/local/src/game-night/*.css /usr/local/bin/
 
 WORKDIR /run/game-night

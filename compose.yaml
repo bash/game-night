@@ -19,7 +19,6 @@ services:
     volumes:
     - ./data:/var/lib/game-night
     - ./config:/usr/local/etc/game-night:ro
-    - ./templates:/usr/local/share/game-night/templates:ro
     - ./data/outbox:/run/outbox:ro
     security_opt:
     - label=disable
