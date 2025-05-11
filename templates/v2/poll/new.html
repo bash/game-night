@@ -1,4 +1,4 @@
-{% extends 'base' %}
+{% extends "base.html" %}
 
 {% block title %}New Poll{% endblock title %}
 
@@ -54,7 +54,7 @@
 
     <fieldset>
         <label for="description">Here's space for me to write down some extra information for the event using markdown:</label>
-        <textarea name="description" id="description" data-auto-resize>{{description}}</textarea>
+        <textarea name="description" id="description" data-auto-resize>{{description.as_deref().unwrap_or_default()}}</textarea>
     </fieldset>
 
     <fieldset class="-actions">
@@ -64,6 +64,6 @@
 {% endblock content %}
 
 {% block scripts %}
-<script type="module" src="{{asset(path='/js/calendar.js')}}"></script>
-<script type="module" src="{{asset(path='/js/auto-resize.js')}}"></script>
+<script type="module" src='{{ctx.asset("/js/calendar.js")}}'></script>
+<script type="module" src='{{ctx.asset("/js/auto-resize.js")}}'></script>
 {% endblock scripts %}

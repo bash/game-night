@@ -1,8 +1,0 @@
-{% macro name(user, inline=false) -%}
-    <span class="user-name">
-        {%- if not inline -%}
-            <span class="symbol">{{user.symbol}}</span>
-        {% endif -%}
-        <span class="name" style="text-decoration-color: {{accent_color(index=user.id)}}">{{user.name}}</span>{#
-    #}</span>
-{%- endmacro %}

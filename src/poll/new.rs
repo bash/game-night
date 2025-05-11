@@ -8,21 +8,20 @@ use crate::event::{
     rocket_uri_macro_event_page, Event, EventEmailSender, EventsQuery, Location, Polling,
     StatefulEvent,
 };
+use crate::groups::Group;
 use crate::push::{PollNotification, PushSender};
 use crate::register::rocket_uri_macro_profile;
 use crate::result::HttpResult;
 use crate::template::PageBuilder;
-use crate::template_v2::prelude::Templated;
+use crate::template_v2::prelude::*;
 use crate::uri::UriBuilder;
 use crate::users::{SubscribedUsers, User};
 use crate::{auto_resolve, uri};
 use anyhow::{Context as _, Result};
-use askama::Template as _;
 use rocket::form::Form;
+use rocket::http::uri::Origin;
 use rocket::response::Redirect;
 use rocket::{get, post, FromForm};
-use rocket_dyn_templates::{context, Template};
-use serde::Serialize;
 use time::{Date, Duration, OffsetDateTime, PrimitiveDateTime, Time};
 use time_tz::{timezones, PrimitiveDateTimeExt};
 
@@ -32,7 +31,7 @@ pub(crate) async fn new_poll_page(
     page: PageBuilder<'_>,
     mut events: EventsQuery,
     mut repository: Box<dyn Repository>,
-) -> HttpResult<Template> {
+) -> HttpResult<Templated<NewPollPage>> {
     let calendar = Calendar::generate(
         OffsetDateTime::now_utc(),
         14,
@@ -41,17 +40,28 @@ pub(crate) async fn new_poll_page(
     let description = events.newest(&user).await?.map(|e| e.description);
     let groups = repository.get_groups().await?;
     let locations = repository.get_locations().await?;
-    Ok(page.render(
-        "poll/new",
-        context! {
-            calendar: calendar.render()?,
-            strategies: strategies(),
-            calendar_uri: uri!(calendar()),
-            description,
-            groups,
-            locations
-        },
-    ))
+    let page = NewPollPage {
+        calendar,
+        strategies: strategies().into_iter().collect(),
+        calendar_uri: uri!(calendar()),
+        description,
+        groups,
+        locations,
+        ctx: page.build(),
+    };
+    Ok(Templated(page))
+}
+
+#[derive(Template, Debug)]
+#[template(path = "poll/new.html")]
+pub(crate) struct NewPollPage {
+    calendar: Calendar,
+    description: Option<String>,
+    groups: Vec<Group>,
+    calendar_uri: Origin<'static>,
+    locations: Vec<Location>,
+    strategies: Vec<DateSelectionStrategyOption>,
+    ctx: PageContext,
 }
 
 #[post("/poll/new/_calendar", data = "<form>")]
@@ -83,7 +93,7 @@ pub(super) struct CalendarData {
     options: Vec<CalendarDayPrefill>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
 struct DateSelectionStrategyOption {
     name: String,
     value: DateSelectionStrategy,

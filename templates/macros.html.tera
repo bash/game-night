@@ -1,7 +1,0 @@
-{% macro long_title(event, untitled_prefix='') %}
-    {% if event.title %}
-        <em>Tau's Game Night «{{event.title}}»</em>
-    {% else %}
-        {{untitled_prefix}} <em>Tau's Game Night</em>
-    {% endif %}
-{% endmacro %}
