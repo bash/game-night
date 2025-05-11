@@ -1,4 +1,4 @@
-{% extends 'base' %}
+{% extends "base.html" %}
 
 {% block title %}Inviting Others{% endblock title %}
 
@@ -8,17 +8,17 @@
     <p>Here's your invitation:</p>
 
     <fieldset class="-two-column">
-        {% for word in passphrase %}
+        {% for word in passphrase.0.iter() %}
             <input type="text" value="{{word}}" readonly>
         {% endfor %}
         <small>
-            <button type="button" class="-icon" data-copy-to-clipboard="{{passphrase | join(sep=' ')}}">
-                <svg><use href="{{asset(path='/icons/clipboard-copy.svg')}}#icon" /></svg>
+            <button type="button" class="-icon" data-copy-to-clipboard='{{ passphrase.0.iter().join(" ") }}'>
+                <svg><use href='{{ctx.asset("/icons/clipboard-copy.svg")}}#icon' /></svg>
                 <span>Copy Words to Clipboard</span>
             </button>
             <br>
             <button type="button" class="-icon" data-copy-to-clipboard="{{register_uri}}">
-                <svg><use href="{{asset(path='/icons/clipboard-copy.svg')}}#icon" /></svg>
+                <svg><use href='{{ctx.asset("/icons/clipboard-copy.svg")}}#icon' /></svg>
                 <span>Copy Link to Clipboard</span>
             </button>
         </small>
@@ -28,12 +28,13 @@
         <button type="submit">Create another invitation</button>
     </fieldset>
 
-    {% for name, value in form %}
-        <input type="hidden" name="{{name}}" value="{{value}}" />
-    {% endfor %}
+    {% let GenerateInvitationData { lifetime_in_days, inviter, comment } = form %}
+    <input type="hidden" name="lifetime_in_days" value="{{lifetime_in_days}}" />
+    <input type="hidden" name="inviter" value="{{inviter}}" />
+    <input type="hidden" name="comment" value="{{comment}}" />
 </form>
 {% endblock content %}
 
 {% block scripts %}
-<script type="module" src="{{asset(path='/js/copy-to-clipboard.js')}}"></script>
+<script type="module" src='{{ctx.asset("/js/copy-to-clipboard.js")}}'></script>
 {% endblock scripts %}

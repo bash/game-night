@@ -3,16 +3,17 @@ use crate::database::Repository;
 use crate::register::rocket_uri_macro_register_page;
 use crate::result::HttpResult;
 use crate::template::PageBuilder;
+use crate::template_v2::prelude::*;
 use crate::uri;
 use crate::uri::UriBuilder;
 use crate::users::{AstronomicalSymbol, EmailSubscription, Role, User, UserId, UsersQuery};
 use anyhow::Result;
+use itertools::Itertools as _;
 use rand::{prelude::*, rng};
 use rocket::form::Form;
+use rocket::http::uri::Absolute;
 use rocket::yansi::Paint as _;
 use rocket::{get, post, routes, FromForm, FromFormField, Route};
-use rocket_dyn_templates::{context, Template};
-use serde::Serialize;
 use std::num::NonZeroU32;
 use time::{Duration, OffsetDateTime};
 
@@ -27,16 +28,25 @@ pub(crate) fn routes() -> Vec<Route> {
 
 #[get("/invite")]
 async fn invite_page(
-    _user: AuthorizedTo<Invite>,
-    mut users_query: UsersQuery,
+    user: AuthorizedTo<Invite>,
+    mut users: UsersQuery,
     page: PageBuilder<'_>,
-) -> HttpResult<Template> {
-    Ok(page.render(
-        "invite",
-        context! {
-            users: users_query.active().await?
-        },
-    ))
+) -> HttpResult<Templated<InvitePage>> {
+    let users = users.active().await?;
+    let user = user.into_inner();
+    Ok(Templated(InvitePage {
+        users,
+        user,
+        ctx: page.build(),
+    }))
+}
+
+#[derive(Template, Debug)]
+#[template(path = "invitation/invite.html")]
+struct InvitePage {
+    users: Vec<User>,
+    user: User,
+    ctx: PageContext,
 }
 
 #[post("/invite", data = "<form>")]
@@ -46,7 +56,8 @@ async fn generate_invitation(
     mut repository: Box<dyn Repository>,
     form: Form<GenerateInvitationData>,
     uri_builder: UriBuilder,
-) -> HttpResult<Template> {
+) -> HttpResult<Templated<InvitationPage>> {
+    let form = form.into_inner();
     let lifetime = Duration::days(i64::from(u32::from(form.lifetime_in_days)));
     let valid_until = OffsetDateTime::now_utc() + lifetime;
     let invitation = Invitation::builder()
@@ -56,25 +67,36 @@ async fn generate_invitation(
         .comment(&form.comment)
         .build(&mut rng());
     let invitation = repository.add_invitation(invitation).await?;
-    Ok(page.render(
-        "invitation",
-        context! {
-            passphrase: invitation.passphrase.clone(),
-            form: form.into_inner(),
-            register_uri: uri!(uri_builder, register_page(passphrase = Some(invitation.passphrase))),
-        },
-    ))
+    let passphrase = invitation.passphrase.clone();
+    let register_uri = uri!(
+        uri_builder,
+        register_page(passphrase = Some(invitation.passphrase))
+    );
+    Ok(Templated(InvitationPage {
+        passphrase,
+        register_uri,
+        form,
+        ctx: page.build(),
+    }))
 }
 
-#[derive(Debug, FromForm, Serialize)]
+#[derive(Template, Debug)]
+#[template(path = "invitation/invitation.html")]
+struct InvitationPage {
+    passphrase: Passphrase,
+    register_uri: Absolute<'static>,
+    form: GenerateInvitationData,
+    ctx: PageContext,
+}
+
+#[derive(Debug, FromForm)]
 struct GenerateInvitationData {
     lifetime_in_days: NonZeroU32,
     inviter: UserId,
     comment: String,
 }
 
-#[derive(Debug, Clone, Copy, FromFormField, Serialize)]
-#[serde(rename_all = "snake_case")]
+#[derive(Debug, Clone, Copy, FromFormField)]
 enum InvitationLifetime {
     Short,
     Long,
