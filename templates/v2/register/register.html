@@ -16,7 +16,7 @@
             Enter those secret words below to continue.
         </p>
 
-        {% include "error_message.html" %}
+        {% include "error-message.html" %}
 
         <fieldset class="-two-column">
             <input type="text" placeholder="1st word" name="words[0]" data-overflow-to="words[1]" value="{{nth_word_or_empty(0)}}" required autofocus>
@@ -45,7 +45,7 @@
     {% endif %}
 
     {% if let RegisterStep::UserDetails = step %}
-        {% include "error_message.html" %}
+        {% include "error-message.html" %}
 
         {% match passphrase_source %}
             {% when PassphraseSource::Query %}
@@ -99,7 +99,7 @@
             Enter the code below to complete the registration.
         </p>
 
-        {% include "error_message.html" %}
+        {% include "error-message.html" %}
 
         <fieldset>
             <input type="number" name="email_verification_code" size="6" placeholder="123456" value="{{form.email_verification_code.unwrap_or_default()}}" autocomplete="off" inputmode="numeric" data-1p-ignore required autofocus>
