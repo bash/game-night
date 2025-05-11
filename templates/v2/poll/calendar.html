@@ -1,0 +1,24 @@
+{% for month in months %}
+    <h2>{{month.name}}</h2>
+    <ul>
+        {% for day in month.days %}
+            <li>
+                <input type="hidden" name="options[{{day.date}}][date]" value="{{day.date}}">
+                <input type="checkbox" name="options[{{day.date}}][enabled]" id="days-{{day.date}}" {{*day.prefill.enabled | checked}}>
+                <label for="days-{{day.date}}">
+                    <span class="day">{{day.day}}</span>
+                    <span class="weekday">{{day.weekday}}</span>
+                </label>
+                <div class="time-range">
+                    <input type="time"
+                        name="options[{{day.date}}][start_time]"
+                        id="options-{{day.date}}-start-time"
+                        data-bind-disabled-to="days-{{day.date}}"
+                        step="{{60 * 15}}"
+                        disabled
+                        {% if let Some(start_time) = day.prefill.start_time %} value="{{start_time}}" {% endif %}>
+                </div>
+            </li>
+        {% endfor %}
+    </ul>
+{% endfor %}

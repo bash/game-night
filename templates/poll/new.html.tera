@@ -43,7 +43,7 @@
     </p>
 
     <div class="calendar-list" id="calendar">
-        {% include 'poll/calendar' %}
+        {{ calendar | safe }}
     </div>
 
     <p>
