@@ -1,7 +1,7 @@
 use super::{ActiveEvent, EventListComponent, EventViewModel, EventsQuery, StatefulEvent};
 use crate::auth::UriProvider;
 use crate::play::{play_page, PlayPage, PlayPageStage};
-use crate::poll::{open_poll_page, NoOpenPollPage};
+use crate::poll::{open_poll_page, NoOpenPollPage, OpenPollPage};
 use crate::responder;
 use crate::result::HttpResult;
 use crate::template::PageBuilder;
@@ -94,6 +94,7 @@ pub(crate) async fn event_page(
 responder! {
     pub(crate) enum EventDetailPageResponse {
         Play(Box<Templated<PlayPage>>),
+        Poll(Box<Templated<OpenPollPage>>),
         PendingFinalization(Box<Template>),
     }
 }

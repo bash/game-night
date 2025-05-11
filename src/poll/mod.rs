@@ -25,6 +25,8 @@ mod skip;
 pub(crate) use skip::*;
 mod no_open_poll;
 pub(crate) use no_open_poll::*;
+mod participated_message;
+pub(crate) use participated_message::*;
 
 pub(crate) fn routes() -> Vec<Route> {
     routes![

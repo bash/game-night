@@ -1,16 +1,16 @@
-{% extends 'base' %}
+{% extends "base.html" %}
 
 {% block title %}Skip Game Night?{% endblock title %}
 
 {% block content %}
     <form method="post">
-        {% include "poll/participated-message" %}
+        {{ ParticipatedMessageComponent::for_poll(poll, user) | safe }}
 
         <p>
             Don't worry, you can always <a href="{{poll_uri}}">fill out the poll</a>
             should you change your mind 😊
         </p>
-        {% if is_subscribed(sub=user.email_subscription) %}
+        {% if user | is_subscribed %}
             <p>
                 I will send you an email to <strong>{{user.email_address}}</strong>
                 once it's time for another game night.

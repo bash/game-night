@@ -28,6 +28,14 @@ pub(crate) fn markdown(input: impl AsRef<str>, _: &dyn askama::Values) -> askama
     Ok(html_output)
 }
 
+pub(crate) fn checked(checked: bool, _: &dyn askama::Values) -> askama::Result<&'static str> {
+    if checked {
+        Ok("checked")
+    } else {
+        Ok("")
+    }
+}
+
 pub(crate) fn guillemets<W: FastWritable>(
     input: W,
     _: &dyn askama::Values,

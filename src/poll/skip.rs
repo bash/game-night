@@ -1,13 +1,15 @@
+use super::ParticipatedMessageComponent;
 use super::{Answer, AnswerValue, Poll};
 use crate::database::{New, Repository};
 use crate::event::EventsQuery;
 use crate::result::HttpResult;
 use crate::template::PageBuilder;
+use crate::template_v2::prelude::*;
 use crate::users::User;
 use crate::{responder, uri};
+use rocket::http::uri::Origin;
 use rocket::response::Redirect;
 use rocket::{get, post};
-use rocket_dyn_templates::{context, Template};
 
 #[get("/event/<id>/skip")]
 pub(super) async fn skip_poll_page(
@@ -19,18 +21,28 @@ pub(super) async fn skip_poll_page(
     let Some(poll) = events.with_id(id, &user).await?.and_then(|e| e.polling()) else {
         return Ok(Redirect::to(uri!(crate::home::home_page())).into());
     };
-    let ctx = context! {
+    let template = SkipPollPage {
         poll_uri: uri!(crate::event::event_page(id = poll.event.id)),
-        has_answers: poll.has_answer(user.id),
         poll,
+        user,
+        ctx: page.build(),
     };
-    Ok(page.render("poll/skip", ctx).into())
+    Ok(Templated(template).into())
+}
+
+#[derive(Template, Debug)]
+#[template(path = "poll/skip.html")]
+pub(crate) struct SkipPollPage {
+    user: User,
+    poll: Poll,
+    poll_uri: Origin<'static>,
+    ctx: PageContext,
 }
 
 responder! {
     pub(crate) enum SkipPollResponse {
         Redirect(Box<Redirect>),
-        Template(Template),
+        Template(Templated<SkipPollPage>),
     }
 }
 
