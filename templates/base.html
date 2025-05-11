@@ -69,7 +69,7 @@
         </footer>
     {% endif %}
 
-    {% if let Some(map) = ctx.import_map %}
+    {% if let Some(map) = ctx.import_map() %}
         <script type="importmap">{{map | safe}}</script>
     {% endif %}
 

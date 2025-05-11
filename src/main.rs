@@ -60,6 +60,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .attach(pruning::database_pruning())
         .attach(users::LastActivity)
         .attach(push::web_push_fairing())
+        .attach(template::template_fairing())
         .manage(infra::HttpClient::new());
 
     if let Some(b) = socket_activation::listener_from_env()? {

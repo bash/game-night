@@ -15,7 +15,6 @@ lettre = { version = "0.11.0", default-features = false, features = [
 rand = { version = "0.9", features = ["small_rng"] }
 rocket = { version = "0.6.0-dev", features = ["secrets", "json"] }
 rocket_db_pools = { version = "0.1.0", features = ["sqlx_sqlite"] }
-rocket_dyn_templates = { version = "0.1.0", features = ["tera"] }
 serde = { version = "1.0", features = ["derive"] }
 sqlx = { version = "0.8", features = ["time"] }
 constcat = "0.6.0"
@@ -33,7 +32,6 @@ dyn-clone = "1.0.14"
 ics = "0.5.8"
 pem = { package = "pem-rfc7468", version = "0.7.0", features = ["std"] }
 listenfd = "1.0.1"
-tera-macros = { path = "crates/tera-macros" }
 either = "1.12.0"
 hostname = "0.4.0"
 web-push = { package = "web-push-native", version = "0.4.0" }
@@ -57,12 +55,10 @@ rocket_codegen = { git = "https://github.com/rwf2/Rocket/" }
 rocket_http = { git = "https://github.com/rwf2/Rocket/" }
 rocket_db_pools = { git = "https://github.com/rwf2/Rocket/" }
 rocket_db_pools_codegen = { git = "https://github.com/rwf2/Rocket/" }
-rocket_dyn_templates = { git = "https://github.com/rwf2/Rocket/" }
 reqwest = { git = "https://github.com/seanmonstar/reqwest.git", branch = "uds" }
 
 [workspace]
 members = [
     "crates/askama-json",
     "crates/askama-json-macros",
-    "crates/tera-macros",
 ]

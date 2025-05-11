@@ -1,7 +1,0 @@
-[package]
-name = "tera-macros"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-tera = { version = "1.19.1", default-features = false }

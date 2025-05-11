@@ -1,3 +1,4 @@
+use super::assets::Assets;
 use crate::auth::LoginState;
 use crate::invitation::Passphrase;
 use crate::uri;
@@ -6,7 +7,7 @@ use itertools::Itertools as _;
 use rocket::http::ext::IntoOwned as _;
 use rocket::http::uri::Origin;
 use std::borrow::Cow;
-use std::sync::OnceLock;
+use std::sync::{Arc, OnceLock};
 
 #[derive(Debug)]
 pub(crate) struct PageContext {
@@ -16,13 +17,17 @@ pub(crate) struct PageContext {
     pub(crate) page: Page,
     pub(crate) chapters: Vec<Chapter>,
     pub(crate) active_chapter: Chapter,
-    pub(crate) import_map: Option<String>,
+    assets: Arc<Assets>,
 }
 
 impl PageContext {
     pub(crate) fn asset(&self, path: impl ToString) -> String {
-        // TODO
-        path.to_string()
+        let path = path.to_string();
+        self.assets.asset_map.get(&path).cloned().unwrap_or(path)
+    }
+
+    pub(crate) fn import_map(&self) -> Option<&str> {
+        self.assets.import_map.as_deref()
     }
 }
 
@@ -36,6 +41,7 @@ pub(crate) struct PageContextBuilder<'r> {
     user: Option<User>,
     login_state: LoginState,
     uri: Cow<'r, Origin<'r>>,
+    assets: Arc<Assets>,
 }
 
 impl PageContextBuilder<'_> {
@@ -54,11 +60,11 @@ impl PageContextBuilder<'_> {
             impersonating: self.login_state.is_impersonating(),
             active_chapter: active_chapter(&chapters, &self.uri),
             chapters,
-            import_map: None, // TODO
             page: Page {
                 path: self.uri.path().raw().percent_decode_lossy().into_owned(),
                 uri: self.uri.into_owned().into_owned(),
             },
+            assets: self.assets,
         }
     }
 }
@@ -227,6 +233,7 @@ impl AccentColor {
 mod from_request {
     use super::PageContextBuilder;
     use crate::auth::LoginState;
+    use crate::template::assets::SharedAssets;
     use crate::users::User;
     use anyhow::Error;
     use rocket::outcome::try_outcome;
@@ -242,11 +249,13 @@ mod from_request {
         async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
             let user: Option<User> = unwrap_infallible(request.guard().await);
             let login_state: LoginState = try_outcome!(request.guard().await);
+            let assets: SharedAssets = try_outcome!(request.guard().await);
             let uri = Cow::Borrowed(request.uri());
             Outcome::Success(PageContextBuilder {
                 user,
                 uri,
                 login_state,
+                assets: assets.0,
             })
         }
     }
