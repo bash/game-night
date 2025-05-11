@@ -1,6 +1,4 @@
-{% import 'user-macros' as user_macros %}
-
-{% extends 'base' %}
+{% extends "base.html" %}
 
 {% block title %}Close Poll?{% endblock title %}
 
@@ -17,21 +15,21 @@
                         <span class="text-badge">candidate</span>
 
                         <span>
-                            <span class="day">{{option.starts_at | time(format="[day padding:none]")}}</span>
+                            <span class="day">{{option.starts_at | time("[day padding:none]")}}</span>
                             <span class="weekday">
-                                {{option.starts_at | time(format="[weekday repr:long]")}}
+                                {{option.starts_at | time("[weekday repr:long]")}}
                             </span>
                         </span>
 
                         <div class="time-range">
-                            <time>{{option.starts_at | time(format='[hour]:[minute]')}}</time>
+                            <time>{{option.starts_at | time("[hour]:[minute]")}}</time>
                         </div>
 
                         <div class="answers-list">
                             {% for answer in option.answers %}
-                                {% if answer.value.type == "yes" %}
+                                {% if let AnswerValue::Yes { .. } = answer.value %}
                                     <span class="answer">
-                                        {{user_macros::name(user=answer.user)}}
+                                        {{ UserNameComponent::for_user(answer.user).with_symbol() | safe }}
                                     </span>
                                 {% endif %}
                             {% endfor %}
@@ -59,7 +57,7 @@
         <p>
             <small>
                 These candidates were selected
-                <strong>{{date_selection_strategy}}</strong>,
+                <strong>{{poll.strategy}}</strong>,
                 where at least <strong>{{poll.min_participants}}</strong> people have said yes.
             </small>
         </p>
@@ -68,7 +66,7 @@
         </p>
         <p>
             <label>
-                <input type="checkbox" name="close_manually" formaction="{{set_close_manually_uri}}" {% if close_manually %}checked{% endif %} data-auto-submit>
+                <input type="checkbox" name="close_manually" formaction="{{set_close_manually_uri}}" {{ *close_manually | checked }} data-auto-submit>
                 I want to close the poll manually, ignore the open until date.
             </label>
         </p>

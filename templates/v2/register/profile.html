@@ -59,7 +59,7 @@
             {% for symbol in symbols %}
                 <label class="symbol">
                     <span class="label">{{symbol}}</span>
-                    <input type="radio" name="symbol" value="{{symbol}}" {% if *symbol == user.symbol %}checked{% endif %} autocomplete="off">
+                    <input type="radio" name="symbol" value="{{symbol}}" {{ *(*symbol == user.symbol) | checked }} autocomplete="off">
                 </label>
             {% endfor %}
         </div>
