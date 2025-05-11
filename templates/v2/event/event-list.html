@@ -7,7 +7,7 @@
             {% else %}<span>{% call label(event=event) %}</span>{% endif %}
 
             {% let date = event.date() %}
-            <span class="time-range"><time datetime='{{ date | time("{iso_8601}") }}'>{{date | time("[hour]:[minute]")}}</time></span>
+            <span class="time-range"><time datetime='{{ date | iso_8601 }}'>{{date | time("[hour]:[minute]")}}</time></span>
 
             {% let details = event.details() %}
             {% let title = details.title() %}

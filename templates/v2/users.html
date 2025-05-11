@@ -19,7 +19,7 @@
                     via {{campaign -}}
                 {% endif %}
                 {%- if user.invited_by.is_some() || user.campaign.is_some() %},{% endif %}
-                active <em><relative-time datetime='{{*user.last_active_at | time(format="{iso_8601}")}}'>{{*user.last_active_at | time(format="{date_with_year}")}}</relative-time></em>
+                active <em><relative-time datetime='{{user.last_active_at | iso_8601}}'>{{user.last_active_at | time(format="{date_with_year}")}}</relative-time></em>
             </small>
             <small class="anchor"><a href="#user-{{user.id}}">#</a></small>
             <small class="actions">
