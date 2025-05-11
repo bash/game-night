@@ -1,4 +1,5 @@
 use super::{ActiveEvent, EventListComponent, EventViewModel, EventsQuery, StatefulEvent};
+use crate::auth::UriProvider;
 use crate::play::{play_page, PlayPageStage};
 use crate::poll::{open_poll_page, NoOpenPollPage};
 use crate::responder;
@@ -7,7 +8,6 @@ use crate::template::PageBuilder;
 use crate::template_v2::prelude::*;
 use crate::users::{User, UsersQuery};
 use itertools::Itertools;
-use rocket::http::uri::Origin;
 use rocket::http::Status;
 use rocket::response::Redirect;
 use rocket::{get, routes, uri, Route};
@@ -45,10 +45,9 @@ fn choose_event_page(
         .sorted_by_key(|e| e.date())
         .map(|e| EventViewModel::from_event(e, &user))
         .collect();
-    let archive_uri = (!events.is_empty()).then(|| uri!(crate::play::archive_page()));
     Templated(ChooseEventPage {
         events,
-        archive_uri,
+        uri: UriProvider::for_user(user),
         ctx: page.build(),
     })
 }
@@ -57,7 +56,7 @@ fn choose_event_page(
 #[template(path = "event/choose.html")]
 pub(crate) struct ChooseEventPage {
     events: Vec<EventViewModel>,
-    archive_uri: Option<Origin<'static>>,
+    uri: UriProvider,
     ctx: PageContext,
 }
 

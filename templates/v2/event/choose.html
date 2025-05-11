@@ -11,9 +11,7 @@
          {{ EventListComponent::for_events(events) | safe }}
     </div>
 
-    {% if let Some(archive_uri) = archive_uri %}
-        Check out the <a href="{{archive_uri}}">archive</a> to see a list of all past game nights.
-    {% endif %}
+    Check out the <a href="{{uri.archive_page()}}">archive</a> to see a list of all past game nights.
 {% endblock content %}
 
 {% block scripts %}
