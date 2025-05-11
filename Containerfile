@@ -66,10 +66,8 @@ ENV ROCKET_DEFAULT_CONFIG=/usr/local/share/game-night/Rocket.toml
 ENV ROCKET_CONFIG=/usr/local/etc/game-night/Rocket.toml
 WORKDIR /usr/local/share/game-night
 COPY config/Rocket.container.toml ./Rocket.toml
-COPY templates/ ./templates
 COPY emails/ ./emails
 COPY --from=email_css /usr/local/src/game-night/emails/*.css ./emails/
-COPY notifications/ ./notifications
 
 WORKDIR /run/game-night
 CMD ["game-night"]
