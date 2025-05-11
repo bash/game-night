@@ -1,32 +1,44 @@
 use crate::auth::LoginState;
-use crate::invitation::rocket_uri_macro_invite_page;
 use crate::invitation::Passphrase;
-use crate::login::rocket_uri_macro_logout;
-use crate::play::{rocket_uri_macro_archive_page, rocket_uri_macro_play_redirect};
-use crate::register::{rocket_uri_macro_profile, rocket_uri_macro_register_page};
-use crate::users::rocket_uri_macro_list_users;
+use crate::uri;
 use crate::users::User;
-use anyhow::Error;
-use itertools::Itertools;
+use itertools::Itertools as _;
+use rocket::http::ext::IntoOwned as _;
 use rocket::http::uri::Origin;
-use rocket::outcome::try_outcome;
-use rocket::request::{FromRequest, Outcome};
-use rocket::{async_trait, uri, Request};
-use rocket_dyn_templates::Template;
-use serde::Serialize;
 use std::borrow::Cow;
 use std::sync::OnceLock;
 
-use rocket::http::ext::IntoOwned;
-use std::convert::Infallible;
+#[derive(Debug)]
+pub(crate) struct PageContext {
+    pub(crate) user: Option<User>,
+    pub(crate) logout_uri: Origin<'static>,
+    pub(crate) impersonating: bool,
+    pub(crate) page: Page,
+    pub(crate) chapters: Vec<Chapter>,
+    pub(crate) active_chapter: Chapter,
+    pub(crate) import_map: Option<String>,
+}
 
-pub(crate) struct PageBuilder<'r> {
+impl PageContext {
+    pub(crate) fn asset(&self, path: impl ToString) -> String {
+        // TODO
+        path.to_string()
+    }
+}
+
+#[derive(Debug)]
+pub(crate) struct Page {
+    pub(crate) uri: Origin<'static>,
+    pub(crate) path: String,
+}
+
+pub(crate) struct PageContextBuilder<'r> {
     user: Option<User>,
     login_state: LoginState,
     uri: Cow<'r, Origin<'r>>,
 }
 
-impl PageBuilder<'_> {
+impl PageContextBuilder<'_> {
     pub(crate) fn uri(mut self, uri: Option<impl Into<Origin<'static>>>) -> Self {
         if let Some(uri) = uri {
             self.uri = Cow::Owned(uri.into());
@@ -34,91 +46,20 @@ impl PageBuilder<'_> {
         self
     }
 
-    pub(crate) fn build(self) -> crate::template_v2::PageContext {
-        use crate::template_v2::{Page, PageContext};
+    pub(crate) fn build(self) -> PageContext {
         let chapters = visible_chapters(&self.user);
         PageContext {
             user: self.user,
-            logout_uri: uri!(logout()),
+            logout_uri: uri!(crate::login::logout()),
             impersonating: self.login_state.is_impersonating(),
             active_chapter: active_chapter(&chapters, &self.uri),
             chapters,
             import_map: None, // TODO
             page: Page {
-                uri: self.uri.clone().into_owned().into_owned(),
                 path: self.uri.path().raw().percent_decode_lossy().into_owned(),
+                uri: self.uri.into_owned().into_owned(),
             },
         }
-    }
-
-    pub(crate) fn render(
-        &self,
-        name: impl Into<Cow<'static, str>>,
-        context: impl Serialize,
-    ) -> Template {
-        let chapters = visible_chapters(&self.user);
-        Template::render(
-            name,
-            TemplateContext {
-                context,
-                user: self.user.as_ref(),
-                logout_uri: uri!(logout()),
-                sudo: self.login_state.is_impersonating(),
-                active_chapter: active_chapter(&chapters, &self.uri),
-                chapters,
-                page: Page {
-                    uri: &self.uri,
-                    path: &self.uri.path().raw().percent_decode_lossy(),
-                },
-            },
-        )
-    }
-}
-
-#[derive(Serialize)]
-struct TemplateContext<'a, C>
-where
-    C: Serialize,
-{
-    user: Option<&'a User>,
-    logout_uri: Origin<'a>,
-    sudo: bool,
-    page: Page<'a>,
-    chapters: Vec<Chapter>,
-    active_chapter: Chapter,
-    #[serde(flatten)]
-    context: C,
-}
-
-#[derive(Serialize)]
-struct Page<'a> {
-    uri: &'a Origin<'a>,
-    path: &'a str,
-}
-
-#[async_trait]
-impl<'r> FromRequest<'r> for PageBuilder<'r> {
-    type Error = Error;
-
-    async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
-        let user: Option<User> = unwrap_infallible(request.guard().await);
-        let login_state: LoginState = try_outcome!(request.guard().await);
-        let uri = Cow::Borrowed(request.uri());
-        Outcome::Success(PageBuilder {
-            user,
-            uri,
-            login_state,
-        })
-    }
-}
-
-fn unwrap_infallible<S>(outcome: Outcome<S, Infallible>) -> S {
-    match outcome {
-        Outcome::Success(value) => value,
-        Outcome::Forward(status) => panic!(
-            "unexpectedly got a forward from an infallible guard: {:?}",
-            status
-        ),
     }
 }
 
@@ -151,7 +92,9 @@ fn chapters() -> &'static [Chapter] {
             Chapter {
                 uri: uri!("/"),
                 weight: 100,
-                match_uris: vec![uri!(register_page(passphrase = Option::<Passphrase>::None))],
+                match_uris: vec![uri!(crate::register::register_page(
+                    passphrase = Option::<Passphrase>::None
+                ))],
                 title: "Register",
                 visible_if: Option::is_none,
                 accent_color: AccentColor::Pink,
@@ -161,7 +104,7 @@ fn chapters() -> &'static [Chapter] {
                 },
             },
             Chapter {
-                uri: uri!(play_redirect()),
+                uri: uri!(crate::play::play_redirect()),
                 weight: 0,
                 match_uris: vec![],
                 title: "Play",
@@ -175,7 +118,7 @@ fn chapters() -> &'static [Chapter] {
             Chapter {
                 uri: uri!(crate::event::events_entry_page()),
                 weight: 100,
-                match_uris: vec![uri!(archive_page())],
+                match_uris: vec![uri!(crate::play::archive_page())],
                 title: "Play",
                 visible_if: Option::is_some,
                 accent_color: AccentColor::Purple,
@@ -185,9 +128,9 @@ fn chapters() -> &'static [Chapter] {
                 },
             },
             Chapter {
-                uri: uri!(profile()),
+                uri: uri!(crate::register::profile()),
                 weight: 0,
-                match_uris: vec![uri!(list_users())],
+                match_uris: vec![uri!(crate::users::list_users())],
                 title: "User Profile",
                 accent_color: AccentColor::Blue,
                 visible_if: |_| true,
@@ -210,7 +153,7 @@ fn chapters() -> &'static [Chapter] {
                 },
             },
             Chapter {
-                uri: uri!(invite_page()),
+                uri: uri!(crate::invitation::invite_page()),
                 weight: 0,
                 match_uris: vec![],
                 title: "Invite",
@@ -225,26 +168,24 @@ fn chapters() -> &'static [Chapter] {
     })
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone)]
 pub(crate) struct Chapter {
     pub(crate) uri: Origin<'static>,
     match_uris: Vec<Origin<'static>>,
     weight: usize,
     pub(crate) title: &'static str,
-    #[serde(skip)]
     visible_if: fn(&Option<User>) -> bool,
     pub(crate) accent_color: AccentColor,
     pub(crate) icon: SvgIcon,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone)]
 pub(crate) struct SvgIcon {
     pub(crate) name: &'static str,
     pub(crate) aria_label: &'static str,
 }
 
-#[derive(Debug, Copy, Clone, Serialize, Default)]
-#[serde(rename_all = "snake_case")]
+#[derive(Debug, Copy, Clone, Default)]
 pub(crate) enum AccentColor {
     #[default]
     Pink,
@@ -279,6 +220,44 @@ impl AccentColor {
             Blue => "_blue",
             Green => "_green",
             Orange => "_orange",
+        }
+    }
+}
+
+mod from_request {
+    use super::PageContextBuilder;
+    use crate::auth::LoginState;
+    use crate::users::User;
+    use anyhow::Error;
+    use rocket::outcome::try_outcome;
+    use rocket::request::{FromRequest, Outcome};
+    use rocket::{async_trait, Request};
+    use std::borrow::Cow;
+    use std::convert::Infallible;
+
+    #[async_trait]
+    impl<'r> FromRequest<'r> for PageContextBuilder<'r> {
+        type Error = Error;
+
+        async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
+            let user: Option<User> = unwrap_infallible(request.guard().await);
+            let login_state: LoginState = try_outcome!(request.guard().await);
+            let uri = Cow::Borrowed(request.uri());
+            Outcome::Success(PageContextBuilder {
+                user,
+                uri,
+                login_state,
+            })
+        }
+    }
+
+    fn unwrap_infallible<S>(outcome: Outcome<S, Infallible>) -> S {
+        match outcome {
+            Outcome::Success(value) => value,
+            Outcome::Forward(status) => panic!(
+                "unexpectedly got a forward from an infallible guard: {:?}",
+                status
+            ),
         }
     }
 }

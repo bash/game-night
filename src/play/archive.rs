@@ -1,6 +1,5 @@
 use crate::event::{EventListComponent, EventViewModel, EventsQuery, StatefulEvent};
 use crate::result::HttpResult;
-use crate::template::PageBuilder;
 use crate::template_v2::prelude::*;
 use crate::users::User;
 use itertools::Itertools;
@@ -11,7 +10,7 @@ use time::OffsetDateTime;
 #[get("/archive")]
 pub(crate) async fn archive_page(
     user: User,
-    page: PageBuilder<'_>,
+    page: PageContextBuilder<'_>,
     mut events: EventsQuery,
 ) -> HttpResult<Templated<ArchivePage>> {
     let events = events.all(&user).await?;

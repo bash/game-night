@@ -11,7 +11,7 @@ use std::ops;
 #[get("/users")]
 pub(crate) async fn list_users(
     _guard: AuthorizedTo<ManageUsers>,
-    page: PageBuilder<'_>,
+    page: PageContextBuilder<'_>,
     mut users: UsersProvider,
 ) -> HttpResult<Templated<UsersPage>> {
     let template = UsersPage {

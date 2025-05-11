@@ -5,7 +5,7 @@ use rocket::http::uri::Origin;
 use rocket::response::Responder;
 
 #[get("/", rank = 20)]
-pub(crate) fn home_page(page: PageBuilder<'_>) -> impl Responder {
+pub(crate) fn home_page(page: PageContextBuilder<'_>) -> impl Responder {
     Templated(HomePage {
         getting_invited_uri: uri!(crate::register::getting_invited_page()),
         ctx: page.build(),

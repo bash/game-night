@@ -16,7 +16,7 @@ use time::Date;
 
 #[get("/profile")]
 pub(crate) fn profile(
-    page: PageBuilder,
+    page: PageContextBuilder,
     user: User,
     push_endpoints: &State<PushEndpoints>,
 ) -> Templated<ProfilePage> {

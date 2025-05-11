@@ -10,7 +10,7 @@ pub(crate) fn catchers() -> Vec<Catcher> {
 
 #[catch(404)]
 async fn not_found(request: &Request<'_>) -> HttpResult<Templated<NotFoundPage>> {
-    let ctx = PageBuilder::from_request(request)
+    let ctx = PageContextBuilder::from_request(request)
         .await
         .success_or_else(|| anyhow!("failed to create page builder"))?
         .build();
@@ -19,7 +19,7 @@ async fn not_found(request: &Request<'_>) -> HttpResult<Templated<NotFoundPage>>
 
 #[catch(403)]
 async fn forbidden(request: &Request<'_>) -> HttpResult<Templated<ForbiddenPage>> {
-    let ctx = PageBuilder::from_request(request)
+    let ctx = PageContextBuilder::from_request(request)
         .await
         .success_or_else(|| anyhow!("failed to create page builder"))?
         .build();

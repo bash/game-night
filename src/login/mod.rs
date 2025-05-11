@@ -52,7 +52,7 @@ fn login_redirect(_user: User, redirect: Option<RedirectUri>) -> Redirect {
 }
 
 #[get("/login?<redirect>", rank = 20)]
-fn login_page(redirect: Option<RedirectUri>, page: PageBuilder<'_>) -> impl Responder {
+fn login_page(redirect: Option<RedirectUri>, page: PageContextBuilder<'_>) -> impl Responder {
     let template = LoginPage {
         has_redirect: redirect.is_some(),
         getting_invited_uri: uri!(getting_invited_page()),
@@ -75,7 +75,7 @@ pub(crate) struct LoginPage {
 
 #[post("/login?<redirect>", data = "<form>")]
 async fn login(
-    builder: PageBuilder<'_>,
+    builder: PageContextBuilder<'_>,
     mut repository: Box<dyn Repository>,
     email_sender: &State<Box<dyn EmailSender>>,
     redirect: Option<RedirectUri>,
@@ -98,7 +98,11 @@ responder! {
 }
 
 impl Login {
-    fn failure(builder: PageBuilder, redirect: Option<RedirectUri>, form: LoginData<'_>) -> Login {
+    fn failure(
+        builder: PageContextBuilder,
+        redirect: Option<RedirectUri>,
+        form: LoginData<'_>,
+    ) -> Login {
         let template = LoginPage {
             has_redirect: redirect.is_some(),
             email_field: Some(form.email.to_string()),

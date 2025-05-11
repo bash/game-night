@@ -12,7 +12,6 @@ use crate::groups::Group;
 use crate::push::{PollNotification, PushSender};
 use crate::register::rocket_uri_macro_profile;
 use crate::result::HttpResult;
-use crate::template::PageBuilder;
 use crate::template_v2::prelude::*;
 use crate::uri::UriBuilder;
 use crate::users::{SubscribedUsers, User};
@@ -28,7 +27,7 @@ use time_tz::{timezones, PrimitiveDateTimeExt};
 #[get("/poll/new")]
 pub(crate) async fn new_poll_page(
     user: AuthorizedTo<ManagePoll>,
-    page: PageBuilder<'_>,
+    page: PageContextBuilder<'_>,
     mut events: EventsQuery,
     mut repository: Box<dyn Repository>,
 ) -> HttpResult<Templated<NewPollPage>> {

@@ -68,7 +68,7 @@ async fn getting_invited_redirect(_user: User) -> Redirect {
 }
 
 #[get("/getting-invited", rank = 20)]
-pub(crate) async fn getting_invited_page(page: PageBuilder<'_>) -> impl Responder {
+pub(crate) async fn getting_invited_page(page: PageContextBuilder<'_>) -> impl Responder {
     Templated(GettingInvitedPage {
         register_uri: uri!(register_page(passphrase = Option::<Passphrase>::None)),
         ctx: page.build(),
@@ -85,7 +85,7 @@ async fn register_page<'r>(
     cookies: &CookieJar<'_>,
     repository: Box<dyn Repository>,
     email_sender: &State<Box<dyn EmailSender>>,
-    page: PageBuilder<'_>,
+    page: PageContextBuilder<'_>,
     campaign: Option<ProvidedCampaign<'r>>,
     passphrase: Option<Passphrase>,
 ) -> HttpResult<RegisterResponse<'r>> {
@@ -107,7 +107,7 @@ async fn register_form<'r>(
     cookies: &CookieJar<'_>,
     repository: Box<dyn Repository>,
     email_sender: &State<Box<dyn EmailSender>>,
-    page: PageBuilder<'_>,
+    page: PageContextBuilder<'_>,
     campaign: Option<ProvidedCampaign<'r>>,
     form: Form<RegisterForm<'r>>,
 ) -> HttpResult<RegisterResponse<'r>> {
@@ -127,7 +127,7 @@ async fn register<'r>(
     cookies: &CookieJar<'_>,
     mut repository: Box<dyn Repository>,
     email_sender: &dyn EmailSender,
-    page: PageBuilder<'_>,
+    page: PageContextBuilder<'_>,
     campaign: Option<ProvidedCampaign<'r>>,
     form: RegisterForm<'r>,
     passphrase_source: PassphraseSource,
@@ -198,7 +198,7 @@ impl<'r> From<RegisterPage<'r>> for RegisterResponse<'r> {
 
 fn invalid_campaign(
     cookies: &CookieJar<'_>,
-    page: PageBuilder<'_>,
+    page: PageContextBuilder<'_>,
 ) -> Templated<InvalidCampaignPage> {
     cookies.add(
         Cookie::build(("vary-smart", "A_cookie_for_very_smart_people"))

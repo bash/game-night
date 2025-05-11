@@ -4,7 +4,6 @@ use crate::play::{play_page, PlayPage, PlayPageStage};
 use crate::poll::{open_poll_page, NoOpenPollPage, OpenPollPage};
 use crate::responder;
 use crate::result::HttpResult;
-use crate::template::PageBuilder;
 use crate::template_v2::prelude::*;
 use crate::users::{User, UsersQuery};
 use itertools::Itertools;
@@ -20,7 +19,7 @@ pub(crate) fn routes() -> Vec<Route> {
 #[get("/")]
 pub(crate) async fn events_entry_page(
     user: User,
-    page: PageBuilder<'_>,
+    page: PageContextBuilder<'_>,
     mut events: EventsQuery,
 ) -> HttpResult<EventsResponse> {
     let active_events = events.active(&user).await?;
@@ -36,7 +35,7 @@ pub(crate) async fn events_entry_page(
 
 fn choose_event_page(
     user: User,
-    page: PageBuilder<'_>,
+    page: PageContextBuilder<'_>,
     active_events: Vec<ActiveEvent>,
 ) -> Templated<ChooseEventPage> {
     let events: Vec<_> = active_events
@@ -73,7 +72,7 @@ pub(crate) async fn event_page(
     id: i64, // TODO: uri!() macro has trouble with type alias
     mut events: EventsQuery,
     users_query: UsersQuery,
-    page: PageBuilder<'_>,
+    page: PageContextBuilder<'_>,
 ) -> HttpResult<EventDetailPageResponse> {
     let event = events.with_id(id, &user).await?;
     match event {

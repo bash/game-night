@@ -3,7 +3,6 @@ use super::{Answer, AnswerValue, Poll};
 use crate::database::{New, Repository};
 use crate::event::EventsQuery;
 use crate::result::HttpResult;
-use crate::template::PageBuilder;
 use crate::template_v2::prelude::*;
 use crate::users::User;
 use crate::{responder, uri};
@@ -16,7 +15,7 @@ pub(super) async fn skip_poll_page(
     id: i64,
     user: User,
     mut events: EventsQuery,
-    page: PageBuilder<'_>,
+    page: PageContextBuilder<'_>,
 ) -> HttpResult<SkipPollResponse> {
     let Some(poll) = events.with_id(id, &user).await?.and_then(|e| e.polling()) else {
         return Ok(Redirect::to(uri!(crate::home::home_page())).into());

@@ -2,7 +2,6 @@ use crate::auth::{AuthorizedTo, Invite};
 use crate::database::Repository;
 use crate::register::rocket_uri_macro_register_page;
 use crate::result::HttpResult;
-use crate::template::PageBuilder;
 use crate::template_v2::prelude::*;
 use crate::uri;
 use crate::uri::UriBuilder;
@@ -30,7 +29,7 @@ pub(crate) fn routes() -> Vec<Route> {
 async fn invite_page(
     user: AuthorizedTo<Invite>,
     mut users: UsersQuery,
-    page: PageBuilder<'_>,
+    page: PageContextBuilder<'_>,
 ) -> HttpResult<Templated<InvitePage>> {
     let users = users.active().await?;
     let user = user.into_inner();
@@ -52,7 +51,7 @@ struct InvitePage {
 #[post("/invite", data = "<form>")]
 async fn generate_invitation(
     _user: AuthorizedTo<Invite>,
-    page: PageBuilder<'_>,
+    page: PageContextBuilder<'_>,
     mut repository: Box<dyn Repository>,
     form: Form<GenerateInvitationData>,
     uri_builder: UriBuilder,

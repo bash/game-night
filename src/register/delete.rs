@@ -11,7 +11,7 @@ use rocket::{get, post, uri};
 use time::{Duration, OffsetDateTime};
 
 #[get("/profile/delete")]
-pub(crate) fn delete_profile_page(page: PageBuilder, user: User) -> impl Responder {
+pub(crate) fn delete_profile_page(page: PageContextBuilder, user: User) -> impl Responder {
     Templated(DeleteProfilePage {
         user,
         random: Random::default(),
@@ -41,7 +41,7 @@ fn goodbye_invitation(user: &User) -> Invitation<()> {
 
 #[get("/profile/deleted?<name>&<passphrase>")]
 pub(crate) fn profile_deleted_page(
-    page: PageBuilder,
+    page: PageContextBuilder,
     name: String,
     passphrase: Passphrase,
 ) -> impl Responder {

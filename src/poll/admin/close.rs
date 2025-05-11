@@ -6,7 +6,6 @@ use crate::poll::{
     finalize, Answer, AnswerValue, NudgeFinalizer, Poll, PollOption, PollOptionPatch, PollStage,
 };
 use crate::result::HttpResult;
-use crate::template::PageBuilder;
 use crate::template_v2::prelude::*;
 use crate::users::User;
 use crate::users::UserNameComponent;
@@ -22,7 +21,7 @@ pub(crate) async fn close_poll_page(
     id: i64,
     user: AuthorizedTo<ManagePoll>,
     mut events: EventsQuery,
-    page: PageBuilder<'_>,
+    page: PageContextBuilder<'_>,
 ) -> HttpResult<Templated<ClosePollPage>> {
     let Some(poll) = events.with_id(id, &user).await?.and_then(|e| e.polling()) else {
         return Err(Status::NotFound.into());

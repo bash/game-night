@@ -4,7 +4,6 @@ use super::{
 use crate::database::Repository;
 use crate::email::EmailMessage;
 use crate::result::HttpResult;
-use crate::template::PageBuilder;
 use crate::template_v2::prelude::*;
 use crate::uri;
 use crate::users::{User, UserNameComponent};
@@ -19,7 +18,7 @@ use serde::Serialize;
 pub(crate) async fn leave_page(
     id: EventId,
     user: User,
-    page: PageBuilder<'_>,
+    page: PageContextBuilder<'_>,
     mut events_query: EventsQuery,
 ) -> HttpResult<Templated<LeavePage>> {
     let event = events_query.with_id(id, &user).await?;

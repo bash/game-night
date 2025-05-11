@@ -25,7 +25,6 @@ mod result;
 mod socket_activation;
 #[cfg(target_os = "linux")]
 mod systemd;
-mod template;
 mod template_v2;
 mod users;
 

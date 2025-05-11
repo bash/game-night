@@ -3,7 +3,6 @@ use crate::auth::{CookieJarExt, LoginState};
 use crate::database::Repository;
 use crate::responder;
 use crate::result::HttpResult;
-use crate::template::PageBuilder;
 use crate::template_v2::prelude::*;
 use rocket::form::Form;
 use rocket::http::CookieJar;
@@ -13,7 +12,7 @@ use rocket::{get, post, FromForm};
 #[get("/login/code?<redirect>")]
 pub(super) async fn login_with_code_page(
     redirect: Option<RedirectUri>,
-    page: PageBuilder<'_>,
+    page: PageContextBuilder<'_>,
 ) -> Templated<LoginWithCodePage> {
     Templated(LoginWithCodePage {
         invalid_code: false,
@@ -23,7 +22,7 @@ pub(super) async fn login_with_code_page(
 
 #[post("/login/code?<redirect>", data = "<form>")]
 pub(super) async fn login_with_code<'r>(
-    page: PageBuilder<'r>,
+    page: PageContextBuilder<'r>,
     form: Form<LoginWithCodeData<'r>>,
     cookies: &'r CookieJar<'r>,
     mut repository: Box<dyn Repository>,

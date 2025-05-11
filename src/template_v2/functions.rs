@@ -1,5 +1,5 @@
+use super::page_context::AccentColor;
 use crate::event::EventId;
-use crate::template::AccentColor;
 use crate::uri;
 use crate::users::UserId;
 use rand::rngs::SmallRng;

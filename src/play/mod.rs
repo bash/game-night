@@ -6,7 +6,6 @@ use crate::event::{
 };
 use crate::poll::EventEmailSender;
 use crate::result::HttpResult;
-use crate::template::PageBuilder;
 use crate::template_v2::prelude::*;
 use crate::uri;
 use crate::uri::UriBuilder;
@@ -40,7 +39,7 @@ pub(crate) fn play_redirect(_user: User) -> Redirect {
 
 pub(crate) fn play_page(
     event: Event,
-    page: PageBuilder<'_>,
+    page: PageContextBuilder<'_>,
     user: User,
     stage: PlayPageStage,
 ) -> HttpResult<Templated<PlayPage>> {

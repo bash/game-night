@@ -1,7 +1,7 @@
 use crate::decorations::{Hearts, SkinToneModifiers};
 use crate::event::EventId;
 use crate::iso_8601::Iso8601;
-use crate::template::AccentColor;
+use crate::template_v2::page_context::AccentColor;
 use crate::users::EmailSubscription;
 use rand::rngs::SmallRng;
 use rand::seq::SliceRandom;

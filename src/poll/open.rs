@@ -7,7 +7,6 @@ use crate::event::{EventsQuery, StatefulEvent};
 use crate::iso_8601::Iso8601;
 use crate::poll::{Poll, PollOption};
 use crate::result::HttpResult;
-use crate::template::PageBuilder;
 use crate::template_v2::prelude::*;
 use crate::users::UserNameComponent;
 use crate::users::{User, UsersQuery};
@@ -23,7 +22,7 @@ use time::{Month, OffsetDateTime};
 pub(crate) async fn open_poll_page(
     user: User,
     poll: Poll,
-    page: PageBuilder<'_>,
+    page: PageContextBuilder<'_>,
     mut users_query: UsersQuery,
 ) -> HttpResult<Templated<OpenPollPage>> {
     let event = StatefulEvent::from_poll(poll.clone(), OffsetDateTime::now_utc());

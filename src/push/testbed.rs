@@ -1,7 +1,6 @@
 use super::{Notification, PushMessage, PushSender};
 use crate::auth::{AuthorizedTo, ManageUsers};
 use crate::result::HttpResult;
-use crate::template::PageBuilder;
 use crate::template_v2::prelude::*;
 use crate::users::User;
 use crate::users::{UserId, UsersQuery};
@@ -29,7 +28,7 @@ const DEFAULT_NOTIFICATION: &str = r#"{
 pub(crate) async fn testbed(
     admin: AuthorizedTo<ManageUsers>,
     mut users: UsersQuery,
-    page: PageBuilder<'_>,
+    page: PageContextBuilder<'_>,
 ) -> HttpResult<Templated<TestbedPage>> {
     let users = users.active().await?;
     Ok(Templated(TestbedPage {
@@ -46,7 +45,7 @@ pub(crate) async fn send_push_notification(
     form: Form<SendPushNotificationData>,
     mut users: UsersQuery,
     mut sender: PushSender,
-    page: PageBuilder<'_>,
+    page: PageContextBuilder<'_>,
 ) -> HttpResult<Templated<TestbedPage>> {
     let form = form.into_inner();
     let message = PushMessage::from(form.notification.into_inner());
