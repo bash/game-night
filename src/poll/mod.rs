@@ -2,12 +2,8 @@ use crate::database::{Materialized, New, Unmaterialized};
 use crate::entity_state;
 use crate::event::{Event, Polling};
 use crate::iso_8601::Iso8601;
-use crate::play::rocket_uri_macro_archive_page;
-use crate::register::rocket_uri_macro_profile;
-use crate::template::PageBuilder;
 use crate::users::{User, UserId};
-use rocket::{routes, uri, FromFormField, Route};
-use rocket_dyn_templates::{context, Template};
+use rocket::{routes, FromFormField, Route};
 use serde::Serialize;
 use sqlx::encode::IsNull;
 use sqlx::error::BoxDynError;
@@ -21,11 +17,14 @@ pub(crate) use finalize::*;
 mod email;
 use email::PollEmail;
 mod new;
+pub(crate) use new::*;
 mod open;
 pub(crate) use open::*;
 mod admin;
 mod skip;
 pub(crate) use skip::*;
+mod no_open_poll;
+pub(crate) use no_open_poll::*;
 
 pub(crate) fn routes() -> Vec<Route> {
     routes![
@@ -40,13 +39,6 @@ pub(crate) fn routes() -> Vec<Route> {
         admin::close_poll,
         admin::set_close_manually,
     ]
-}
-
-pub(crate) fn no_open_poll_page(user: User, page: PageBuilder<'_>) -> Template {
-    let new_poll_uri = user.can_manage_poll().then(|| uri!(new::new_poll_page()));
-    let profile_uri = uri!(profile());
-    let archive_uri = uri!(archive_page());
-    page.render("poll", context! { new_poll_uri, profile_uri, archive_uri })
 }
 
 #[derive(Debug, Clone, sqlx::FromRow, Serialize)]

@@ -1,6 +1,6 @@
 use super::{ActiveEvent, EventListComponent, EventViewModel, EventsQuery, StatefulEvent};
 use crate::play::{play_page, PlayPageStage};
-use crate::poll::{no_open_poll_page, open_poll_page};
+use crate::poll::{open_poll_page, NoOpenPollPage};
 use crate::responder;
 use crate::result::HttpResult;
 use crate::template::PageBuilder;
@@ -26,7 +26,7 @@ pub(crate) async fn events_entry_page(
 ) -> HttpResult<EventsResponse> {
     let active_events = events.active(&user).await?;
     match active_events.len() {
-        0 => Ok(no_open_poll_page(user, page).into()),
+        0 => Ok(Templated(NoOpenPollPage::for_user(user, page.build())).into()),
         1 => {
             let event_page_uri = uri!(event_page(id = active_events[0].event_id()));
             Ok(Redirect::to(event_page_uri).into())
@@ -63,7 +63,7 @@ pub(crate) struct ChooseEventPage {
 
 responder! {
     pub(crate) enum EventsResponse {
-        Template(Template),
+        NoOpenPoll(Box<Templated<NoOpenPollPage>>),
         Choose(Box<Templated<ChooseEventPage>>),
         Redirect(Box<Redirect>),
     }

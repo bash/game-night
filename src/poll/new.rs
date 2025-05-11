@@ -29,7 +29,7 @@ use time::{Date, Duration, Month, OffsetDateTime, PrimitiveDateTime, Time};
 use time_tz::{timezones, PrimitiveDateTimeExt};
 
 #[get("/poll/new")]
-pub(super) async fn new_poll_page(
+pub(crate) async fn new_poll_page(
     user: AuthorizedTo<ManagePoll>,
     page: PageBuilder<'_>,
     mut events: EventsQuery,

@@ -1,9 +1,17 @@
 use askama::{FastWritable, NO_VALUES};
 use askama_json::askama;
 use std::fmt;
+use time::OffsetDateTime;
 
 mod date_time;
+use crate::users::User;
 pub(crate) use date_time::*;
+
+pub(crate) fn is_subscribed(user: &User, _: &dyn askama::Values) -> askama::Result<bool> {
+    Ok(user
+        .email_subscription
+        .is_subscribed(OffsetDateTime::now_utc().date()))
+}
 
 pub(crate) fn guillemets<W: FastWritable>(
     input: W,
