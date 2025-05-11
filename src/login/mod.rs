@@ -64,7 +64,7 @@ fn login_page(redirect: Option<RedirectUri>, page: PageBuilder<'_>) -> impl Resp
 }
 
 #[derive(Template, Debug)]
-#[template(path = "login.html")]
+#[template(path = "login/email.html")]
 pub(crate) struct LoginPage {
     pub(crate) has_redirect: bool,
     pub(crate) getting_invited_uri: Origin<'static>,
