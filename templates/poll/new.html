@@ -33,7 +33,7 @@
         The date should be chosen
         <select class="-inline" name="strategy">
             {% for strategy in strategies %}
-                <option value="{{strategy.value}}">{{strategy.name}}</option>
+                <option value="{{strategy.form_value_display()}}">{{strategy.human_display()}}</option>
             {% endfor %}
         </select>.
     </p>

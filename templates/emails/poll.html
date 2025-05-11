@@ -1,15 +1,15 @@
-{% extends 'base.html.tera' %}
+{% extends "emails/base.html" %}
 {% block content %}
 
 <h1>
-    {% if poll.event.title %}Tau's Game Night «{{poll.event.title}}»{% else %}Another Game Night{% endif %}
-    is Just Around the Corner 🧙{{skin_tone}}
+    {% if !poll.event.title.is_empty() %}Tau's Game Night «{{poll.event.title}}»{% else %}Another Game Night{% endif %}
+    is Just Around the Corner 🧙{{random.skin_tone_modifier()}}
 </h1>
 
-{% if poll.event.restrict_to %}
+{% if let Some(group) = poll.event.restrict_to %}
 <p>
     This is a special game night just for members of
-    «{{poll.event.restrict_to.name}}».
+    «{{group.name}}».
 </p>
 {% endif %}
 
@@ -19,13 +19,13 @@
 </p>
 
 <ul>
-    {% for option in poll.options | sort(attribute='starts_at') %}
-        <li>{{option.starts_at | time(format = "{date}")}} at <time>{{option.starts_at | time(format='{time}')}}</time></li>
+    {% for option in sorted_options() %}
+        <li>{{option.starts_at | time("{date}")}} at <time>{{option.starts_at | time("{time}")}}</time></li>
     {% endfor %}
 </ul>
 
 <p>
-    But don't take too long—the poll is only open until <strong>{{poll.open_until | time(format = "{date}")}}</strong> at <strong>{{poll.open_until | time(format='{time}')}}</strong> :)
+    But don't take too long—the poll is only open until <strong>{{poll.open_until | time("{date}")}}</strong> at <strong>{{poll.open_until | time("{time}")}}</strong> :)
 </p>
 
 <a href="{{poll_uri}}">
@@ -41,7 +41,7 @@
 </a>
 
 <p>
-    <em>{{closing}}</em>
+    <em>{{random.closing()}}</em>
 </p>
 
 <hr>

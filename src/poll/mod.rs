@@ -338,11 +338,36 @@ pub(crate) enum DateSelectionStrategy {
     // TODO: everyone
 }
 
-impl fmt::Display for DateSelectionStrategy {
+impl DateSelectionStrategy {
+    pub(crate) fn human_display(self) -> DateSelectionStrategyHumanDisplay {
+        DateSelectionStrategyHumanDisplay(self)
+    }
+
+    pub(crate) fn form_value_display(self) -> DateSelectionStrategyFormValueDisplay {
+        DateSelectionStrategyFormValueDisplay(self)
+    }
+}
+
+#[derive(Debug, Copy, Clone)]
+pub(crate) struct DateSelectionStrategyHumanDisplay(DateSelectionStrategy);
+
+impl fmt::Display for DateSelectionStrategyHumanDisplay {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
+        match self.0 {
             DateSelectionStrategy::AtRandom => write!(f, "at random"),
             DateSelectionStrategy::ToMaximizeParticipants => write!(f, "to maximize participants"),
+        }
+    }
+}
+
+#[derive(Debug, Copy, Clone)]
+pub(crate) struct DateSelectionStrategyFormValueDisplay(DateSelectionStrategy);
+
+impl fmt::Display for DateSelectionStrategyFormValueDisplay {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.0 {
+            DateSelectionStrategy::AtRandom => write!(f, "at_random"),
+            DateSelectionStrategy::ToMaximizeParticipants => write!(f, "to_maximize_participants"),
         }
     }
 }

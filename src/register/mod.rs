@@ -1,7 +1,7 @@
 use crate::auth::{CookieJarExt, LoginState};
 use crate::database::Repository;
 use crate::default;
-use crate::email::EmailSender;
+use crate::email::{EmailSender, EmailTemplateContext};
 use crate::invitation::{Invitation, Passphrase};
 use crate::template::prelude::*;
 use crate::users::{AstronomicalSymbol, User, UserId};
@@ -25,6 +25,7 @@ mod delete;
 mod email_verification_code;
 mod profile;
 mod verification;
+use crate::decorations::Random;
 use crate::result::HttpResult;
 pub(crate) use email_verification_code::*;
 pub(crate) use profile::*;
@@ -86,6 +87,7 @@ async fn register_page<'r>(
     repository: Box<dyn Repository>,
     email_sender: &State<Box<dyn EmailSender>>,
     page: PageContextBuilder<'_>,
+    email_ctx: EmailTemplateContext,
     campaign: Option<ProvidedCampaign<'r>>,
     passphrase: Option<Passphrase>,
 ) -> HttpResult<RegisterResponse<'r>> {
@@ -95,6 +97,7 @@ async fn register_page<'r>(
         repository,
         email_sender.as_ref(),
         page,
+        email_ctx,
         campaign,
         form,
         PassphraseSource::Query,
@@ -108,6 +111,7 @@ async fn register_form<'r>(
     repository: Box<dyn Repository>,
     email_sender: &State<Box<dyn EmailSender>>,
     page: PageContextBuilder<'_>,
+    email_ctx: EmailTemplateContext,
     campaign: Option<ProvidedCampaign<'r>>,
     form: Form<RegisterForm<'r>>,
 ) -> HttpResult<RegisterResponse<'r>> {
@@ -116,6 +120,7 @@ async fn register_form<'r>(
         repository,
         email_sender.as_ref(),
         page,
+        email_ctx,
         campaign,
         form.into_inner(),
         PassphraseSource::Form,
@@ -128,6 +133,7 @@ async fn register<'r>(
     mut repository: Box<dyn Repository>,
     email_sender: &dyn EmailSender,
     page: PageContextBuilder<'_>,
+    email_ctx: EmailTemplateContext,
     campaign: Option<ProvidedCampaign<'r>>,
     form: RegisterForm<'r>,
     passphrase_source: PassphraseSource,
@@ -153,7 +159,7 @@ async fn register<'r>(
     );
 
     let user_details = unwrap_or_return!(
-        user_details_step(&form, repository.as_mut(), email_sender).await?,
+        user_details_step(&form, repository.as_mut(), email_sender, email_ctx).await?,
         error_message => Ok(RegisterPage {
             step: RegisterStep::UserDetails,
             error_message,
@@ -235,6 +241,7 @@ async fn user_details_step(
     form: &RegisterForm<'_>,
     repository: &mut dyn Repository,
     email_sender: &dyn EmailSender,
+    email_ctx: EmailTemplateContext,
 ) -> Result<StepResult<UserDetails>> {
     let user_details = unwrap_or_return!(get_user_details_from_form(form)?, e => Ok(Pending(e)));
 
@@ -245,7 +252,7 @@ async fn user_details_step(
     }
 
     if !repository.has_verification_code(email_address).await? {
-        send_verification_email(repository, email_sender, &user_details).await?;
+        send_verification_email(repository, email_sender, email_ctx, &user_details).await?;
     }
 
     Ok(Complete(user_details))
@@ -271,6 +278,7 @@ fn get_user_details_from_form(form: &RegisterForm<'_>) -> Result<StepResult<User
 async fn send_verification_email(
     repository: &mut dyn Repository,
     email_sender: &dyn EmailSender,
+    email_ctx: EmailTemplateContext,
     user_details: &UserDetails,
 ) -> Result<()> {
     let email_address = user_details.email_address.to_string();
@@ -280,6 +288,8 @@ async fn send_verification_email(
     let email = VerificationEmail {
         name: user_details.name.to_owned(),
         code: code.code,
+        random: Random::default(),
+        ctx: email_ctx,
     };
     email_sender
         .send(user_details.clone().into(), &email, default())

@@ -1,6 +1,6 @@
-{{greeting}} {{name}},
+{{random.greeting()}} {{name}},
 
-Let's Get You Logged In 👋{{skin_tone}}
+Let's Get You Logged In 👋{{random.skin_tone_modifier()}}
 
 Use the code below to log in to Tau's Game Night:
 

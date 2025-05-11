@@ -1,3 +1,4 @@
+mod email_template;
 mod response;
 mod services;
 mod uri;
@@ -39,7 +40,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     #[cfg(target_os = "linux")]
     let rocket = rocket.attach(systemd::SystemdNotify);
 
-    let template = infra::template_fairing(rocket.figment())?;
     let rocket = rocket
         .mount("/", rocket::routes![home::home_page])
         .mount("/", invitation::routes())
@@ -52,7 +52,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .mount("/", push::routes())
         .register("/", login::catchers())
         .register("/", error_pages::catchers())
-        .attach(template)
         .attach(database::GameNightDatabase::init())
         .attach(email::email_sender_fairing())
         .attach(users::invite_admin_user_fairing())

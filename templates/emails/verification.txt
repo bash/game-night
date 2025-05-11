@@ -1,6 +1,6 @@
-{{greeting}} {{name}},
+{{random.greeting()}} {{name}},
 
-Welcome to Tau's Game Night 👋{{skin_tone}}
+Welcome to Tau's Game Night 👋{{random.skin_tone_modifier()}}
 
 Here's the verification code to complete your registration:
 

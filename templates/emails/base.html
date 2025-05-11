@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="supported-color-schemes" value="light dark">
-    <style>{{css}}</style>
+    <style>{{ctx.css | safe}}</style>
 </head>
 <body>
     <table class="outer-table" role="presentation">
@@ -14,7 +14,7 @@
                 <table role="presentation">
                     <tr>
                         <td>
-                            <div class="greeting">{{greeting}} {% block name %}{{name}}{% endblock %},</div>
+                            <div class="greeting">{{random.greeting()}} {% block name %}{{name}}{% endblock %},</div>
                             {% block content %}{% endblock content%}
                         </td>
                     </tr>

@@ -4,6 +4,8 @@ use super::{DateSelectionStrategy, Poll, PollOption};
 use super::{PollEmail, PollStage};
 use crate::auth::{AuthorizedTo, ManagePoll};
 use crate::database::{New, Repository};
+use crate::decorations::Random;
+use crate::email::EmailTemplateContext;
 use crate::event::{
     rocket_uri_macro_event_page, Event, EventEmailSender, EventsQuery, Location, Polling,
     StatefulEvent,
@@ -59,7 +61,7 @@ pub(crate) struct NewPollPage {
     groups: Vec<Group>,
     calendar_uri: Origin<'static>,
     locations: Vec<Location>,
-    strategies: Vec<DateSelectionStrategyOption>,
+    strategies: Vec<DateSelectionStrategy>,
     ctx: PageContext,
 }
 
@@ -92,25 +94,10 @@ pub(super) struct CalendarData {
     options: Vec<CalendarDayPrefill>,
 }
 
-#[derive(Debug)]
-struct DateSelectionStrategyOption {
-    name: String,
-    value: DateSelectionStrategy,
-}
-
-impl From<DateSelectionStrategy> for DateSelectionStrategyOption {
-    fn from(value: DateSelectionStrategy) -> Self {
-        DateSelectionStrategyOption {
-            name: value.to_string(),
-            value,
-        }
-    }
-}
-
-fn strategies() -> [DateSelectionStrategyOption; 2] {
+fn strategies() -> [DateSelectionStrategy; 2] {
     [
-        DateSelectionStrategy::AtRandom.into(),
-        DateSelectionStrategy::ToMaximizeParticipants.into(),
+        DateSelectionStrategy::AtRandom,
+        DateSelectionStrategy::ToMaximizeParticipants,
     ]
 }
 
@@ -232,6 +219,7 @@ auto_resolve! {
         email_sender: Box<dyn EventEmailSender<Polling>>,
         push_sender: PushSender,
         uri_builder: UriBuilder,
+        ctx: EmailTemplateContext,
     }
 }
 
@@ -250,6 +238,8 @@ impl NewPollNotificationSender {
                 poll_uri,
                 skip_poll_uri,
                 manage_subscription_url: sub_url,
+                random: Random::default(),
+                ctx: self.ctx.clone(),
             };
             self.email_sender.send(&poll.event, &user, &email).await?;
             let notification = PollNotification { poll };

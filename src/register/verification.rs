@@ -1,18 +1,20 @@
-use crate::email::EmailMessage;
-use serde::Serialize;
+use crate::decorations::Random;
+use crate::email::{EmailMessage, EmailTemplateContext};
+use crate::email_template;
 
-#[derive(Debug, Clone, Serialize)]
-pub(super) struct VerificationEmail {
-    pub(crate) name: String,
-    pub(crate) code: String,
+email_template! {
+    #[template(html_path = "emails/verification.html", txt_path = "emails/verification.txt")]
+    #[derive(Debug)]
+    pub(crate) struct VerificationEmail {
+       pub(crate) code: String,
+       pub(crate) name: String,
+       pub(crate) random: Random,
+       pub(crate) ctx: EmailTemplateContext,
+    }
 }
 
 impl EmailMessage for VerificationEmail {
     fn subject(&self) -> String {
         "Let's Get You Verified".to_owned()
-    }
-
-    fn template_name(&self) -> String {
-        "verification".to_owned()
     }
 }

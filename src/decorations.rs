@@ -2,10 +2,13 @@ use rand::distr::{self, Distribution};
 use rand::{rng, Rng as _};
 use std::sync::LazyLock;
 
+// TODO: rename
 #[derive(Debug)]
 pub(crate) struct Random {
     heart: LazyLock<&'static str>,
     skin_tone_modifier: LazyLock<&'static str>,
+    greeting: LazyLock<&'static str>,
+    closing: LazyLock<&'static str>,
 }
 
 impl Random {
@@ -16,6 +19,14 @@ impl Random {
     pub(crate) fn skin_tone_modifier(&self) -> &'static str {
         &self.skin_tone_modifier
     }
+
+    pub(crate) fn greeting(&self) -> &'static str {
+        &self.greeting
+    }
+
+    pub(crate) fn closing(&self) -> &'static str {
+        &self.closing
+    }
 }
 
 impl Default for Random {
@@ -23,6 +34,8 @@ impl Default for Random {
         Self {
             heart: LazyLock::new(|| rng().sample(Hearts)),
             skin_tone_modifier: LazyLock::new(|| rng().sample(SkinToneModifiers)),
+            greeting: LazyLock::new(|| rng().sample(Greetings)),
+            closing: LazyLock::new(|| rng().sample(Closings)),
         }
     }
 }

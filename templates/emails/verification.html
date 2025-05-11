@@ -1,12 +1,11 @@
-{% extends 'base.html.tera' %}
-
+{% extends "emails/base.html" %}
 {% block content %}
 <h1>
-    Let's Get You Logged In 🙌{{skin_tone}}
+    Welcome to Tau's Game Night 👋{{random.skin_tone_modifier()}}
 </h1>
 
 <p>
-    Use the code below to log in to <em>Tau's Game Night</em>:
+    Here's the verification code to complete your registration:
 </p>
 
 <table class="code" role="presentation">
@@ -18,7 +17,8 @@
 <hr>
 
 <p>
-    <strong>P.S.</strong> This code is valid for 10 minutes, so hurryyyyy~<br>
+    <strong>P.S.</strong> This code is valid for 30 minutes, so hurryyyyy~<br>
     <strong>P.P.S.</strong> You can safely ignore this email if you didn't request it.
 </p>
+
 {% endblock content %}

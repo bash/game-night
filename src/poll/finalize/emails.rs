@@ -1,16 +1,16 @@
 use crate::decorations::Random;
-use crate::email::EmailMessage;
+use crate::email::{EmailMessage, EmailTemplateContext};
 use crate::event::{Event, EventEmailSender as DynEventEmailSender, Ics};
 use crate::fmt::LongEventTitle;
 use crate::push::{InvitedNotification, MissedNotification, PushSender};
+use crate::template::prelude::*;
 use crate::uri::UriBuilder;
 use crate::users::User;
-use crate::{auto_resolve, uri};
+use crate::{auto_resolve, email_template, uri};
 use anyhow::Result;
 use lettre::message::header::ContentType;
 use lettre::message::{Attachment, SinglePart};
 use rocket::http::uri::Absolute;
-use serde::Serialize;
 use time::format_description::FormatItem;
 use time::macros::format_description;
 
@@ -36,6 +36,7 @@ auto_resolve! {
         email_sender: Box<dyn DynEventEmailSender + 'static>,
         uri_builder: UriBuilder,
         push_sender: PushSender,
+        ctx: EmailTemplateContext,
     }
 }
 
@@ -50,6 +51,8 @@ impl EventEmailSender {
             event_url,
             name: &user.name,
             ics_file,
+            random: Random::default(),
+            ctx: self.ctx.clone(),
         };
         self.email_sender.send(event, user, &email).await?;
         let notification = InvitedNotification {
@@ -70,6 +73,8 @@ impl EventEmailSender {
             event,
             event_url,
             name: &user.name,
+            random: Random::default(),
+            ctx: self.ctx.clone(),
         };
         self.email_sender.send(event, user, &email).await?;
         let notification = MissedNotification { event };
@@ -80,13 +85,17 @@ impl EventEmailSender {
     }
 }
 
-#[derive(Debug, Serialize)]
-struct InvitedEmail<'a> {
-    event: &'a Event,
-    name: &'a str,
-    event_url: Absolute<'a>,
-    #[serde(skip)]
-    ics_file: String,
+email_template! {
+    #[template(html_path = "emails/event/invited.html", txt_path = "emails/event/invited.txt")]
+    #[derive(Debug)]
+    struct InvitedEmail<'a> {
+        event: &'a Event,
+        name: &'a str,
+        event_url: Absolute<'a>,
+        ics_file: String,
+        random: Random,
+        ctx: EmailTemplateContext,
+    }
 }
 
 impl EmailMessage for InvitedEmail<'_> {
@@ -100,10 +109,6 @@ impl EmailMessage for InvitedEmail<'_> {
         )
     }
 
-    fn template_name(&self) -> String {
-        "event/invited".to_string()
-    }
-
     fn attachments(&self) -> Result<Vec<SinglePart>> {
         let ics_attachment = Attachment::new("game-night.ics".to_string())
             .body(self.ics_file.clone(), ContentType::parse("text/calendar")?);
@@ -111,11 +116,16 @@ impl EmailMessage for InvitedEmail<'_> {
     }
 }
 
-#[derive(Debug, Serialize)]
-struct MissedEmail<'a> {
-    event: &'a Event,
-    name: &'a str,
-    event_url: Absolute<'a>,
+email_template! {
+    #[template(html_path = "emails/event/missed.html", txt_path = "emails/event/missed.txt")]
+    #[derive(Debug)]
+    struct MissedEmail<'a> {
+        event: &'a Event,
+        name: &'a str,
+        event_url: Absolute<'a>,
+        random: Random,
+        ctx: EmailTemplateContext,
+    }
 }
 
 impl EmailMessage for MissedEmail<'_> {
@@ -127,9 +137,5 @@ impl EmailMessage for MissedEmail<'_> {
             date = self.event.starts_at.format(FORMAT).unwrap(),
             title = LongEventTitle(&self.event.title),
         )
-    }
-
-    fn template_name(&self) -> String {
-        "event/missed".to_string()
     }
 }

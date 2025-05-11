@@ -30,20 +30,18 @@ RUN npm install
 
 
 FROM npm_deps as email_css
-COPY emails/email.scss ./emails/
-RUN npx sass --no-source-map --style compressed emails/email.scss emails/email.css
+COPY templates/emails/email.scss ./
+RUN npx sass --no-source-map --style compressed email.scss email.css
 
 
 FROM npm_deps as web_build
 COPY browserslist .
 COPY scss ./scss
-COPY emails/email.scss ./emails/
 COPY public ./public
 COPY hash-files.py .
 ARG SASS_FLAGS=--no-source-map
 RUN npx sass scss/main.scss public/main.css $SASS_FLAGS
 RUN npx lightningcss --browserslist public/main.css -o public/main.css
-RUN npx sass --no-source-map --style compressed emails/email.scss emails/email.css
 RUN cp node_modules/@github/relative-time-element/dist/bundle.js public/js/relative-time-element.js
 
 
@@ -66,8 +64,7 @@ ENV ROCKET_DEFAULT_CONFIG=/usr/local/share/game-night/Rocket.toml
 ENV ROCKET_CONFIG=/usr/local/etc/game-night/Rocket.toml
 WORKDIR /usr/local/share/game-night
 COPY config/Rocket.container.toml ./Rocket.toml
-COPY emails/ ./emails
-COPY --from=email_css /usr/local/src/game-night/emails/*.css ./emails/
+COPY --from=email_css /usr/local/src/game-night/*.css /usr/local/bin/
 
 WORKDIR /run/game-night
 CMD ["game-night"]

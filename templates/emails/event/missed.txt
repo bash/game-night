@@ -1,9 +1,9 @@
-{{greeting}} {{name}},
+{{random.greeting()}} {{name}},
 
-Tau's Game Night{% if event.title %} «{{event.title}}»{% endif %} is set for {{event.starts_at | time(format = "{date}")}} 🥳
+Tau's Game Night{% if !event.title.is_empty() %} «{{event.title}}»{% endif %} is set for {{event.starts_at | time("{date}")}} 🥳
 
 The next instance of Tau's Game Night is happening on
-{{event.starts_at | time(format = "{date}")}} at {{event.starts_at | time(format = "{time}")}} and you are warmly invited {{heart}}
+{{event.starts_at | time("{date}")}} at {{event.starts_at | time("{time}")}} and you are warmly invited {{random.heart()}}
 
 Unfortunately this is a date that—according to the poll—you're not available on.
 But don't worry, there's always next time.

@@ -1,16 +1,18 @@
-use super::Poll;
-use crate::email::{EmailMessage, EmailSender};
+use super::{Poll, PollOption};
+use crate::decorations::Random;
+use crate::email::{EmailMessage, EmailTemplate, EmailTemplateContext};
 use crate::event::EventsQuery;
 use crate::fmt::LongEventTitle;
 use crate::result::HttpResult;
+use crate::template::prelude::*;
 use crate::uri::UriBuilder;
 use crate::users::User;
-use crate::{responder, uri};
+use crate::{email_template, responder, uri};
+use itertools::Itertools;
 use rocket::get;
 use rocket::http::uri::Absolute;
 use rocket::http::Status;
 use rocket::response::content::RawHtml;
-use serde::Serialize;
 
 #[get("/event/<id>/poll/email-preview?<txt>")]
 pub(super) async fn poll_email_preview(
@@ -18,8 +20,8 @@ pub(super) async fn poll_email_preview(
     user: User,
     txt: bool,
     mut events: EventsQuery,
-    email_sender: Box<dyn EmailSender>,
     uri_builder: UriBuilder,
+    email_ctx: EmailTemplateContext,
 ) -> HttpResult<PlainOrHtml> {
     let Some(poll) = events.with_id(id, &user).await?.and_then(|e| e.polling()) else {
         return Err(Status::NotFound.into());
@@ -31,8 +33,10 @@ pub(super) async fn poll_email_preview(
         poll_uri: uri!(uri_builder, crate::event::event_page(id = event_id)),
         skip_poll_uri: uri!(uri_builder, super::skip::skip_poll(id = event_id)),
         manage_subscription_url: uri!(uri_builder, crate::register::profile),
+        random: Random::default(),
+        ctx: email_ctx,
     };
-    let body = email_sender.preview(&email)?;
+    let body = email.render()?;
     if txt {
         Ok(body.plain.into())
     } else {
@@ -47,13 +51,29 @@ responder! {
     }
 }
 
-#[derive(Debug, Clone, Serialize)]
-pub(super) struct PollEmail<'a> {
-    pub(super) name: String,
-    pub(super) poll: Poll,
-    pub(super) poll_uri: Absolute<'a>,
-    pub(super) skip_poll_uri: Absolute<'a>,
-    pub(super) manage_subscription_url: Absolute<'a>,
+email_template! {
+    #[template(html_path = "emails/poll.html", txt_path = "emails/poll.txt")]
+    #[derive(Debug)]
+    pub(super) struct PollEmail<'a> {
+        pub(super) name: String,
+        pub(super) poll: Poll,
+        pub(super) poll_uri: Absolute<'a>,
+        pub(super) skip_poll_uri: Absolute<'a>,
+        pub(super) manage_subscription_url: Absolute<'a>,
+        pub(super) random: Random,
+        pub(super) ctx: EmailTemplateContext,
+    }
+}
+
+impl PollEmail<'_> {
+    fn sorted_options(&self) -> Vec<PollOption> {
+        self.poll
+            .options
+            .iter()
+            .sorted_by_key(|o| o.starts_at.0)
+            .cloned()
+            .collect()
+    }
 }
 
 impl EmailMessage for PollEmail<'_> {
@@ -62,9 +82,5 @@ impl EmailMessage for PollEmail<'_> {
             "Pick a Date for {title}",
             title = LongEventTitle(&self.poll.event.title)
         )
-    }
-
-    fn template_name(&self) -> String {
-        "poll".to_owned()
     }
 }
