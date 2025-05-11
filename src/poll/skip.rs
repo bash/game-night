@@ -41,7 +41,7 @@ pub(crate) struct SkipPollPage {
 responder! {
     pub(crate) enum SkipPollResponse {
         Redirect(Box<Redirect>),
-        Template(Templated<SkipPollPage>),
+        Template(Box<Templated<SkipPollPage>>),
     }
 }
 

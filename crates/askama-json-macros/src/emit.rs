@@ -5,15 +5,15 @@ use syn::{Generics, Ident, ItemStruct, LitBool, LitStr, parse_quote};
 
 pub(crate) fn emit(template: json::Value, input: &ItemStruct) -> TokenStream {
     let mut ctx = EmitContext::new(input.ident.clone());
-    let json_template_impl = emit_template_impl(template, &input, &mut ctx);
-    let askama_templates = emit_askama_templates(ctx, &input);
+    let json_template_impl = emit_template_impl(template, input, &mut ctx);
+    let askama_templates = emit_askama_templates(ctx, input);
     quote! {
         #json_template_impl
         #askama_templates
     }
 }
 
-pub(crate) fn emit_include_bytes(path: &String, span: Span) -> TokenStream {
+pub(crate) fn emit_include_bytes(path: &str, span: Span) -> TokenStream {
     let path = LitStr::new(path, span);
     quote! {
         const _: &[::core::primitive::u8] = ::core::include_bytes!(#path);

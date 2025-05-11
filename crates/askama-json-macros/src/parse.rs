@@ -42,7 +42,7 @@ fn parse_attr(attr: &Attribute) -> Result<Option<(String, Span)>, Error> {
 fn read_template_from_path(path: &str, span: Span) -> Result<json::Value, Error> {
     let reader = fs::OpenOptions::new()
         .read(true)
-        .open(&path)
+        .open(path)
         .map_err(|err| span.error(format!("Failed to open '{path}': {err}")))?;
     let template = json::from_reader(reader)
         .map_err(|err| span.error(format!("Failed to deserialize '{path}': {err}")))?;
