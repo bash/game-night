@@ -13,6 +13,21 @@ pub(crate) fn is_subscribed(user: &User, _: &dyn askama::Values) -> askama::Resu
         .is_subscribed(OffsetDateTime::now_utc().date()))
 }
 
+pub(crate) fn markdown(input: impl AsRef<str>, _: &dyn askama::Values) -> askama::Result<String> {
+    use pulldown_cmark::{html, Options, Parser};
+
+    const OPTIONS: Options = Options::empty()
+        .union(Options::ENABLE_TABLES)
+        .union(Options::ENABLE_FOOTNOTES)
+        .union(Options::ENABLE_STRIKETHROUGH);
+
+    let parser = Parser::new_ext(input.as_ref(), OPTIONS);
+    let mut html_output = String::new();
+    html::push_html(&mut html_output, parser);
+
+    Ok(html_output)
+}
+
 pub(crate) fn guillemets<W: FastWritable>(
     input: W,
     _: &dyn askama::Values,

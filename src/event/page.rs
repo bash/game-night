@@ -1,6 +1,6 @@
 use super::{ActiveEvent, EventListComponent, EventViewModel, EventsQuery, StatefulEvent};
 use crate::auth::UriProvider;
-use crate::play::{play_page, PlayPageStage};
+use crate::play::{play_page, PlayPage, PlayPageStage};
 use crate::poll::{open_poll_page, NoOpenPollPage};
 use crate::responder;
 use crate::result::HttpResult;
@@ -75,16 +75,25 @@ pub(crate) async fn event_page(
     mut events: EventsQuery,
     users_query: UsersQuery,
     page: PageBuilder<'_>,
-) -> HttpResult<Template> {
+) -> HttpResult<EventDetailPageResponse> {
     let event = events.with_id(id, &user).await?;
     match event {
-        Some(Polling(poll)) => Ok(open_poll_page(user, poll, page, users_query).await?),
+        Some(Polling(poll)) => Ok(open_poll_page(user, poll, page, users_query).await?.into()),
         Some(Pending(_) | Finalizing(_)) => {
-            Ok(page.render("poll/pending-finalization", context! {}))
+            Ok(page.render("poll/pending-finalization", context! {}).into())
         }
-        Some(Planned(event)) => play_page(event, page, user, PlayPageStage::Planned),
-        Some(Cancelled(event)) => play_page(event, page, user, PlayPageStage::Cancelled),
-        Some(Archived(event)) => play_page(event, page, user, PlayPageStage::Archived),
+        Some(Planned(event)) => Ok(play_page(event, page, user, PlayPageStage::Planned)?.into()),
+        Some(Cancelled(event)) => {
+            Ok(play_page(event, page, user, PlayPageStage::Cancelled)?.into())
+        }
+        Some(Archived(event)) => Ok(play_page(event, page, user, PlayPageStage::Archived)?.into()),
         Some(Failed(_)) | None => Err(Status::NotFound.into()),
+    }
+}
+
+responder! {
+    pub(crate) enum EventDetailPageResponse {
+        Play(Box<Templated<PlayPage>>),
+        PendingFinalization(Box<Template>),
     }
 }
