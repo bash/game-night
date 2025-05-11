@@ -1,8 +1,7 @@
 use super::{Event, Participant};
 use crate::users::{Role, User, UserId};
-use serde::Serialize;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
 pub(crate) struct VisibleParticipants {
     pub(crate) redacted: bool,
     pub(crate) participants: Vec<Participant>,

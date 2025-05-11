@@ -3,7 +3,6 @@ use crate::entity_state;
 use crate::iso_8601::Iso8601;
 use crate::poll::PollOption;
 use crate::users::{User, UserId};
-use serde::Serialize;
 use time::{Duration, OffsetDateTime};
 
 mod email;
@@ -37,7 +36,7 @@ pub(crate) use convert::*;
 // TODO: strong type
 pub type EventId = i64;
 
-#[derive(Debug, Clone, sqlx::FromRow, Serialize)]
+#[derive(Debug, Clone, sqlx::FromRow)]
 pub(crate) struct Event<S: EventState = Materialized, L: EventLifecycle = Planned> {
     pub(crate) id: S::Id,
     pub(crate) starts_at: L::StartsAt,
@@ -78,7 +77,7 @@ entity_state! {
         type CreatedBy = UserId => UserId => User;
         type Location = i64 => i64 => Location;
         type Participants: Default = Vec<Participant<Self>> => () => Vec<Participant<Self>>;
-        type RestrictTo: Serialize = i64 => i64 => Group;
+        type RestrictTo = i64 => i64 => Group;
     }
 }
 
@@ -183,7 +182,7 @@ impl Event {
     }
 }
 
-#[derive(Debug, Clone, sqlx::FromRow, Serialize)]
+#[derive(Debug, Clone, sqlx::FromRow)]
 pub(crate) struct Participant<S: ParticipantState = Materialized> {
     pub(crate) id: S::Id,
     #[sqlx(rename = "user_id")]

@@ -2,7 +2,7 @@ use crate::database::{Materialized, Unmaterialized};
 use crate::entity_state;
 use crate::users::{User, UserId};
 
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize)]
+#[derive(Debug, Clone, sqlx::FromRow)]
 pub(crate) struct Location<S: LocationState = Materialized> {
     pub(crate) id: S::Id,
     pub(crate) description: String,
@@ -40,7 +40,7 @@ entity_state! {
     }
 }
 
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize)]
+#[derive(Debug, Clone, sqlx::FromRow)]
 pub(crate) struct Organizer<S: OrganizerState = Materialized> {
     pub(crate) id: S::Id,
     #[sqlx(rename = "user_id")]

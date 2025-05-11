@@ -1,12 +1,10 @@
 use super::{Event, StatefulEvent, VisibleParticipants};
 use crate::users::User;
 use rocket::{http::uri::Origin, uri};
-use serde::Serialize;
 use std::ops;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
 pub(crate) struct EventViewModel {
-    #[serde(flatten)]
     event: StatefulEvent,
     pub(crate) view_uri: Option<Origin<'static>>,
     pub(crate) visible_participants: Option<VisibleParticipants>,

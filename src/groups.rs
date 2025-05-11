@@ -2,7 +2,7 @@ use crate::database::{Materialized, Unmaterialized};
 use crate::entity_state;
 use crate::users::{User, UserId};
 
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize)]
+#[derive(Debug, Clone, sqlx::FromRow)]
 pub(crate) struct Group<S: GroupState = Materialized> {
     pub(crate) id: S::Id,
     pub(crate) name: String,

@@ -4,7 +4,6 @@ use crate::event::{Event, Polling};
 use crate::iso_8601::Iso8601;
 use crate::users::{User, UserId};
 use rocket::{routes, FromFormField, Route};
-use serde::Serialize;
 use sqlx::encode::IsNull;
 use sqlx::error::BoxDynError;
 use sqlx::sqlite::{SqliteTypeInfo, SqliteValueRef};
@@ -44,7 +43,7 @@ pub(crate) fn routes() -> Vec<Route> {
     ]
 }
 
-#[derive(Debug, Clone, sqlx::FromRow, Serialize)]
+#[derive(Debug, Clone, sqlx::FromRow)]
 pub(crate) struct Poll<S: PollState = Materialized> {
     pub(crate) id: S::Id,
     #[sqlx(try_from = "i64")]
@@ -59,8 +58,7 @@ pub(crate) struct Poll<S: PollState = Materialized> {
     pub(crate) options: S::Options,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, sqlx::Type, Serialize)]
-#[serde(rename_all = "snake_case")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, sqlx::Type)]
 #[sqlx(rename_all = "snake_case")]
 pub(crate) enum PollStage {
     Open,
@@ -142,7 +140,7 @@ impl Poll {
     }
 }
 
-#[derive(Debug, Clone, sqlx::FromRow, Serialize)]
+#[derive(Debug, Clone, sqlx::FromRow)]
 pub(crate) struct PollOption<S: PollOptionState = Materialized> {
     pub(crate) id: S::Id,
     pub(crate) starts_at: Iso8601<OffsetDateTime>,
@@ -191,7 +189,7 @@ impl PollOption {
     }
 }
 
-#[derive(Debug, Clone, sqlx::FromRow, Serialize)]
+#[derive(Debug, Clone, sqlx::FromRow)]
 pub(crate) struct Answer<S: AnswerState = Materialized> {
     pub(crate) id: S::Id,
     pub(crate) value: AnswerValue,
@@ -226,8 +224,7 @@ impl<S: AnswerState> Answer<S> {
     }
 }
 
-#[derive(Debug, Copy, Clone, Serialize)]
-#[serde(rename_all = "snake_case", tag = "type")]
+#[derive(Debug, Copy, Clone)]
 pub(crate) enum AnswerValue {
     No { veto: bool },
     Yes { attendance: Attendance },
@@ -317,8 +314,7 @@ impl<'r> Decode<'r, Sqlite> for AnswerValue {
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, sqlx::Type, Serialize)]
-#[serde(rename_all = "snake_case")]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, sqlx::Type)]
 pub(crate) enum Attendance {
     Optional,
     /// Admins and people with a special permission can set their attendance to "required".
@@ -327,9 +323,8 @@ pub(crate) enum Attendance {
     Required,
 }
 
-#[derive(Debug, Copy, Clone, sqlx::Type, Serialize, FromFormField)]
+#[derive(Debug, Copy, Clone, sqlx::Type, FromFormField)]
 #[sqlx(rename_all = "snake_case")]
-#[serde(rename_all = "snake_case")]
 pub(crate) enum DateSelectionStrategy {
     #[field(value = "at_random")]
     AtRandom,

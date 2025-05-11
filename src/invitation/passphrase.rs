@@ -6,15 +6,13 @@ use rand::Rng;
 use rocket::form::FromFormField;
 use rocket::http::impl_from_uri_param_identity;
 use rocket::http::uri::fmt::{Query, UriDisplay};
-use serde::Serialize;
 use sqlx::encode::IsNull;
 use sqlx::error::BoxDynError;
 use sqlx::sqlite::SqliteArgumentValue;
 use sqlx::{Database, Decode, Encode, Sqlite};
 use std::fmt;
 
-#[derive(Debug, Default, Clone, Serialize)]
-#[serde(transparent)]
+#[derive(Debug, Default, Clone)]
 pub(crate) struct Passphrase(pub(crate) Vec<String>);
 
 impl Distribution<Passphrase> for StandardUniform {

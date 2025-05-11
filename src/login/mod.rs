@@ -17,7 +17,6 @@ use rocket::response::{self, Redirect, Responder};
 use rocket::{
     catch, catchers, get, post, routes, Catcher, FromForm, Request, Response, Route, State,
 };
-use serde::Serialize;
 use time::{Duration, OffsetDateTime};
 
 mod auto_login;
@@ -150,7 +149,7 @@ async fn generate_login_email(
     Ok((user.mailbox()?, email))
 }
 
-#[derive(Debug, FromForm, Serialize)]
+#[derive(Debug, FromForm)]
 struct LoginData<'r> {
     email: &'r str,
 }

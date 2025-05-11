@@ -5,11 +5,9 @@ use crate::groups::Group;
 use crate::iso_8601::Iso8601;
 use crate::poll::{Poll, PollStage};
 use crate::users::User;
-use serde::Serialize;
 use time::OffsetDateTime;
 
-#[derive(Debug, Clone, Serialize)]
-#[serde(tag = "state", rename_all = "snake_case")]
+#[derive(Debug, Clone)]
 pub(crate) enum StatefulEvent {
     /// Poll is open.
     Polling(Poll),

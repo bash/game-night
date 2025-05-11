@@ -29,8 +29,6 @@ mod systemd;
 mod template;
 mod users;
 
-// TODO: remove no longer needed Serialize impls
-
 #[rocket::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     use rocket_db_pools::Database as _;

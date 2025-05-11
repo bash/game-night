@@ -76,8 +76,7 @@ pub(crate) struct PlayPage {
     ctx: PageContext,
 }
 
-#[derive(Debug, serde::Serialize)]
-#[serde(rename_all = "snake_case")]
+#[derive(Debug)]
 pub(crate) enum PlayPageStage {
     Planned,
     Cancelled,

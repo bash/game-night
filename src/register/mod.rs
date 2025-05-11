@@ -15,7 +15,6 @@ use rocket::http::uri::Origin;
 use rocket::http::{Cookie, CookieJar, SameSite};
 use rocket::response::{Redirect, Responder};
 use rocket::{get, post, routes, uri, FromForm, Route, State};
-use serde::Serialize;
 use std::str::FromStr;
 use verification::VerificationEmail;
 use StepResult::*;
@@ -347,7 +346,7 @@ enum StepResult<T> {
     Complete(T),
 }
 
-#[derive(FromForm, Debug, Serialize)]
+#[derive(FromForm, Debug)]
 pub(crate) struct RegisterForm<'r> {
     words: Option<Vec<String>>,
     name: Option<&'r str>,
@@ -355,8 +354,7 @@ pub(crate) struct RegisterForm<'r> {
     email_verification_code: Option<&'r str>,
 }
 
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "snake_case")]
+#[derive(Debug)]
 enum PassphraseSource {
     Query,
     Form,
