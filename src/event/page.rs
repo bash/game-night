@@ -11,7 +11,6 @@ use itertools::Itertools;
 use rocket::http::Status;
 use rocket::response::Redirect;
 use rocket::{get, routes, uri, Route};
-use rocket_dyn_templates::{context, Template};
 use StatefulEvent::*;
 
 pub(crate) fn routes() -> Vec<Route> {
@@ -80,7 +79,11 @@ pub(crate) async fn event_page(
     match event {
         Some(Polling(poll)) => Ok(open_poll_page(user, poll, page, users_query).await?.into()),
         Some(Pending(_) | Finalizing(_)) => {
-            Ok(page.render("poll/pending-finalization", context! {}).into())
+            let page = PendingFinalizationPage {
+                user,
+                ctx: page.build(),
+            };
+            Ok(Templated(page).into())
         }
         Some(Planned(event)) => Ok(play_page(event, page, user, PlayPageStage::Planned)?.into()),
         Some(Cancelled(event)) => {
@@ -91,10 +94,17 @@ pub(crate) async fn event_page(
     }
 }
 
+#[derive(Template, Debug)]
+#[template(path = "poll/pending-finalization.html")]
+pub(crate) struct PendingFinalizationPage {
+    user: User,
+    ctx: PageContext,
+}
+
 responder! {
     pub(crate) enum EventDetailPageResponse {
         Play(Box<Templated<PlayPage>>),
         Poll(Box<Templated<OpenPollPage>>),
-        PendingFinalization(Box<Template>),
+        PendingFinalization(Box<Templated<PendingFinalizationPage>>),
     }
 }

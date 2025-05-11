@@ -1,4 +1,4 @@
-{% extends 'base' %}
+{% extends "base.html" %}
 
 {% block title %}Poll Closed{% endblock title %}
 
@@ -8,7 +8,7 @@
 </p>
 
 <p>
-    {% if is_subscribed(sub=user.email_subscription) %}
+    {% if user | is_subscribed %}
         You will receive an email at <strong>{{user.email_address}}</strong> within the next 10 minutes
         with the definitive date announcement.
     {% else %}
