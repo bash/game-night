@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Login{% endblock title %}
+
+{% block content %}
+<form method="post">
+    <p>
+        {% if has_redirect %}
+            Accessing this page requires a user account.<br>
+        {% endif %}
+        Enter your email address below to receive a login code ✨
+    </p>
+
+    {% include "error-message.html" %}
+
+    <fieldset>
+        <input type="email"
+            autocomplete="email"
+            inputmode="email"
+            placeholder="awesome-person@example.com"
+            name="email" required autofocus
+            value="{{email_field.as_deref().unwrap_or_default()}}"/>
+    </fieldset>
+
+    <fieldset class="-actions">
+        <button type="submit">Send Login Code</button>
+        <a href="{{getting_invited_uri}}" class="link-button">I don't have an account :/</a>
+    </fieldset>
+</form>
+{% endblock content %}

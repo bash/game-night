@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Inviting Others{% endblock title %}
+
+{% block content %}
+
+<form method="post">
+    <p>Here's your invitation:</p>
+
+    <fieldset class="-two-column">
+        {% for word in passphrase.0.iter() %}
+            <input type="text" value="{{word}}" readonly>
+        {% endfor %}
+        <small>
+            <button type="button" class="-icon" data-copy-to-clipboard='{{ passphrase.0.iter().join(" ") }}'>
+                <svg><use href='{{ctx.asset("/icons/clipboard-copy.svg")}}#icon' /></svg>
+                <span>Copy Words to Clipboard</span>
+            </button>
+            <br>
+            <button type="button" class="-icon" data-copy-to-clipboard="{{register_uri}}">
+                <svg><use href='{{ctx.asset("/icons/clipboard-copy.svg")}}#icon' /></svg>
+                <span>Copy Link to Clipboard</span>
+            </button>
+        </small>
+    </fieldset>
+
+    <fieldset class="-actions">
+        <button type="submit">Create another invitation</button>
+    </fieldset>
+
+    {% let GenerateInvitationData { lifetime_in_days, inviter, comment } = form %}
+    <input type="hidden" name="lifetime_in_days" value="{{lifetime_in_days}}" />
+    <input type="hidden" name="inviter" value="{{inviter}}" />
+    <input type="hidden" name="comment" value="{{comment}}" />
+</form>
+{% endblock content %}
+
+{% block scripts %}
+<script type="module" src='{{ctx.asset("/js/copy-to-clipboard.js")}}'></script>
+{% endblock scripts %}

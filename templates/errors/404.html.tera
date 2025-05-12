@@ -1,8 +1,0 @@
-{% extends 'base' %}
-
-{% block title %}404—Not Found{% endblock title %}
-
-{% block content %}
-I have searched far and wide for the page <strong>{{page.path}}</strong>.
-But alas, I have to give up as it is nowhere to be found.
-{% endblock content %}

@@ -25,4 +25,5 @@ impl_from! {
     anyhow::Error,
     std::fmt::Error,
     std::io::Error,
+    askama::Error,
 }

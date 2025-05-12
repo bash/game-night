@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}Profile{% endblock title %}
+
+{% block content %}
+<form method="post">
+    <p>
+        Hi, my name is
+        {% if can_update_name %}
+        <input type="text" class="-inline" placeholder="Name" name="name" value="{{user.name}}" required autocomplete="name" size="15">
+        {% else %}
+        <input type="text" class="-inline" value="{{user.name}}" size="15" disabled>
+        {% endif %}
+        and <br>
+        my email address is
+        <input type="email" class="-inline" value="{{user.email_address}}" disabled>.
+    </p>
+
+    <h2>Notifications</h2>
+
+    <p>
+        Please
+        <select class="-inline" name="subscribe" id="subscription">
+            <option value="on">send</option>
+            <option value="off">do not send</option>
+        </select>
+        me notifications about <em>Tau's Game Night</em><span data-visible-if="subscription=on"><template>.</template></span>
+
+        <span data-visible-if="subscription=off">
+            <template>
+                until
+                <select class="-inline" id="permanence">
+                    <option value="temporary">after the following day</option>
+                    <option value="permanent">I turn them on again</option>
+                </select>
+
+                <span data-visible-if="permanence=temporary">
+                    <template>
+                        : <input type="date" name="until" class="-inline" required>
+                    </template>
+                </span>
+                .
+            </template>
+        </span>
+    </p>
+
+    <fieldset class="-actions">
+        <p>You can also receive push notifications in addition to emails.</p>
+        <push-subscription-button endpoints="{{push_endpoints | json}}"></push-subscription-button>
+        <button type="submit" formaction="{{push_self_test_uri}}" formmethod="post">Send a test notification</button>
+    </fieldset>
+
+    {% if let Some(symbols) = symbols %}
+    <h2>Avatar</h2>
+    <fieldset>
+        The following symbol is my avatar:
+
+        <div class="symbol-picker">
+            {% for symbol in symbols %}
+                <label class="symbol">
+                    <span class="label">{{symbol}}</span>
+                    <input type="radio" name="symbol" value="{{symbol}}" {{ *(*symbol == user.symbol) | checked }} autocomplete="off">
+                </label>
+            {% endfor %}
+        </div>
+    </fieldset>
+    {% endif %}
+
+    <fieldset class="-actions">
+        <button type="submit">Save my details</button>
+        {% if let Some(list_users_uri) = list_users_uri %}
+            <a href="{{list_users_uri}}" class="link-button">Show me the list of users, please</a>
+        {% endif %}
+    </fieldset>
+
+    <p>
+        <strong>P.S.</strong> You can always <a href="{{delete_profile_uri}}">delete your profile</a>
+        if you no longer wish to participate in <em>Tau's Game Night</em>.
+    </p>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script id="form-values" type="application/json">
+  {{subscription_values() | json | safe}}
+</script>
+<script>
+    let formValues = JSON.parse(document.getElementById('form-values').innerText)
+
+    function bindRequiredAndVisibleTo(scope) {
+        for (const target of scope.querySelectorAll('[data-visible-if]')) {
+            const [sourceId, sourceValue] = target.dataset.visibleIf.split('=')
+            const source = document.getElementById(sourceId)
+            const template = target.querySelector(':scope > template')
+
+            const update = () => {
+                const visible = source.value == sourceValue
+                if (visible && !target.hasAttribute('data-visible')) {
+                    target.setAttribute('data-visible', '')
+                    target.append(template.content.cloneNode(true))
+                    fillFormValues(target)
+                    bindRequiredAndVisibleTo(target)
+                }
+                if (!visible) {
+                    target.removeAttribute('data-visible', '')
+                    target.replaceChildren(template)
+                }
+            }
+            update()
+            source.addEventListener('input', () => update())
+        }
+    }
+
+    function fillFormValues(scope) {
+        if (formValues) {
+            for (const [name, value] of Object.entries(formValues)) {
+                const field = document.getElementsByName(name)[0] || document.getElementById(name)
+                if (field != null) { field.value = value }
+            }
+        }
+    }
+
+    fillFormValues(document)
+    bindRequiredAndVisibleTo(document)
+    formValues = null
+</script>
+<script type="module" src='{{ctx.asset("/js/open-modal.js")}}'></script>
+<script type="module" src='{{ctx.asset("/js/push-subscription.js")}}'></script>
+{% endblock scripts %}

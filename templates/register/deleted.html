@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Goodbye {{name}} 👋{{random.skin_tone_modifier()}}{% endblock title %}
+
+{% block content %}
+    <form method="post">
+        <p>
+            Your profile has been successfully deleted.
+        </p>
+        <p>
+            Here's an invitation, just in case you change your mind:<br>
+        </p>
+        <fieldset class="-two-column">
+            {% for word in passphrase.0 %}
+                <input type="text" value="{{word}}" readonly>
+            {% endfor %}
+            <small>
+                <button type="button" class="-icon" data-copy-to-clipboard='{{passphrase}}'>
+                    <svg><use href='{{ctx.asset("/icons/clipboard-copy.svg")}}#icon' /></svg>
+                    <span>Copy Words to Clipboard</span>
+                </button>
+            </small>
+        </fieldset>
+    </form>
+{% endblock content %}
+
+{% block scripts %}
+<script type="module" src='{{ctx.asset("/js/copy-to-clipboard.js")}}'></script>
+{% endblock scripts %}

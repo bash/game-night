@@ -4,6 +4,7 @@ use crate::event::{
     Polling, StatefulEvent,
 };
 use crate::groups::Group;
+use crate::impl_from_request_for_service;
 use crate::invitation::{Invitation, InvitationId, Passphrase};
 use crate::login::{LoginToken, LoginTokenType};
 use crate::poll::{Answer, Poll, PollOption, PollOptionPatch, PollStage};
@@ -11,17 +12,20 @@ use crate::push::PushSubscription;
 use crate::register::EmailVerificationCode;
 use crate::services::{Resolve, ResolveContext};
 use crate::users::{User, UserId, UserPatch};
-use crate::{impl_from_request_for_service, GameNightDatabase};
 use anyhow::{anyhow, Context as _, Ok, Result};
 use rocket::async_trait;
-use rocket_db_pools::{Database as _, Pool as _};
+use rocket_db_pools::{Database, Pool as _};
 use sqlx::pool::PoolConnection;
-use sqlx::{Connection as _, Executor, Sqlite, SqliteConnection};
+use sqlx::{Connection as _, Executor, Sqlite, SqliteConnection, SqlitePool};
 use std::fmt;
 use time::OffsetDateTime;
 
 mod entity;
 pub(crate) use entity::*;
+
+#[derive(Debug, Database)]
+#[database("sqlite")]
+pub(crate) struct GameNightDatabase(SqlitePool);
 
 #[async_trait]
 pub(crate) trait Repository: EventEmailsRepository + fmt::Debug + Send {
@@ -78,7 +82,7 @@ pub(crate) trait Repository: EventEmailsRepository + fmt::Debug + Send {
 
     async fn add_event(&mut self, event: Event<New, Polling>) -> Result<i64>;
 
-    async fn update_poll_stage(&mut self, id: i64, stage: PollStage) -> Result<()>;
+    async fn update_poll_stage(&mut self, id: EventId, stage: PollStage) -> Result<()>;
 
     async fn plan_event(&mut self, id: EventId, details: PlanningDetails) -> Result<Event>;
 
@@ -479,7 +483,7 @@ impl Repository for SqliteRepository {
     }
 
     async fn update_poll_stage(&mut self, id: i64, stage: PollStage) -> Result<()> {
-        sqlx::query!("UPDATE polls SET stage = ?1 WHERE id = ?2", stage, id)
+        sqlx::query!("UPDATE polls SET stage = ?1 WHERE event_id = ?2", stage, id)
             .execute(self.executor())
             .await?;
         Ok(())

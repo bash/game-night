@@ -1,6 +1,6 @@
 {
-    "title": "Heyoooo {{user.name}} 👋{{random_skin_tone_modifier()}}",
-    "body": "This is what a notification from Tau's Game Night would look like. Thank you for testing {{random_heart()}}",
+    "title": "Heyoooo {{user.name}} 👋{{random.skin_tone_modifier()}}",
+    "body": "This is what a notification from Tau's Game Night would look like. Thank you for testing {{random.heart()}}",
     "navigate": "/",
     "tag": "self-test",
     "renotify": true,

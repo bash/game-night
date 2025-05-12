@@ -5,7 +5,7 @@ use anyhow::Result;
 use lettre::message::Mailbox;
 use rocket::{routes, Route};
 use rocket_db_pools::sqlx;
-use serde::Serialize;
+use std::fmt;
 use time::{Duration, OffsetDateTime};
 
 mod email_subscription;
@@ -19,18 +19,27 @@ use crate::event::StatefulEvent;
 pub(crate) use symbol::*;
 mod list;
 pub(crate) use list::*;
+mod name;
+pub(crate) use name::*;
+mod admin_user;
+pub(crate) use admin_user::*;
 
 pub(crate) fn routes() -> Vec<Route> {
     routes![list::list_users]
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, sqlx::Type, Serialize, rocket::FromForm)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, sqlx::Type, rocket::FromForm)]
 #[sqlx(transparent)]
-#[serde(transparent)]
 #[form(transparent)]
 pub(crate) struct UserId(pub(crate) i64);
 
-#[derive(Debug, Clone, sqlx::FromRow, Serialize)]
+impl fmt::Display for UserId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+#[derive(Debug, Clone, sqlx::FromRow)]
 pub(crate) struct User<Id = UserId> {
     pub(crate) id: Id,
     pub(crate) name: String,
@@ -53,7 +62,7 @@ pub(crate) struct UserPatch {
     pub(crate) email_subscription: Option<EmailSubscription>,
 }
 
-#[derive(Debug, Default, Copy, Clone, Eq, PartialEq, sqlx::Type, Serialize)]
+#[derive(Debug, Default, Copy, Clone, Eq, PartialEq, sqlx::Type)]
 #[sqlx(rename_all = "lowercase")]
 pub(crate) enum Role {
     Admin,

@@ -11,6 +11,3 @@ outbox_socket = "outbox.sock"
 [default.tls]
 certs = "data/certs/localhost+2.pem"
 key = "data/certs/localhost+2-key.pem"
-
-[default.web_push]
-template_dir = "notifications"

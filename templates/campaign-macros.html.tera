@@ -1,7 +1,0 @@
-{% macro campaign_ps(campaign, level=0) %}
-    {% if campaign %}
-        <p>
-            <strong>{{ps(level=level)}}</strong> {{campaign.message | safe}}
-        </p>
-    {% endif %}
-{% endmacro %}

@@ -1,25 +1,26 @@
 use crate::auth::{CookieJarExt, LoginState};
 use crate::database::Repository;
-use crate::email::{EmailMessage, EmailSender};
+use crate::decorations::Random;
+use crate::email::{EmailMessage, EmailSender, EmailTemplateContext};
 use crate::register::rocket_uri_macro_getting_invited_page;
-use crate::template::PageBuilder;
+use crate::result::HttpResult;
+use crate::template::prelude::*;
 use crate::users::{User, UserId};
-use crate::{default, responder, uri};
-use anyhow::{Error, Result};
+use crate::{default, email_template, responder, uri};
+use anyhow::Result;
 use lettre::message::Mailbox;
 use rand::distr::{Alphanumeric, Distribution, SampleString as _, Uniform};
 use rand::{rng, Rng};
 use rocket::form::Form;
-use rocket::response::{self, Debug, Redirect, Responder};
+use rocket::http::uri::Origin;
+use rocket::response::{self, Redirect, Responder};
 use rocket::{
     catch, catchers, get, post, routes, Catcher, FromForm, Request, Response, Route, State,
 };
-use rocket_dyn_templates::{context, Template};
+use time::{Duration, OffsetDateTime};
 
 mod auto_login;
 pub(crate) use auto_login::*;
-use serde::Serialize;
-use time::{Duration, OffsetDateTime};
 mod code;
 mod secret_key;
 pub(crate) use secret_key::*;
@@ -51,22 +52,39 @@ fn login_redirect(_user: User, redirect: Option<RedirectUri>) -> Redirect {
 }
 
 #[get("/login?<redirect>", rank = 20)]
-fn login_page(redirect: Option<RedirectUri>, page: PageBuilder<'_>) -> Template {
-    page.uri(redirect.clone()).render(
-        "login",
-        context! { has_redirect: redirect.is_some(), getting_invited_uri: uri!(getting_invited_page()) },
-    )
+fn login_page(redirect: Option<RedirectUri>, page: PageContextBuilder<'_>) -> impl Responder {
+    let template = LoginPage {
+        has_redirect: redirect.is_some(),
+        getting_invited_uri: uri!(getting_invited_page()),
+        error_message: None,
+        email_field: None,
+        ctx: page.uri(redirect.clone()).build(),
+    };
+    Templated(template)
+}
+
+#[derive(Template, Debug)]
+#[template(path = "login/email.html")]
+pub(crate) struct LoginPage {
+    pub(crate) has_redirect: bool,
+    pub(crate) getting_invited_uri: Origin<'static>,
+    pub(crate) error_message: Option<String>,
+    pub(crate) email_field: Option<String>,
+    pub(crate) ctx: PageContext,
 }
 
 #[post("/login?<redirect>", data = "<form>")]
 async fn login(
-    builder: PageBuilder<'_>,
+    builder: PageContextBuilder<'_>,
     mut repository: Box<dyn Repository>,
     email_sender: &State<Box<dyn EmailSender>>,
     redirect: Option<RedirectUri>,
     form: Form<LoginData<'_>>,
-) -> Result<Login, Debug<Error>> {
-    if let Some((mailbox, email)) = login_email_for(repository.as_mut(), form.email).await? {
+    email_ctx: EmailTemplateContext,
+) -> HttpResult<Login> {
+    if let Some((mailbox, email)) =
+        login_email_for(repository.as_mut(), form.email, email_ctx).await?
+    {
         email_sender.send(mailbox, &email, default()).await?;
         Ok(Redirect::to(uri!(code::login_with_code_page(redirect))).into())
     } else {
@@ -78,28 +96,36 @@ responder! {
     enum Login {
         Success(Box<Redirect>),
         #[response(status = 400)]
-        Failure(Template),
+        Failure(Box<Templated<LoginPage>>),
     }
 }
 
 impl Login {
-    fn failure(builder: PageBuilder, redirect: Option<RedirectUri>, form: LoginData<'_>) -> Login {
-        let context = context! {
+    fn failure(
+        builder: PageContextBuilder,
+        redirect: Option<RedirectUri>,
+        form: LoginData<'_>,
+    ) -> Login {
+        let template = LoginPage {
             has_redirect: redirect.is_some(),
-            form,
-            error_message: "I don't know what to do with this email address, are you sure that you spelled it correctly? 🤔",
+            email_field: Some(form.email.to_string()),
+            error_message: Some("I don't know what to do with this email address, are you sure that you spelled it correctly? 🤔".to_string()),
             getting_invited_uri: uri!(getting_invited_page()),
+            ctx: builder.build(),
         };
-        Self::Failure(builder.render("login", context))
+        Self::Failure(Box::new(Templated(template)))
     }
 }
 
 async fn login_email_for(
     repository: &mut dyn Repository,
     email: &str,
+    email_ctx: EmailTemplateContext,
 ) -> Result<Option<(Mailbox, LoginEmail)>> {
     if let Some(user) = repository.get_user_by_email(email).await? {
-        generate_login_email(repository, user).await.map(Some)
+        generate_login_email(repository, user, email_ctx)
+            .await
+            .map(Some)
     } else {
         Ok(None)
     }
@@ -108,6 +134,7 @@ async fn login_email_for(
 async fn generate_login_email(
     repository: &mut dyn Repository,
     user: User,
+    email_ctx: EmailTemplateContext,
 ) -> Result<(Mailbox, LoginEmail)> {
     let token = LoginToken::generate_one_time(user.id, &mut rng());
     repository.add_login_token(&token).await?;
@@ -115,12 +142,14 @@ async fn generate_login_email(
     let email = LoginEmail {
         name: user.name.clone(),
         code: token.token,
+        random: Random::default(),
+        ctx: email_ctx,
     };
 
     Ok((user.mailbox()?, email))
 }
 
-#[derive(Debug, FromForm, Serialize)]
+#[derive(Debug, FromForm)]
 struct LoginData<'r> {
     email: &'r str,
 }
@@ -217,18 +246,19 @@ impl Distribution<String> for OneTimeToken {
     }
 }
 
-#[derive(Debug, Clone, Serialize)]
-struct LoginEmail {
-    name: String,
-    code: String,
+email_template! {
+    #[template(html_path = "emails/login.html", txt_path = "emails/login.txt")]
+    #[derive(Debug)]
+    struct LoginEmail {
+        name: String,
+        code: String,
+        random: Random,
+        ctx: EmailTemplateContext,
+    }
 }
 
 impl EmailMessage for LoginEmail {
     fn subject(&self) -> String {
         "Let's Get You Logged In".to_owned()
-    }
-
-    fn template_name(&self) -> String {
-        "login".to_owned()
     }
 }

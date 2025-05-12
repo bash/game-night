@@ -1,29 +1,30 @@
-use super::EventEmailSender;
+use super::{
+    Event, EventEmailSender, EventId, EventsQuery, LongEventTitleComponent, StatefulEvent,
+};
 use crate::database::Repository;
-use crate::email::EmailMessage;
-use crate::event::{Event, EventId, EventsQuery, StatefulEvent};
+use crate::decorations::Random;
+use crate::email::{EmailMessage, EmailTemplateContext};
 use crate::result::HttpResult;
-use crate::template::PageBuilder;
-use crate::uri;
-use crate::users::User;
+use crate::template::prelude::*;
+use crate::users::{User, UserNameComponent};
+use crate::{email_template, uri};
 use lettre::message::Mailbox;
 use rocket::form::Form;
 use rocket::http::Status;
 use rocket::response::Redirect;
 use rocket::{get, post, FromForm};
-use rocket_dyn_templates::{context, Template};
-use serde::Serialize;
 
 #[get("/event/<id>/leave")]
 pub(crate) async fn leave_page(
     id: EventId,
     user: User,
-    page: PageBuilder<'_>,
+    page: PageContextBuilder<'_>,
     mut events_query: EventsQuery,
-) -> HttpResult<Template> {
+) -> HttpResult<Templated<LeavePage>> {
     let event = events_query.with_id(id, &user).await?;
     if let Some(StatefulEvent::Planned(event)) = event {
-        Ok(page.render("play/leave", context! { event }))
+        let ctx = page.build();
+        Ok(Templated(LeavePage { event, ctx }))
     } else {
         Err(Status::NotFound.into())
     }
@@ -37,6 +38,7 @@ pub(crate) async fn leave_(
     mut events_query: EventsQuery,
     mut repository: Box<dyn Repository>,
     mut email_sender: Box<dyn EventEmailSender>,
+    email_ctx: EmailTemplateContext,
 ) -> HttpResult<Redirect> {
     let event = events_query.with_id(id, &user).await?;
     let message = form.message.trim();
@@ -46,6 +48,8 @@ pub(crate) async fn leave_(
             event: &event,
             participant: &user,
             message,
+            random: Random::default(),
+            ctx: email_ctx,
         };
         email_sender.send(&event, &event.created_by, &email).await?;
         Ok(Redirect::to(uri!(crate::event::event_page(id = event.id))))
@@ -54,16 +58,28 @@ pub(crate) async fn leave_(
     }
 }
 
+#[derive(Debug, Template)]
+#[template(path = "event/leave.html")]
+pub(crate) struct LeavePage {
+    event: Event,
+    ctx: PageContext,
+}
+
 #[derive(Debug, FromForm)]
 pub(crate) struct LeaveFormData<'r> {
     pub(crate) message: &'r str,
 }
 
-#[derive(Debug, Serialize)]
-struct ParticipantLeftEmail<'a> {
-    event: &'a Event,
-    participant: &'a User,
-    message: &'a str,
+email_template! {
+    #[template(html_path = "emails/event/participant-left.html", txt_path = "emails/event/participant-left.txt")]
+    #[derive(Debug)]
+    struct ParticipantLeftEmail<'a> {
+        event: &'a Event,
+        participant: &'a User,
+        message: &'a str,
+        random: Random,
+        ctx: EmailTemplateContext,
+    }
 }
 
 impl EmailMessage for ParticipantLeftEmail<'_> {
@@ -72,10 +88,6 @@ impl EmailMessage for ParticipantLeftEmail<'_> {
             "{} cannot make it and has left the event",
             self.participant.name,
         )
-    }
-
-    fn template_name(&self) -> String {
-        "event/participant-left".to_string()
     }
 
     fn reply_to(&self) -> Option<Mailbox> {

@@ -1,16 +1,4 @@
-use anyhow::{anyhow, Context as _, Result};
-use database::Repository;
-use poll::poll_finalizer;
-use pruning::database_pruning;
-use result::HttpResult;
-use rocket::fairing::{self, Fairing};
-use rocket::request::FromRequest;
-use rocket::{catch, catchers, error, get, routes, Orbit, Request, Rocket};
-use rocket_db_pools::{sqlx::SqlitePool, Database};
-use rocket_dyn_templates::{context, Template};
-use socket_activation::listener_from_env;
-use template::PageBuilder;
-
+mod email_template;
 mod response;
 mod services;
 mod uri;
@@ -19,10 +7,12 @@ mod auth;
 mod database;
 mod decorations;
 mod email;
+mod error_pages;
 mod event;
 mod fmt;
 mod fs;
 mod groups;
+mod home;
 mod infra;
 mod invitation;
 mod iso_8601;
@@ -41,14 +31,15 @@ mod users;
 
 #[rocket::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    use rocket_db_pools::Database as _;
+
     let rocket = rocket::custom(crate::infra::figment()?);
 
     #[cfg(target_os = "linux")]
     let rocket = rocket.attach(systemd::SystemdNotify);
 
-    let template = infra::template_fairing(rocket.figment())?;
     let rocket = rocket
-        .mount("/", routes![home_page])
+        .mount("/", rocket::routes![home::home_page])
         .mount("/", invitation::routes())
         .mount("/", register::routes())
         .mount("/", poll::routes())
@@ -58,64 +49,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .mount("/", event::routes())
         .mount("/", push::routes())
         .register("/", login::catchers())
-        .register("/", auth::catchers())
-        .register("/", catchers![not_found])
-        .attach(template)
-        .attach(GameNightDatabase::init())
+        .register("/", error_pages::catchers())
+        .attach(database::GameNightDatabase::init())
         .attach(email::email_sender_fairing())
-        .attach(invite_admin_user())
+        .attach(users::invite_admin_user_fairing())
         .attach(login::auto_login_fairing())
-        .attach(poll_finalizer())
-        .attach(database_pruning())
+        .attach(poll::poll_finalizer())
+        .attach(pruning::database_pruning())
         .attach(users::LastActivity)
         .attach(push::web_push_fairing())
+        .attach(template::template_fairing())
         .manage(infra::HttpClient::new());
 
-    if let Some(b) = listener_from_env()? {
+    if let Some(b) = socket_activation::listener_from_env()? {
         rocket.launch_on(b).await?;
     } else {
         rocket.launch().await?;
     }
 
     Ok(())
-}
-
-#[get("/", rank = 20)]
-fn home_page(page: PageBuilder<'_>) -> Template {
-    page.render(
-        "index",
-        context! { getting_invited_uri: uri!(register::getting_invited_page())},
-    )
-}
-
-#[catch(404)]
-async fn not_found(request: &Request<'_>) -> HttpResult<Template> {
-    let page = PageBuilder::from_request(request)
-        .await
-        .success_or_else(|| anyhow!("failed to create page builder"))?;
-    Ok(page.render("errors/404", ()))
-}
-
-#[derive(Debug, Database)]
-#[database("sqlite")]
-pub(crate) struct GameNightDatabase(SqlitePool);
-
-fn invite_admin_user() -> impl Fairing {
-    fairing::AdHoc::on_liftoff("Invite Admin User", |rocket| {
-        Box::pin(async move {
-            if let Err(e) = try_invite_admin_user(rocket).await {
-                error!("{:?}", e);
-            }
-        })
-    })
-}
-
-async fn try_invite_admin_user(rocket: &Rocket<Orbit>) -> Result<()> {
-    use crate::services::RocketResolveExt as _;
-    let mut repository: Box<dyn crate::database::Repository> = rocket.resolve().await?;
-    invitation::invite_admin_user(&mut *repository)
-        .await
-        .context("failed to invite admin user")
 }
 
 fn default<T: Default>() -> T {

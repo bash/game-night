@@ -1,25 +1,29 @@
 use crate::database::Repository;
+use crate::decorations::Random;
 use crate::invitation::{Invitation, Passphrase};
 use crate::login::{Logout, RedirectUri};
-use crate::template::PageBuilder;
+use crate::result::HttpResult;
+use crate::template::prelude::*;
 use crate::users::User;
-use anyhow::{Error, Result};
 use rand::rng;
-use rocket::response::Debug;
+use rocket::response::Responder;
 use rocket::{get, post, uri};
-use rocket_dyn_templates::{context, Template};
 use time::{Duration, OffsetDateTime};
 
 #[get("/profile/delete")]
-pub(crate) fn delete_profile_page(page: PageBuilder, _user: User) -> Template {
-    page.render("register/delete", context! {})
+pub(crate) fn delete_profile_page(page: PageContextBuilder, user: User) -> impl Responder {
+    Templated(DeleteProfilePage {
+        user,
+        random: Random::default(),
+        ctx: page.build(),
+    })
 }
 
 #[post("/profile/delete")]
 pub(crate) async fn delete_profile(
     mut repository: Box<dyn Repository>,
     user: User,
-) -> Result<Logout, Debug<Error>> {
+) -> HttpResult<Logout> {
     let invitation = repository.add_invitation(goodbye_invitation(&user)).await?;
     repository.delete_user(user.id).await?;
     let redirect_uri = RedirectUri(uri!(profile_deleted_page(user.name, invitation.passphrase)));
@@ -37,9 +41,31 @@ fn goodbye_invitation(user: &User) -> Invitation<()> {
 
 #[get("/profile/deleted?<name>&<passphrase>")]
 pub(crate) fn profile_deleted_page(
-    page: PageBuilder,
+    page: PageContextBuilder,
     name: String,
     passphrase: Passphrase,
-) -> Template {
-    page.render("register/deleted", context! { name, passphrase })
+) -> impl Responder {
+    Templated(ProfileDeletedPage {
+        name,
+        passphrase,
+        random: Random::default(),
+        ctx: page.build(),
+    })
+}
+
+#[derive(Template, Debug)]
+#[template(path = "register/delete.html")]
+pub(crate) struct DeleteProfilePage {
+    pub(crate) user: User,
+    pub(crate) random: Random,
+    pub(crate) ctx: PageContext,
+}
+
+#[derive(Template, Debug)]
+#[template(path = "register/deleted.html")]
+pub(crate) struct ProfileDeletedPage {
+    pub(crate) name: String,
+    pub(crate) passphrase: Passphrase,
+    pub(crate) random: Random,
+    pub(crate) ctx: PageContext,
 }

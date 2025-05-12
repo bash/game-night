@@ -3,11 +3,9 @@ use crate::auto_resolve;
 use crate::event::StatefulEvent;
 use crate::iso_8601::Iso8601;
 use anyhow::Result;
-use serde::{Deserialize, Serialize};
 use time::{Date, OffsetDateTime};
 
-#[derive(Default, Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case", tag = "type")]
+#[derive(Default, Debug, Copy, Clone, Eq, PartialEq)]
 pub(crate) enum EmailSubscription {
     #[default]
     Subscribed,

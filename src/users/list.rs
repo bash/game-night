@@ -1,18 +1,24 @@
-use super::{User, UsersQuery};
+use super::{Role, User, UserId, UsersQuery};
 use crate::auth::{AuthorizedTo, ManageUsers};
-use crate::{auto_resolve, HttpResult, PageBuilder, Repository};
+use crate::auto_resolve;
+use crate::database::Repository;
+use crate::result::HttpResult;
+use crate::template::prelude::*;
 use anyhow::Result;
 use rocket::get;
-use rocket_dyn_templates::{context, Template};
-use serde::Serialize;
+use std::ops;
 
 #[get("/users")]
 pub(crate) async fn list_users(
     _guard: AuthorizedTo<ManageUsers>,
-    page: PageBuilder<'_>,
+    page: PageContextBuilder<'_>,
     mut users: UsersProvider,
-) -> HttpResult<Template> {
-    Ok(page.render("users", context! { users: users.active().await? }))
+) -> HttpResult<Templated<UsersPage>> {
+    let template = UsersPage {
+        users: users.active().await?,
+        ctx: page.build(),
+    };
+    Ok(Templated(template))
 }
 
 auto_resolve! {
@@ -32,11 +38,18 @@ impl UsersProvider {
     }
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone)]
 pub(crate) struct UserViewModel {
-    #[serde(flatten)]
     user: User,
     has_push_subscription: bool,
+}
+
+impl ops::Deref for UserViewModel {
+    type Target = User;
+
+    fn deref(&self) -> &Self::Target {
+        &self.user
+    }
 }
 
 impl UserViewModel {
@@ -46,5 +59,25 @@ impl UserViewModel {
             user,
             has_push_subscription,
         })
+    }
+}
+
+#[derive(Template, Debug)]
+#[template(path = "users.html")]
+pub(crate) struct UsersPage {
+    pub(super) users: Vec<UserViewModel>,
+    pub(super) ctx: PageContext,
+}
+
+impl UsersPage {
+    fn user_by_id(&self, user_id: UserId) -> Option<&UserViewModel> {
+        self.users.iter().find(|u| u.id == user_id)
+    }
+
+    fn fmt_role(&self, role: Role) -> &'static str {
+        match role {
+            Role::Admin => "admin",
+            Role::Guest => "guest",
+        }
     }
 }

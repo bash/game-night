@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="supported-color-schemes" value="light dark">
+    <style>{{ctx.css | safe}}</style>
+</head>
+<body>
+    <table class="outer-table" role="presentation">
+        <tr>
+            <td></td>
+            <td class="inner-table-cell">
+                <table role="presentation">
+                    <tr>
+                        <td>
+                            <div class="greeting">{{random.greeting()}} {% block name %}{{name}}{% endblock %},</div>
+                            {% block content %}{% endblock content%}
+                        </td>
+                    </tr>
+                </table>
+            </td>
+            <td></td>
+        </tr>
+    </table>
+</body>
+</html>

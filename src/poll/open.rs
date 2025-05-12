@@ -1,47 +1,62 @@
+use super::ParticipatedMessageComponent;
 use super::{Answer, AnswerValue};
 use crate::auth::can_answer_strongly;
 use crate::database::{New, Repository};
+use crate::event::LongEventTitleComponent;
 use crate::event::{EventsQuery, StatefulEvent};
 use crate::iso_8601::Iso8601;
 use crate::poll::{Poll, PollOption};
 use crate::result::HttpResult;
-use crate::template::PageBuilder;
+use crate::template::prelude::*;
+use crate::users::UserNameComponent;
 use crate::users::{User, UsersQuery};
-use anyhow::Error;
 use itertools::{Either, Itertools as _};
 use rocket::form::Form;
 use rocket::http::uri::Origin;
 use rocket::http::Status;
 use rocket::response::Redirect;
 use rocket::{post, uri, FromForm};
-use rocket_dyn_templates::Template;
-use serde::Serialize;
 use std::collections::HashMap;
 use time::{Month, OffsetDateTime};
 
 pub(crate) async fn open_poll_page(
     user: User,
     poll: Poll,
-    page: PageBuilder<'_>,
+    page: PageContextBuilder<'_>,
     mut users_query: UsersQuery,
-) -> Result<Template, Error> {
+) -> HttpResult<Templated<OpenPollPage>> {
     let event = StatefulEvent::from_poll(poll.clone(), OffsetDateTime::now_utc());
     let users = users_query.active_and_invited(&event).await?;
-    Ok(page.render("poll/open", to_open_poll(poll, &user, users)))
+    let template = to_open_poll_page(poll, user, users, page.build());
+    Ok(Templated(template))
 }
 
-fn to_open_poll(poll: Poll, user: &User, users: Vec<User>) -> OpenPoll {
+#[derive(Template, Debug)]
+#[template(path = "poll/open.html")]
+pub(crate) struct OpenPollPage {
+    poll: Poll,
+    option_groups: Vec<OpenPollOptionsGroup>,
+    has_answers: bool,
+    can_answer_strongly: bool,
+    no_date_answered_with_yes: Vec<User>,
+    not_answered: Vec<User>,
+    update_answers_uri: Origin<'static>,
+    close_poll_uri: Option<Origin<'static>>,
+    user: User,
+    ctx: PageContext,
+}
+
+fn to_open_poll_page(poll: Poll, user: User, users: Vec<User>, ctx: PageContext) -> OpenPollPage {
     let (not_answered, no_date_answered_with_yes) = if user.can_manage_poll() {
         users_with_no_yes(&poll, users)
     } else {
         Default::default()
     };
 
-    OpenPoll {
-        option_groups: to_open_poll_options(&poll, poll.options.iter(), user),
-        date_selection_strategy: poll.strategy.to_string(),
+    OpenPollPage {
+        option_groups: to_open_poll_options(&poll, poll.options.iter(), &user),
         has_answers: poll.has_answer(user.id),
-        can_answer_strongly: can_answer_strongly(user, &poll),
+        can_answer_strongly: can_answer_strongly(&user, &poll),
         update_answers_uri: uri!(update_answers(id = poll.event.id)),
         close_poll_uri: user
             .can_manage_poll()
@@ -49,6 +64,8 @@ fn to_open_poll(poll: Poll, user: &User, users: Vec<User>) -> OpenPoll {
         poll,
         not_answered,
         no_date_answered_with_yes,
+        user,
+        ctx,
     }
 }
 
@@ -118,26 +135,13 @@ fn to_open_poll_option(option: &PollOption, user: &User) -> OpenPollOption {
     }
 }
 
-#[derive(Debug, Serialize)]
-struct OpenPoll {
-    poll: Poll,
-    option_groups: Vec<OpenPollOptionsGroup>,
-    date_selection_strategy: String,
-    has_answers: bool,
-    can_answer_strongly: bool,
-    no_date_answered_with_yes: Vec<User>,
-    not_answered: Vec<User>,
-    update_answers_uri: Origin<'static>,
-    close_poll_uri: Option<Origin<'static>>,
-}
-
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
 struct OpenPollOptionsGroup {
     name: String,
     options: Vec<OpenPollOption>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
 struct OpenPollOption {
     id: i64,
     starts_at: Iso8601<OffsetDateTime>,

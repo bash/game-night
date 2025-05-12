@@ -2,13 +2,8 @@ use crate::database::{Materialized, New, Unmaterialized};
 use crate::entity_state;
 use crate::event::{Event, Polling};
 use crate::iso_8601::Iso8601;
-use crate::play::rocket_uri_macro_archive_page;
-use crate::register::rocket_uri_macro_profile;
-use crate::template::PageBuilder;
 use crate::users::{User, UserId};
-use rocket::{routes, uri, FromFormField, Route};
-use rocket_dyn_templates::{context, Template};
-use serde::Serialize;
+use rocket::{routes, FromFormField, Route};
 use sqlx::encode::IsNull;
 use sqlx::error::BoxDynError;
 use sqlx::sqlite::{SqliteTypeInfo, SqliteValueRef};
@@ -21,11 +16,17 @@ pub(crate) use finalize::*;
 mod email;
 use email::PollEmail;
 mod new;
+pub(crate) use new::*;
 mod open;
 pub(crate) use open::*;
 mod admin;
 mod skip;
 pub(crate) use skip::*;
+mod no_open_poll;
+pub(crate) use no_open_poll::*;
+mod participated_message;
+pub(crate) use participated_message::*;
+mod calendar;
 
 pub(crate) fn routes() -> Vec<Route> {
     routes![
@@ -42,14 +43,7 @@ pub(crate) fn routes() -> Vec<Route> {
     ]
 }
 
-pub(crate) fn no_open_poll_page(user: User, page: PageBuilder<'_>) -> Template {
-    let new_poll_uri = user.can_manage_poll().then(|| uri!(new::new_poll_page()));
-    let profile_uri = uri!(profile());
-    let archive_uri = uri!(archive_page());
-    page.render("poll", context! { new_poll_uri, profile_uri, archive_uri })
-}
-
-#[derive(Debug, Clone, sqlx::FromRow, Serialize)]
+#[derive(Debug, Clone, sqlx::FromRow)]
 pub(crate) struct Poll<S: PollState = Materialized> {
     pub(crate) id: S::Id,
     #[sqlx(try_from = "i64")]
@@ -64,8 +58,7 @@ pub(crate) struct Poll<S: PollState = Materialized> {
     pub(crate) options: S::Options,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, sqlx::Type, Serialize)]
-#[serde(rename_all = "snake_case")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, sqlx::Type)]
 #[sqlx(rename_all = "snake_case")]
 pub(crate) enum PollStage {
     Open,
@@ -147,7 +140,7 @@ impl Poll {
     }
 }
 
-#[derive(Debug, Clone, sqlx::FromRow, Serialize)]
+#[derive(Debug, Clone, sqlx::FromRow)]
 pub(crate) struct PollOption<S: PollOptionState = Materialized> {
     pub(crate) id: S::Id,
     pub(crate) starts_at: Iso8601<OffsetDateTime>,
@@ -196,7 +189,7 @@ impl PollOption {
     }
 }
 
-#[derive(Debug, Clone, sqlx::FromRow, Serialize)]
+#[derive(Debug, Clone, sqlx::FromRow)]
 pub(crate) struct Answer<S: AnswerState = Materialized> {
     pub(crate) id: S::Id,
     pub(crate) value: AnswerValue,
@@ -231,8 +224,7 @@ impl<S: AnswerState> Answer<S> {
     }
 }
 
-#[derive(Debug, Copy, Clone, Serialize)]
-#[serde(rename_all = "snake_case", tag = "type")]
+#[derive(Debug, Copy, Clone)]
 pub(crate) enum AnswerValue {
     No { veto: bool },
     Yes { attendance: Attendance },
@@ -322,8 +314,7 @@ impl<'r> Decode<'r, Sqlite> for AnswerValue {
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, sqlx::Type, Serialize)]
-#[serde(rename_all = "snake_case")]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, sqlx::Type)]
 pub(crate) enum Attendance {
     Optional,
     /// Admins and people with a special permission can set their attendance to "required".
@@ -332,9 +323,8 @@ pub(crate) enum Attendance {
     Required,
 }
 
-#[derive(Debug, Copy, Clone, sqlx::Type, Serialize, FromFormField)]
+#[derive(Debug, Copy, Clone, sqlx::Type, FromFormField)]
 #[sqlx(rename_all = "snake_case")]
-#[serde(rename_all = "snake_case")]
 pub(crate) enum DateSelectionStrategy {
     #[field(value = "at_random")]
     AtRandom,
@@ -343,11 +333,36 @@ pub(crate) enum DateSelectionStrategy {
     // TODO: everyone
 }
 
-impl fmt::Display for DateSelectionStrategy {
+impl DateSelectionStrategy {
+    pub(crate) fn human_display(self) -> DateSelectionStrategyHumanDisplay {
+        DateSelectionStrategyHumanDisplay(self)
+    }
+
+    pub(crate) fn form_value_display(self) -> DateSelectionStrategyFormValueDisplay {
+        DateSelectionStrategyFormValueDisplay(self)
+    }
+}
+
+#[derive(Debug, Copy, Clone)]
+pub(crate) struct DateSelectionStrategyHumanDisplay(DateSelectionStrategy);
+
+impl fmt::Display for DateSelectionStrategyHumanDisplay {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
+        match self.0 {
             DateSelectionStrategy::AtRandom => write!(f, "at random"),
             DateSelectionStrategy::ToMaximizeParticipants => write!(f, "to maximize participants"),
+        }
+    }
+}
+
+#[derive(Debug, Copy, Clone)]
+pub(crate) struct DateSelectionStrategyFormValueDisplay(DateSelectionStrategy);
+
+impl fmt::Display for DateSelectionStrategyFormValueDisplay {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.0 {
+            DateSelectionStrategy::AtRandom => write!(f, "at_random"),
+            DateSelectionStrategy::ToMaximizeParticipants => write!(f, "to_maximize_participants"),
         }
     }
 }

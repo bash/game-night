@@ -1,5 +1,4 @@
 use crate::impl_resolve_for_state;
-use crate::infra::TeraConfigurationContext;
 use anyhow::{Context as _, Result};
 use dyn_clone::DynClone;
 use headers::MessageBuilderExt;
@@ -7,13 +6,10 @@ use lettre::message::{Mailbox, MultiPart, SinglePart};
 use lettre::Message;
 #[cfg(unix)]
 use outbox::Outbox;
-use render::EmailRenderer;
 use rocket::fairing::{self, Fairing};
-use rocket::figment::value::magic::RelativePathBuf;
 use rocket::figment::Figment;
-use rocket::{async_trait, error};
-use rocket_dyn_templates::tera::Context;
-use serde::{Deserialize, Serialize};
+use rocket::{async_trait, error, Build, Rocket};
+use serde::Deserialize;
 use std::fmt;
 
 mod headers;
@@ -25,8 +21,8 @@ pub(crate) use render::*;
 pub(crate) fn email_sender_fairing() -> impl Fairing {
     fairing::AdHoc::try_on_ignite("Email Sender", |rocket| {
         Box::pin(async {
-            match EmailSenderImpl::from_figment(rocket.figment()).await {
-                Ok(sender) => Ok(rocket.manage(Box::new(sender) as Box<dyn EmailSender>)),
+            match fairing_impl(&rocket).await {
+                Ok((sender, context)) => Ok(rocket.manage(sender).manage(context)),
                 Err(error) => {
                     error!("failed to initialize email sender:\n{:?}", error);
                     Err(rocket)
@@ -34,6 +30,14 @@ pub(crate) fn email_sender_fairing() -> impl Fairing {
             }
         })
     })
+}
+
+async fn fairing_impl(
+    rocket: &Rocket<Build>,
+) -> Result<(Box<dyn EmailSender>, EmailTemplateContext)> {
+    let sender = EmailSenderImpl::from_figment(rocket.figment()).await?;
+    let context = EmailTemplateContext::new().await?;
+    Ok((Box::new(sender), context))
 }
 
 #[async_trait]
@@ -44,18 +48,14 @@ pub(crate) trait EmailSender: Send + Sync + fmt::Debug + DynClone {
         email: &dyn EmailMessage,
         options: EmailMessageOptions,
     ) -> Result<()>;
-
-    fn preview(&self, email: &dyn EmailMessage) -> Result<EmailBody>;
 }
 
 dyn_clone::clone_trait_object!(EmailSender);
 
 impl_resolve_for_state!(Box<dyn EmailSender>: "email sender");
 
-pub(crate) trait EmailMessage: Send + Sync + EmailMessageContext {
+pub(crate) trait EmailMessage: Send + Sync + EmailTemplate {
     fn subject(&self) -> String;
-
-    fn template_name(&self) -> String;
 
     fn reply_to(&self) -> Option<Mailbox> {
         None
@@ -63,19 +63,6 @@ pub(crate) trait EmailMessage: Send + Sync + EmailMessageContext {
 
     fn attachments(&self) -> Result<Vec<SinglePart>> {
         Ok(Vec::default())
-    }
-}
-
-pub(crate) trait EmailMessageContext {
-    fn template_context(&self) -> Result<Context>;
-}
-
-impl<T> EmailMessageContext for T
-where
-    T: Serialize,
-{
-    fn template_context(&self) -> Result<Context> {
-        Context::from_serialize(self).map_err(Into::into)
     }
 }
 
@@ -91,7 +78,6 @@ pub(crate) struct EmailSenderImpl {
     reply_to: Option<Mailbox>,
     #[cfg(unix)]
     outbox: Outbox,
-    renderer: EmailRenderer,
 }
 
 #[async_trait]
@@ -102,7 +88,7 @@ impl EmailSender for EmailSenderImpl {
         email: &dyn EmailMessage,
         options: EmailMessageOptions,
     ) -> Result<()> {
-        let body = self.renderer.render(email)?;
+        let body = email.render()?;
         let multipart = email
             .attachments()?
             .into_iter()
@@ -137,10 +123,6 @@ impl EmailSender for EmailSenderImpl {
 
         Ok(())
     }
-
-    fn preview(&self, email: &dyn EmailMessage) -> Result<EmailBody> {
-        self.renderer.render(email)
-    }
 }
 
 impl EmailSenderImpl {
@@ -148,18 +130,14 @@ impl EmailSenderImpl {
         let config: EmailSenderConfig = figment
             .extract_inner("email")
             .context("failed to read email sender configuration")?;
-        let template_dir = config.template_dir.relative();
         #[cfg(unix)]
         let outbox =
             Outbox::new_for_path(config.outbox_socket).context("failed to initialize outbox")?;
-
-        let context = TeraConfigurationContext::from_figment(figment)?;
         Ok(Self {
             sender: config.sender,
             reply_to: config.reply_to,
             #[cfg(unix)]
             outbox,
-            renderer: EmailRenderer::from_template_dir(&template_dir, &context).await?,
         })
     }
 }
@@ -168,7 +146,6 @@ impl EmailSenderImpl {
 struct EmailSenderConfig {
     sender: Mailbox,
     reply_to: Option<Mailbox>,
-    template_dir: RelativePathBuf,
     #[cfg(unix)]
     outbox_socket: String,
 }

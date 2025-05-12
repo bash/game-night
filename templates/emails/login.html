@@ -1,0 +1,24 @@
+{% extends "emails/base.html" %}
+
+{% block content %}
+<h1>
+    Let's Get You Logged In 🙌{{random.skin_tone_modifier()}}
+</h1>
+
+<p>
+    Use the code below to log in to <em>Tau's Game Night</em>:
+</p>
+
+<table class="code" role="presentation">
+    <tr>
+        <td>{{code}}</td>
+    </tr>
+</table>
+
+<hr>
+
+<p>
+    <strong>P.S.</strong> This code is valid for 10 minutes, so hurryyyyy~<br>
+    <strong>P.P.S.</strong> You can safely ignore this email if you didn't request it.
+</p>
+{% endblock content %}

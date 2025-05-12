@@ -1,7 +1,6 @@
 [default]
 address = "0.0.0.0"
 secret_keys_path = "/var/lib/game-night/keys"
-template_dir = "/usr/local/share/game-night/templates"
 
 [default.databases.sqlite]
 url = "/var/lib/game-night/database.sqlite"
@@ -9,6 +8,3 @@ url = "/var/lib/game-night/database.sqlite"
 [default.email]
 template_dir = "/usr/local/share/game-night/emails"
 outbox_socket = "/run/outbox/outbox.sock"
-
-[default.web_push]
-template_dir = "/usr/local/share/game-night/notifications"

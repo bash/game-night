@@ -1,0 +1,118 @@
+{% import "campaign-macros.html" as campaign_macros %}
+
+{% extends "base.html" %}
+
+{% block title %}Invited{% endblock title %}
+
+{% block content %}
+<form method="post">
+    {% if let RegisterStep::InvitationCode = step %}
+        <p>
+            Congratulations! Tau has invited you to their amazing
+            game night by providing you with four secret words.
+        </p>
+
+        <p>
+            Enter those secret words below to continue.
+        </p>
+
+        {% include "error-message.html" %}
+
+        <fieldset class="-two-column">
+            <input type="text" placeholder="1st word" name="words[0]" data-overflow-to="words[1]" value="{{nth_word_or_empty(0)}}" required autofocus>
+            <input type="text" placeholder="2nd word" name="words[1]" data-overflow-to="words[2]" value="{{nth_word_or_empty(1)}}" required>
+            <input type="text" placeholder="3rd word" name="words[2]" data-overflow-to="words[3]" value="{{nth_word_or_empty(2)}}" required>
+            <input type="text" placeholder="4th word" name="words[3]" value="{{nth_word_or_empty(3)}}" required>
+        </fieldset>
+
+        <fieldset class="-actions">
+            <button type="submit">Neext!</button>
+        </fieldset>
+
+        {% if let Some(campaign) = campaign %}
+        <p>
+            <strong>P.S.</strong> I'm tracking that you are registering via the «<strong>{{campaign.name}}</strong>» campaign.
+            I will only use it for—*paper rustling*—special reward purposes.
+            You can <a href="{{ctx.page.path}}">opt out</a> if you don't want that.
+        </p>
+        {% call campaign_macros::campaign_ps(campaign=campaign, level=1) %}
+        {% endif %}
+    {% else %}
+        <input type="hidden" name="words[]" value="{{nth_word_or_empty(0)}}">
+        <input type="hidden" name="words[]" value="{{nth_word_or_empty(1)}}">
+        <input type="hidden" name="words[]" value="{{nth_word_or_empty(2)}}">
+        <input type="hidden" name="words[]" value="{{nth_word_or_empty(3)}}">
+    {% endif %}
+
+    {% if let RegisterStep::UserDetails = step %}
+        {% include "error-message.html" %}
+
+        {% match passphrase_source %}
+            {% when PassphraseSource::Query %}
+                <p>
+                    Congratulations! Tau has invited you to their amazing game night 🎉
+                </p>
+            {% when PassphraseSource::Form %}
+                <p>
+                    Ding ding ding! You have entered the correct words.
+                </p>
+        {% endmatch %}
+
+        <p>
+            First, let's introduce ourselves. My name is Tau, and what's yours?
+        </p>
+
+        <fieldset>
+            <input type="text" placeholder="Name" name="name" value="{{form.name.unwrap_or_default()}}" required autocomplete="name" autofocus>
+        </fieldset>
+
+        <p>
+            Hiiii <strong data-bind-to="name"></strong> and welcome to my game night.
+            I will need your email address to notify you when the next game night is happening.
+            I will only use it for game night related purposes–pinky promise~
+        </p>
+
+        <fieldset>
+            <input type="email" inputmode="email" placeholder="awesome-person@example.com" name="email_address" value="{{form.email_address.unwrap_or_default()}}" autocomplete="email" required>
+        </fieldset>
+
+        <fieldset class="-actions">
+            <button type="submit">Neeext!</button>
+        </fieldset>
+
+        {% if let Some(campaign) = campaign %}
+            {% call campaign_macros::campaign_ps(campaign=campaign, level=0) %}
+        {% endif %}
+    {% else %}
+        {% if let Some(name) = form.name %}
+            <input type="hidden" name="name" value="{{name}}">
+        {% endif %}
+        {% if let Some(email_address) = form.email_address %}
+            <input type="hidden" name="email_address" value="{{email_address}}">
+        {% endif %}
+    {% endif %}
+
+    {% if let RegisterStep::VerifyEmail(email_address) = step %}
+        <p>
+            We're almost there.
+            I have sent you an email to <strong>{{email_address}}</strong> with a six-digit code.
+            Enter the code below to complete the registration.
+        </p>
+
+        {% include "error-message.html" %}
+
+        <fieldset>
+            <input type="number" name="email_verification_code" size="6" placeholder="123456" value="{{form.email_verification_code.unwrap_or_default()}}" autocomplete="off" inputmode="numeric" data-1p-ignore required autofocus>
+        </fieldset>
+
+        <fieldset class="-actions">
+            <button type="submit">Neeeext!</button>
+        </fieldset>
+    {% endif %}
+</form>
+{% endblock content %}
+
+{% block scripts %}
+<script type="module" src='{{ctx.asset("/js/overflow-to.js")}}'></script>
+<script type="module" src='{{ctx.asset("/js/bind-to.js")}}'></script>
+{% endblock scripts %}

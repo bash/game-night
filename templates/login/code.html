@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Login{% endblock title %}
+
+{% block content %}
+<form method="post">
+    <p>
+        Success! An email is on it's way to you~<br>
+        Enter the login code below:
+    </p>
+
+    {% if invalid_code %}
+        <div class="error-message">
+            <em>Hmmmmmmmmm</em> That's not a valid code, maybe it has expired? 🤔
+        </div>
+    {% endif %}
+
+    <fieldset>
+        <input type="number" placeholder="123456" size="6" name="code" required autocomplete="off" inputmode="numeric" data-1p-ignore autofocus />
+    </fieldset>
+
+    <fieldset class="-actions">
+        <button type="submit">Login</button>
+    </fieldset>
+</form>
+{% endblock content %}

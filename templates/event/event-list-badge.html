@@ -1,0 +1,14 @@
+{% match **event %}
+{% when StatefulEvent::Polling(_) %}
+    <span class="text-badge -important">poll open</span>
+{% when StatefulEvent::Finalizing(_) | StatefulEvent::Pending(_) %}
+    <span class="text-badge -important">closing</span>
+{% when StatefulEvent::Planned(_) %}
+    <span class="text-badge -important">upcoming</span>
+{% when StatefulEvent::Cancelled(_) %}
+    <span class="text-badge">cancelled</span>
+{% when StatefulEvent::Archived(_) %}
+    <span class="text-badge">passé</span>
+{% when StatefulEvent::Failed(_) %}
+    <span class="text-badge">failed</span>
+{% endmatch %}

@@ -1,0 +1,19 @@
+{% extends "emails/base.html" %}
+
+{% block content %}
+<h1>
+    {{participant.name}} cannot make it to
+    <em>Tau's Game Night{% if !event.title.is_empty() %} «{{event.title}}»{% endif %}</em> on {{event.starts_at | time(format = "{date}")}}
+</h1>
+
+{% if !message.is_empty() %}
+    <p>They included a message for you:</p>
+    <pre>{{message | linebreaksbr | safe}}</pre>
+{% endif %}
+
+<hr>
+
+<strong>P.S.</strong> You are receiving this email because you are the organizer of this event.
+{% endblock content %}
+
+{% block name %}{{event.created_by.name}}{% endblock %}

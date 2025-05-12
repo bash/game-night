@@ -1,0 +1,55 @@
+{% extends "emails/base.html" %}
+{% block content %}
+
+<h1>
+    {% if !poll.event.title.is_empty() %}Tau's Game Night «{{poll.event.title}}»{% else %}Another Game Night{% endif %}
+    is Just Around the Corner 🧙{{random.skin_tone_modifier()}}
+</h1>
+
+{% if let Some(group) = poll.event.restrict_to %}
+<p>
+    This is a special game night just for members of
+    «{{group.name}}».
+</p>
+{% endif %}
+
+<p>
+    &hellip; and I need <em>you</em> to help pick a date.<br>
+    You can choose from the following dates:
+</p>
+
+<ul>
+    {% for option in sorted_options() %}
+        <li>{{option.starts_at | time("{date}")}} at <time>{{option.starts_at | time("{time}")}}</time></li>
+    {% endfor %}
+</ul>
+
+<p>
+    But don't take too long—the poll is only open until <strong>{{poll.open_until | time("{date}")}}</strong> at <strong>{{poll.open_until | time("{time}")}}</strong> :)
+</p>
+
+<a href="{{poll_uri}}">
+    <span class="arrow" role="presentation">→</span>
+    Onwards to the poll!
+</a>
+
+<br>
+
+<a href="{{skip_poll_uri}}">
+    <span class="arrow" role="presentation">→</span>
+    I want to skip the upcoming game night&hellip;
+</a>
+
+<p>
+    <em>{{random.closing()}}</em>
+</p>
+
+<hr>
+
+<p>
+    <small>
+        No longer want to receive these emails?
+        You can <a href="{{manage_subscription_url}}">change</a> your subscription settings.
+    </small>
+</p>
+{% endblock content %}

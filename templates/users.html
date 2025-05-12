@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Users{% endblock title %}
+
+{% block content %}
+<ul class="users-list">
+    {% for user in users %}
+    <li class="user" id="user-{{user.id}}">
+        <div class="user-card">
+            <span class="avatar">{{ crate::users::UserNameComponent::for_user(user).with_symbol() | safe }}</span>
+            <small class="role" title="Role">{{fmt_role(*user.role)}}</small>
+            <small class="invitation">
+                {% if let Some(invited_by) = user.invited_by %}
+                    {% if let Some(inviter) = user_by_id(**invited_by) %}
+                        invited by <a href="#user-{{inviter.id}}">{{inviter.name}}</a>
+                    {%- endif -%}
+                {% endif -%}
+                {%- if let Some(campaign) = user.campaign %}
+                    via {{campaign -}}
+                {% endif %}
+                {%- if user.invited_by.is_some() || user.campaign.is_some() %},{% endif %}
+                active <em><relative-time datetime='{{user.last_active_at | iso_8601}}'>{{user.last_active_at | time(format="{date_with_year}")}}</relative-time></em>
+            </small>
+            <small class="anchor"><a href="#user-{{user.id}}">#</a></small>
+            <small class="actions">
+                <a href="mailto:{{user.email_address}}" class="link-button">email</a>
+                <form action="/sudo/enter" method="post"><input type="hidden" name="user" value="{{user.id}}"><button type="submit">impersonate</button></form>
+                {% if user.has_push_subscription %}
+                    <svg role="img" aria-label="Bell" title="User has push notifications enabled" class="_icon">
+                        <use href='{{ctx.asset("/icons/bell.svg")}}#icon' aria-hidden="true" />
+                    </svg>
+                {% endif %}
+            </small>
+        </div>
+    </li>
+    {% endfor %}
+</ul>
+
+<p>
+    <small>Note that this list may be incomplete: Users who have not been active in the last 9 months are automatically hidden.</small>
+</p>
+
+{% endblock content %}
+
+{% block scripts %}
+    <script src='{{ctx.asset("/js/relative-time-element.js")}}' type="module"></script>
+{% endblock scripts %}

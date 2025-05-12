@@ -3,15 +3,19 @@ WORKDIR /usr/local/src/game-night
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y libsystemd-dev jq && rm -rf /var/lib/apt/lists/*
 COPY Cargo.toml ./
 COPY Cargo.lock ./
+COPY askama.toml ./
 COPY src/ ./src
 COPY crates/ ./crates
+COPY templates/ ./templates
+COPY notifications/ ./notifications
 COPY .sqlx/ ./.sqlx
 ARG CARGO_BUILD_FLAGS=--release
 RUN --mount=type=cache,target=/usr/local/src/game-night/target \
     --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/usr/local/cargo/git \
-    build_messages=$(cargo build $CARGO_BUILD_FLAGS --color=always --message-format json) && \
-    executable=$(echo "$build_messages" | jq --slurp --join-output '.[] | select(.reason == "compiler-artifact") | select(.target.name == "game-night") | .executable') && \
+    cargo build $CARGO_BUILD_FLAGS --color=always && \
+    cargo build $CARGO_BUILD_FLAGS --message-format json > _messages.json && \
+    executable=$(jq --slurp --join-output '.[] | select(.reason == "compiler-artifact") | select(.target.name == "game-night") | .executable') < _messages.json && \
     cp "$executable" /usr/local/bin/
 
 
@@ -26,20 +30,18 @@ RUN npm install
 
 
 FROM npm_deps as email_css
-COPY emails/email.scss ./emails/
-RUN npx sass --no-source-map --style compressed emails/email.scss emails/email.css
+COPY templates/emails/email.scss ./
+RUN npx sass --no-source-map --style compressed email.scss email.css
 
 
 FROM npm_deps as web_build
 COPY browserslist .
 COPY scss ./scss
-COPY emails/email.scss ./emails/
 COPY public ./public
 COPY hash-files.py .
 ARG SASS_FLAGS=--no-source-map
 RUN npx sass scss/main.scss public/main.css $SASS_FLAGS
 RUN npx lightningcss --browserslist public/main.css -o public/main.css
-RUN npx sass --no-source-map --style compressed emails/email.scss emails/email.css
 RUN cp node_modules/@github/relative-time-element/dist/bundle.js public/js/relative-time-element.js
 
 
@@ -62,10 +64,8 @@ ENV ROCKET_DEFAULT_CONFIG=/usr/local/share/game-night/Rocket.toml
 ENV ROCKET_CONFIG=/usr/local/etc/game-night/Rocket.toml
 WORKDIR /usr/local/share/game-night
 COPY config/Rocket.container.toml ./Rocket.toml
-COPY templates/ ./templates
-COPY emails/ ./emails
-COPY --from=email_css /usr/local/src/game-night/emails/*.css ./emails/
-COPY notifications/ ./notifications
+# TODO: this is ugly, make path configurable
+COPY --from=email_css /usr/local/src/game-night/*.css /usr/local/bin/
 
 WORKDIR /run/game-night
 CMD ["game-night"]

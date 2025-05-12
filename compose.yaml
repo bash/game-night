@@ -1,12 +1,11 @@
 volumes:
-  outbox:
   caddy_data:
 
 services:
   outbox:
     image: codeberg.org/tautropfli/outboxd:0.2.3
     volumes:
-    - outbox:/var/lib/outboxd
+    - ./data/outbox:/var/lib/outboxd:rw
 
   backend:
     build:
@@ -20,8 +19,7 @@ services:
     volumes:
     - ./data:/var/lib/game-night
     - ./config:/usr/local/etc/game-night:ro
-    - ./templates:/usr/local/share/game-night/templates:ro
-    - outbox:/run/outbox:ro
+    - ./data/outbox:/run/outbox:ro
     security_opt:
     - label=disable
     networks:
@@ -40,6 +38,3 @@ services:
     - label=disable
     ports:
     - "8000:8000"
-    depends_on:
-     backend:
-       condition: service_started

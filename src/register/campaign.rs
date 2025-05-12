@@ -3,10 +3,9 @@ use rocket::figment::{self, Figment};
 use rocket::http::Status;
 use rocket::request::{FromRequest, Outcome};
 use rocket::{async_trait, Request};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
-#[derive(Debug, Clone, Serialize)]
-#[serde(transparent)]
+#[derive(Debug, Clone)]
 pub(super) struct ProvidedCampaign<'a>(Option<Campaign<'a>>);
 
 impl<'a> ProvidedCampaign<'a> {
@@ -15,7 +14,7 @@ impl<'a> ProvidedCampaign<'a> {
     }
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone)]
 pub(super) struct Campaign<'a> {
     pub(super) name: &'a str,
     pub(super) message: String,

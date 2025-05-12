@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}New Poll{% endblock title %}
+
+{% block content %}
+<form method="post">
+    <p>
+        I want to invite
+        <select class="-inline" name="restrict_to">
+            <option value="">everyone</option>
+            {% for group in groups %}
+                <option value="{{group.id}}">members of «{{group.name}}»</option>
+            {% endfor %}
+        </select>
+        to a game night with at least
+        <input type="number" class="-inline" name="min_participants" id="min-participants" size="2" inputmode="numeric" placeholder="2" required min="2" value="2"> people
+    </p>
+
+    <p>
+        It should take place in <select class="-inline" name="location">
+            {% for location in locations %}
+                <option value="{{location.id}}">{{location.description}}</option>
+            {% endfor %}
+        </select>
+    </p>
+
+    <p>
+        The game night is titled:
+        <input type="text" class="-inline" name="title"><br>
+    </p>
+
+    <p>
+        The date should be chosen
+        <select class="-inline" name="strategy">
+            {% for strategy in strategies %}
+                <option value="{{strategy.form_value_display()}}">{{strategy.human_display()}}</option>
+            {% endfor %}
+        </select>.
+    </p>
+
+    <p>
+        Participants have <input type="number" class="-inline" name="duration" size="2" inputmode="numeric" placeholder="72" required min="1" value="72"> hours to complete the poll.
+    </p>
+
+    <div class="calendar-list" id="calendar">
+        {{ calendar | safe }}
+    </div>
+
+    <p>
+        <button type="button"
+            data-fetch-more-target="calendar"
+            data-fetch-more-url="{{calendar_uri}}">Show me more dates</button>
+    </p>
+
+    <fieldset>
+        <label for="description">Here's space for me to write down some extra information for the event using markdown:</label>
+        <textarea name="description" id="description" data-auto-resize>{{description.as_deref().unwrap_or_default()}}</textarea>
+    </fieldset>
+
+    <fieldset class="-actions">
+        <button type="submit">Create Poll</button>
+    </fieldset>
+</form>
+{% endblock content %}
+
+{% block scripts %}
+<script type="module" src='{{ctx.asset("/js/calendar.js")}}'></script>
+<script type="module" src='{{ctx.asset("/js/auto-resize.js")}}'></script>
+{% endblock scripts %}

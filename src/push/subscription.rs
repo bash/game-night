@@ -8,7 +8,7 @@ use time::OffsetDateTime;
 use web_push::p256::PublicKey;
 use web_push::Auth;
 
-#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize)]
+#[derive(Debug, Clone, sqlx::FromRow)]
 pub(crate) struct PushSubscription<S: PushSubscriptionState = Materialized> {
     pub(crate) id: S::Id,
     pub(crate) user_id: UserId,

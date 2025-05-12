@@ -1,14 +1,13 @@
-use super::{Event, EventId, Planned, Polling};
+use super::{Event, EventId, Planned, Polling, SafeEventDetails};
 use crate::database::Materialized;
+use crate::event::EventLike;
 use crate::groups::Group;
 use crate::iso_8601::Iso8601;
 use crate::poll::{Poll, PollStage};
 use crate::users::User;
-use serde::Serialize;
 use time::OffsetDateTime;
 
-#[derive(Debug, Clone, Serialize)]
-#[serde(tag = "state", rename_all = "snake_case")]
+#[derive(Debug, Clone)]
 pub(crate) enum StatefulEvent {
     /// Poll is open.
     Polling(Poll),
@@ -131,6 +130,16 @@ impl StatefulEvent {
         match self {
             Polling(poll) | Pending(poll) | Finalizing(poll) | Failed(poll) => polling(&poll.event),
             Planned(event) | Cancelled(event) | Archived(event) => planned(event),
+        }
+    }
+}
+
+impl EventLike for StatefulEvent {
+    fn details(&self) -> SafeEventDetails {
+        use StatefulEvent::*;
+        match self {
+            Polling(poll) | Pending(poll) | Finalizing(poll) | Failed(poll) => poll.event.details(),
+            Planned(event) | Cancelled(event) | Archived(event) => event.details(),
         }
     }
 }

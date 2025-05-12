@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Close Poll?{% endblock title %}
+
+{% block content %}
+    <form method="post">
+        <p>
+            After the poll is closed, the date will be chosen
+            from one of the following candidates:
+        </p>
+        <div class="calendar-list -candidates">
+            <ul>
+                {% for option in candidates %}
+                    <li>
+                        <span class="text-badge">candidate</span>
+
+                        <span>
+                            <span class="day">{{option.starts_at | time("[day padding:none]")}}</span>
+                            <span class="weekday">
+                                {{option.starts_at | time("[weekday repr:long]")}}
+                            </span>
+                        </span>
+
+                        <div class="time-range">
+                            <time>{{option.starts_at | time("[hour]:[minute]")}}</time>
+                        </div>
+
+                        <div class="answers-list">
+                            {% for answer in option.answers %}
+                                {% if let AnswerValue::Yes { .. } = answer.value %}
+                                    <span class="answer">
+                                        {{ UserNameComponent::for_user(answer.user).with_symbol() | safe }}
+                                    </span>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+
+                        <ul class="calendar-event-actions">
+                            <input type="hidden" name="actions[{{option.id}}][id]" value="{{option.id}}">
+                            <li>
+                                <label>
+                                    <input type="checkbox" name="actions[{{option.id}}][promote]">
+                                    Promote to own event
+                                </label>
+                            </li>
+                            <li>
+                                <label>
+                                    <input type="checkbox" name="actions[{{option.id}}][veto]">
+                                    Veto
+                                </label>
+                            </li>
+                        </ul>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+        <p>
+            <small>
+                These candidates were selected
+                <strong>{{poll.strategy.human_display()}}</strong>,
+                where at least <strong>{{poll.min_participants}}</strong> people have said yes.
+            </small>
+        </p>
+        <p>
+            An email will be sent to all participants of the selected date.
+        </p>
+        <p>
+            <label>
+                <input type="checkbox" name="close_manually" formaction="{{set_close_manually_uri}}" {{ *close_manually | checked }} data-auto-submit>
+                I want to close the poll manually, ignore the open until date.
+            </label>
+        </p>
+        <fieldset>
+            <button type="submit">Close Poll</button>
+        </fieldset>
+    </form>
+{% endblock content %}
+{% block scripts %}
+    <script type="module">
+      for (const input of document.querySelectorAll('[data-auto-submit]')) {
+        input.addEventListener('input', () => {
+          input.form.setAttribute('action', input.getAttribute('formaction'))
+          input.form.submit()
+        })
+      }
+    </script>
+{% endblock %}

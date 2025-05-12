@@ -1,0 +1,27 @@
+{{random.greeting()}} {{name}},
+
+{% if !poll.event.title.is_empty() %}Tau's Game Night «{{poll.event.title}}»{% else %}Another Game Night{% endif %} is Just Around the Corner 🧙{{random.skin_tone_modifier()}}
+
+{%- if let Some(group) = poll.event.restrict_to %}
+
+This is a special game night just for members of «{{group.name}}».
+
+{% endif -%}
+
+… and I need *you* to help pick a date.
+You can choose from the following dates:
+{% for option in sorted_options() %}
+• {{option.starts_at | time("{date}")}} at {{option.starts_at | time("{time}")}}
+{%- endfor %}
+
+But don't take too long—the poll is only open until {{poll.open_until | time("{date}")}} at {{poll.open_until | time("{time}")}} :)
+
+→ Onwards to the poll! {{poll_uri}}
+→ I want to skip the upcoming game night… {{skip_poll_uri}}
+
+{{random.closing()}}
+
+------
+
+No longer want to receive these emails?
+You can change your subscription settings here: {{manage_subscription_url}}

@@ -1,40 +1,39 @@
+use super::calendar::{Calendar, CalendarDayPrefill};
 use super::{Answer, AnswerValue, Attendance};
 use super::{DateSelectionStrategy, Poll, PollOption};
 use super::{PollEmail, PollStage};
 use crate::auth::{AuthorizedTo, ManagePoll};
 use crate::database::{New, Repository};
+use crate::decorations::Random;
+use crate::email::EmailTemplateContext;
 use crate::event::{
     rocket_uri_macro_event_page, Event, EventEmailSender, EventsQuery, Location, Polling,
     StatefulEvent,
 };
-use crate::iso_8601::Iso8601;
-use crate::push::PushSender;
+use crate::groups::Group;
+use crate::push::{PollNotification, PushSender};
 use crate::register::rocket_uri_macro_profile;
-use crate::template::PageBuilder;
+use crate::result::HttpResult;
+use crate::template::prelude::*;
 use crate::uri::UriBuilder;
 use crate::users::{SubscribedUsers, User};
 use crate::{auto_resolve, uri};
-use anyhow::{Context as _, Error, Result};
-use itertools::Itertools as _;
+use anyhow::{Context as _, Result};
 use rocket::form::Form;
-use rocket::response::{Debug, Redirect};
+use rocket::http::uri::Origin;
+use rocket::response::Redirect;
 use rocket::{get, post, FromForm};
-use rocket_dyn_templates::{context, Template};
-use serde::Serialize;
-use std::iter;
-use time::format_description::FormatItem;
-use time::macros::format_description;
-use time::{Date, Duration, Month, OffsetDateTime, PrimitiveDateTime, Time};
+use time::{Date, Duration, OffsetDateTime, PrimitiveDateTime, Time};
 use time_tz::{timezones, PrimitiveDateTimeExt};
 
 #[get("/poll/new")]
-pub(super) async fn new_poll_page(
+pub(crate) async fn new_poll_page(
     user: AuthorizedTo<ManagePoll>,
-    page: PageBuilder<'_>,
+    page: PageContextBuilder<'_>,
     mut events: EventsQuery,
     mut repository: Box<dyn Repository>,
-) -> Result<Template, Debug<Error>> {
-    let calendar = get_calendar(
+) -> HttpResult<Templated<NewPollPage>> {
+    let calendar = Calendar::generate(
         OffsetDateTime::now_utc(),
         14,
         &mut CalendarDayPrefill::empty,
@@ -42,24 +41,41 @@ pub(super) async fn new_poll_page(
     let description = events.newest(&user).await?.map(|e| e.description);
     let groups = repository.get_groups().await?;
     let locations = repository.get_locations().await?;
-    Ok(page.render(
-        "poll/new",
-        context! { calendar, strategies: strategies(), calendar_uri: uri!(calendar()), description, groups, locations },
-    ))
+    let page = NewPollPage {
+        calendar,
+        strategies: strategies().into_iter().collect(),
+        calendar_uri: uri!(calendar()),
+        description,
+        groups,
+        locations,
+        ctx: page.build(),
+    };
+    Ok(Templated(page))
+}
+
+#[derive(Template, Debug)]
+#[template(path = "poll/new.html")]
+pub(crate) struct NewPollPage {
+    calendar: Calendar,
+    description: Option<String>,
+    groups: Vec<Group>,
+    calendar_uri: Origin<'static>,
+    locations: Vec<Location>,
+    strategies: Vec<DateSelectionStrategy>,
+    ctx: PageContext,
 }
 
 #[post("/poll/new/_calendar", data = "<form>")]
 pub(super) fn calendar(
-    page: PageBuilder<'_>,
     _user: AuthorizedTo<ManagePoll>,
     form: Form<CalendarData>,
-) -> Template {
+) -> Templated<Calendar> {
     let mut prefill = find_prefill(&form);
-    let calendar = get_calendar(OffsetDateTime::now_utc(), 14 * form.count, &mut prefill);
-    page.render(
-        "poll/calendar",
-        context! { calendar, strategies: strategies() },
-    )
+    Templated(Calendar::generate(
+        OffsetDateTime::now_utc(),
+        14 * form.count,
+        &mut prefill,
+    ))
 }
 
 fn find_prefill(form: &CalendarData) -> impl Fn(Date) -> CalendarDayPrefill + '_ {
@@ -78,91 +94,11 @@ pub(super) struct CalendarData {
     options: Vec<CalendarDayPrefill>,
 }
 
-fn get_calendar(
-    start: OffsetDateTime,
-    days: usize,
-    prefill: &mut impl Fn(Date) -> CalendarDayPrefill,
-) -> Vec<CalendarMonth> {
-    iter::successors(Some(start.date()), |d| d.next_day())
-        .take(days)
-        .chunk_by(|d| d.month())
-        .into_iter()
-        .map(|(month, days)| to_calendar_month(month, days, prefill))
-        .collect()
-}
-
-fn to_calendar_month(
-    month: Month,
-    days: impl Iterator<Item = Date>,
-    prefill: &mut impl Fn(Date) -> CalendarDayPrefill,
-) -> CalendarMonth {
-    CalendarMonth {
-        name: month.to_string(),
-        days: days.map(|d| to_calendar_day(d, prefill)).collect(),
-    }
-}
-
-fn to_calendar_day(date: Date, prefill: &mut impl Fn(Date) -> CalendarDayPrefill) -> CalendarDay {
-    const WEEKDAY_FORMAT: &[FormatItem<'_>] = format_description!("[weekday repr:long]");
-    CalendarDay {
-        date: date.into(),
-        day: date.day(),
-        weekday: date.format(WEEKDAY_FORMAT).unwrap(),
-        prefill: prefill(date),
-    }
-}
-
-#[derive(Debug, Serialize)]
-struct DateSelectionStrategyOption {
-    name: String,
-    value: DateSelectionStrategy,
-}
-
-impl From<DateSelectionStrategy> for DateSelectionStrategyOption {
-    fn from(value: DateSelectionStrategy) -> Self {
-        DateSelectionStrategyOption {
-            name: value.to_string(),
-            value,
-        }
-    }
-}
-
-fn strategies() -> [DateSelectionStrategyOption; 2] {
+fn strategies() -> [DateSelectionStrategy; 2] {
     [
-        DateSelectionStrategy::AtRandom.into(),
-        DateSelectionStrategy::ToMaximizeParticipants.into(),
+        DateSelectionStrategy::AtRandom,
+        DateSelectionStrategy::ToMaximizeParticipants,
     ]
-}
-
-#[derive(Debug, Serialize)]
-struct CalendarMonth {
-    name: String,
-    days: Vec<CalendarDay>,
-}
-
-#[derive(Debug, Serialize)]
-struct CalendarDay {
-    date: Iso8601<Date>,
-    day: u8,
-    weekday: String,
-    prefill: CalendarDayPrefill,
-}
-
-#[derive(Debug, Serialize, FromForm, Clone)]
-struct CalendarDayPrefill {
-    date: Iso8601<Date>,
-    enabled: bool,
-    start_time: Option<Iso8601<Time>>,
-}
-
-impl CalendarDayPrefill {
-    fn empty(date: impl Into<Iso8601<Date>>) -> Self {
-        Self {
-            date: date.into(),
-            enabled: false,
-            start_time: None,
-        }
-    }
 }
 
 #[post("/poll/new", data = "<form>")]
@@ -171,7 +107,7 @@ pub(super) async fn new_poll(
     form: Form<NewPollData<'_>>,
     user: AuthorizedTo<ManagePoll>,
     mut notification_sender: NewPollNotificationSender,
-) -> Result<Redirect, Debug<Error>> {
+) -> HttpResult<Redirect> {
     let location = repository
         .get_location_by_id(form.location)
         .await?
@@ -283,6 +219,7 @@ auto_resolve! {
         email_sender: Box<dyn EventEmailSender<Polling>>,
         push_sender: PushSender,
         uri_builder: UriBuilder,
+        ctx: EmailTemplateContext,
     }
 }
 
@@ -301,10 +238,13 @@ impl NewPollNotificationSender {
                 poll_uri,
                 skip_poll_uri,
                 manage_subscription_url: sub_url,
+                random: Random::default(),
+                ctx: self.ctx.clone(),
             };
             self.email_sender.send(&poll.event, &user, &email).await?;
+            let notification = PollNotification { poll };
             self.push_sender
-                .send_templated("poll.json", context! { poll: &poll }, user.id)
+                .send_templated(&notification, user.id)
                 .await?;
         }
 

@@ -1,0 +1,27 @@
+{% extends "emails/base.html" %}
+
+{% block content %}
+<h1>
+    You're Invited to <em>Tau's Game Night{% if !event.title.is_empty() %} «{{event.title}}»{% endif %}</em> 🥳
+</h1>
+
+<p>
+    The next instance of <em>Tau's Game Night</em>
+    is happening on <strong>{{event.starts_at | time("{date}")}}</strong>
+    at <strong>{{event.starts_at | time("{time}")}}</strong>
+    and you are warmly invited {{random.heart()}}
+</p>
+
+<p>
+    Be sure to add this date to your calendar ASAP :)
+</p>
+
+<a href="{{event_url}}">
+    <span class="arrow" role="presentation">→</span>
+    Show me all the deets!
+</a>
+
+<hr>
+
+<strong>P.S.</strong> You are receiving this email because you participated in the poll for this event.
+{% endblock content %}
