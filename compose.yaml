@@ -6,6 +6,8 @@ services:
     image: codeberg.org/tautropfli/outboxd:0.2.3
     volumes:
     - ./data/outbox:/var/lib/outboxd:rw
+    security_opt:
+    - label=disable
 
   backend:
     build:
