@@ -1,7 +1,7 @@
 CREATE TABLE users
     ( id INTEGER PRIMARY KEY -- This is an alias for `rowid` so we get auto-increment and last_insert_rowid() support
     , name TEXT NOT NULL
-    , 'role' INTEGER NOT NULL
+    , 'role' TEXT NOT NULL
     , email_address TEXT NOT NULL UNIQUE
     , email_subscription TEXT NOT NULL
     , invited_by INTEGER NULL REFERENCES users(id) ON DELETE RESTRICT
@@ -15,7 +15,7 @@ CREATE TABLE users
 
 CREATE TABLE invitations
     ( id INTEGER PRIMARY KEY
-    , 'role' INTEGER NOT NULL
+    , 'role' TEXT NOT NULL
     , created_by INTEGER NULL
     , passphrase TEXT NOT NULL UNIQUE
     , comment TEXT NOT NULL DEFAULT ''

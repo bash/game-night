@@ -4,7 +4,7 @@ use crate::default;
 use crate::email::{EmailSender, EmailTemplateContext};
 use crate::invitation::{Invitation, Passphrase};
 use crate::template::prelude::*;
-use crate::users::{AstronomicalSymbol, User, UserId};
+use crate::users::{AstronomicalSymbol, User, UserCommands, UserId};
 use anyhow::Result;
 use campaign::{Campaign, ProvidedCampaign};
 use email_address::EmailAddress;
@@ -26,6 +26,7 @@ mod profile;
 mod verification;
 use crate::decorations::Random;
 use crate::result::HttpResult;
+use crate::users::models::NewUser;
 pub(crate) use email_verification_code::*;
 pub(crate) use profile::*;
 
@@ -80,9 +81,11 @@ async fn register_redirect(_user: User) -> Redirect {
     Redirect::to(uri!(profile::profile()))
 }
 
+#[allow(clippy::too_many_arguments)]
 #[get("/register?<passphrase>", rank = 20)]
 async fn register_page<'r>(
     cookies: &CookieJar<'_>,
+    users: UserCommands,
     repository: Box<dyn Repository>,
     email_sender: &State<Box<dyn EmailSender>>,
     page: PageContextBuilder<'_>,
@@ -93,6 +96,7 @@ async fn register_page<'r>(
     let form = RegisterForm::new_with_passphrase(passphrase);
     register(
         cookies,
+        users,
         repository,
         email_sender.as_ref(),
         page,
@@ -104,9 +108,11 @@ async fn register_page<'r>(
     .await
 }
 
+#[allow(clippy::too_many_arguments)]
 #[post("/register", data = "<form>")]
 async fn register_form<'r>(
     cookies: &CookieJar<'_>,
+    users: UserCommands,
     repository: Box<dyn Repository>,
     email_sender: &State<Box<dyn EmailSender>>,
     page: PageContextBuilder<'_>,
@@ -116,6 +122,7 @@ async fn register_form<'r>(
 ) -> HttpResult<RegisterResponse<'r>> {
     register(
         cookies,
+        users,
         repository,
         email_sender.as_ref(),
         page,
@@ -127,8 +134,10 @@ async fn register_form<'r>(
     .await
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn register<'r>(
     cookies: &CookieJar<'_>,
+    users: UserCommands,
     mut repository: Box<dyn Repository>,
     email_sender: &dyn EmailSender,
     page: PageContextBuilder<'_>,
@@ -171,7 +180,7 @@ async fn register<'r>(
 
     let email_address = user_details.email_address.clone();
     let user_id = unwrap_or_return!(
-        email_verification_step(repository.as_mut(), &form, invitation, user_details, campaign.clone()).await?,
+        email_verification_step(repository.as_mut(), users, &form, invitation, user_details, campaign.clone()).await?,
         error_message => Ok(RegisterPage {
             step: RegisterStep::VerifyEmail(email_address),
             error_message,
@@ -297,6 +306,7 @@ async fn send_verification_email(
 
 async fn email_verification_step(
     repository: &mut dyn Repository,
+    mut users: UserCommands,
     form: &RegisterForm<'_>,
     invitation: Invitation,
     user_details: UserDetails,
@@ -306,13 +316,9 @@ async fn email_verification_step(
         return Ok(Pending(e));
     };
 
-    let user_id = repository
-        .add_user(
-            invitation.clone(),
-            new_user(invitation, user_details, campaign.into_inner()),
-        )
-        .await?;
-    Ok(Complete(user_id))
+    let new_user = new_user(&invitation, user_details, campaign.into_inner());
+    let user = users.add(new_user, &invitation).await?;
+    Ok(Complete(user.id))
 }
 
 async fn use_verification_code(
@@ -329,10 +335,10 @@ async fn use_verification_code(
 }
 
 fn new_user(
-    invitation: Invitation,
+    invitation: &Invitation,
     user_details: UserDetails,
     campaign: Option<Campaign<'_>>,
-) -> User<()> {
+) -> NewUser {
     invitation.to_user(
         user_details.name,
         rng().random::<AstronomicalSymbol>(),

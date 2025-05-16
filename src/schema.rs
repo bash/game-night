@@ -14,3 +14,16 @@ diesel::table! {
         last_active_at -> Text,
     }
 }
+
+diesel::table! {
+    invitations(id) {
+        id -> BigInt,
+        role -> Text,
+        created_by -> Nullable<BigInt>,
+        passphrase -> Text,
+        comment -> Text,
+        used_by -> Nullable<BigInt>,
+        valid_until -> Nullable<Text>,
+        created_at -> Text,
+    }
+}

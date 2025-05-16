@@ -12,14 +12,10 @@ macro_rules! impl_to_from_sql {
             }
         }
 
-        impl<DB> diesel::serialize::ToSql<diesel::sql_types::Text, DB> for $T
-            where
-                for<'c> DB: diesel::backend::Backend<BindCollector<'c> = diesel::query_builder::bind_collector::RawBytesBindCollector<DB>>,
-                String: diesel::serialize::ToSql<diesel::sql_types::Text, DB>
+        impl diesel::serialize::ToSql<diesel::sql_types::Text, diesel::sqlite::Sqlite> for $T
         {
-            fn to_sql<'b>(&'b self, out: &mut diesel::serialize::Output<'b, '_, DB>) -> diesel::serialize::Result {
-                use std::io::Write as _;
-                write!(out, "{self}")?;
+            fn to_sql<'b>(&'b self, out: &mut diesel::serialize::Output<'b, '_, diesel::sqlite::Sqlite>) -> diesel::serialize::Result {
+                out.set_value(self.to_string());
                 Ok(diesel::serialize::IsNull::No)
             }
         }

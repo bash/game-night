@@ -21,11 +21,10 @@ use std::fmt;
 use time::OffsetDateTime;
 
 mod entity;
-use crate::infra::{DieselConnectionPool, DieselPoolConnection};
+use crate::infra::DieselConnectionPool;
 use diesel::QueryDsl;
 use diesel_async::RunQueryDsl;
 pub(crate) use entity::*;
-use nameof::name_of;
 
 #[derive(Debug, Database)]
 #[database("sqlite")]
@@ -41,9 +40,6 @@ pub(crate) trait Repository: EventEmailsRepository + fmt::Debug + Send {
     ) -> Result<Option<Invitation>>;
 
     async fn get_admin_invitation(&mut self) -> Result<Option<Invitation>>;
-
-    /// Adds a user while destroying the associated invitation.
-    async fn add_user(&mut self, invitation: Invitation, user: User<()>) -> Result<UserId>;
 
     async fn has_users(&mut self) -> Result<bool>;
 
@@ -122,14 +118,8 @@ pub(crate) trait EventEmailsRepository: fmt::Debug + Send {
     async fn get_last_message_id(&mut self, event: i64, user: UserId) -> Result<Option<MessageId>>;
 }
 
-pub(crate) struct SqliteRepository(PoolConnection<Sqlite>, DieselPoolConnection);
-
-impl fmt::Debug for SqliteRepository {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_tuple(name_of!(SqliteRepository))
-            .finish_non_exhaustive()
-    }
-}
+#[derive(Debug)]
+pub(crate) struct SqliteRepository(PoolConnection<Sqlite>, DieselConnectionPool);
 
 impl SqliteRepository {
     fn executor(&mut self) -> &mut SqliteConnection {
@@ -178,43 +168,10 @@ impl Repository for SqliteRepository {
         Ok(invitation)
     }
 
-    async fn add_user(&mut self, invitation: Invitation, user: User<()>) -> Result<UserId> {
-        let mut transaction = self.0.begin().await?;
-
-        let user_id = sqlx::query!(
-            "INSERT INTO users (name, symbol, role, email_address, email_subscription, invited_by, campaign)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
-             user.name,
-             user.symbol,
-             user.role,
-             user.email_address,
-             user.email_subscription,
-             user.invited_by,
-             user.campaign,
-        )
-        .execute(&mut *transaction)
-        .await?
-        .last_insert_rowid();
-
-        let update_result = sqlx::query!(
-            "UPDATE invitations SET used_by = ?2 WHERE id = ?1 AND used_by IS NULL",
-            invitation.id,
-            user_id
-        )
-        .execute(&mut *transaction)
-        .await?;
-        if update_result.rows_affected() >= 1 {
-            transaction.commit().await?;
-            Ok(UserId(user_id))
-        } else {
-            transaction.rollback().await?;
-            Err(anyhow!("Invalid invitation"))
-        }
-    }
-
     async fn has_users(&mut self) -> Result<bool> {
         use crate::schema::users::dsl::*;
-        let user_count: i64 = users.count().get_result(&mut self.1).await?;
+        let mut connection = self.1.get().await?;
+        let user_count: i64 = users.count().get_result(&mut connection).await?;
         Ok(user_count >= 1)
     }
 
@@ -910,8 +867,8 @@ impl Resolve for Box<dyn Repository> {
     async fn resolve(ctx: &ResolveContext<'_>) -> Result<Self> {
         let db = GameNightDatabase::fetch(ctx.rocket()).context("unable to retrieve database")?;
         let connection = db.get().await?;
-        let diesel_connection = ctx.resolve::<DieselConnectionPool>().await?.0.get().await?;
-        Ok(create_repository(connection, diesel_connection))
+        let diesel_pool = ctx.resolve::<DieselConnectionPool>().await?;
+        Ok(create_repository(connection, diesel_pool))
     }
 }
 
@@ -929,7 +886,7 @@ impl_from_request_for_service!(Box<dyn EventEmailsRepository>);
 
 pub(crate) fn create_repository(
     connection: PoolConnection<Sqlite>,
-    diesel_connection: DieselPoolConnection,
+    diesel_pool: DieselConnectionPool,
 ) -> Box<dyn Repository> {
-    Box::new(SqliteRepository(connection, diesel_connection))
+    Box::new(SqliteRepository(connection, diesel_pool))
 }

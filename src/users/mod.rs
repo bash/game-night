@@ -28,6 +28,8 @@ mod name;
 pub(crate) use name::*;
 mod admin_user;
 pub(crate) use admin_user::*;
+mod commands;
+pub(crate) use commands::*;
 pub(crate) mod models;
 
 pub(crate) fn routes() -> Vec<Route> {

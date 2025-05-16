@@ -20,6 +20,7 @@ mod wordlist;
 pub(crate) use self::wordlist::*;
 mod passphrase;
 pub(crate) use self::passphrase::*;
+use crate::users::models::NewUser;
 
 pub(crate) fn routes() -> Vec<Route> {
     routes![invite_page, generate_invitation]
@@ -193,9 +194,8 @@ impl<Id> Invitation<Id> {
         symbol: AstronomicalSymbol,
         email_address: String,
         campaign: Option<String>,
-    ) -> User<()> {
-        User {
-            id: (),
+    ) -> NewUser {
+        NewUser {
             name,
             symbol,
             email_address,
@@ -203,10 +203,6 @@ impl<Id> Invitation<Id> {
             role: self.role,
             invited_by: self.created_by,
             campaign,
-            can_update_name: true,
-            can_answer_strongly: false,
-            can_update_symbol: true,
-            last_active_at: OffsetDateTime::now_utc().into(),
         }
     }
 }
