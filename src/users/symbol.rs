@@ -1,5 +1,10 @@
+use crate::impl_to_from_sql;
 use anyhow::bail;
+use diesel::deserialize::FromSqlRow;
+use diesel::expression::AsExpression;
+use diesel::sql_types::Text;
 use std::fmt;
+use std::str::FromStr;
 
 macro_rules! symbols { ($($symbol:literal,)*) => { &[$(AstronomicalSymbol($symbol),)*] }; }
 pub(crate) static ASTRONOMICAL_SYMBOLS: &[AstronomicalSymbol] = symbols! {
@@ -14,9 +19,12 @@ pub(crate) static ASTRONOMICAL_SYMBOLS: &[AstronomicalSymbol] = symbols! {
     "⯰", "⯰I", "⯲", "🜨", "🝻", "🝼", "🝽", "🝾", "🝿",
 };
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Deserialize, FromSqlRow, AsExpression)]
 #[serde(try_from = "&str", into = "&str")]
+#[diesel(sql_type = Text)]
 pub(crate) struct AstronomicalSymbol(&'static str);
+
+impl_to_from_sql! { AstronomicalSymbol }
 
 impl AstronomicalSymbol {
     pub(crate) fn as_str(self) -> &'static str {
@@ -38,6 +46,14 @@ impl<'a> TryFrom<&'a str> for AstronomicalSymbol {
             Ok(index) => Ok(ASTRONOMICAL_SYMBOLS[index]),
             Err(_) => bail!("{value} is not a valid astronomical symbol"),
         }
+    }
+}
+
+impl FromStr for AstronomicalSymbol {
+    type Err = anyhow::Error;
+
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        Self::try_from(value)
     }
 }
 

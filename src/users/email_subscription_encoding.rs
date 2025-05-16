@@ -1,10 +1,39 @@
 use super::EmailSubscription;
+use crate::iso_8601::Iso8601;
 use sqlx::encode::IsNull;
 use sqlx::error::BoxDynError;
 use sqlx::{Database, Decode, Encode, Type};
+use std::fmt;
+use std::str::FromStr;
 use time::format_description::FormatItem;
 use time::macros::format_description;
 use time::Date;
+
+impl fmt::Display for EmailSubscription {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        use EmailSubscription::*;
+        match self {
+            Subscribed => f.write_str("subscribed"),
+            PermanentlyUnsubscribed => f.write_str("unsubscribed"),
+            TemporarilyUnsubscribed { until: date } => write!(f, "{date}"),
+        }
+    }
+}
+
+impl FromStr for EmailSubscription {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        use EmailSubscription::*;
+        match s {
+            "subscribed" => Ok(Subscribed),
+            "unsubscribed" => Ok(PermanentlyUnsubscribed),
+            other => Ok(TemporarilyUnsubscribed {
+                until: Iso8601::<Date>::from_str(other)?,
+            }),
+        }
+    }
+}
 
 impl<DB: Database> Type<DB> for EmailSubscription
 where

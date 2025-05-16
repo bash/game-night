@@ -1,11 +1,18 @@
 use crate::auth::is_invited;
 use crate::database::Repository;
+use crate::event::StatefulEvent;
 use crate::iso_8601::Iso8601;
+use crate::{auto_resolve, impl_to_from_sql};
 use anyhow::Result;
+use diesel::deserialize::FromSqlRow;
+use diesel::expression::AsExpression;
+use diesel::sql_types::Text;
+use diesel_derive_newtype::DieselNewType;
 use lettre::message::Mailbox;
 use rocket::{routes, Route};
 use rocket_db_pools::sqlx;
 use std::fmt;
+use strum_lite::strum;
 use time::{Duration, OffsetDateTime};
 
 mod email_subscription;
@@ -14,8 +21,6 @@ mod email_subscription_encoding;
 mod last_activity;
 pub(crate) use last_activity::*;
 mod symbol;
-use crate::auto_resolve;
-use crate::event::StatefulEvent;
 pub(crate) use symbol::*;
 mod list;
 pub(crate) use list::*;
@@ -23,12 +28,13 @@ mod name;
 pub(crate) use name::*;
 mod admin_user;
 pub(crate) use admin_user::*;
+pub(crate) mod models;
 
 pub(crate) fn routes() -> Vec<Route> {
     routes![list::list_users]
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, sqlx::Type, rocket::FromForm)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, sqlx::Type, rocket::FromForm, DieselNewType)]
 #[sqlx(transparent)]
 #[form(transparent)]
 pub(crate) struct UserId(pub(crate) i64);
@@ -62,13 +68,18 @@ pub(crate) struct UserPatch {
     pub(crate) email_subscription: Option<EmailSubscription>,
 }
 
-#[derive(Debug, Default, Copy, Clone, Eq, PartialEq, sqlx::Type)]
-#[sqlx(rename_all = "lowercase")]
-pub(crate) enum Role {
-    Admin,
-    #[default]
-    Guest,
+strum! {
+    #[derive(Debug, Default, Copy, Clone, Eq, PartialEq, sqlx::Type, FromSqlRow, AsExpression)]
+    #[diesel(sql_type = Text)]
+    #[sqlx(rename_all = "lowercase")]
+    pub(crate) enum Role {
+        Admin = "admin",
+        #[default]
+        Guest = "guest",
+    }
 }
+
+impl_to_from_sql! { Role }
 
 impl<Id> User<Id> {
     pub(crate) fn mailbox(&self) -> Result<Mailbox> {

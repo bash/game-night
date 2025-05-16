@@ -1,11 +1,15 @@
 use super::{User, UsersQuery};
-use crate::auto_resolve;
 use crate::event::StatefulEvent;
 use crate::iso_8601::Iso8601;
+use crate::{auto_resolve, impl_to_from_sql};
 use anyhow::Result;
+use diesel::deserialize::FromSqlRow;
+use diesel::expression::AsExpression;
+use diesel::sql_types::Text;
 use time::{Date, OffsetDateTime};
 
-#[derive(Default, Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Default, Debug, Copy, Clone, Eq, PartialEq, FromSqlRow, AsExpression)]
+#[diesel(sql_type = Text)]
 pub(crate) enum EmailSubscription {
     #[default]
     Subscribed,
@@ -14,6 +18,8 @@ pub(crate) enum EmailSubscription {
     },
     PermanentlyUnsubscribed,
 }
+
+impl_to_from_sql! { EmailSubscription }
 
 impl EmailSubscription {
     pub(crate) fn is_subscribed(&self, today: Date) -> bool {

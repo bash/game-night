@@ -751,6 +751,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "diesel-derive-newtype"
+version = "2.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d5adf688c584fe33726ce0e2898f608a2a92578ac94a4a92fcecf73214fe0716"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "diesel_derives"
 version = "2.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1175,6 +1186,7 @@ dependencies = [
  "constcat",
  "diesel",
  "diesel-async",
+ "diesel-derive-newtype",
  "dyn-clone",
  "either",
  "email_address",
@@ -1195,6 +1207,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sqlx",
+ "strum-lite",
  "systemd",
  "time",
  "time-tz",
@@ -3695,6 +3708,12 @@ name = "strsim"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7da8b5736845d9f2fcb837ea5d9e2628564b3b043a70948a3f0b778838c5fb4f"
+
+[[package]]
+name = "strum-lite"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cdbea1af582685244c1e75994dfedd9f2115d4a77714824320b774a2604c5da9"
 
 [[package]]
 name = "subtle"

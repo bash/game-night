@@ -1,6 +1,7 @@
 mod email_template;
 mod response;
 mod services;
+mod to_from_sql;
 mod uri;
 
 mod auth;
@@ -23,6 +24,7 @@ mod pruning;
 mod push;
 mod register;
 mod result;
+mod schema;
 mod socket_activation;
 #[cfg(target_os = "linux")]
 mod systemd;

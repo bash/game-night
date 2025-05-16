@@ -10,6 +10,8 @@ use std::fmt;
 
 type Connection = SyncConnectionWrapper<SqliteConnection>;
 type Pool = diesel_async::pooled_connection::deadpool::Pool<Connection>;
+pub(crate) type DieselPoolConnection =
+    diesel_async::pooled_connection::deadpool::Object<Connection>;
 
 #[derive(Clone)]
 pub(crate) struct DieselConnectionPool(pub(crate) Pool);

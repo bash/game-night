@@ -21,7 +21,11 @@ use std::fmt;
 use time::OffsetDateTime;
 
 mod entity;
+use crate::infra::{DieselConnectionPool, DieselPoolConnection};
+use diesel::QueryDsl;
+use diesel_async::RunQueryDsl;
 pub(crate) use entity::*;
+use nameof::name_of;
 
 #[derive(Debug, Database)]
 #[database("sqlite")]
@@ -118,8 +122,14 @@ pub(crate) trait EventEmailsRepository: fmt::Debug + Send {
     async fn get_last_message_id(&mut self, event: i64, user: UserId) -> Result<Option<MessageId>>;
 }
 
-#[derive(Debug)]
-pub(crate) struct SqliteRepository(pub(crate) PoolConnection<Sqlite>);
+pub(crate) struct SqliteRepository(PoolConnection<Sqlite>, DieselPoolConnection);
+
+impl fmt::Debug for SqliteRepository {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_tuple(name_of!(SqliteRepository))
+            .finish_non_exhaustive()
+    }
+}
 
 impl SqliteRepository {
     fn executor(&mut self) -> &mut SqliteConnection {
@@ -203,9 +213,8 @@ impl Repository for SqliteRepository {
     }
 
     async fn has_users(&mut self) -> Result<bool> {
-        let user_count: i64 = sqlx::query_scalar!("SELECT count(1) FROM users")
-            .fetch_one(self.executor())
-            .await?;
+        use crate::schema::users::dsl::*;
+        let user_count: i64 = users.count().get_result(&mut self.1).await?;
         Ok(user_count >= 1)
     }
 
@@ -901,7 +910,8 @@ impl Resolve for Box<dyn Repository> {
     async fn resolve(ctx: &ResolveContext<'_>) -> Result<Self> {
         let db = GameNightDatabase::fetch(ctx.rocket()).context("unable to retrieve database")?;
         let connection = db.get().await?;
-        Ok(create_repository(connection))
+        let diesel_connection = ctx.resolve::<DieselConnectionPool>().await?.0.get().await?;
+        Ok(create_repository(connection, diesel_connection))
     }
 }
 
@@ -917,6 +927,9 @@ impl Resolve for Box<dyn EventEmailsRepository> {
 
 impl_from_request_for_service!(Box<dyn EventEmailsRepository>);
 
-pub(crate) fn create_repository(connection: PoolConnection<Sqlite>) -> Box<dyn Repository> {
-    Box::new(SqliteRepository(connection))
+pub(crate) fn create_repository(
+    connection: PoolConnection<Sqlite>,
+    diesel_connection: DieselPoolConnection,
+) -> Box<dyn Repository> {
+    Box::new(SqliteRepository(connection, diesel_connection))
 }
