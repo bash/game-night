@@ -1,10 +1,11 @@
 use super::models::{NewUser, UserV2};
+use super::UserId;
 use crate::auto_resolve;
 use crate::infra::DieselConnectionPool;
 use crate::invitation::Invitation;
 use crate::schema::{invitations, users};
 use anyhow::{bail, Error, Result};
-use diesel::{insert_into, update, ExpressionMethods, SelectableHelper};
+use diesel::{connection, delete, insert_into, update, ExpressionMethods, SelectableHelper};
 use diesel_async::{AsyncConnection, RunQueryDsl};
 
 auto_resolve! {
@@ -38,5 +39,15 @@ impl UserCommands {
                 })
             })
             .await
+    }
+
+    pub(crate) async fn remove(&mut self, user_id: UserId) -> Result<()> {
+        use crate::schema::users::id;
+        let mut connection = self.connection.get().await?;
+        delete(users::table)
+            .filter(id.eq(user_id.0))
+            .execute(&mut connection)
+            .await?;
+        Ok(())
     }
 }

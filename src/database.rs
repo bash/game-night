@@ -56,8 +56,6 @@ pub(crate) trait Repository: EventEmailsRepository + fmt::Debug + Send {
 
     async fn update_user(&mut self, id: UserId, patch: UserPatch) -> Result<()>;
 
-    async fn delete_user(&mut self, id: UserId) -> Result<()>;
-
     async fn update_last_active(&mut self, id: UserId, ts: OffsetDateTime) -> Result<()>;
 
     async fn add_verification_code(&mut self, code: &EmailVerificationCode) -> Result<()>;
@@ -250,14 +248,6 @@ impl Repository for SqliteRepository {
                 .await?;
         }
         transaction.commit().await?;
-        Ok(())
-    }
-
-    async fn delete_user(&mut self, id: UserId) -> Result<()> {
-        sqlx::query("DELETE FROM users WHERE id = ?1")
-            .bind(id)
-            .execute(self.executor())
-            .await?;
         Ok(())
     }
 
