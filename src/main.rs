@@ -59,7 +59,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .attach(users::LastActivity)
         .attach(push::web_push_fairing())
         .attach(template::template_fairing())
-        .manage(infra::HttpClient::new());
+        .manage(infra::HttpClient::new())
+        .attach(infra::DieselConnectionPool::fairing());
 
     if let Some(b) = socket_activation::listener_from_env()? {
         rocket.launch_on(b).await?;
