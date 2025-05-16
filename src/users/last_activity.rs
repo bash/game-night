@@ -1,4 +1,5 @@
-use crate::{auth::LoginState, database::Repository, users::User};
+use super::UserCommands;
+use crate::{auth::LoginState, users::User};
 use rocket::{
     async_trait,
     fairing::{Fairing, Info, Kind},
@@ -21,11 +22,11 @@ impl Fairing for LastActivity {
 
     async fn on_request(&self, req: &mut Request<'_>, _data: &mut Data<'_>) {
         if req.method() == Method::Post && is_authenticated_and_not_impersonating(req).await {
-            if let (Some(user), Some(mut repository)) = (
+            if let (Some(user), Some(mut users)) = (
                 req.guard::<User>().await.succeeded(),
-                req.guard::<Box<dyn Repository>>().await.succeeded(),
+                req.guard::<UserCommands>().await.succeeded(),
             ) {
-                _ = repository
+                _ = users
                     .update_last_active(user.id, OffsetDateTime::now_utc())
                     .await
                     .inspect_err(|err| {
