@@ -19,8 +19,7 @@ pub(crate) static ASTRONOMICAL_SYMBOLS: &[AstronomicalSymbol] = symbols! {
     "⯰", "⯰I", "⯲", "🜨", "🝻", "🝼", "🝽", "🝾", "🝿",
 };
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Deserialize, FromSqlRow, AsExpression)]
-#[serde(try_from = "&str", into = "&str")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, FromSqlRow, AsExpression)]
 #[diesel(sql_type = Text)]
 pub(crate) struct AstronomicalSymbol(&'static str);
 
