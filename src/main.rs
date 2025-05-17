@@ -17,6 +17,7 @@ mod home;
 mod infra;
 mod invitation;
 mod iso_8601;
+mod locations;
 mod login;
 mod play;
 mod poll;
