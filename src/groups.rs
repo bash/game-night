@@ -1,5 +1,6 @@
 use crate::database::{Materialized, Unmaterialized};
 use crate::entity_state;
+use crate::users::models::UserV2;
 use crate::users::{User, UserId};
 
 #[derive(Debug, Clone, sqlx::FromRow)]
@@ -29,6 +30,10 @@ impl Group<Unmaterialized> {
 
 impl Group {
     pub(crate) fn has_member(&self, user: &User) -> bool {
+        self.members.iter().any(|m| m.id == user.id)
+    }
+
+    pub(crate) fn has_member_v2(&self, user: &UserV2) -> bool {
         self.members.iter().any(|m| m.id == user.id)
     }
 }

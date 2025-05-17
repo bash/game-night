@@ -1,4 +1,4 @@
-use super::{AstronomicalSymbol, EmailSubscription, Role, UserId};
+use super::{AstronomicalSymbol, EmailSubscription, Role, User, UserId};
 use crate::iso_8601::Iso8601;
 use diesel::prelude::*;
 use time::OffsetDateTime;
@@ -31,4 +31,23 @@ pub(crate) struct NewUser {
     pub(crate) email_address: String,
     pub(crate) invited_by: Option<UserId>,
     pub(crate) campaign: Option<String>,
+}
+
+impl UserV2 {
+    pub(crate) fn to_v1(&self) -> User {
+        User {
+            id: self.id,
+            name: self.name.clone(),
+            symbol: self.symbol,
+            role: self.role,
+            email_address: self.email_address.clone(),
+            email_subscription: self.email_subscription,
+            invited_by: self.invited_by,
+            campaign: self.campaign.clone(),
+            can_update_name: self.can_update_name,
+            can_answer_strongly: self.can_answer_strongly,
+            can_update_symbol: self.can_update_symbol,
+            last_active_at: self.last_active_at,
+        }
+    }
 }

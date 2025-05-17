@@ -8,8 +8,9 @@ use crate::iso_8601::Iso8601;
 use crate::poll::{Poll, PollOption};
 use crate::result::HttpResult;
 use crate::template::prelude::*;
-use crate::users::UserNameComponent;
-use crate::users::{User, UsersQuery};
+use crate::users::models::UserV2;
+use crate::users::User;
+use crate::users::{UserNameComponent, UserQueries};
 use itertools::{Either, Itertools as _};
 use rocket::form::Form;
 use rocket::http::uri::Origin;
@@ -23,10 +24,10 @@ pub(crate) async fn open_poll_page(
     user: User,
     poll: Poll,
     page: PageContextBuilder<'_>,
-    mut users_query: UsersQuery,
+    mut users: UserQueries,
 ) -> HttpResult<Templated<OpenPollPage>> {
     let event = StatefulEvent::from_poll(poll.clone(), OffsetDateTime::now_utc());
-    let users = users_query.active_and_invited(&event).await?;
+    let users = users.active_and_invited(&event).await?;
     let template = to_open_poll_page(poll, user, users, page.build());
     Ok(Templated(template))
 }
@@ -38,15 +39,15 @@ pub(crate) struct OpenPollPage {
     option_groups: Vec<OpenPollOptionsGroup>,
     has_answers: bool,
     can_answer_strongly: bool,
-    no_date_answered_with_yes: Vec<User>,
-    not_answered: Vec<User>,
+    no_date_answered_with_yes: Vec<UserV2>,
+    not_answered: Vec<UserV2>,
     update_answers_uri: Origin<'static>,
     close_poll_uri: Option<Origin<'static>>,
     user: User,
     ctx: PageContext,
 }
 
-fn to_open_poll_page(poll: Poll, user: User, users: Vec<User>, ctx: PageContext) -> OpenPollPage {
+fn to_open_poll_page(poll: Poll, user: User, users: Vec<UserV2>, ctx: PageContext) -> OpenPollPage {
     let (not_answered, no_date_answered_with_yes) = if user.can_manage_poll() {
         users_with_no_yes(&poll, users)
     } else {
@@ -69,7 +70,7 @@ fn to_open_poll_page(poll: Poll, user: User, users: Vec<User>, ctx: PageContext)
     }
 }
 
-fn users_with_no_yes(poll: &Poll, users: Vec<User>) -> (Vec<User>, Vec<User>) {
+fn users_with_no_yes(poll: &Poll, users: Vec<UserV2>) -> (Vec<UserV2>, Vec<UserV2>) {
     let (answered, not_answered) = partition_by_answered(poll, users);
     let no_date_answered_with_yes = answered
         .into_iter()
@@ -78,7 +79,7 @@ fn users_with_no_yes(poll: &Poll, users: Vec<User>) -> (Vec<User>, Vec<User>) {
     (not_answered, no_date_answered_with_yes)
 }
 
-fn partition_by_answered(poll: &Poll, users: Vec<User>) -> (Vec<User>, Vec<User>) {
+fn partition_by_answered(poll: &Poll, users: Vec<UserV2>) -> (Vec<UserV2>, Vec<UserV2>) {
     users.into_iter().partition_map(|user| {
         if poll.has_answer(user.id) {
             Either::Left(user)

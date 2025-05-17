@@ -1,8 +1,5 @@
-use crate::auth::is_invited;
-use crate::database::Repository;
-use crate::event::StatefulEvent;
+use crate::impl_to_from_sql;
 use crate::iso_8601::Iso8601;
-use crate::{auto_resolve, impl_to_from_sql};
 use anyhow::Result;
 use diesel::deserialize::FromSqlRow;
 use diesel::expression::AsExpression;
@@ -31,6 +28,8 @@ pub(crate) use admin_user::*;
 mod commands;
 pub(crate) use commands::*;
 pub(crate) mod models;
+mod queries;
+pub(crate) use queries::*;
 
 pub(crate) fn routes() -> Vec<Route> {
     routes![list::list_users]
@@ -117,32 +116,3 @@ impl<Id> User<Id> {
 }
 
 pub(crate) const INACTIVITY_THRESHOLD: Duration = Duration::days(9 * 30);
-
-auto_resolve! {
-    #[derive(Debug)]
-    pub(crate) struct UsersQuery {
-        repository: Box<dyn Repository>,
-    }
-}
-
-impl UsersQuery {
-    pub(crate) async fn all(&mut self) -> Result<Vec<User>> {
-        self.repository.get_users().await
-    }
-
-    pub(crate) async fn active(&mut self) -> Result<Vec<User>> {
-        self.repository.get_active_users(INACTIVITY_THRESHOLD).await
-    }
-
-    pub(crate) async fn invited(&mut self, event: &StatefulEvent) -> Result<Vec<User>> {
-        let is_invited = |u: &User| is_invited(u, event);
-        let users = self.all().await?;
-        Ok(users.into_iter().filter(is_invited).collect())
-    }
-
-    pub(crate) async fn active_and_invited(&mut self, event: &StatefulEvent) -> Result<Vec<User>> {
-        let is_invited = |u: &User| is_invited(u, event);
-        let active = self.active().await?;
-        Ok(active.into_iter().filter(is_invited).collect())
-    }
-}

@@ -2,8 +2,9 @@ use super::{Notification, PushMessage, PushSender};
 use crate::auth::{AuthorizedTo, ManageUsers};
 use crate::result::HttpResult;
 use crate::template::prelude::*;
-use crate::users::User;
-use crate::users::{UserId, UsersQuery};
+use crate::users::models::UserV2;
+use crate::users::UserId;
+use crate::users::UserQueries;
 use anyhow::Error;
 use rocket::form::Form;
 use rocket::serde::json::Json;
@@ -27,7 +28,7 @@ const DEFAULT_NOTIFICATION: &str = r#"{
 #[get("/users/push")]
 pub(crate) async fn testbed(
     admin: AuthorizedTo<ManageUsers>,
-    mut users: UsersQuery,
+    mut users: UserQueries,
     page: PageContextBuilder<'_>,
 ) -> HttpResult<Templated<TestbedPage>> {
     let users = users.active().await?;
@@ -43,7 +44,7 @@ pub(crate) async fn testbed(
 pub(crate) async fn send_push_notification(
     _admin: AuthorizedTo<ManageUsers>,
     form: Form<SendPushNotificationData>,
-    mut users: UsersQuery,
+    mut users: UserQueries,
     mut sender: PushSender,
     page: PageContextBuilder<'_>,
 ) -> HttpResult<Templated<TestbedPage>> {
@@ -70,7 +71,7 @@ pub(crate) struct SendPushNotificationData {
 #[derive(Debug, Template)]
 #[template(path = "web-push/testbed.html")]
 pub(crate) struct TestbedPage {
-    users: Vec<User>,
+    users: Vec<UserV2>,
     recipient_id: UserId,
     notification: String,
     ctx: PageContext,

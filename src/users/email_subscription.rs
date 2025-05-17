@@ -1,4 +1,5 @@
-use super::{User, UsersQuery};
+use super::models::UserV2;
+use super::UserQueries;
 use crate::event::StatefulEvent;
 use crate::iso_8601::Iso8601;
 use crate::{auto_resolve, impl_to_from_sql};
@@ -32,16 +33,15 @@ impl EmailSubscription {
 }
 
 auto_resolve! {
-    #[derive(Debug)]
     pub(crate) struct SubscribedUsers {
-        users: UsersQuery,
+        users: UserQueries,
     }
 }
 
 impl SubscribedUsers {
-    pub(crate) async fn for_event(&mut self, event: &StatefulEvent) -> Result<Vec<User>> {
+    pub(crate) async fn for_event(&mut self, event: &StatefulEvent) -> Result<Vec<UserV2>> {
         let today = OffsetDateTime::now_utc().date();
-        let is_subscribed = |u: &User| u.email_subscription.is_subscribed(today);
+        let is_subscribed = |u: &UserV2| u.email_subscription.is_subscribed(today);
         let invited = self.users.invited(event).await?;
         Ok(invited.into_iter().filter(is_subscribed).collect())
     }

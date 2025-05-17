@@ -1,5 +1,6 @@
 use crate::event::StatefulEvent;
 use crate::poll::Poll;
+use crate::users::models::UserV2;
 use crate::users::{Role, User};
 use anyhow::Error;
 use rocket::http::Status;
@@ -82,6 +83,13 @@ pub(crate) fn is_invited(user: &User, event: &StatefulEvent) -> bool {
     user.role == Role::Admin
         || group.is_none_or(|group| group.has_member(user))
         || event.has_organizer(user)
+}
+
+pub(crate) fn is_invited_v2(user: &UserV2, event: &StatefulEvent) -> bool {
+    let group = event.restrict_to();
+    user.role == Role::Admin
+        || group.is_none_or(|group| group.has_member_v2(user))
+        || event.has_organizer_v2(user)
 }
 
 pub(crate) fn can_answer_strongly(user: &User, poll: &Poll) -> bool {

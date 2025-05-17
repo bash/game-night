@@ -227,6 +227,7 @@ impl NewPollNotificationSender {
     async fn execute(&mut self, poll: &Poll) -> Result<()> {
         let event = StatefulEvent::from_poll(poll.clone(), OffsetDateTime::now_utc());
         for user in self.subscribed_users.for_event(&event).await? {
+            let user = user.to_v1();
             let open_until = *poll.open_until;
             let poll_uri = uri!(auto_login(&user, open_until); self.uri_builder, crate::event::event_page(id = poll.event.id)).await?;
             let skip_poll_uri =

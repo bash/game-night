@@ -4,3 +4,4 @@ mod config;
 pub(crate) use config::*;
 mod database;
 pub(crate) use database::*;
+pub(crate) mod sql_functions;

@@ -5,7 +5,7 @@ use crate::poll::{open_poll_page, NoOpenPollPage, OpenPollPage};
 use crate::responder;
 use crate::result::HttpResult;
 use crate::template::prelude::*;
-use crate::users::{User, UsersQuery};
+use crate::users::{User, UserQueries};
 use itertools::Itertools;
 use rocket::http::Status;
 use rocket::response::Redirect;
@@ -71,12 +71,12 @@ pub(crate) async fn event_page(
     user: User,
     id: i64, // TODO: uri!() macro has trouble with type alias
     mut events: EventsQuery,
-    users_query: UsersQuery,
+    users: UserQueries,
     page: PageContextBuilder<'_>,
 ) -> HttpResult<EventDetailPageResponse> {
     let event = events.with_id(id, &user).await?;
     match event {
-        Some(Polling(poll)) => Ok(open_poll_page(user, poll, page, users_query).await?.into()),
+        Some(Polling(poll)) => Ok(open_poll_page(user, poll, page, users).await?.into()),
         Some(Pending(_) | Finalizing(_)) => {
             let page = PendingFinalizationPage {
                 user,

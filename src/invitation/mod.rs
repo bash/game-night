@@ -5,7 +5,8 @@ use crate::result::HttpResult;
 use crate::template::prelude::*;
 use crate::uri;
 use crate::uri::UriBuilder;
-use crate::users::{AstronomicalSymbol, EmailSubscription, Role, User, UserId, UsersQuery};
+use crate::users::models::{NewUser, UserV2};
+use crate::users::{AstronomicalSymbol, EmailSubscription, Role, User, UserId, UserQueries};
 use anyhow::Result;
 use itertools::Itertools as _;
 use rand::{prelude::*, rng};
@@ -20,7 +21,6 @@ mod wordlist;
 pub(crate) use self::wordlist::*;
 mod passphrase;
 pub(crate) use self::passphrase::*;
-use crate::users::models::NewUser;
 
 pub(crate) fn routes() -> Vec<Route> {
     routes![invite_page, generate_invitation]
@@ -29,7 +29,7 @@ pub(crate) fn routes() -> Vec<Route> {
 #[get("/invite")]
 async fn invite_page(
     user: AuthorizedTo<Invite>,
-    mut users: UsersQuery,
+    mut users: UserQueries,
     page: PageContextBuilder<'_>,
 ) -> HttpResult<Templated<InvitePage>> {
     let users = users.active().await?;
@@ -44,7 +44,7 @@ async fn invite_page(
 #[derive(Template, Debug)]
 #[template(path = "invitation/invite.html")]
 struct InvitePage {
-    users: Vec<User>,
+    users: Vec<UserV2>,
     user: User,
     ctx: PageContext,
 }
