@@ -34,6 +34,7 @@ pub(crate) struct NewUser {
 }
 
 impl UserV2 {
+    #[deprecated]
     pub(crate) fn to_v1(&self) -> User {
         User {
             id: self.id,

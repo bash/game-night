@@ -1,5 +1,5 @@
 use crate::database::Repository;
-use crate::users::{User, UserId};
+use crate::users::{User, UserId, UserQueries};
 use anyhow::{Error, Result};
 use rocket::http::{Cookie, CookieJar, SameSite, Status};
 use rocket::outcome::{try_outcome, IntoOutcome};
@@ -15,11 +15,11 @@ impl<'r> FromRequest<'r> for User {
     async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
         request
             .local_cache_async(async {
-                let mut repository = try_outcome!(request
-                    .guard::<Box<dyn Repository>>()
+                let mut users = try_outcome!(request
+                    .guard::<UserQueries>()
                     .await
                     .map_error(|(status, e)| (status, Arc::new(e))));
-                match fetch_user(request, repository.as_mut()).await {
+                match fetch_user(request, &mut users).await {
                     Ok(Some(user)) => Outcome::Success(user),
                     Ok(None) => Outcome::Forward(Status::Unauthorized),
                     Err(e) => Outcome::Error((Status::InternalServerError, Arc::new(e))),
@@ -42,12 +42,9 @@ impl<'r> FromRequest<'r> for LoginState {
     }
 }
 
-async fn fetch_user(
-    request: &Request<'_>,
-    repository: &mut dyn Repository,
-) -> Result<Option<User>> {
+async fn fetch_user(request: &Request<'_>, users: &mut UserQueries) -> Result<Option<User>> {
     match request.cookies().login_state()?.effective_user_id() {
-        Some(user_id) => Ok(repository.get_user_by_id(user_id).await?),
+        Some(user_id) => Ok(users.by_id(user_id).await?.map(|u| u.to_v1())),
         None => Ok(None),
     }
 }

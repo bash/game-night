@@ -16,7 +16,8 @@ pub(crate) fn invite_admin_user_fairing() -> impl Fairing {
 async fn try_invite_admin_user(rocket: &Rocket<Orbit>) -> Result<()> {
     use crate::services::RocketResolveExt as _;
     let mut repository: Box<dyn crate::database::Repository> = rocket.resolve().await?;
-    invitation::invite_admin_user(&mut *repository)
+    let mut users = rocket.resolve().await?;
+    invitation::invite_admin_user(&mut users, &mut *repository)
         .await
         .context("failed to invite admin user")
 }

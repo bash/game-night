@@ -21,9 +21,6 @@ use std::fmt;
 use time::OffsetDateTime;
 
 mod entity;
-use crate::infra::DieselConnectionPool;
-use diesel::QueryDsl;
-use diesel_async::RunQueryDsl;
 pub(crate) use entity::*;
 
 #[derive(Debug, Database)]
@@ -41,14 +38,9 @@ pub(crate) trait Repository: EventEmailsRepository + fmt::Debug + Send {
 
     async fn get_admin_invitation(&mut self) -> Result<Option<Invitation>>;
 
-    async fn has_users(&mut self) -> Result<bool>;
-
-    async fn get_user_by_id(&mut self, user_id: UserId) -> Result<Option<User>>;
-
-    async fn get_user_by_email(&mut self, email: &str) -> Result<Option<User>>;
-
     async fn get_groups(&mut self) -> Result<Vec<Group>>;
 
+    #[deprecated]
     async fn update_user(&mut self, id: UserId, patch: UserPatch) -> Result<()>;
 
     async fn add_verification_code(&mut self, code: &EmailVerificationCode) -> Result<()>;
@@ -110,7 +102,7 @@ pub(crate) trait EventEmailsRepository: fmt::Debug + Send {
 }
 
 #[derive(Debug)]
-pub(crate) struct SqliteRepository(PoolConnection<Sqlite>, DieselConnectionPool);
+pub(crate) struct SqliteRepository(PoolConnection<Sqlite>);
 
 impl SqliteRepository {
     fn executor(&mut self) -> &mut SqliteConnection {
@@ -157,29 +149,6 @@ impl Repository for SqliteRepository {
         .fetch_optional(self.executor())
         .await?;
         Ok(invitation)
-    }
-
-    async fn has_users(&mut self) -> Result<bool> {
-        use crate::schema::users::dsl::*;
-        let mut connection = self.1.get().await?;
-        let user_count: i64 = users.count().get_result(&mut connection).await?;
-        Ok(user_count >= 1)
-    }
-
-    async fn get_user_by_id(&mut self, user_id: UserId) -> Result<Option<User>> {
-        let user = sqlx::query_as("SELECT * FROM users WHERE id = ?1")
-            .bind(user_id)
-            .fetch_optional(self.executor())
-            .await?;
-        Ok(user)
-    }
-
-    async fn get_user_by_email(&mut self, email: &str) -> Result<Option<User>> {
-        let user = sqlx::query_as("SELECT * FROM users WHERE email_address = ?1")
-            .bind(email)
-            .fetch_optional(self.executor())
-            .await?;
-        Ok(user)
     }
 
     async fn get_groups(&mut self) -> Result<Vec<Group>> {
@@ -818,8 +787,7 @@ impl Resolve for Box<dyn Repository> {
     async fn resolve(ctx: &ResolveContext<'_>) -> Result<Self> {
         let db = GameNightDatabase::fetch(ctx.rocket()).context("unable to retrieve database")?;
         let connection = db.get().await?;
-        let diesel_pool = ctx.resolve::<DieselConnectionPool>().await?;
-        Ok(create_repository(connection, diesel_pool))
+        Ok(create_repository(connection))
     }
 }
 
@@ -835,9 +803,6 @@ impl Resolve for Box<dyn EventEmailsRepository> {
 
 impl_from_request_for_service!(Box<dyn EventEmailsRepository>);
 
-pub(crate) fn create_repository(
-    connection: PoolConnection<Sqlite>,
-    diesel_pool: DieselConnectionPool,
-) -> Box<dyn Repository> {
-    Box::new(SqliteRepository(connection, diesel_pool))
+pub(crate) fn create_repository(connection: PoolConnection<Sqlite>) -> Box<dyn Repository> {
+    Box::new(SqliteRepository(connection))
 }

@@ -29,6 +29,7 @@ mod commands;
 pub(crate) use commands::*;
 pub(crate) mod models;
 mod queries;
+use models::UserV2;
 pub(crate) use queries::*;
 
 pub(crate) fn routes() -> Vec<Route> {
@@ -83,6 +84,7 @@ strum! {
 impl_to_from_sql! { Role }
 
 impl<Id> User<Id> {
+    #[deprecated]
     pub(crate) fn mailbox(&self) -> Result<Mailbox> {
         Ok(Mailbox::new(
             Some(self.name.clone()),
@@ -112,6 +114,19 @@ impl<Id> User<Id> {
 
     pub(crate) fn can_update_symbol(&self) -> bool {
         self.can_update_symbol
+    }
+}
+
+pub(crate) trait UserMailboxExt {
+    fn mailbox(&self) -> Result<Mailbox>;
+}
+
+impl UserMailboxExt for UserV2 {
+    fn mailbox(&self) -> Result<Mailbox> {
+        Ok(Mailbox::new(
+            Some(self.name.clone()),
+            self.email_address.parse()?,
+        ))
     }
 }
 

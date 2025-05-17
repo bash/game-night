@@ -1,5 +1,5 @@
 use super::models::UserV2;
-use super::INACTIVITY_THRESHOLD;
+use super::{UserId, INACTIVITY_THRESHOLD};
 use crate::auth::is_invited_v2;
 use crate::auto_resolve;
 use crate::event::StatefulEvent;
@@ -52,5 +52,34 @@ impl UserQueries {
         let is_invited = |u: &UserV2| is_invited_v2(u, event);
         let active = self.active().await?;
         Ok(active.into_iter().filter(is_invited).collect())
+    }
+
+    pub(crate) async fn has(&mut self) -> Result<bool> {
+        use crate::schema::users::dsl::*;
+        let mut connection = self.connection.get().await?;
+        let user_count: i64 = users.count().get_result(&mut connection).await?;
+        Ok(user_count >= 1)
+    }
+
+    pub(crate) async fn by_id(&mut self, user_id: UserId) -> Result<Option<UserV2>> {
+        use crate::schema::users::dsl::*;
+        let mut connection = self.connection.get().await?;
+        Ok(users
+            .filter(id.eq(user_id.0))
+            .select(UserV2::as_select())
+            .get_result(&mut connection)
+            .await
+            .optional()?)
+    }
+
+    pub(crate) async fn by_email(&mut self, email: &str) -> Result<Option<UserV2>> {
+        use crate::schema::users::dsl::*;
+        let mut connection = self.connection.get().await?;
+        Ok(users
+            .filter(email_address.eq(email))
+            .select(UserV2::as_select())
+            .get_result(&mut connection)
+            .await
+            .optional()?)
     }
 }

@@ -1,16 +1,12 @@
 use crate::auth::{CookieJarExt, LoginState};
-use crate::database::Repository;
-use crate::decorations::Random;
-use crate::email::{EmailMessage, EmailSender, EmailTemplateContext};
+use crate::email::EmailSender;
 use crate::register::rocket_uri_macro_getting_invited_page;
 use crate::result::HttpResult;
 use crate::template::prelude::*;
 use crate::users::{User, UserId};
-use crate::{default, email_template, responder, uri};
-use anyhow::Result;
-use lettre::message::Mailbox;
+use crate::{default, responder, uri};
 use rand::distr::{Alphanumeric, Distribution, SampleString as _, Uniform};
-use rand::{rng, Rng};
+use rand::Rng;
 use rocket::form::Form;
 use rocket::http::uri::Origin;
 use rocket::response::{self, Redirect, Responder};
@@ -25,7 +21,9 @@ mod code;
 mod secret_key;
 pub(crate) use secret_key::*;
 mod redirect;
+use email::LoginEmailProvider;
 pub(crate) use redirect::*;
+mod email;
 mod sudo;
 
 pub(crate) fn routes() -> Vec<Route> {
@@ -76,15 +74,12 @@ pub(crate) struct LoginPage {
 #[post("/login?<redirect>", data = "<form>")]
 async fn login(
     builder: PageContextBuilder<'_>,
-    mut repository: Box<dyn Repository>,
+    mut login_email: LoginEmailProvider,
     email_sender: &State<Box<dyn EmailSender>>,
     redirect: Option<RedirectUri>,
     form: Form<LoginData<'_>>,
-    email_ctx: EmailTemplateContext,
 ) -> HttpResult<Login> {
-    if let Some((mailbox, email)) =
-        login_email_for(repository.as_mut(), form.email, email_ctx).await?
-    {
+    if let Some((mailbox, email)) = login_email.for_address(form.email).await? {
         email_sender.send(mailbox, &email, default()).await?;
         Ok(Redirect::to(uri!(code::login_with_code_page(redirect))).into())
     } else {
@@ -115,38 +110,6 @@ impl Login {
         };
         Self::Failure(Box::new(Templated(template)))
     }
-}
-
-async fn login_email_for(
-    repository: &mut dyn Repository,
-    email: &str,
-    email_ctx: EmailTemplateContext,
-) -> Result<Option<(Mailbox, LoginEmail)>> {
-    if let Some(user) = repository.get_user_by_email(email).await? {
-        generate_login_email(repository, user, email_ctx)
-            .await
-            .map(Some)
-    } else {
-        Ok(None)
-    }
-}
-
-async fn generate_login_email(
-    repository: &mut dyn Repository,
-    user: User,
-    email_ctx: EmailTemplateContext,
-) -> Result<(Mailbox, LoginEmail)> {
-    let token = LoginToken::generate_one_time(user.id, &mut rng());
-    repository.add_login_token(&token).await?;
-
-    let email = LoginEmail {
-        name: user.name.clone(),
-        code: token.token,
-        random: Random::default(),
-        ctx: email_ctx,
-    };
-
-    Ok((user.mailbox()?, email))
 }
 
 #[derive(Debug, FromForm)]
@@ -243,22 +206,5 @@ impl Distribution<String> for OneTimeToken {
             .take(6)
             .map(|d| d.to_string())
             .collect()
-    }
-}
-
-email_template! {
-    #[template(html_path = "emails/login.html", txt_path = "emails/login.txt")]
-    #[derive(Debug)]
-    struct LoginEmail {
-        name: String,
-        code: String,
-        random: Random,
-        ctx: EmailTemplateContext,
-    }
-}
-
-impl EmailMessage for LoginEmail {
-    fn subject(&self) -> String {
-        "Let's Get You Logged In".to_owned()
     }
 }

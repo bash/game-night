@@ -4,7 +4,7 @@ use crate::default;
 use crate::email::{EmailSender, EmailTemplateContext};
 use crate::invitation::{Invitation, Passphrase};
 use crate::template::prelude::*;
-use crate::users::{AstronomicalSymbol, User, UserCommands, UserId};
+use crate::users::{AstronomicalSymbol, User, UserCommands, UserId, UserQueries};
 use anyhow::Result;
 use campaign::{Campaign, ProvidedCampaign};
 use email_address::EmailAddress;
@@ -86,6 +86,7 @@ async fn register_redirect(_user: User) -> Redirect {
 async fn register_page<'r>(
     cookies: &CookieJar<'_>,
     users: UserCommands,
+    mut users_q: UserQueries,
     repository: Box<dyn Repository>,
     email_sender: &State<Box<dyn EmailSender>>,
     page: PageContextBuilder<'_>,
@@ -97,6 +98,7 @@ async fn register_page<'r>(
     register(
         cookies,
         users,
+        &mut users_q,
         repository,
         email_sender.as_ref(),
         page,
@@ -113,6 +115,7 @@ async fn register_page<'r>(
 async fn register_form<'r>(
     cookies: &CookieJar<'_>,
     users: UserCommands,
+    mut users_q: UserQueries,
     repository: Box<dyn Repository>,
     email_sender: &State<Box<dyn EmailSender>>,
     page: PageContextBuilder<'_>,
@@ -123,6 +126,7 @@ async fn register_form<'r>(
     register(
         cookies,
         users,
+        &mut users_q,
         repository,
         email_sender.as_ref(),
         page,
@@ -138,6 +142,7 @@ async fn register_form<'r>(
 async fn register<'r>(
     cookies: &CookieJar<'_>,
     users: UserCommands,
+    users_q: &mut UserQueries,
     mut repository: Box<dyn Repository>,
     email_sender: &dyn EmailSender,
     page: PageContextBuilder<'_>,
@@ -167,7 +172,7 @@ async fn register<'r>(
     );
 
     let user_details = unwrap_or_return!(
-        user_details_step(&form, repository.as_mut(), email_sender, email_ctx).await?,
+        user_details_step(&form, repository.as_mut(), users_q, email_sender, email_ctx).await?,
         error_message => Ok(RegisterPage {
             step: RegisterStep::UserDetails,
             error_message,
@@ -248,6 +253,7 @@ async fn invitation_code_step(
 async fn user_details_step(
     form: &RegisterForm<'_>,
     repository: &mut dyn Repository,
+    users: &mut UserQueries,
     email_sender: &dyn EmailSender,
     email_ctx: EmailTemplateContext,
 ) -> Result<StepResult<UserDetails>> {
@@ -255,7 +261,7 @@ async fn user_details_step(
 
     let email_address = user_details.email_address.as_str();
 
-    if repository.get_user_by_email(email_address).await?.is_some() {
+    if users.by_email(email_address).await?.is_some() {
         return pending!("You are already registered, you should try logging in instead :)");
     }
 

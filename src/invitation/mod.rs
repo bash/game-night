@@ -207,8 +207,11 @@ impl<Id> Invitation<Id> {
     }
 }
 
-pub(crate) async fn invite_admin_user(repository: &mut dyn Repository) -> Result<()> {
-    if !repository.has_users().await? {
+pub(crate) async fn invite_admin_user(
+    users: &mut UserQueries,
+    repository: &mut dyn Repository,
+) -> Result<()> {
+    if !users.has().await? {
         let invitation = get_or_create_invitation(repository).await?;
         eprintln!("👑 {}", "admin".magenta().bold());
         eprintln!("   >> {}: {}", "invitation".blue(), &invitation.passphrase);
