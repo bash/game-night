@@ -11,7 +11,7 @@ use crate::poll::{Answer, Poll, PollOption, PollOptionPatch, PollStage};
 use crate::push::PushSubscription;
 use crate::register::EmailVerificationCode;
 use crate::services::{Resolve, ResolveContext};
-use crate::users::{User, UserId, UserPatch};
+use crate::users::{User, UserId};
 use anyhow::{anyhow, Context as _, Ok, Result};
 use rocket::async_trait;
 use rocket_db_pools::{Database, Pool as _};
@@ -39,9 +39,6 @@ pub(crate) trait Repository: EventEmailsRepository + fmt::Debug + Send {
     async fn get_admin_invitation(&mut self) -> Result<Option<Invitation>>;
 
     async fn get_groups(&mut self) -> Result<Vec<Group>>;
-
-    #[deprecated]
-    async fn update_user(&mut self, id: UserId, patch: UserPatch) -> Result<()>;
 
     async fn add_verification_code(&mut self, code: &EmailVerificationCode) -> Result<()>;
 
@@ -161,33 +158,6 @@ impl Repository for SqliteRepository {
             materialized.push(materialize_group(&mut transaction, group).await?);
         }
         Ok(materialized)
-    }
-
-    async fn update_user(&mut self, id: UserId, patch: UserPatch) -> Result<()> {
-        let mut transaction = self.0.begin().await?;
-        if let Some(name) = patch.name {
-            sqlx::query("UPDATE users SET name = ?2 WHERE id = ?1")
-                .bind(id)
-                .bind(name)
-                .execute(&mut *transaction)
-                .await?;
-        }
-        if let Some(email_subscription) = patch.email_subscription {
-            sqlx::query("UPDATE users SET email_subscription = ?2 WHERE id = ?1")
-                .bind(id)
-                .bind(email_subscription)
-                .execute(&mut *transaction)
-                .await?;
-        }
-        if let Some(symbol) = patch.symbol {
-            sqlx::query("UPDATE users SET symbol = ?2 WHERE id = ?1")
-                .bind(id)
-                .bind(symbol)
-                .execute(&mut *transaction)
-                .await?;
-        }
-        transaction.commit().await?;
-        Ok(())
     }
 
     async fn add_verification_code(&mut self, code: &EmailVerificationCode) -> Result<()> {

@@ -63,13 +63,6 @@ pub(crate) struct User<Id = UserId> {
     pub(crate) last_active_at: Iso8601<OffsetDateTime>,
 }
 
-#[derive(Debug)]
-pub(crate) struct UserPatch {
-    pub(crate) name: Option<String>,
-    pub(crate) symbol: Option<AstronomicalSymbol>,
-    pub(crate) email_subscription: Option<EmailSubscription>,
-}
-
 strum! {
     #[derive(Debug, Default, Copy, Clone, Eq, PartialEq, sqlx::Type, FromSqlRow, AsExpression)]
     #[diesel(sql_type = Text)]

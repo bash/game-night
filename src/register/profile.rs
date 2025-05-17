@@ -1,11 +1,12 @@
 use super::delete::rocket_uri_macro_delete_profile_page;
 use super::AstronomicalSymbol;
-use crate::database::Repository;
+use crate::default;
 use crate::push::PushEndpoints;
 use crate::result::HttpResult;
 use crate::template::prelude::*;
 use crate::users::{
-    rocket_uri_macro_list_users, EmailSubscription, User, UserPatch, ASTRONOMICAL_SYMBOLS,
+    rocket_uri_macro_list_users, EmailSubscription, User, UserCommands, UserPatch,
+    ASTRONOMICAL_SYMBOLS,
 };
 use rocket::form::Form;
 use rocket::http::uri::Origin;
@@ -35,12 +36,12 @@ pub(crate) fn profile(
 
 #[post("/profile", data = "<form>")]
 pub(super) async fn update_profile(
-    mut repository: Box<dyn Repository>,
+    mut users: UserCommands,
     form: Form<UpdateUserForm>,
     user: User,
 ) -> HttpResult<Redirect> {
     let patch = form.into_inner().into_user_patch(&user);
-    repository.update_user(user.id, patch).await?;
+    users.update(user.id, patch).await?;
     Ok(Redirect::to(uri!(profile)))
 }
 
@@ -65,6 +66,7 @@ impl UpdateUserForm {
             name,
             email_subscription,
             symbol,
+            ..default()
         }
     }
 }

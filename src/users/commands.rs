@@ -1,10 +1,10 @@
 use super::models::{NewUser, UserV2};
-use super::UserId;
-use crate::auto_resolve;
+use super::{AstronomicalSymbol, EmailSubscription, UserId};
 use crate::infra::DieselConnectionPool;
 use crate::invitation::Invitation;
 use crate::iso_8601::Iso8601;
 use crate::schema::{invitations, users};
+use crate::{auto_resolve, default};
 use anyhow::{bail, Error, Result};
 use diesel::dsl::*;
 use diesel::prelude::*;
@@ -59,13 +59,30 @@ impl UserCommands {
         user_id: UserId,
         ts: OffsetDateTime,
     ) -> Result<()> {
-        use crate::schema::users::{id, last_active_at};
+        let patch = UserPatch {
+            last_active_at: Some(Iso8601(ts)),
+            ..default()
+        };
+        self.update(user_id, patch).await
+    }
+
+    pub(crate) async fn update(&mut self, user_id: UserId, patch: UserPatch) -> Result<()> {
+        use crate::schema::users::id;
         let mut connection = self.connection.get().await?;
         update(users::table)
-            .filter(id.eq(user_id.0).and(last_active_at.lt(Iso8601(ts))))
-            .set(last_active_at.eq(Iso8601(ts)))
+            .filter(id.eq(user_id.0))
+            .set(patch)
             .execute(&mut connection)
             .await?;
         Ok(())
     }
+}
+
+#[derive(Debug, Default, AsChangeset)]
+#[diesel(table_name = crate::schema::users)]
+pub(crate) struct UserPatch {
+    pub(crate) name: Option<String>,
+    pub(crate) symbol: Option<AstronomicalSymbol>,
+    pub(crate) email_subscription: Option<EmailSubscription>,
+    pub(crate) last_active_at: Option<Iso8601<OffsetDateTime>>,
 }

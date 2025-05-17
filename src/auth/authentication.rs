@@ -1,4 +1,3 @@
-use crate::database::Repository;
 use crate::users::{User, UserId, UserQueries};
 use anyhow::{Error, Result};
 use rocket::http::{Cookie, CookieJar, SameSite, Status};
