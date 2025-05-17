@@ -2,8 +2,7 @@ use super::LoginToken;
 use crate::database::Repository;
 use crate::decorations::Random;
 use crate::email::{EmailMessage, EmailTemplateContext};
-use crate::users::models::UserV2;
-use crate::users::{UserMailboxExt as _, UserQueries};
+use crate::users::{User, UserMailboxExt as _, UserQueries};
 use crate::{auto_resolve, email_template};
 use anyhow::Result;
 use lettre::message::Mailbox;
@@ -28,7 +27,7 @@ impl LoginEmailProvider {
         self.for_user(user).await.map(Some)
     }
 
-    async fn for_user(&mut self, user: UserV2) -> Result<(Mailbox, LoginEmail)> {
+    async fn for_user(&mut self, user: User) -> Result<(Mailbox, LoginEmail)> {
         let token = LoginToken::generate_one_time(user.id, &mut rng());
         self.repository.add_login_token(&token).await?;
 

@@ -1,4 +1,4 @@
-use super::models::UserV2;
+use super::models::User;
 use super::{Role, UserId, UserQueries};
 use crate::auth::{AuthorizedTo, ManageUsers};
 use crate::auto_resolve;
@@ -41,12 +41,12 @@ impl UsersProvider {
 
 #[derive(Debug, Clone)]
 pub(crate) struct UserViewModel {
-    user: UserV2,
+    user: User,
     has_push_subscription: bool,
 }
 
 impl ops::Deref for UserViewModel {
-    type Target = UserV2;
+    type Target = User;
 
     fn deref(&self) -> &Self::Target {
         &self.user
@@ -54,7 +54,7 @@ impl ops::Deref for UserViewModel {
 }
 
 impl UserViewModel {
-    async fn for_user(user: UserV2, repository: &mut dyn Repository) -> Result<Self> {
+    async fn for_user(user: User, repository: &mut dyn Repository) -> Result<Self> {
         let has_push_subscription = repository.has_push_subscription(user.id).await?;
         Ok(Self {
             user,

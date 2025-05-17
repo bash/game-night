@@ -4,7 +4,6 @@ use crate::event::EventLike;
 use crate::groups::Group;
 use crate::iso_8601::Iso8601;
 use crate::poll::{Poll, PollStage};
-use crate::users::models::UserV2;
 use crate::users::User;
 use time::OffsetDateTime;
 
@@ -100,7 +99,7 @@ impl StatefulEvent {
         self.visit_event(|e| e.has_organizer(user), |e| e.has_organizer(user))
     }
 
-    pub(crate) fn has_organizer_v2(&self, user: &UserV2) -> bool {
+    pub(crate) fn has_organizer_v2(&self, user: &User) -> bool {
         self.visit_event(|e| e.has_organizer_v2(user), |e| e.has_organizer_v2(user))
     }
 

@@ -1,4 +1,4 @@
-use super::models::UserV2;
+use super::models::User;
 use super::{UserId, INACTIVITY_THRESHOLD};
 use crate::auth::is_invited_v2;
 use crate::auto_resolve;
@@ -18,38 +18,35 @@ auto_resolve! {
 }
 
 impl UserQueries {
-    pub(crate) async fn all(&mut self) -> Result<Vec<UserV2>> {
+    pub(crate) async fn all(&mut self) -> Result<Vec<User>> {
         use crate::schema::users::dsl::*;
         let mut connection = self.connection.get().await?;
         Ok(users
-            .select(UserV2::as_select())
+            .select(User::as_select())
             .order_by(last_active_at.desc())
             .load(&mut connection)
             .await?)
     }
 
-    pub(crate) async fn active(&mut self) -> Result<Vec<UserV2>> {
+    pub(crate) async fn active(&mut self) -> Result<Vec<User>> {
         use crate::schema::users::dsl::*;
         let mut connection = self.connection.get().await?;
         let min_active_at = OffsetDateTime::now_utc() - INACTIVITY_THRESHOLD;
         Ok(users
             .filter((unixepoch(last_active_at)).ge(unixepoch(Iso8601(min_active_at))))
-            .select(UserV2::as_select())
+            .select(User::as_select())
             .load(&mut connection)
             .await?)
     }
 
-    pub(crate) async fn invited(&mut self, event: &StatefulEvent) -> Result<Vec<UserV2>> {
-        let is_invited = |u: &UserV2| is_invited_v2(u, event);
+    pub(crate) async fn invited(&mut self, event: &StatefulEvent) -> Result<Vec<User>> {
+        let is_invited = |u: &User| is_invited_v2(u, event);
         let users = self.all().await?;
         Ok(users.into_iter().filter(is_invited).collect())
     }
 
-    pub(crate) async fn active_and_invited(
-        &mut self,
-        event: &StatefulEvent,
-    ) -> Result<Vec<UserV2>> {
-        let is_invited = |u: &UserV2| is_invited_v2(u, event);
+    pub(crate) async fn active_and_invited(&mut self, event: &StatefulEvent) -> Result<Vec<User>> {
+        let is_invited = |u: &User| is_invited_v2(u, event);
         let active = self.active().await?;
         Ok(active.into_iter().filter(is_invited).collect())
     }
@@ -61,33 +58,33 @@ impl UserQueries {
         Ok(user_count >= 1)
     }
 
-    pub(crate) async fn by_id(&mut self, user_id: UserId) -> Result<Option<UserV2>> {
+    pub(crate) async fn by_id(&mut self, user_id: UserId) -> Result<Option<User>> {
         use crate::schema::users::dsl::*;
         let mut connection = self.connection.get().await?;
         Ok(users
             .filter(id.eq(user_id.0))
-            .select(UserV2::as_select())
+            .select(User::as_select())
             .get_result(&mut connection)
             .await
             .optional()?)
     }
 
-    pub(crate) async fn by_id_required(&mut self, user_id: UserId) -> Result<UserV2> {
+    pub(crate) async fn by_id_required(&mut self, user_id: UserId) -> Result<User> {
         use crate::schema::users::dsl::*;
         let mut connection = self.connection.get().await?;
         Ok(users
             .filter(id.eq(user_id.0))
-            .select(UserV2::as_select())
+            .select(User::as_select())
             .get_result(&mut connection)
             .await?)
     }
 
-    pub(crate) async fn by_email(&mut self, email: &str) -> Result<Option<UserV2>> {
+    pub(crate) async fn by_email(&mut self, email: &str) -> Result<Option<User>> {
         use crate::schema::users::dsl::*;
         let mut connection = self.connection.get().await?;
         Ok(users
             .filter(email_address.eq(email))
-            .select(UserV2::as_select())
+            .select(User::as_select())
             .get_result(&mut connection)
             .await
             .optional()?)

@@ -1,4 +1,4 @@
-use super::models::{NewUser, UserV2};
+use super::models::{NewUser, User};
 use super::{AstronomicalSymbol, EmailSubscription, UserId};
 use crate::infra::DieselConnectionPool;
 use crate::invitation::Invitation;
@@ -19,7 +19,7 @@ auto_resolve! {
 
 impl UserCommands {
     /// Adds a user while destroying the associated invitation.
-    pub(crate) async fn add(&mut self, user: NewUser, invitation: &Invitation) -> Result<UserV2> {
+    pub(crate) async fn add(&mut self, user: NewUser, invitation: &Invitation) -> Result<User> {
         use crate::schema::invitations::{id as invitation_id, used_by};
         let mut connection = self.connection.get().await?;
         connection
@@ -27,7 +27,7 @@ impl UserCommands {
                 Box::pin(async move {
                     let user = insert_into(users::table)
                         .values(&user)
-                        .returning(UserV2::as_returning())
+                        .returning(User::as_returning())
                         .get_result(connection)
                         .await?;
                     let updated_rows = update(invitations::table)

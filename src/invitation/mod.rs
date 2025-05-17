@@ -4,7 +4,6 @@ use crate::result::HttpResult;
 use crate::template::prelude::*;
 use crate::uri;
 use crate::uri::UriBuilder;
-use crate::users::models::UserV2;
 use crate::users::{Role, User, UserId, UserQueries};
 use itertools::Itertools as _;
 use rand::rng;
@@ -47,7 +46,7 @@ async fn invite_page(
 #[derive(Template, Debug)]
 #[template(path = "invitation/invite.html")]
 struct InvitePage {
-    users: Vec<UserV2>,
+    users: Vec<User>,
     user: User,
     ctx: PageContext,
 }

@@ -93,7 +93,7 @@
                     <div class="answers-list">
                         {% for user in no_date_answered_with_yes %}
                             <span class="answer">
-                                {{ UserNameComponent::for_user(&user.to_v1()).with_symbol() | safe }}
+                                {{ UserNameComponent::for_user(&user).with_symbol() | safe }}
                             </span>
                         {% endfor %}
                     </div>
@@ -107,7 +107,7 @@
                     <div class="answers-list">
                         {% for user in not_answered %}
                             <span class="answer">
-                                {{ UserNameComponent::for_user(&user.to_v1()).with_symbol() | safe }}
+                                {{ UserNameComponent::for_user(&user).with_symbol() | safe }}
                             </span>
                         {% endfor %}
                     </div>

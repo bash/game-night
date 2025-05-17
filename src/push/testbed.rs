@@ -2,9 +2,7 @@ use super::{Notification, PushMessage, PushSender};
 use crate::auth::{AuthorizedTo, ManageUsers};
 use crate::result::HttpResult;
 use crate::template::prelude::*;
-use crate::users::models::UserV2;
-use crate::users::UserId;
-use crate::users::UserQueries;
+use crate::users::{User, UserId, UserQueries};
 use anyhow::Error;
 use rocket::form::Form;
 use rocket::serde::json::Json;
@@ -71,7 +69,7 @@ pub(crate) struct SendPushNotificationData {
 #[derive(Debug, Template)]
 #[template(path = "web-push/testbed.html")]
 pub(crate) struct TestbedPage {
-    users: Vec<UserV2>,
+    users: Vec<User>,
     recipient_id: UserId,
     notification: String,
     ctx: PageContext,

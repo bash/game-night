@@ -1,11 +1,13 @@
 use crate::auth::{CookieJarExt, LoginState};
 use crate::database::Repository;
+use crate::decorations::Random;
 use crate::default;
 use crate::email::{EmailSender, EmailTemplateContext};
 use crate::invitation::{Invitation, InvitationQueries, Passphrase};
+use crate::result::HttpResult;
 use crate::template::prelude::*;
 use crate::users::{
-    AstronomicalSymbol, EmailSubscription, User, UserCommands, UserId, UserQueries,
+    AstronomicalSymbol, EmailSubscription, NewUser, User, UserCommands, UserId, UserQueries,
 };
 use anyhow::Result;
 use campaign::{Campaign, ProvidedCampaign};
@@ -24,13 +26,10 @@ use StepResult::*;
 mod campaign;
 mod delete;
 mod email_verification_code;
-mod profile;
-mod verification;
-use crate::decorations::Random;
-use crate::result::HttpResult;
-use crate::users::models::NewUser;
 pub(crate) use email_verification_code::*;
+mod profile;
 pub(crate) use profile::*;
+mod verification;
 
 macro_rules! unwrap_or_return {
     ($result:expr, $e:ident => $ret:expr) => {

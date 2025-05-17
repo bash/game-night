@@ -1,6 +1,5 @@
 use crate::event::StatefulEvent;
 use crate::poll::Poll;
-use crate::users::models::UserV2;
 use crate::users::{Role, User};
 use anyhow::Error;
 use rocket::http::Status;
@@ -85,7 +84,7 @@ pub(crate) fn is_invited(user: &User, event: &StatefulEvent) -> bool {
         || event.has_organizer(user)
 }
 
-pub(crate) fn is_invited_v2(user: &UserV2, event: &StatefulEvent) -> bool {
+pub(crate) fn is_invited_v2(user: &User, event: &StatefulEvent) -> bool {
     let group = event.restrict_to();
     user.role == Role::Admin
         || group.is_none_or(|group| group.has_member_v2(user))
@@ -94,4 +93,30 @@ pub(crate) fn is_invited_v2(user: &UserV2, event: &StatefulEvent) -> bool {
 
 pub(crate) fn can_answer_strongly(user: &User, poll: &Poll) -> bool {
     user.can_answer_strongly() || poll.event.has_organizer(user)
+}
+
+impl User {
+    pub(crate) fn can_invite(&self) -> bool {
+        self.role == Role::Admin
+    }
+
+    pub(crate) fn can_manage_poll(&self) -> bool {
+        self.role == Role::Admin
+    }
+
+    pub(crate) fn can_manage_users(&self) -> bool {
+        self.role == Role::Admin
+    }
+
+    pub(crate) fn can_answer_strongly(&self) -> bool {
+        self.can_answer_strongly || self.role == Role::Admin
+    }
+
+    pub(crate) fn can_update_name(&self) -> bool {
+        self.can_update_name
+    }
+
+    pub(crate) fn can_update_symbol(&self) -> bool {
+        self.can_update_symbol
+    }
 }

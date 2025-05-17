@@ -1,12 +1,19 @@
-use super::{AstronomicalSymbol, EmailSubscription, Role, User, UserId};
+use super::{AstronomicalSymbol, EmailSubscription};
+use crate::impl_to_from_sql;
 use crate::iso_8601::Iso8601;
+use diesel::deserialize::FromSqlRow;
+use diesel::expression::AsExpression;
 use diesel::prelude::*;
+use diesel::sql_types::Text;
+use diesel_derive_newtype::DieselNewType;
+use std::fmt;
+use strum_lite::strum;
 use time::OffsetDateTime;
 
 #[derive(Debug, Clone, sqlx::FromRow, Queryable, Selectable)]
 #[diesel(table_name = crate::schema::users)]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
-pub(crate) struct UserV2 {
+pub(crate) struct User {
     pub(crate) id: UserId,
     pub(crate) name: String,
     pub(crate) symbol: AstronomicalSymbol,
@@ -33,22 +40,25 @@ pub(crate) struct NewUser {
     pub(crate) campaign: Option<String>,
 }
 
-impl UserV2 {
-    #[deprecated]
-    pub(crate) fn to_v1(&self) -> User {
-        User {
-            id: self.id,
-            name: self.name.clone(),
-            symbol: self.symbol,
-            role: self.role,
-            email_address: self.email_address.clone(),
-            email_subscription: self.email_subscription,
-            invited_by: self.invited_by,
-            campaign: self.campaign.clone(),
-            can_update_name: self.can_update_name,
-            can_answer_strongly: self.can_answer_strongly,
-            can_update_symbol: self.can_update_symbol,
-            last_active_at: self.last_active_at,
-        }
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, sqlx::Type, rocket::FromForm, DieselNewType)]
+#[sqlx(transparent)]
+#[form(transparent)]
+pub(crate) struct UserId(pub(crate) i64);
+
+impl fmt::Display for UserId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
     }
 }
+
+strum! {
+    #[derive(Debug, Default, Copy, Clone, Eq, PartialEq, FromSqlRow, AsExpression)]
+    #[diesel(sql_type = Text)]
+    pub(crate) enum Role {
+        Admin = "admin",
+        #[default]
+        Guest = "guest",
+    }
+}
+
+impl_to_from_sql! { Role }

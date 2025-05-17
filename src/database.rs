@@ -545,7 +545,7 @@ async fn materialize_answer(
     answer: Answer<Unmaterialized>,
 ) -> Result<Answer> {
     let user = users.by_id_required(answer.user).await?;
-    Ok(answer.materialize(user.to_v1()))
+    Ok(answer.materialize(user))
 }
 
 async fn materialize_stateful_event(
@@ -594,7 +594,7 @@ async fn materialize_event<L: EventLifecycle>(
     } else {
         None
     };
-    Ok(event.into_materialized(location, created_by.to_v1(), participants, restrict_to))
+    Ok(event.into_materialized(location, created_by, participants, restrict_to))
 }
 
 async fn materialize_group(
@@ -611,7 +611,7 @@ async fn materialize_group(
     .await?;
     let mut members = Vec::new();
     for (user_id,) in user_ids {
-        members.push(users.by_id_required(user_id).await?.to_v1());
+        members.push(users.by_id_required(user_id).await?);
     }
     Ok(group.into_materialized(members))
 }
@@ -632,7 +632,7 @@ async fn materialize_participant(
     participant: Participant<Unmaterialized>,
 ) -> Result<Participant> {
     let user = users.by_id_required(participant.user).await?;
-    Ok(participant.into_materialized(user.to_v1()))
+    Ok(participant.into_materialized(user))
 }
 
 async fn materialize_location(
@@ -664,7 +664,7 @@ async fn materialize_organizer(
     organizer: Organizer<Unmaterialized>,
 ) -> Result<Organizer> {
     let user = users.by_id_required(organizer.user).await?;
-    Ok(organizer.into_materialized(user.to_v1()))
+    Ok(organizer.into_materialized(user))
 }
 
 async fn insert_event<L>(connection: &mut SqliteConnection, event: &Event<New, L>) -> Result<i64>

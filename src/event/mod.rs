@@ -31,7 +31,6 @@ pub(crate) use list::*;
 mod title;
 pub(crate) use title::*;
 mod convert;
-use crate::users::models::UserV2;
 pub(crate) use convert::*;
 
 // TODO: strong type
@@ -156,7 +155,7 @@ impl<L: EventLifecycle> Event<Materialized, L> {
         self.location.organizers.iter().any(is_same_user)
     }
 
-    pub(crate) fn has_organizer_v2(&self, user: &UserV2) -> bool {
+    pub(crate) fn has_organizer_v2(&self, user: &User) -> bool {
         let is_same_user = |o: &Organizer| o.user.id == user.id;
         self.location.organizers.iter().any(is_same_user)
     }

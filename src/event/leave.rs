@@ -6,7 +6,7 @@ use crate::decorations::Random;
 use crate::email::{EmailMessage, EmailTemplateContext};
 use crate::result::HttpResult;
 use crate::template::prelude::*;
-use crate::users::{User, UserNameComponent};
+use crate::users::{User, UserMailboxExt as _, UserNameComponent};
 use crate::{email_template, uri};
 use lettre::message::Mailbox;
 use rocket::form::Form;

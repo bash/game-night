@@ -43,7 +43,7 @@ impl<'r> FromRequest<'r> for LoginState {
 
 async fn fetch_user(request: &Request<'_>, users: &mut UserQueries) -> Result<Option<User>> {
     match request.cookies().login_state()?.effective_user_id() {
-        Some(user_id) => Ok(users.by_id(user_id).await?.map(|u| u.to_v1())),
+        Some(user_id) => Ok(users.by_id(user_id).await?.map(|u| u)),
         None => Ok(None),
     }
 }

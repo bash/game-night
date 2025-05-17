@@ -4,7 +4,7 @@ use crate::{
     event::Event,
     impl_from_request_for_service,
     services::{Resolve, ResolveContext},
-    users::{User, UserId},
+    users::{User, UserId, UserMailboxExt as _},
 };
 use anyhow::Result;
 use rand::{rng, Rng};
