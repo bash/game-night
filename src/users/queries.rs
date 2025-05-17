@@ -72,6 +72,16 @@ impl UserQueries {
             .optional()?)
     }
 
+    pub(crate) async fn by_id_required(&mut self, user_id: UserId) -> Result<UserV2> {
+        use crate::schema::users::dsl::*;
+        let mut connection = self.connection.get().await?;
+        Ok(users
+            .filter(id.eq(user_id.0))
+            .select(UserV2::as_select())
+            .get_result(&mut connection)
+            .await?)
+    }
+
     pub(crate) async fn by_email(&mut self, email: &str) -> Result<Option<UserV2>> {
         use crate::schema::users::dsl::*;
         let mut connection = self.connection.get().await?;
