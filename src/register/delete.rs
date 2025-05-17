@@ -1,6 +1,5 @@
-use crate::database::Repository;
 use crate::decorations::Random;
-use crate::invitation::{Invitation, Passphrase};
+use crate::invitation::{InvitationCommands, NewInvitation, Passphrase};
 use crate::login::{Logout, RedirectUri};
 use crate::result::HttpResult;
 use crate::template::prelude::*;
@@ -21,19 +20,19 @@ pub(crate) fn delete_profile_page(page: PageContextBuilder, user: User) -> impl 
 
 #[post("/profile/delete")]
 pub(crate) async fn delete_profile(
-    mut repository: Box<dyn Repository>,
+    mut invitations: InvitationCommands,
     mut users: UserCommands,
     user: User,
 ) -> HttpResult<Logout> {
-    let invitation = repository.add_invitation(goodbye_invitation(&user)).await?;
+    let invitation = invitations.add(goodbye_invitation(&user)).await?;
     users.remove(user.id).await?;
     let redirect_uri = RedirectUri(uri!(profile_deleted_page(user.name, invitation.passphrase)));
     Ok(Logout(redirect_uri))
 }
 
-fn goodbye_invitation(user: &User) -> Invitation<()> {
+fn goodbye_invitation(user: &User) -> NewInvitation {
     let valid_until = OffsetDateTime::now_utc() + Duration::days(365);
-    Invitation::builder()
+    NewInvitation::builder()
         .role(user.role)
         .valid_until(valid_until)
         .comment(format!("Goodbye invitation for '{}'", user.name))

@@ -5,7 +5,6 @@ use crate::event::{
 };
 use crate::groups::Group;
 use crate::impl_from_request_for_service;
-use crate::invitation::{Invitation, InvitationId, Passphrase};
 use crate::login::{LoginToken, LoginTokenType};
 use crate::poll::{Answer, Poll, PollOption, PollOptionPatch, PollStage};
 use crate::push::PushSubscription;
@@ -29,15 +28,6 @@ pub(crate) struct GameNightDatabase(SqlitePool);
 
 #[async_trait]
 pub(crate) trait Repository: EventEmailsRepository + fmt::Debug + Send {
-    async fn add_invitation(&mut self, invitation: Invitation<()>) -> Result<Invitation>;
-
-    async fn get_invitation_by_passphrase(
-        &mut self,
-        passphrase: &Passphrase,
-    ) -> Result<Option<Invitation>>;
-
-    async fn get_admin_invitation(&mut self) -> Result<Option<Invitation>>;
-
     async fn get_groups(&mut self) -> Result<Vec<Group>>;
 
     async fn add_verification_code(&mut self, code: &EmailVerificationCode) -> Result<()>;
@@ -109,45 +99,6 @@ impl SqliteRepository {
 
 #[async_trait]
 impl Repository for SqliteRepository {
-    async fn add_invitation(&mut self, invitation: Invitation<()>) -> Result<Invitation> {
-        let result = sqlx::query!(
-            "INSERT INTO invitations (role, created_by, valid_until, passphrase, comment)
-             VALUES (?1, ?2, ?3, ?4, ?5)",
-            invitation.role,
-            invitation.created_by,
-            invitation.valid_until,
-            invitation.passphrase,
-            invitation.comment
-        )
-        .execute(self.executor())
-        .await?;
-        Ok(invitation.with_id(InvitationId(result.last_insert_rowid())))
-    }
-
-    async fn get_admin_invitation(&mut self) -> Result<Option<Invitation>> {
-        let invitation = sqlx::query_as(
-            "SELECT * FROM invitations WHERE role = 'admin' AND created_by IS NULL LIMIT 1",
-        )
-        .fetch_optional(self.executor())
-        .await?;
-        Ok(invitation)
-    }
-
-    async fn get_invitation_by_passphrase(
-        &mut self,
-        passphrase: &Passphrase,
-    ) -> Result<Option<Invitation>> {
-        let invitation = sqlx::query_as(
-            "SELECT * FROM invitations
-             WHERE passphrase = ?1
-               AND (valid_until IS NULL OR unixepoch(valid_until) - unixepoch('now') >= 0)",
-        )
-        .bind(passphrase)
-        .fetch_optional(self.executor())
-        .await?;
-        Ok(invitation)
-    }
-
     async fn get_groups(&mut self) -> Result<Vec<Group>> {
         let mut transaction = self.0.begin().await?;
         let groups = sqlx::query_as("SELECT * FROM groups")

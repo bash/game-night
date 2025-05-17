@@ -31,7 +31,7 @@ impl UserCommands {
                         .get_result(connection)
                         .await?;
                     let updated_rows = update(invitations::table)
-                        .filter(invitation_id.eq(invitation.id.0))
+                        .filter(invitation_id.eq(invitation.id))
                         .set(used_by.eq(user.id))
                         .execute(connection)
                         .await?;

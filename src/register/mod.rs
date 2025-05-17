@@ -2,9 +2,11 @@ use crate::auth::{CookieJarExt, LoginState};
 use crate::database::Repository;
 use crate::default;
 use crate::email::{EmailSender, EmailTemplateContext};
-use crate::invitation::{Invitation, Passphrase};
+use crate::invitation::{Invitation, InvitationQueries, Passphrase};
 use crate::template::prelude::*;
-use crate::users::{AstronomicalSymbol, User, UserCommands, UserId, UserQueries};
+use crate::users::{
+    AstronomicalSymbol, EmailSubscription, User, UserCommands, UserId, UserQueries,
+};
 use anyhow::Result;
 use campaign::{Campaign, ProvidedCampaign};
 use email_address::EmailAddress;
@@ -87,6 +89,7 @@ async fn register_page<'r>(
     cookies: &CookieJar<'_>,
     users: UserCommands,
     mut users_q: UserQueries,
+    mut invitations: InvitationQueries,
     repository: Box<dyn Repository>,
     email_sender: &State<Box<dyn EmailSender>>,
     page: PageContextBuilder<'_>,
@@ -99,6 +102,7 @@ async fn register_page<'r>(
         cookies,
         users,
         &mut users_q,
+        &mut invitations,
         repository,
         email_sender.as_ref(),
         page,
@@ -116,6 +120,7 @@ async fn register_form<'r>(
     cookies: &CookieJar<'_>,
     users: UserCommands,
     mut users_q: UserQueries,
+    mut invitations: InvitationQueries,
     repository: Box<dyn Repository>,
     email_sender: &State<Box<dyn EmailSender>>,
     page: PageContextBuilder<'_>,
@@ -127,6 +132,7 @@ async fn register_form<'r>(
         cookies,
         users,
         &mut users_q,
+        &mut invitations,
         repository,
         email_sender.as_ref(),
         page,
@@ -143,6 +149,7 @@ async fn register<'r>(
     cookies: &CookieJar<'_>,
     users: UserCommands,
     users_q: &mut UserQueries,
+    invitations: &mut InvitationQueries,
     mut repository: Box<dyn Repository>,
     email_sender: &dyn EmailSender,
     page: PageContextBuilder<'_>,
@@ -160,7 +167,7 @@ async fn register<'r>(
     };
 
     let invitation = unwrap_or_return!(
-        invitation_code_step(&form, repository.as_mut()).await?,
+        invitation_code_step(&form, invitations).await?,
         error_message => Ok(RegisterPage {
             step: RegisterStep::InvitationCode,
             error_message,
@@ -230,7 +237,7 @@ fn invalid_campaign(
 
 async fn invitation_code_step(
     form: &RegisterForm<'_>,
-    repository: &mut dyn Repository,
+    invitations: &mut InvitationQueries,
 ) -> Result<StepResult<Invitation>> {
     let passphrase = if let Some(words) = &form.words {
         Passphrase::from_form_fields(words.iter().map(|w| w.as_str()))
@@ -238,7 +245,7 @@ async fn invitation_code_step(
         return pending!();
     };
 
-    let invitation = match repository.get_invitation_by_passphrase(&passphrase).await? {
+    let invitation = match invitations.by_passphrase(&passphrase).await? {
         Some(invitation) => invitation,
         None => return pending!("That's not a valid invitation passphrase"),
     };
@@ -345,12 +352,15 @@ fn new_user(
     user_details: UserDetails,
     campaign: Option<Campaign<'_>>,
 ) -> NewUser {
-    invitation.to_user(
-        user_details.name,
-        rng().random::<AstronomicalSymbol>(),
-        user_details.email_address.to_string(),
-        campaign.map(|c| c.name.to_owned()),
-    )
+    NewUser {
+        name: user_details.name,
+        symbol: rng().random(),
+        email_subscription: EmailSubscription::default(),
+        role: invitation.role,
+        email_address: user_details.email_address.to_string(),
+        invited_by: invitation.created_by,
+        campaign: campaign.map(|c| c.name.to_owned()),
+    }
 }
 
 enum StepResult<T> {

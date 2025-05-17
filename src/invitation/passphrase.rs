@@ -1,5 +1,9 @@
 use super::TAUS_WORDLIST;
+use crate::impl_to_from_sql;
 use anyhow::Result;
+use diesel::deserialize::FromSqlRow;
+use diesel::expression::AsExpression;
+use diesel::sql_types::Text;
 use rand::distr::{Distribution, StandardUniform};
 use rand::seq::IndexedRandom as _;
 use rand::Rng;
@@ -10,9 +14,12 @@ use sqlx::encode::IsNull;
 use sqlx::error::BoxDynError;
 use sqlx::sqlite::SqliteArgumentValue;
 use sqlx::{Database, Decode, Encode, Sqlite};
+use std::convert::Infallible;
 use std::fmt;
+use std::str::FromStr;
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default, Clone, FromSqlRow, AsExpression)]
+#[diesel(sql_type = Text)]
 pub(crate) struct Passphrase(pub(crate) Vec<String>);
 
 impl Distribution<Passphrase> for StandardUniform {
@@ -30,6 +37,16 @@ impl fmt::Display for Passphrase {
         write!(f, "{}", self.0.join(" "))
     }
 }
+
+impl FromStr for Passphrase {
+    type Err = Infallible;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Ok(Passphrase(s.split(' ').map(|w| w.to_owned()).collect()))
+    }
+}
+
+impl_to_from_sql! { Passphrase }
 
 impl<'v> FromFormField<'v> for Passphrase {
     fn from_value(field: rocket::form::ValueField<'v>) -> rocket::form::Result<'v, Self> {
