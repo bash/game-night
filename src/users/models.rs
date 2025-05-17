@@ -10,7 +10,7 @@ use std::fmt;
 use strum_lite::strum;
 use time::OffsetDateTime;
 
-#[derive(Debug, Clone, sqlx::FromRow, Queryable, Selectable)]
+#[derive(Debug, Clone, Queryable, Selectable)]
 #[diesel(table_name = crate::schema::users)]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
 pub(crate) struct User {

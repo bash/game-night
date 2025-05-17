@@ -1,7 +1,4 @@
-use anyhow::Result;
-use lettre::message::Mailbox;
 use rocket::{routes, Route};
-use time::Duration;
 
 mod email_subscription;
 pub(crate) use email_subscription::*;
@@ -21,22 +18,9 @@ mod models;
 pub(crate) use models::*;
 mod queries;
 pub(crate) use queries::*;
+mod mailbox;
+pub(crate) use mailbox::*;
 
 pub(crate) fn routes() -> Vec<Route> {
     routes![list::list_users]
 }
-
-pub(crate) trait UserMailboxExt {
-    fn mailbox(&self) -> Result<Mailbox>;
-}
-
-impl UserMailboxExt for User {
-    fn mailbox(&self) -> Result<Mailbox> {
-        Ok(Mailbox::new(
-            Some(self.name.clone()),
-            self.email_address.parse()?,
-        ))
-    }
-}
-
-pub(crate) const INACTIVITY_THRESHOLD: Duration = Duration::days(9 * 30);

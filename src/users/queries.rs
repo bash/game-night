@@ -1,5 +1,5 @@
 use super::models::User;
-use super::{UserId, INACTIVITY_THRESHOLD};
+use super::UserId;
 use crate::auth::is_invited_v2;
 use crate::auto_resolve;
 use crate::event::StatefulEvent;
@@ -9,7 +9,9 @@ use crate::iso_8601::Iso8601;
 use anyhow::Result;
 use diesel::prelude::*;
 use diesel_async::RunQueryDsl;
-use time::OffsetDateTime;
+use time::{Duration, OffsetDateTime};
+
+const INACTIVITY_THRESHOLD: Duration = Duration::days(9 * 30);
 
 auto_resolve! {
     pub(crate) struct UserQueries {
