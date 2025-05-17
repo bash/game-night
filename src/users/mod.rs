@@ -7,14 +7,12 @@ use diesel::sql_types::Text;
 use diesel_derive_newtype::DieselNewType;
 use lettre::message::Mailbox;
 use rocket::{routes, Route};
-use rocket_db_pools::sqlx;
 use std::fmt;
 use strum_lite::strum;
 use time::{Duration, OffsetDateTime};
 
 mod email_subscription;
 pub(crate) use email_subscription::*;
-mod email_subscription_encoding;
 mod last_activity;
 pub(crate) use last_activity::*;
 mod symbol;
@@ -47,7 +45,7 @@ impl fmt::Display for UserId {
     }
 }
 
-#[derive(Debug, Clone, sqlx::FromRow)]
+#[derive(Debug, Clone)]
 pub(crate) struct User<Id = UserId> {
     pub(crate) id: Id,
     pub(crate) name: String,
@@ -64,9 +62,8 @@ pub(crate) struct User<Id = UserId> {
 }
 
 strum! {
-    #[derive(Debug, Default, Copy, Clone, Eq, PartialEq, sqlx::Type, FromSqlRow, AsExpression)]
+    #[derive(Debug, Default, Copy, Clone, Eq, PartialEq, FromSqlRow, AsExpression)]
     #[diesel(sql_type = Text)]
-    #[sqlx(rename_all = "lowercase")]
     pub(crate) enum Role {
         Admin = "admin",
         #[default]

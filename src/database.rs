@@ -10,7 +10,7 @@ use crate::poll::{Answer, Poll, PollOption, PollOptionPatch, PollStage};
 use crate::push::PushSubscription;
 use crate::register::EmailVerificationCode;
 use crate::services::{Resolve, ResolveContext};
-use crate::users::{User, UserId, UserQueries};
+use crate::users::{UserId, UserQueries};
 use anyhow::{anyhow, Context as _, Ok, Result};
 use rocket::async_trait;
 use rocket_db_pools::{Database, Pool as _};

@@ -86,40 +86,6 @@ impl From<AstronomicalSymbol> for &'static str {
     }
 }
 
-impl<'q, DB: sqlx::Database> sqlx::Encode<'q, DB> for AstronomicalSymbol
-where
-    &'q str: sqlx::Encode<'q, DB>,
-{
-    fn encode_by_ref(
-        &self,
-        buf: &mut DB::ArgumentBuffer<'q>,
-    ) -> Result<sqlx::encode::IsNull, sqlx::error::BoxDynError> {
-        self.0.encode_by_ref(buf)
-    }
-}
-
-impl<'r, DB: sqlx::Database> sqlx::Decode<'r, DB> for AstronomicalSymbol
-where
-    &'r str: sqlx::Decode<'r, DB>,
-{
-    fn decode(value: DB::ValueRef<'r>) -> Result<AstronomicalSymbol, sqlx::error::BoxDynError> {
-        Ok(<&str as sqlx::Decode<DB>>::decode(value)?.try_into()?)
-    }
-}
-
-impl<DB: sqlx::Database> sqlx::Type<DB> for AstronomicalSymbol
-where
-    for<'a> &'a str: sqlx::Type<DB>,
-{
-    fn type_info() -> DB::TypeInfo {
-        <&str as sqlx::Type<DB>>::type_info()
-    }
-
-    fn compatible(ty: &DB::TypeInfo) -> bool {
-        <&str as sqlx::Type<DB>>::compatible(ty)
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
