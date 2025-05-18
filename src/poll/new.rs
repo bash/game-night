@@ -10,7 +10,7 @@ use crate::event::{
     rocket_uri_macro_event_page, Event, EventEmailSender, EventsQuery, Polling, StatefulEvent,
 };
 use crate::groups::Group;
-use crate::locations::Location;
+use crate::locations::{Location, LocationId, LocationQueries};
 use crate::push::{PollNotification, PushSender};
 use crate::register::rocket_uri_macro_profile;
 use crate::result::HttpResult;
@@ -31,6 +31,7 @@ pub(crate) async fn new_poll_page(
     user: AuthorizedTo<ManagePoll>,
     page: PageContextBuilder<'_>,
     mut events: EventsQuery,
+    mut locations: LocationQueries,
     mut repository: Box<dyn Repository>,
 ) -> HttpResult<Templated<NewPollPage>> {
     let calendar = Calendar::generate(
@@ -40,14 +41,13 @@ pub(crate) async fn new_poll_page(
     );
     let description = events.newest(&user).await?.map(|e| e.description);
     let groups = repository.get_groups().await?;
-    let locations = repository.get_locations().await?;
     let page = NewPollPage {
         calendar,
         strategies: strategies().into_iter().collect(),
         calendar_uri: uri!(calendar()),
         description,
         groups,
-        locations,
+        locations: locations.all().await?,
         ctx: page.build(),
     };
     Ok(Templated(page))
@@ -103,13 +103,14 @@ fn strategies() -> [DateSelectionStrategy; 2] {
 
 #[post("/poll/new", data = "<form>")]
 pub(super) async fn new_poll(
-    mut repository: Box<dyn Repository>,
-    form: Form<NewPollData<'_>>,
     user: AuthorizedTo<ManagePoll>,
+    form: Form<NewPollData<'_>>,
+    mut repository: Box<dyn Repository>,
+    mut locations: LocationQueries,
     mut notification_sender: NewPollNotificationSender,
 ) -> HttpResult<Redirect> {
-    let location = repository
-        .get_location_by_id(form.location)
+    let location = locations
+        .by_id(form.location)
         .await?
         .context("invalid location id")?;
     let new_poll = to_poll(form.into_inner(), location, &user)?;
@@ -191,7 +192,7 @@ pub(super) struct NewPollData<'r> {
     description: &'r str,
     options: Vec<NewPollOption>,
     restrict_to: Option<i64>,
-    location: i64,
+    location: LocationId,
 }
 
 #[derive(Debug, FromForm)]

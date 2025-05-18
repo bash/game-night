@@ -1,7 +1,7 @@
 use crate::database::{Materialized, New, Unmaterialized};
 use crate::entity_state;
 use crate::iso_8601::Iso8601;
-use crate::locations::{Location, Organizer};
+use crate::locations::{Location, LocationId, Organizer};
 use crate::poll::PollOption;
 use crate::users::{User, UserId};
 use time::{Duration, OffsetDateTime};
@@ -72,7 +72,7 @@ entity_state! {
     pub(crate) trait EventState {
         type Id = () => EventId => EventId;
         type CreatedBy = UserId => UserId => User;
-        type Location = i64 => i64 => Location;
+        type Location = LocationId => LocationId => Location;
         type Participants: Default = Vec<Participant<Self>> => () => Vec<Participant<Self>>;
         type RestrictTo = i64 => i64 => Group;
     }

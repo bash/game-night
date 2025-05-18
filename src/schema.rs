@@ -27,3 +27,31 @@ diesel::table! {
         created_at -> Text,
     }
 }
+
+diesel::table! {
+    locations(id) {
+        id -> BigInt,
+        description -> Text,
+        nameplate -> Text,
+        street -> Text,
+        street_number -> Text,
+        plz -> Text,
+        city -> Text,
+        floor -> BigInt,
+        created_at -> Text,
+    }
+}
+
+diesel::joinable!(organizers -> locations (location_id));
+diesel::allow_tables_to_appear_in_same_query!(locations, organizers);
+
+diesel::table! {
+    organizers(id) {
+        id -> BigInt,
+        location_id -> BigInt,
+        user_id -> BigInt,
+    }
+}
+
+diesel::joinable!(organizers -> users (user_id));
+diesel::allow_tables_to_appear_in_same_query!(organizers, users);

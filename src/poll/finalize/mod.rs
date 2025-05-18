@@ -2,7 +2,7 @@ use super::{Answer, DateSelectionStrategy, Poll, PollOption, PollStage};
 use crate::database::Repository;
 use crate::event::PlanningDetails;
 use crate::users::{User, UserId};
-use anyhow::Result;
+use anyhow::{Context, Result};
 use itertools::Itertools;
 use rand::rng;
 use rocket::tokio::sync::Mutex;
@@ -20,7 +20,10 @@ mod veto;
 
 async fn finalize(ctx: &mut FinalizeContext) -> Result<()> {
     // not using a transaction here because we're the only ones setting polls to closed.
-    while let Some(poll) = get_next_pending_poll(&mut *ctx.repository).await? {
+    while let Some(poll) = get_next_pending_poll(&mut *ctx.repository)
+        .await
+        .context("get pending poll")?
+    {
         try_finalize_poll(ctx, poll).await?;
     }
 
@@ -37,7 +40,8 @@ auto_resolve! {
 async fn try_finalize_poll(ctx: &mut FinalizeContext, poll: Poll) -> Result<()> {
     ctx.repository
         .update_poll_stage(poll.event.id, PollStage::Finalizing)
-        .await?;
+        .await
+        .context("set to finalizing")?;
 
     let (result, promoted_events) = finalize_poll_dry_run(&poll);
 
@@ -48,15 +52,25 @@ async fn try_finalize_poll(ctx: &mut FinalizeContext, poll: Poll) -> Result<()> 
         ..
     } = result
     {
-        let event = ctx.repository.plan_event(poll.event.id, details).await?;
-        veto_date_in_other_polls(ctx, &event).await?;
+        let event = ctx
+            .repository
+            .plan_event(poll.event.id, details)
+            .await
+            .context("plan event")?;
+        veto_date_in_other_polls(ctx, &event)
+            .await
+            .context("veto date")?;
         let sender = &mut *ctx.sender.lock().await;
         emails::send_notification_emails(sender, &event, &invited, &missed).await?;
     }
 
     for promoted in promoted_events {
         let id = ctx.repository.add_event(poll.event.to_new()).await?;
-        let event = ctx.repository.plan_event(id, promoted.details).await?;
+        let event = ctx
+            .repository
+            .plan_event(id, promoted.details)
+            .await
+            .context("plan event")?;
         veto_date_in_other_polls(ctx, &event).await?;
         let sender = &mut *ctx.sender.lock().await;
         emails::send_notification_emails(sender, &event, &promoted.invited, &[]).await?;

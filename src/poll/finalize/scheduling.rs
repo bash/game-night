@@ -79,6 +79,6 @@ async fn run_finalizer(
 
 async fn finalize_with_error_handling(context: &mut FinalizeContext) {
     if let Err(error) = finalize(context).await {
-        warn!("poll finalization failed: {error:?}");
+        warn!("poll finalization failed: {error:#?}");
     }
 }

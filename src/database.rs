@@ -5,7 +5,7 @@ use crate::event::{
 };
 use crate::groups::Group;
 use crate::impl_from_request_for_service;
-use crate::locations::{Location, Organizer};
+use crate::locations::LocationQueries;
 use crate::login::{LoginToken, LoginTokenType};
 use crate::poll::{Answer, Poll, PollOption, PollOptionPatch, PollStage};
 use crate::push::PushSubscription;
@@ -62,10 +62,6 @@ pub(crate) trait Repository: EventEmailsRepository + fmt::Debug + Send {
 
     async fn get_stateful_events(&mut self) -> Result<Vec<StatefulEvent>>;
 
-    async fn get_location_by_id(&mut self, id: i64) -> Result<Option<Location>>;
-
-    async fn get_locations(&mut self) -> Result<Vec<Location>>;
-
     async fn add_participant(&mut self, event: EventId, user: UserId) -> Result<()>;
 
     async fn remove_participant(&mut self, event: EventId, user: UserId) -> Result<()>;
@@ -90,7 +86,7 @@ pub(crate) trait EventEmailsRepository: fmt::Debug + Send {
     async fn get_last_message_id(&mut self, event: i64, user: UserId) -> Result<Option<MessageId>>;
 }
 
-pub(crate) struct SqliteRepository(PoolConnection<Sqlite>, UserQueries);
+pub(crate) struct SqliteRepository(PoolConnection<Sqlite>, UserQueries, LocationQueries);
 
 impl fmt::Debug for SqliteRepository {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -108,13 +104,12 @@ impl SqliteRepository {
 #[async_trait]
 impl Repository for SqliteRepository {
     async fn get_groups(&mut self) -> Result<Vec<Group>> {
-        let mut transaction = self.0.begin().await?;
         let groups = sqlx::query_as("SELECT * FROM groups")
-            .fetch_all(&mut *transaction)
+            .fetch_all(&mut *self.0)
             .await?;
         let mut materialized = Vec::with_capacity(groups.len());
         for group in groups {
-            materialized.push(materialize_group(&mut transaction, &mut self.1, group).await?);
+            materialized.push(materialize_group(&mut self.0, &mut self.1, group).await?);
         }
         Ok(materialized)
     }
@@ -233,7 +228,7 @@ impl Repository for SqliteRepository {
         }
 
         let poll = poll.into_unmaterialized(poll_id, event_id);
-        let poll = materialize_poll(&mut transaction, &mut self.1, poll, None).await?;
+        let poll = materialize_poll(&mut transaction, &mut self.1, &mut self.2, poll, None).await?;
 
         transaction.commit().await?;
 
@@ -323,70 +318,45 @@ impl Repository for SqliteRepository {
             .await?;
         }
 
+        transaction.commit().await?;
+
         let event: Event<_> = sqlx::query_as("SELECT * FROM events WHERE id = ?1")
             .bind(id)
-            .fetch_one(&mut *transaction)
+            .fetch_one(&mut *self.0)
             .await?;
-        let event = materialize_event(&mut transaction, &mut self.1, event).await?;
-
-        transaction.commit().await?;
+        let event = materialize_event(&mut self.0, &mut self.1, &mut self.2, event).await?;
 
         Ok(event)
     }
 
     async fn get_stateful_event(&mut self, id: EventId) -> Result<Option<StatefulEvent>> {
-        let mut transaction = self.0.begin().await?;
         let event = sqlx::query_as("SELECT * FROM events WHERE id = ?1 LIMIT 1")
             .bind(id)
-            .fetch_optional(&mut *transaction)
+            .fetch_optional(&mut *self.0)
             .await?;
         Ok(match event {
             Some(event) => {
                 let now = OffsetDateTime::now_utc();
-                Some(materialize_stateful_event(&mut transaction, &mut self.1, event, now).await?)
+                Some(
+                    materialize_stateful_event(&mut self.0, &mut self.1, &mut self.2, event, now)
+                        .await?,
+                )
             }
             None => None,
         })
     }
 
     async fn get_stateful_events(&mut self) -> Result<Vec<StatefulEvent>> {
-        let mut transaction = self.0.begin().await?;
         let events = sqlx::query_as("SELECT * FROM events")
-            .fetch_all(&mut *transaction)
+            .fetch_all(&mut *self.0)
             .await?;
         let mut materialized = Vec::with_capacity(events.len());
         let now = OffsetDateTime::now_utc();
         for event in events {
             let event =
-                materialize_stateful_event(&mut transaction, &mut self.1, event, now).await?;
+                materialize_stateful_event(&mut self.0, &mut self.1, &mut self.2, event, now)
+                    .await?;
             materialized.push(event);
-        }
-        Ok(materialized)
-    }
-
-    async fn get_location_by_id(&mut self, id: i64) -> Result<Option<Location>> {
-        let mut transaction = self.0.begin().await?;
-        let Some(location) = sqlx::query_as("SELECT * FROM locations WHERE id = ?1")
-            .bind(id)
-            .fetch_optional(&mut *transaction)
-            .await?
-        else {
-            return Ok(None);
-        };
-        Ok(Some(
-            materialize_location(&mut transaction, &mut self.1, location).await?,
-        ))
-    }
-
-    async fn get_locations(&mut self) -> Result<Vec<Location>> {
-        let mut transaction = self.0.begin().await?;
-        let locations = sqlx::query_as("SELECT * FROM locations")
-            .fetch_all(&mut *transaction)
-            .await?;
-        let mut materialized = Vec::with_capacity(locations.len());
-        for location in locations {
-            let location = materialize_location(&mut transaction, &mut self.1, location).await?;
-            materialized.push(location);
         }
         Ok(materialized)
     }
@@ -505,6 +475,7 @@ impl EventEmailsRepository for SqliteRepository {
 async fn materialize_poll(
     connection: &mut SqliteConnection,
     users: &mut UserQueries,
+    locations: &mut LocationQueries,
     poll: Poll<Unmaterialized>,
     event: Option<Event<Materialized, Polling>>,
 ) -> Result<Poll> {
@@ -517,7 +488,7 @@ async fn materialize_poll(
             .bind(poll.event)
             .fetch_one(&mut *connection)
             .await?;
-        materialize_event(connection, users, event).await?
+        materialize_event(connection, users, locations, event).await?
     };
 
     let mut options: Vec<PollOption> =
@@ -552,10 +523,11 @@ async fn materialize_answer(
 async fn materialize_stateful_event(
     connection: &mut SqliteConnection,
     users: &mut UserQueries,
+    locations: &mut LocationQueries,
     event: Event<Unmaterialized, Polling>,
     now: OffsetDateTime,
 ) -> Result<StatefulEvent> {
-    let event = materialize_event(connection, users, event).await?;
+    let event = materialize_event(connection, users, locations, event).await?;
     if let Some(starts_at) = event.starts_at {
         Ok(StatefulEvent::from_planned(event, starts_at, now))
     } else {
@@ -565,7 +537,7 @@ async fn materialize_stateful_event(
             .bind(event.id)
             .fetch_one(&mut *connection)
             .await?;
-        let poll = materialize_poll(connection, users, poll, Some(event)).await?;
+        let poll = materialize_poll(connection, users, locations, poll, Some(event)).await?;
         Ok(StatefulEvent::from_polling(poll, now))
     }
 }
@@ -573,14 +545,14 @@ async fn materialize_stateful_event(
 async fn materialize_event<L: EventLifecycle>(
     connection: &mut SqliteConnection,
     users: &mut UserQueries,
+    locations: &mut LocationQueries,
     event: Event<Unmaterialized, L>,
 ) -> Result<Event<Materialized, L>> {
     let created_by = users.by_id_required(event.created_by).await?;
-    let location = sqlx::query_as("SELECT * FROM locations WHERE id = ?1")
-        .bind(event.location)
-        .fetch_one(&mut *connection)
-        .await?;
-    let location = materialize_location(connection, users, location).await?;
+    let location = locations
+        .by_id(event.location)
+        .await?
+        .context("invalid location id")?;
     let participants = sqlx::query_as("SELECT * FROM participants WHERE event_id = ?1")
         .bind(event.id)
         .fetch_all(&mut *connection)
@@ -636,38 +608,6 @@ async fn materialize_participant(
     Ok(participant.into_materialized(user))
 }
 
-async fn materialize_location(
-    connection: &mut SqliteConnection,
-    users: &mut UserQueries,
-    location: Location<Unmaterialized>,
-) -> Result<Location> {
-    let organizers = sqlx::query_as("SELECT * FROM organizers WHERE location_id = ?1")
-        .bind(location.id)
-        .fetch_all(&mut *connection)
-        .await?;
-    let organizers = materialize_organizers(users, organizers).await?;
-    Ok(location.into_materialized(organizers))
-}
-
-async fn materialize_organizers(
-    users: &mut UserQueries,
-    organizers: Vec<Organizer<Unmaterialized>>,
-) -> Result<Vec<Organizer>> {
-    let mut materialized = Vec::new();
-    for organizer in organizers {
-        materialized.push(materialize_organizer(users, organizer).await?);
-    }
-    Ok(materialized)
-}
-
-async fn materialize_organizer(
-    users: &mut UserQueries,
-    organizer: Organizer<Unmaterialized>,
-) -> Result<Organizer> {
-    let user = users.by_id_required(organizer.user).await?;
-    Ok(organizer.into_materialized(user))
-}
-
 async fn insert_event<L>(connection: &mut SqliteConnection, event: &Event<New, L>) -> Result<i64>
 where
     L: EventLifecycle,
@@ -713,7 +653,11 @@ impl Resolve for Box<dyn Repository> {
     async fn resolve(ctx: &ResolveContext<'_>) -> Result<Self> {
         let db = GameNightDatabase::fetch(ctx.rocket()).context("unable to retrieve database")?;
         let connection = db.get().await?;
-        Ok(Box::new(SqliteRepository(connection, ctx.resolve().await?)))
+        Ok(Box::new(SqliteRepository(
+            connection,
+            ctx.resolve().await?,
+            ctx.resolve().await?,
+        )))
     }
 }
 
