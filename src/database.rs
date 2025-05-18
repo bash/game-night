@@ -1,10 +1,11 @@
 use crate::email::MessageId;
 use crate::event::{
-    Event, EventEmail, EventId, EventLifecycle, Location, Organizer, Participant, PlanningDetails,
-    Polling, StatefulEvent,
+    Event, EventEmail, EventId, EventLifecycle, Participant, PlanningDetails, Polling,
+    StatefulEvent,
 };
 use crate::groups::Group;
 use crate::impl_from_request_for_service;
+use crate::locations::{Location, Organizer};
 use crate::login::{LoginToken, LoginTokenType};
 use crate::poll::{Answer, Poll, PollOption, PollOptionPatch, PollStage};
 use crate::push::PushSubscription;

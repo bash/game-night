@@ -7,10 +7,10 @@ use crate::database::{New, Repository};
 use crate::decorations::Random;
 use crate::email::EmailTemplateContext;
 use crate::event::{
-    rocket_uri_macro_event_page, Event, EventEmailSender, EventsQuery, Location, Polling,
-    StatefulEvent,
+    rocket_uri_macro_event_page, Event, EventEmailSender, EventsQuery, Polling, StatefulEvent,
 };
 use crate::groups::Group;
+use crate::locations::Location;
 use crate::push::{PollNotification, PushSender};
 use crate::register::rocket_uri_macro_profile;
 use crate::result::HttpResult;

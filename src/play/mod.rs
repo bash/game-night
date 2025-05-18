@@ -1,9 +1,9 @@
 use crate::auth::UriProvider;
 use crate::database::Repository;
 use crate::event::{
-    Event, EventId, EventsQuery, Ics, LongEventTitleComponent, PostalAddressComponent,
-    StatefulEvent, VisibleParticipants,
+    Event, EventId, EventsQuery, Ics, LongEventTitleComponent, StatefulEvent, VisibleParticipants,
 };
+use crate::locations::PostalAddressComponent;
 use crate::poll::EventEmailSender;
 use crate::result::HttpResult;
 use crate::template::prelude::*;

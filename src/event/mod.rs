@@ -1,6 +1,7 @@
 use crate::database::{Materialized, New, Unmaterialized};
 use crate::entity_state;
 use crate::iso_8601::Iso8601;
+use crate::locations::{Location, Organizer};
 use crate::poll::PollOption;
 use crate::users::{User, UserId};
 use time::{Duration, OffsetDateTime};
@@ -22,10 +23,6 @@ use crate::groups::Group;
 pub(crate) use ics_file::*;
 mod leave;
 pub(crate) use leave::*;
-mod location;
-pub(crate) use location::*;
-mod postal_address;
-pub(crate) use postal_address::*;
 mod list;
 pub(crate) use list::*;
 mod title;
